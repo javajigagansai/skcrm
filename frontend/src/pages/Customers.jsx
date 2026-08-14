@@ -167,14 +167,19 @@ export const Customers = () => {
       alert('Please type "DELETE" to confirm deletion.');
       return;
     }
+
+    const targetName = customerToDelete.name;
+    const targetId = customerToDelete.id;
+
+    // Automatically close modal window
+    setCustomerToDelete(null);
+    setDeleteConfirmText('');
+
     try {
-      await deleteCustomer(customerToDelete.id);
-      if (selectedCustomer && selectedCustomer.id === customerToDelete.id) {
+      await deleteCustomer(targetId);
+      if (selectedCustomer && selectedCustomer.id === targetId) {
         setSelectedCustomer(null);
       }
-      alert(`Customer "${customerToDelete.name}" (${customerToDelete.id}) permanently deleted from database.`);
-      setCustomerToDelete(null);
-      setDeleteConfirmText('');
     } catch (err) {
       alert(`Error deleting customer: ${err.message}`);
     }
@@ -1915,55 +1920,66 @@ export const Customers = () => {
       {/* ================= 2-STEP CONFIRMATION CUSTOMER DELETION MODAL ================= */}
       {customerToDelete && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-rose-200 animate-fadeIn">
-            <div className="flex items-center justify-between border-b pb-3">
-              <div className="flex items-center space-x-2 text-rose-600">
-                <Trash2 className="h-5 w-5" />
-                <h3 className="text-base font-black text-slate-900">Step 1: Confirm Permanent Deletion</h3>
+          <div className="bg-white rounded-3xl max-w-xl sm:max-w-2xl w-full p-8 space-y-6 shadow-2xl border border-rose-200 animate-fadeIn">
+            <div className="flex items-center justify-between border-b pb-4">
+              <div className="flex items-center space-x-3 text-rose-600">
+                <div className="p-2.5 bg-rose-100 rounded-2xl">
+                  <Trash2 className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-slate-900">Step 1: Confirm Permanent Deletion</h3>
+                  <p className="text-xs text-slate-500 font-semibold">Critical database operation to remove client profile.</p>
+                </div>
               </div>
-              <button onClick={() => setCustomerToDelete(null)} className="text-slate-400 hover:text-slate-600">
+              <button 
+                onClick={() => setCustomerToDelete(null)} 
+                className="text-slate-400 hover:text-slate-600 p-2 rounded-xl hover:bg-slate-100 cursor-pointer"
+              >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="bg-rose-50 p-4 rounded-2xl border border-rose-100 space-y-2">
-              <p className="text-xs font-black text-rose-800 uppercase tracking-wider">⚠️ WARNING: PERMANENT DATA REMOVAL</p>
-              <p className="text-xs text-rose-700 font-semibold leading-relaxed">
-                You are about to permanently delete customer <strong>"{customerToDelete.name}"</strong> ({customerToDelete.id || customerToDelete.customerCode}).
-                This will clear their 360° record and remove them completely from the database.
+            <div className="bg-rose-50 p-5 rounded-2xl border border-rose-200 space-y-2">
+              <p className="text-xs font-black text-rose-800 uppercase tracking-wider flex items-center space-x-1">
+                <span>⚠️ WARNING: PERMANENT DATA REMOVAL</span>
+              </p>
+              <p className="text-xs sm:text-sm text-rose-700 font-bold leading-relaxed">
+                You are about to permanently delete customer <strong className="text-slate-900 text-sm font-black">"{customerToDelete.name}"</strong> ({customerToDelete.id || customerToDelete.customerCode}).
+                This action is irreversible and will purge their 360° profile record from the database.
               </p>
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-black uppercase text-slate-700">
-                Step 2: Type <span className="text-rose-600 font-mono font-black">DELETE</span> below to confirm:
+              <label className="text-xs font-black uppercase text-slate-700 block">
+                Step 2: Type <span className="text-rose-600 font-mono font-black text-sm">DELETE</span> below to confirm:
               </label>
               <input
                 type="text"
                 value={deleteConfirmText}
                 onChange={(e) => setDeleteConfirmText(e.target.value)}
-                placeholder="Type DELETE to enable confirmation"
-                className="w-full px-3.5 py-2.5 rounded-xl border-2 border-slate-200 text-xs font-extrabold text-slate-900 focus:border-rose-500 focus:outline-none"
+                placeholder="Type DELETE to enable permanent deletion button"
+                className="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 text-sm font-black text-slate-900 focus:border-rose-500 focus:outline-none"
               />
             </div>
 
-            <div className="flex items-center justify-end space-x-3 border-t pt-4">
+            <div className="flex items-center justify-end space-x-3 border-t pt-5">
               <button
                 onClick={() => setCustomerToDelete(null)}
-                className="px-4 py-2 rounded-xl text-xs font-extrabold text-slate-600 hover:bg-slate-100 cursor-pointer"
+                className="px-5 py-2.5 rounded-2xl text-xs font-extrabold text-slate-600 hover:bg-slate-100 cursor-pointer transition"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteCustomer}
                 disabled={deleteConfirmText.trim().toUpperCase() !== 'DELETE'}
-                className={`px-5 py-2.5 rounded-xl text-xs font-black text-white shadow-md transition cursor-pointer ${
+                className={`px-6 py-3 rounded-2xl text-xs font-black text-white shadow-lg transition cursor-pointer flex items-center space-x-2 ${
                   deleteConfirmText.trim().toUpperCase() === 'DELETE'
-                    ? 'bg-rose-600 hover:bg-rose-700'
+                    ? 'bg-rose-600 hover:bg-rose-700 transform active:scale-95'
                     : 'bg-slate-300 opacity-60 cursor-not-allowed'
                 }`}
               >
-                🔥 PERMANENTLY DELETE
+                <Trash2 className="h-4 w-4" />
+                <span>🔥 PERMANENTLY DELETE CLIENT</span>
               </button>
             </div>
           </div>
