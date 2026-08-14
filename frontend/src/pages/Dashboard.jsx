@@ -172,6 +172,19 @@ export const Dashboard = () => {
   const staffBusinessLeaderboard = useMemo(() => {
     const staffMap = {};
 
+    // Load all real registered staff members
+    let registeredStaff = [];
+    try {
+      const saved = localStorage.getItem('crm_v2_users_list');
+      if (saved) registeredStaff = JSON.parse(saved);
+    } catch (e) {}
+
+    (registeredStaff || []).forEach(st => {
+      if (st && st.name) {
+        staffMap[st.name.trim()] = { name: st.name.trim(), businessAmount: 0, policyCount: 0 };
+      }
+    });
+
     // 1. Compute real-time business totals from active policies
     (policies || []).forEach(p => {
       const name = (p.assignedStaff || p.assignedTo || p.advisorName || 'Priya Sharma').trim();
@@ -194,13 +207,32 @@ export const Dashboard = () => {
   const staffClientLeaderboard = useMemo(() => {
     const staffMap = {};
 
-    (customers || []).forEach(c => {
-      const name = (c.assignedAdvisorName || c.assignedStaff || c.assignedToName || c.advisorName || 'Priya Sharma').trim();
-      if (!staffMap[name]) staffMap[name] = { name, clientCount: 0 };
-      staffMap[name].clientCount += 1;
+    let registeredStaff = [];
+    try {
+      const saved = localStorage.getItem('crm_v2_users_list');
+      if (saved) registeredStaff = JSON.parse(saved);
+    } catch (e) {}
+
+    (registeredStaff || []).forEach(st => {
+      if (st && st.name) {
+        staffMap[st.name.trim()] = { name: st.name.trim(), activeCount: 0, completedCount: 0, totalCount: 0 };
+      }
     });
 
-    return Object.values(staffMap).sort((a, b) => b.clientCount - a.clientCount);
+    (customers || []).forEach(c => {
+      const name = (c.assignedAdvisorName || c.assignedStaff || c.assignedToName || c.advisorName || 'Priya Sharma').trim();
+      if (!staffMap[name]) staffMap[name] = { name, activeCount: 0, completedCount: 0, totalCount: 0 };
+
+      const isCompleted = c.status === 'Completed' || c.status === 'INACTIVE' || c.isCompleted === true;
+      if (isCompleted) {
+        staffMap[name].completedCount += 1;
+      } else {
+        staffMap[name].activeCount += 1;
+      }
+      staffMap[name].totalCount += 1;
+    });
+
+    return Object.values(staffMap).sort((a, b) => b.totalCount - a.totalCount);
   }, [customers]);
 
   const currentMetrics = {
@@ -1115,7 +1147,9 @@ export const Dashboard = () => {
                   <tr>
                     <th className="p-3">Rank</th>
                     <th className="p-3">Staff Advisor</th>
-                    <th className="p-3">Assigned Clients</th>
+                    <th className="p-3">Active Assigned</th>
+                    <th className="p-3">Completed Clients</th>
+                    <th className="p-3">Total Clients</th>
                     <th className="p-3">Portfolio Share</th>
                     <th className="p-3">Capacity Status</th>
                   </tr>
@@ -1123,7 +1157,7 @@ export const Dashboard = () => {
                 <tbody className="divide-y divide-slate-100">
                   {staffClientLeaderboard.map((st, idx) => {
                     const totalCusts = customers.length || 1;
-                    const pct = ((st.clientCount / totalCusts) * 100).toFixed(1);
+                    const pct = ((st.totalCount / totalCusts) * 100).toFixed(1);
                     return (
                       <tr key={idx} className="hover:bg-slate-50 transition">
                         <td className="p-3 font-black">
@@ -1133,7 +1167,9 @@ export const Dashboard = () => {
                           <UserCheck className="h-3.5 w-3.5 text-purple-600" />
                           <span>{st.name}</span>
                         </td>
-                        <td className="p-3 font-bold text-indigo-700">{st.clientCount} Clients</td>
+                        <td className="p-3 font-bold text-indigo-700">{st.activeCount} Active</td>
+                        <td className="p-3 font-bold text-emerald-700">{st.completedCount} Completed</td>
+                        <td className="p-3 font-black text-slate-900">{st.totalCount} Total</td>
                         <td className="p-3 font-black text-slate-800">{pct}% Share</td>
                         <td className="p-3">
                           {idx === 0 ? (
