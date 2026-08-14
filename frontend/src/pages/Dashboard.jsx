@@ -991,7 +991,7 @@ export const Dashboard = () => {
             <div>
               <h3 className="text-base font-black text-slate-900 flex items-center space-x-2">
                 <Users className="h-5 w-5 text-blue-600" />
-                <span>Registered Customers &amp; Account Profiles ({customers.length})</span>
+                <span>Registered Customers &amp; Account Profiles</span>
               </h3>
               <p className="text-xs text-slate-500 font-semibold">Click any customer below to view their unified 360° profile with linked policies, claims &amp; holdings.</p>
             </div>
@@ -999,7 +999,7 @@ export const Dashboard = () => {
               onClick={() => navigate('/customers')}
               className="px-3.5 py-2 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white font-extrabold text-xs transition cursor-pointer flex items-center space-x-1"
             >
-              <span>View All ({customers.length})</span>
+              <span>View All</span>
               <ChevronRight className="h-3.5 w-3.5" />
             </button>
           </div>
