@@ -393,9 +393,30 @@ export const DataProvider = ({ children }) => {
             return Array.from(map.values());
           });
         }
+      } catch (err) {}
+    };
+
+    fetchRemoteData();
+  }, []);
+
+  // Real-time synchronization listener across tabs & portals
+  useEffect(() => {
+    const syncRealtimeData = () => {
+      try {
+        const storedCusts = localStorage.getItem('crm_v2_customers');
+        if (storedCusts) {
+          const parsed = JSON.parse(storedCusts);
+          if (Array.isArray(parsed) && parsed.length > 0) setCustomers(parsed);
+        }
       } catch (e) {}
     };
-    fetchRemoteData();
+
+    window.addEventListener('storage_customers_updated', syncRealtimeData);
+    window.addEventListener('storage', syncRealtimeData);
+    return () => {
+      window.removeEventListener('storage_customers_updated', syncRealtimeData);
+      window.removeEventListener('storage', syncRealtimeData);
+    };
   }, []);
 
   // CRUD Actions
@@ -416,15 +437,32 @@ export const DataProvider = ({ children }) => {
     return newCust;
   };
 
-  const updateCustomer = (id, updatedFields) => {
-    setCustomers(prev => prev.map(c => c.id === id || c.name === id ? { ...c, ...updatedFields } : c));
+  const updateCustomer = (idOrData, updatedFields) => {
+    if (!idOrData) return;
+    const targetId = typeof idOrData === 'object' ? idOrData.id || idOrData.customerCode : idOrData;
+    const updateObj = typeof idOrData === 'object' ? idOrData : updatedFields || {};
+
+    setCustomers(prev => prev.map(c => {
+      if (c.id === targetId || c.customerCode === targetId || c.name === targetId) {
+        return { ...c, ...updateObj };
+      }
+      return c;
+    }));
+
+    try {
+      const stored = JSON.parse(localStorage.getItem('crm_v2_customers') || '[]');
+      const newStored = stored.map(c => (c.id === targetId || c.customerCode === targetId || c.name === targetId) ? { ...c, ...updateObj } : c);
+      localStorage.setItem('crm_v2_customers', JSON.stringify(newStored));
+      window.dispatchEvent(new Event('storage_customers_updated'));
+    } catch (e) {}
+
     addAuditLog({
-      userName: updatedFields.assignedAdvisorName || 'Staff Advisor',
+      userName: updateObj.assignedAdvisorName || 'Staff Advisor',
       userRole: 'STAFF',
-      action: 'UPDATE_CLIENT',
+      action: 'UPDATE_CUSTOMER',
       module: 'Customers',
-      affectedRecord: String(id),
-      details: 'Updated customer profile details and relationships'
+      affectedRecord: String(targetId),
+      details: 'Updated customer 360 profile details & relationships'
     });
   };
 
@@ -438,26 +476,6 @@ export const DataProvider = ({ children }) => {
       module: 'Customers',
       affectedRecord: String(id),
       details: 'Deleted customer record'
-    });
-  };
-
-  const updateCustomer = (updatedCustData) => {
-    if (!updatedCustData || !updatedCustData.id) return;
-    setCustomers(prev => prev.map(c => c.id === updatedCustData.id ? { ...c, ...updatedCustData } : c));
-    
-    try {
-      const stored = JSON.parse(localStorage.getItem('crm_v2_customers') || '[]');
-      const newStored = stored.map(c => c.id === updatedCustData.id ? { ...c, ...updatedCustData } : c);
-      localStorage.setItem('crm_v2_customers', JSON.stringify(newStored));
-    } catch (e) {}
-
-    addAuditLog({
-      userName: 'Staff Advisor',
-      userRole: 'STAFF',
-      action: 'UPDATE_CUSTOMER',
-      module: 'Customers',
-      affectedRecord: `${updatedCustData.customerCode || updatedCustData.id} (${updatedCustData.name})`,
-      details: 'Updated customer 360 profile details'
     });
   };
 
