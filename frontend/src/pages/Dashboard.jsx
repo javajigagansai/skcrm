@@ -887,9 +887,15 @@ export const Dashboard = () => {
       {/* KPI Overview Cards - Interactive Clickable Grid (5 Key Cards) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <div 
-          onClick={() => setActiveModal('TOTAL_CUSTOMERS')}
+          onClick={() => {
+            if (isStaffAdvisor) {
+              navigate('/customers');
+            } else {
+              setActiveModal('TOTAL_CUSTOMERS');
+            }
+          }}
           className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-card space-y-2 hover:border-blue-500 hover:shadow-lg transition cursor-pointer group relative"
-          title="Click to view detailed customer breakdown & analysis"
+          title={isStaffAdvisor ? 'Click to view your assigned client portfolios' : 'Click to view detailed customer breakdown & analysis'}
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-extrabold text-slate-500 uppercase group-hover:text-blue-600 transition">
