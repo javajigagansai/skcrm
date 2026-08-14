@@ -21,6 +21,7 @@ export const Renewals = () => {
     customerName: p.customerName,
     phone: p.phone || '9876543210',
     type: p.type || 'Insurance Policy',
+    insuranceCompany: p.insuranceCompany || 'Tata AIA / Star Health',
     premium: p.grossPremium || 25000,
     dueDate: p.expiryDate || '2026-09-01',
     assignedStaff: p.assignedStaff || 'Priya Sharma (Senior Advisor)',
@@ -28,9 +29,31 @@ export const Renewals = () => {
     reminderSent: !!remindersMap[p.id]
   }));
 
-  const handleSendReminder = (policyNo, name) => {
-    setRemindersMap(prev => ({ ...prev, [policyNo]: true }));
-    setToastMessage(`Renewal reminder notice sent via email & WhatsApp to ${name}!`);
+  const handleSendWhatsAppNotice = (r) => {
+    const rawPhone = (r.phone || '9876543210').replace(/\D/g, '');
+    const formattedPhone = rawPhone.length === 10 ? `91${rawPhone}` : rawPhone;
+
+    const message = `Hello *${r.customerName}*, 👋✨\n\n` +
+      `Warm Greetings from *SK Smart Investments*! 🌟\n\n` +
+      `We hope you are doing well! This is a friendly reminder regarding your upcoming policy renewal.\n\n` +
+      `📌 *Policy Renewal Details:*\n` +
+      `• *Policy Number:* ${r.policyNo}\n` +
+      `• *Insurance Provider:* ${r.insuranceCompany}\n` +
+      `• *Policy Category:* ${r.type}\n` +
+      `• *Renewal Premium:* ₹${Number(r.premium).toLocaleString()}\n` +
+      `• *Due Date:* ${r.dueDate}\n` +
+      `• *Assigned Advisor:* ${r.assignedStaff}\n\n` +
+      `To ensure your coverage remains active without any interruption or penalty, please contact us or reply to this message to renew your policy.\n\n` +
+      `📞 *Help Desk:* +91 98765 43210\n` +
+      `🌐 *Portal:* https://sk-crm-1.web.app\n\n` +
+      `Thank you for trusting SK Smart Investments! 🙏`;
+
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=${formattedPhone}&text=${encodeURIComponent(message)}`;
+    
+    window.open(whatsappUrl, '_blank');
+
+    setRemindersMap(prev => ({ ...prev, [r.policyNo]: true }));
+    setToastMessage(`WhatsApp renewal notice dispatched for ${r.customerName}!`);
     setTimeout(() => setToastMessage(null), 4000);
   };
 
@@ -124,11 +147,12 @@ export const Renewals = () => {
                     {r.status !== 'RENEWED' && (
                       <>
                         <button 
-                          onClick={() => handleSendReminder(r.policyNo, r.customerName)}
-                          className="px-3 py-1.5 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 font-extrabold text-[11px] cursor-pointer inline-flex items-center space-x-1"
+                          onClick={() => handleSendWhatsAppNotice(r)}
+                          className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-black text-[11px] cursor-pointer inline-flex items-center space-x-1.5 shadow-xs transition"
+                          title="Open WhatsApp with personalized customer greeting and policy renewal details"
                         >
                           <Send className="h-3 w-3" />
-                          <span>{r.reminderSent ? 'Resend Notice' : 'Send Notice'}</span>
+                          <span>{r.reminderSent ? 'Resend WhatsApp Notice' : 'Send WhatsApp Notice'}</span>
                         </button>
                         <button 
                           onClick={() => handleMarkRenewed(r.policyNo, r.customerName)}

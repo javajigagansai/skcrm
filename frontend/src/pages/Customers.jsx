@@ -411,48 +411,48 @@ export const Customers = () => {
               <tr className="bg-slate-850 border-b border-slate-700">
                 <th className="p-2 border-r border-slate-700">
                   <input 
-                    type="text" 
-                    placeholder="Filter Date..." 
+                    type="date" 
                     value={colFilters.date} 
                     onChange={(e) => handleColFilterChange('date', e.target.value)} 
-                    className="w-full px-2 py-1 bg-slate-800 text-white rounded border border-slate-700 text-[10px] outline-none focus:border-blue-500 font-medium" 
+                    className="w-full px-2 py-1 bg-slate-800 text-amber-300 rounded-lg border border-slate-700 text-[10px] outline-none focus:border-blue-500 font-bold cursor-pointer" 
+                    title="Select Date to Filter"
                   />
                 </th>
                 <th className="p-2 border-r border-slate-700">
                   <select 
                     value={colFilters.clientCategory} 
                     onChange={(e) => handleColFilterChange('clientCategory', e.target.value)} 
-                    className="w-full px-1.5 py-1 bg-slate-800 text-white rounded border border-slate-700 text-[10px] outline-none font-bold focus:border-blue-500"
+                    className="w-full px-1.5 py-1 bg-slate-800 text-white rounded-lg border border-slate-700 text-[10px] outline-none font-bold focus:border-blue-500 cursor-pointer"
                   >
                     <option value="ALL">All Categories</option>
-                    <option value="New Lead">New Lead</option>
-                    <option value="Existing Lead">Existing Lead</option>
-                    <option value="VIP Client">VIP Client</option>
+                    <option value="New Lead">New Lead 🔵</option>
+                    <option value="Existing Lead">Existing Lead 🟣</option>
+                    <option value="VIP Client">VIP Client ⭐</option>
                   </select>
                 </th>
                 <th className="p-2 border-r border-slate-700">
                   <input 
                     type="text" 
-                    placeholder="Filter Name..." 
+                    placeholder="🔍 Filter Name..." 
                     value={colFilters.name} 
                     onChange={(e) => handleColFilterChange('name', e.target.value)} 
-                    className="w-full px-2 py-1 bg-slate-800 text-white rounded border border-slate-700 text-[10px] outline-none focus:border-blue-500 font-medium" 
+                    className="w-full px-2 py-1 bg-slate-800 text-white rounded-lg border border-slate-700 text-[10px] outline-none focus:border-blue-500 font-medium placeholder-slate-400" 
                   />
                 </th>
                 <th className="p-2 border-r border-slate-700">
                   <input 
                     type="text" 
-                    placeholder="Filter Phone..." 
+                    placeholder="📞 Filter Phone..." 
                     value={colFilters.phone} 
                     onChange={(e) => handleColFilterChange('phone', e.target.value)} 
-                    className="w-full px-2 py-1 bg-slate-800 text-white rounded border border-slate-700 text-[10px] outline-none focus:border-blue-500 font-medium" 
+                    className="w-full px-2 py-1 bg-slate-800 text-white rounded-lg border border-slate-700 text-[10px] outline-none focus:border-blue-500 font-mono font-medium placeholder-slate-400" 
                   />
                 </th>
                 <th className="p-2 border-r border-slate-700">
                   <select 
                     value={colFilters.assignedStaff} 
                     onChange={(e) => handleColFilterChange('assignedStaff', e.target.value)} 
-                    className="w-full px-1.5 py-1 bg-slate-800 text-white rounded border border-slate-700 text-[10px] outline-none font-bold focus:border-blue-500"
+                    className="w-full px-1.5 py-1 bg-slate-800 text-white rounded-lg border border-slate-700 text-[10px] outline-none font-bold focus:border-blue-500 cursor-pointer"
                   >
                     <option value="ALL">All Staff</option>
                     {staffList.map(st => <option key={st.name} value={st.name}>{st.name}</option>)}
@@ -461,26 +461,26 @@ export const Customers = () => {
                 <th className="p-2 border-r border-slate-700">
                   <input 
                     type="text" 
-                    placeholder="Filter Insurer..." 
+                    placeholder="🛡️ Filter Insurer..." 
                     value={colFilters.insurer} 
                     onChange={(e) => handleColFilterChange('insurer', e.target.value)} 
-                    className="w-full px-2 py-1 bg-slate-800 text-white rounded border border-slate-700 text-[10px] outline-none focus:border-blue-500 font-medium" 
+                    className="w-full px-2 py-1 bg-slate-800 text-white rounded-lg border border-slate-700 text-[10px] outline-none focus:border-blue-500 font-medium placeholder-slate-400" 
                   />
                 </th>
                 <th className="p-2 border-r border-slate-700">
                   <input 
                     type="text" 
-                    placeholder="Filter Pitch..." 
+                    placeholder="📊 Filter Pitch..." 
                     value={colFilters.salesPitch} 
                     onChange={(e) => handleColFilterChange('salesPitch', e.target.value)} 
-                    className="w-full px-2 py-1 bg-slate-800 text-white rounded border border-slate-700 text-[10px] outline-none focus:border-blue-500 font-medium" 
+                    className="w-full px-2 py-1 bg-slate-800 text-white rounded-lg border border-slate-700 text-[10px] outline-none focus:border-blue-500 font-medium placeholder-slate-400" 
                   />
                 </th>
                 <th className="p-2 border-r border-slate-700">
                   <select 
                     value={colFilters.clientStatus} 
                     onChange={(e) => handleColFilterChange('clientStatus', e.target.value)} 
-                    className="w-full px-1.5 py-1 bg-slate-800 text-white rounded border border-slate-700 text-[10px] outline-none font-bold focus:border-blue-500"
+                    className="w-full px-1.5 py-1 bg-slate-800 text-white rounded-lg border border-slate-700 text-[10px] outline-none font-bold focus:border-blue-500 cursor-pointer"
                   >
                     <option value="ALL">All Statuses</option>
                     <option value="Quotation Shared">Quotation Shared</option>
@@ -493,19 +493,19 @@ export const Customers = () => {
                 <th className="p-2 border-r border-slate-700">
                   <input 
                     type="text" 
-                    placeholder="Filter Notes..." 
+                    placeholder="📝 Filter Notes..." 
                     value={colFilters.advisorNotes} 
                     onChange={(e) => handleColFilterChange('advisorNotes', e.target.value)} 
-                    className="w-full px-2 py-1 bg-slate-800 text-white rounded border border-slate-700 text-[10px] outline-none focus:border-blue-500 font-medium" 
+                    className="w-full px-2 py-1 bg-slate-800 text-white rounded-lg border border-slate-700 text-[10px] outline-none focus:border-blue-500 font-medium placeholder-slate-400" 
                   />
                 </th>
                 <th className="p-2 text-center">
                   <button 
                     onClick={clearAllColFilters} 
-                    className="px-2 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded text-[9px] font-black uppercase transition cursor-pointer"
+                    className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-[9px] font-black uppercase transition cursor-pointer shadow-2xs"
                     title="Reset all column filters"
                   >
-                    Clear Filters
+                    Reset
                   </button>
                 </th>
               </tr>
