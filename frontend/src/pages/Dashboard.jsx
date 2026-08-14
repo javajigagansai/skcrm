@@ -996,9 +996,7 @@ export const Dashboard = () => {
                 </div>
               </div>
             ))}
-
-            {customers.length === 0 && (
-              <div className="col-span-full p-6 text-center text-xs text-slate-400 font-semibold">
+            <div className="col-span-full p-6 text-center text-xs text-slate-400 font-semibold">
                 No customers registered yet. Click "Customer Directory" to create your first customer.
               </div>
             )}
@@ -1006,112 +1004,114 @@ export const Dashboard = () => {
         </div>
       )}
 
-      {/* DASHBOARD STAFF PERFORMANCE LEADERBOARDS */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* LEADERBOARD A: STAFF GENERATING MOST BUSINESS */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-card space-y-4">
-          <div className="flex items-center justify-between border-b pb-3">
-            <div>
-              <h3 className="text-sm font-black text-slate-900 flex items-center space-x-2">
-                <Award className="h-5 w-5 text-amber-500" />
-                <span>1. Staff Doing Most Business (Revenue Leaderboard)</span>
-              </h3>
-              <p className="text-[11px] text-slate-500">Highest revenue generating advisors &amp; policy issuers.</p>
+      {/* DASHBOARD STAFF PERFORMANCE LEADERBOARDS (HIDDEN FROM STAFF) */}
+      {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* LEADERBOARD A: STAFF GENERATING MOST BUSINESS */}
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-card space-y-4">
+            <div className="flex items-center justify-between border-b pb-3">
+              <div>
+                <h3 className="text-sm font-black text-slate-900 flex items-center space-x-2">
+                  <Award className="h-5 w-5 text-amber-500" />
+                  <span>1. Staff Doing Most Business (Revenue Leaderboard)</span>
+                </h3>
+                <p className="text-[11px] text-slate-500">Highest revenue generating advisors &amp; policy issuers.</p>
+              </div>
+              <span className="badge badge-amber text-[10px] uppercase font-black">Business Rank 🏆</span>
             </div>
-            <span className="badge badge-amber text-[10px] uppercase font-black">Business Rank 🏆</span>
-          </div>
 
-          <div className="overflow-x-auto rounded-2xl border border-slate-100">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-600 font-extrabold uppercase text-[10px]">
-                <tr>
-                  <th className="p-3">Rank</th>
-                  <th className="p-3">Staff Advisor</th>
-                  <th className="p-3">Policies / SIPs</th>
-                  <th className="p-3">Total Business Value</th>
-                  <th className="p-3">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {staffBusinessLeaderboard.map((st, idx) => (
-                  <tr key={idx} className="hover:bg-slate-50 transition">
-                    <td className="p-3 font-black">
-                      {idx === 0 ? '🥇 #1' : idx === 1 ? '🥈 #2' : idx === 2 ? '🥉 #3' : `#${idx + 1}`}
-                    </td>
-                    <td className="p-3 font-extrabold text-slate-900 flex items-center space-x-1.5">
-                      <UserCheck className="h-3.5 w-3.5 text-blue-600" />
-                      <span>{st.name}</span>
-                    </td>
-                    <td className="p-3 font-bold text-slate-700">{st.policyCount} Contracts</td>
-                    <td className="p-3 font-black text-emerald-700">₹{st.businessAmount.toLocaleString()}</td>
-                    <td className="p-3">
-                      {idx === 0 ? (
-                        <span className="badge badge-green text-[10px]">Top Business Leader 🏆</span>
-                      ) : (
-                        <span className="badge badge-brand text-[10px]">Active Business</span>
-                      )}
-                    </td>
+            <div className="overflow-x-auto rounded-2xl border border-slate-100">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 text-slate-600 font-extrabold uppercase text-[10px]">
+                  <tr>
+                    <th className="p-3">Rank</th>
+                    <th className="p-3">Staff Advisor</th>
+                    <th className="p-3">Policies / SIPs</th>
+                    <th className="p-3">Total Business Value</th>
+                    <th className="p-3">Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* LEADERBOARD B: STAFF HANDLING MOST CLIENTS */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-card space-y-4">
-          <div className="flex items-center justify-between border-b pb-3">
-            <div>
-              <h3 className="text-sm font-black text-slate-900 flex items-center space-x-2">
-                <Users className="h-5 w-5 text-indigo-600" />
-                <span>2. Staff Handling Most Clients (Workload Leaderboard)</span>
-              </h3>
-              <p className="text-[11px] text-slate-500">Advisors with maximum assigned client portfolios.</p>
-            </div>
-            <span className="badge badge-purple text-[10px] uppercase font-black">Client Workload 📊</span>
-          </div>
-
-          <div className="overflow-x-auto rounded-2xl border border-slate-100">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-600 font-extrabold uppercase text-[10px]">
-                <tr>
-                  <th className="p-3">Rank</th>
-                  <th className="p-3">Staff Advisor</th>
-                  <th className="p-3">Assigned Clients</th>
-                  <th className="p-3">Portfolio Share</th>
-                  <th className="p-3">Capacity Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {staffClientLeaderboard.map((st, idx) => {
-                  const totalCusts = customers.length || 1;
-                  const pct = ((st.clientCount / totalCusts) * 100).toFixed(1);
-                  return (
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {staffBusinessLeaderboard.map((st, idx) => (
                     <tr key={idx} className="hover:bg-slate-50 transition">
                       <td className="p-3 font-black">
                         {idx === 0 ? '🥇 #1' : idx === 1 ? '🥈 #2' : idx === 2 ? '🥉 #3' : `#${idx + 1}`}
                       </td>
                       <td className="p-3 font-extrabold text-slate-900 flex items-center space-x-1.5">
-                        <UserCheck className="h-3.5 w-3.5 text-purple-600" />
+                        <UserCheck className="h-3.5 w-3.5 text-blue-600" />
                         <span>{st.name}</span>
                       </td>
-                      <td className="p-3 font-bold text-indigo-700">{st.clientCount} Clients</td>
-                      <td className="p-3 font-black text-slate-800">{pct}% Share</td>
+                      <td className="p-3 font-bold text-slate-700">{st.policyCount} Contracts</td>
+                      <td className="p-3 font-black text-emerald-700">₹{st.businessAmount.toLocaleString()}</td>
                       <td className="p-3">
                         {idx === 0 ? (
-                          <span className="badge badge-purple text-[10px]">Max Client Workload ⚡</span>
+                          <span className="badge badge-green text-[10px]">Top Business Leader 🏆</span>
                         ) : (
-                          <span className="badge badge-blue text-[10px]">Optimal Capacity</span>
+                          <span className="badge badge-brand text-[10px]">Active Business</span>
                         )}
                       </td>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* LEADERBOARD B: STAFF HANDLING MOST CLIENTS */}
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-card space-y-4">
+            <div className="flex items-center justify-between border-b pb-3">
+              <div>
+                <h3 className="text-sm font-black text-slate-900 flex items-center space-x-2">
+                  <Users className="h-5 w-5 text-indigo-600" />
+                  <span>2. Staff Handling Most Clients (Workload Leaderboard)</span>
+                </h3>
+                <p className="text-[11px] text-slate-500">Advisors with maximum assigned client portfolios.</p>
+              </div>
+              <span className="badge badge-purple text-[10px] uppercase font-black">Client Workload 📊</span>
+            </div>
+
+            <div className="overflow-x-auto rounded-2xl border border-slate-100">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 text-slate-600 font-extrabold uppercase text-[10px]">
+                  <tr>
+                    <th className="p-3">Rank</th>
+                    <th className="p-3">Staff Advisor</th>
+                    <th className="p-3">Assigned Clients</th>
+                    <th className="p-3">Portfolio Share</th>
+                    <th className="p-3">Capacity Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {staffClientLeaderboard.map((st, idx) => {
+                    const totalCusts = customers.length || 1;
+                    const pct = ((st.clientCount / totalCusts) * 100).toFixed(1);
+                    return (
+                      <tr key={idx} className="hover:bg-slate-50 transition">
+                        <td className="p-3 font-black">
+                          {idx === 0 ? '🥇 #1' : idx === 1 ? '🥈 #2' : idx === 2 ? '🥉 #3' : `#${idx + 1}`}
+                        </td>
+                        <td className="p-3 font-extrabold text-slate-900 flex items-center space-x-1.5">
+                          <UserCheck className="h-3.5 w-3.5 text-purple-600" />
+                          <span>{st.name}</span>
+                        </td>
+                        <td className="p-3 font-bold text-indigo-700">{st.clientCount} Clients</td>
+                        <td className="p-3 font-black text-slate-800">{pct}% Share</td>
+                        <td className="p-3">
+                          {idx === 0 ? (
+                            <span className="badge badge-purple text-[10px]">Max Workload ⚡</span>
+                          ) : (
+                            <span className="badge badge-green text-[10px]">Optimal Load</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* BAR GRAPH 1 & 2 GRID - Full Width for Maximum Day-to-Day Spacing */}
       <div className="grid grid-cols-1 gap-8">
@@ -1402,77 +1402,81 @@ export const Dashboard = () => {
           </div>
         </div>
 
-        {/* GRAPH 4: Staff Advisor Performance Targets */}
+        {/* GRAPH 4: Staff Advisor Performance Targets (HIDDEN FROM STAFF) */}
+        {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
+          <div 
+            onClick={() => setActiveModal('STAFF_PERFORMANCE_CHART')}
+            className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-card space-y-4 hover:border-amber-400 hover:shadow-md transition cursor-pointer group"
+            title="Click to view staff advisor leaderboard details"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-extrabold text-slate-900 group-hover:text-amber-600 transition flex items-center space-x-1.5">
+                  <span>4. Staff Advisor Targets vs Achieved ({dateFilter === 'THIS_YEAR' ? 'Total' : 'Lakhs'})</span>
+                  <ArrowUpRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition" />
+                </h3>
+                <p className="text-[11px] text-slate-500">Revenue Contribution per Advisor ({dateFilter})</p>
+              </div>
+              <span className="badge badge-amber text-[10px]">Staff Leaderboard • Click Details 🔍</span>
+            </div>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={currentMetrics.staffPerformanceChart}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                  <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700 }} />
+                  <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700 }} />
+                  <Tooltip cursor={{ fill: '#F1F5F9' }} />
+                  <Legend />
+                  <Bar dataKey="target" fill="#94A3B8" radius={[6, 6, 0, 0]} name="Target" />
+                  <Bar dataKey="achieved" fill="#F59E0B" radius={[6, 6, 0, 0]} name="Achieved" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* GRAPH 5: Product Portfolio Distribution Donut Chart (HIDDEN FROM STAFF) */}
+      {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
         <div 
-          onClick={() => setActiveModal('STAFF_PERFORMANCE_CHART')}
-          className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-card space-y-4 hover:border-amber-400 hover:shadow-md transition cursor-pointer group"
-          title="Click to view staff advisor leaderboard details"
+          onClick={() => setActiveModal('PRODUCT_DISTRIBUTION_CHART')}
+          className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-card space-y-4 hover:border-brand hover:shadow-md transition cursor-pointer group"
+          title="Click to view detailed product share breakdown"
         >
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-extrabold text-slate-900 group-hover:text-amber-600 transition flex items-center space-x-1.5">
-                <span>4. Staff Advisor Targets vs Achieved ({dateFilter === 'THIS_YEAR' ? 'Total' : 'Lakhs'})</span>
+              <h3 className="text-sm font-extrabold text-slate-900 group-hover:text-blue-600 transition flex items-center space-x-1.5">
+                <span>5. Insurance &amp; Financial Portfolio Share (%)</span>
                 <ArrowUpRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition" />
               </h3>
-              <p className="text-[11px] text-slate-500">Revenue Contribution per Advisor ({dateFilter})</p>
+              <p className="text-[11px] text-slate-500">Distribution across Health, Life, SIP, FDs &amp; Real Estate ({dateFilter})</p>
             </div>
-            <span className="badge badge-amber text-[10px]">Staff Leaderboard • Click Details 🔍</span>
+            <span className="badge badge-brand text-[10px]">Product Mix • Click Details 🔍</span>
           </div>
-          <div className="h-64">
+
+          <div className="h-64 flex items-center justify-center">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={currentMetrics.staffPerformanceChart}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700 }} />
-                <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700 }} />
-                <Tooltip cursor={{ fill: '#F1F5F9' }} />
+              <PieChart>
+                <Pie
+                  data={currentMetrics.productDistributionChart}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={95}
+                  paddingAngle={4}
+                  dataKey="value"
+                >
+                  {currentMetrics.productDistributionChart.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
                 <Legend />
-                <Bar dataKey="target" fill="#94A3B8" radius={[6, 6, 0, 0]} name="Target" />
-                <Bar dataKey="achieved" fill="#F59E0B" radius={[6, 6, 0, 0]} name="Achieved" />
-              </BarChart>
+              </PieChart>
             </ResponsiveContainer>
           </div>
         </div>
-      </div>
-
-      {/* GRAPH 5: Product Portfolio Distribution Donut Chart */}
-      <div 
-        onClick={() => setActiveModal('PRODUCT_DISTRIBUTION_CHART')}
-        className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-card space-y-4 hover:border-brand hover:shadow-md transition cursor-pointer group"
-        title="Click to view detailed product share breakdown"
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-sm font-extrabold text-slate-900 group-hover:text-blue-600 transition flex items-center space-x-1.5">
-              <span>5. Insurance &amp; Financial Portfolio Share (%)</span>
-              <ArrowUpRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition" />
-            </h3>
-            <p className="text-[11px] text-slate-500">Distribution across Health, Life, SIP, FDs &amp; Real Estate ({dateFilter})</p>
-          </div>
-          <span className="badge badge-brand text-[10px]">Product Mix • Click Details 🔍</span>
-        </div>
-
-        <div className="h-64 flex items-center justify-center">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={currentMetrics.productDistributionChart}
-                cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={95}
-                paddingAngle={4}
-                dataKey="value"
-              >
-                {currentMetrics.productDistributionChart.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+      )}
     </div>
   );
 };
