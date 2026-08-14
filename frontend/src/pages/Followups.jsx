@@ -251,35 +251,38 @@ export const Followups = () => {
     alert(`Follow-up step ${editingStage.stepId} updated & notification sent to ${editingStage.assignedTo}!`);
   };
 
-  const isStaffAdvisor = user?.role === 'EMPLOYEE' || user?.role === 'USER';
+  const isStaffAdvisor = user?.role === 'EMPLOYEE' || user?.role === 'USER' || user?.role === 'STAFF';
 
   const isFollowupAssignedToStaff = (item) => {
-    if (!isStaffAdvisor) return true; // Admin and Manager see all records
-    if (!user || !user.name) return true;
+    // Admins and Managers see all follow-ups
+    if (user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER') {
+      return true;
+    }
 
-    const activeName = user.name.toLowerCase().trim();
+    if (!user || (!user.name && !user.email)) return false;
+
+    const activeName = (user.name || '').toLowerCase().trim();
     const activeFirst = activeName.split(' ')[0];
     const activeEmail = (user.email || '').toLowerCase().trim();
+    const activeUid = user.uid || '';
 
     const assignedName = (item.currentAssignedTo || item.assignedTo || item.assignedStaff || '').toLowerCase().trim();
     const assignedEmail = (item.assignedEmail || item.assignedToEmail || '').toLowerCase().trim();
 
-    if (assignedName && (assignedName === activeName || assignedName.split(' ')[0] === activeFirst)) return true;
+    if (assignedName && (assignedName === activeName || (activeFirst.length > 2 && assignedName.split(' ')[0] === activeFirst))) return true;
     if (assignedEmail && activeEmail && assignedEmail === activeEmail) return true;
-    if (item.assignedToId && item.assignedToId === user.uid) return true;
+    if (item.assignedToId && item.assignedToId === activeUid) return true;
 
     // Check if any stage in client history is assigned to staff
     if (item.history && Array.isArray(item.history)) {
       const hasHistoryMatch = item.history.some(h => {
         const hName = (h.assignedTo || '').toLowerCase().trim();
-        return hName === activeName || (activeFirst && hName.split(' ')[0] === activeFirst);
+        return hName === activeName || (activeFirst.length > 2 && hName.split(' ')[0] === activeFirst);
       });
       if (hasHistoryMatch) return true;
     }
 
-    // Fallback: If no staff is assigned yet, show to staff so they can manage
-    if (!assignedName && !assignedEmail && !item.assignedToId) return true;
-
+    // STRICT PRIVACY: Do NOT show follow-ups assigned to other staff members!
     return false;
   };
 
