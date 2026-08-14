@@ -7,6 +7,8 @@ import {
   fetchExpensesBackend, createExpenseBackend,
   fetchTasksBackend, createTaskBackend
 } from '../services/apiService';
+import { db } from '../config/firebaseClient';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const DataContext = createContext();
 
@@ -419,13 +421,40 @@ export const DataProvider = ({ children }) => {
     };
   }, []);
 
-  // CRUD Actions
+  const notifyCustomerAssignment = async (advisorName, customerName, isReassignment = false) => {
+    if (!advisorName) return;
+    try {
+      await addDoc(collection(db, 'notifications'), {
+        recipientName: advisorName,
+        type: 'CUSTOMER_ASSIGNED',
+        title: isReassignment ? '👤 Customer Portfolio Reassigned to You' : '👤 New Customer Portfolio Assigned!',
+        message: isReassignment
+          ? `Customer "${customerName}" has been assigned to your staff profile for advisor management.`
+          : `New Customer "${customerName}" has been created and assigned to your staff portfolio.`,
+        isRead: false,
+        read: false,
+        createdAt: serverTimestamp()
+      });
+    } catch (e) {}
+
+    try {
+      window.dispatchEvent(new CustomEvent('storage_customer_assigned', {
+        detail: { advisorName, customerName }
+      }));
+    } catch (e) {}
+  };
+
   // CRUD Actions
   const addCustomer = async (custData) => {
     const id = custData.id || `SK-CUST-${100 + customers.length + 1}`;
     const newCust = { ...custData, id, customerCode: id, createdAt: new Date().toISOString() };
     setCustomers(prev => [newCust, ...prev]);
     try { await createCustomerBackend(newCust); } catch (e) {}
+    
+    if (newCust.assignedAdvisorName) {
+      notifyCustomerAssignment(newCust.assignedAdvisorName, newCust.name, false);
+    }
+
     addAuditLog({
       userName: newCust.assignedAdvisorName || 'Staff Advisor',
       userRole: 'STAFF',
@@ -455,6 +484,10 @@ export const DataProvider = ({ children }) => {
       localStorage.setItem('crm_v2_customers', JSON.stringify(newStored));
       window.dispatchEvent(new Event('storage_customers_updated'));
     } catch (e) {}
+
+    if (updateObj.assignedAdvisorName) {
+      notifyCustomerAssignment(updateObj.assignedAdvisorName, updateObj.name || String(targetId), true);
+    }
 
     addAuditLog({
       userName: updateObj.assignedAdvisorName || 'Staff Advisor',
