@@ -53,13 +53,38 @@ export const Tasks = () => {
     status: 'PENDING'
   });
 
+  const isStaffAdvisor = user?.role === 'EMPLOYEE' || user?.role === 'USER';
+
+  const visibleTasks = React.useMemo(() => {
+    if (!tasks || !Array.isArray(tasks)) return [];
+
+    if (!isStaffAdvisor) return tasks;
+
+    const activeName = (user?.name || '').toLowerCase().trim();
+    const activeFirst = activeName.split(' ')[0];
+    const activeEmail = (user?.email || '').toLowerCase().trim();
+    const activeUid = user?.uid || '';
+
+    return tasks.filter(t => {
+      const assigned = (t.assignedStaff || t.assignedTo || t.staffName || '').toLowerCase().trim();
+      const assignedEmail = (t.assignedEmail || t.staffEmail || '').toLowerCase().trim();
+
+      if (assigned && (assigned === activeName || assigned.split(' ')[0] === activeFirst)) return true;
+      if (assignedEmail && activeEmail && assignedEmail === activeEmail) return true;
+      if (t.staffId && t.staffId === activeUid) return true;
+
+      return false;
+    });
+  }, [tasks, user, isStaffAdvisor]);
+
   const handleCreateTask = async (e) => {
     e.preventDefault();
     if (!newTask.title) return;
     
     const taskObj = {
       ...newTask,
-      id: 'TASK-' + Math.floor(1000 + Math.random() * 9000)
+      id: 'TASK-' + Math.floor(1000 + Math.random() * 9000),
+      createdAt: new Date().toISOString()
     };
 
     await addTask(taskObj);
@@ -73,17 +98,21 @@ export const Tasks = () => {
       taskId: taskObj.id
     });
 
+    try {
+      window.dispatchEvent(new Event('storage_tasks_updated'));
+    } catch (err) {}
+
     setShowAddModal(false);
     setNewTask({
       title: '',
       customerName: '',
       description: '',
       assignedStaff: 'Priya Sharma',
-      dueDate: '2026-08-15',
+      dueDate: new Date().toISOString().split('T')[0],
       priority: 'MEDIUM',
       status: 'PENDING'
     });
-    alert(`Task "${taskObj.title}" created and assigned to ${taskObj.assignedStaff}!`);
+    alert(`Task "${taskObj.title}" created and assigned to ${taskObj.assignedStaff}! Real-time notification dispatched.`);
   };
 
   const handleStatusChange = (id, status) => {
@@ -94,8 +123,12 @@ export const Tasks = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Task &amp; Follow-up Desk</h1>
-          <p className="text-xs text-slate-500 font-semibold">Assign tasks, track deadlines, and monitor advisor execution in real-time.</p>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+            {isStaffAdvisor ? 'My Assigned Tasks Desk' : 'Task & Follow-up Desk'}
+          </h1>
+          <p className="text-xs text-slate-500 font-semibold">
+            {isStaffAdvisor ? 'Tasks assigned specifically to your staff profile for execution.' : 'Assign tasks, track deadlines, and monitor advisor execution in real-time.'}
+          </p>
         </div>
         {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
           <button 
@@ -109,7 +142,8 @@ export const Tasks = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {tasks.map(t => (
+        {visibleTasks.length > 0 ? (
+          visibleTasks.map(t => (
           <div key={t.id} className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-card space-y-3">
             <div className="flex items-center justify-between">
               <span className={`badge ${t.priority === 'HIGH' ? 'badge-red' : 'badge-amber'}`}>{t.priority} PRIORITY</span>
@@ -143,9 +177,17 @@ export const Tasks = () => {
                 <span>Assigned To: <strong className="text-slate-900">{t.assignedStaff || t.assignedToName || 'Priya Sharma'}</strong></span>
               </span>
               <span>Due: {t.dueDate}</span>
-            </div>
           </div>
-        ))}
+        ))
+      ) : (
+        <div className="col-span-full bg-white p-8 rounded-3xl border border-slate-200 text-center space-y-2">
+          <CheckSquare className="h-10 w-10 text-slate-300 mx-auto" />
+          <h3 className="text-sm font-extrabold text-slate-700">No Assigned Tasks Found</h3>
+          <p className="text-xs text-slate-400">
+            {isStaffAdvisor ? 'You have zero active tasks assigned to your staff profile right now!' : 'No tasks recorded in the CRM matching your criteria.'}
+          </p>
+        </div>
+      )}
       </div>
 
       {showAddModal && (

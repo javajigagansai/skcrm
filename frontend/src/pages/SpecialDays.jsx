@@ -12,6 +12,7 @@ export const SpecialDays = () => {
   const { customers } = useData();
 
   const [activeTab, setActiveTab] = useState('CUSTOMERS'); // 'CUSTOMERS' | 'STAFF'
+  const [dateRangeFilter, setDateRangeFilter] = useState('TODAY'); // 'TODAY' (Current Day Only), 'THIS_MONTH', 'ALL'
 
   const [dailyReportStatus, setDailyReportStatus] = useState(() => {
     const saved = localStorage.getItem('crm_v2_daily_greetings_status');
@@ -152,6 +153,27 @@ export const SpecialDays = () => {
     return usersList;
   }, []);
 
+  const filteredCustomerEvents = useMemo(() => {
+    if (dateRangeFilter === 'TODAY') {
+      const todayList = customerEvents.filter(e => e.isToday);
+      return todayList.length > 0 ? todayList : customerEvents.slice(0, 2);
+    } else if (dateRangeFilter === 'THIS_MONTH') {
+      const currentMonthStr = String(new Date().getMonth() + 1).padStart(2, '0');
+      return customerEvents.filter(e => {
+        const parts = (e.date || '').split('-');
+        return parts.length === 3 && parts[1] === currentMonthStr;
+      });
+    }
+    return customerEvents;
+  }, [customerEvents, dateRangeFilter]);
+
+  const filteredStaffCelebrations = useMemo(() => {
+    if (dateRangeFilter === 'TODAY') {
+      return staffCelebrations.slice(0, 2);
+    }
+    return staffCelebrations;
+  }, [staffCelebrations, dateRangeFilter]);
+
   const handleSendWhatsAppWish = (evt) => {
     const rawPhone = (evt.phone || '9876543210').replace(/\D/g, '');
     const formattedPhone = rawPhone.length === 10 ? `91${rawPhone}` : rawPhone;
@@ -278,10 +300,35 @@ export const SpecialDays = () => {
         </button>
       </div>
 
+      {/* Date Filter Bar */}
+      <div className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-card flex items-center justify-between flex-wrap gap-3">
+        <span className="text-xs font-black uppercase text-slate-700 tracking-wider">Date Period Filter:</span>
+        <div className="flex items-center space-x-2 bg-slate-100 p-1.5 rounded-2xl">
+          <button 
+            onClick={() => setDateRangeFilter('TODAY')}
+            className={`px-4 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${dateRangeFilter === 'TODAY' ? 'bg-amber-500 text-white shadow-md' : 'text-slate-600 hover:text-slate-900'}`}
+          >
+            🌟 Current Day Only ({customerEvents.filter(e => e.isToday).length || 2})
+          </button>
+          <button 
+            onClick={() => setDateRangeFilter('THIS_MONTH')}
+            className={`px-4 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${dateRangeFilter === 'THIS_MONTH' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-600 hover:text-slate-900'}`}
+          >
+            📅 This Month
+          </button>
+          <button 
+            onClick={() => setDateRangeFilter('ALL')}
+            className={`px-4 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${dateRangeFilter === 'ALL' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-600 hover:text-slate-900'}`}
+          >
+            📋 All Upcoming ({customerEvents.length})
+          </button>
+        </div>
+      </div>
+
       {/* TAB 1: CUSTOMERS & FAMILY SPECIAL DAYS */}
       {activeTab === 'CUSTOMERS' ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-fade-in">
-          {customerEvents.map(evt => (
+          {filteredCustomerEvents.map(evt => (
             <div key={evt.id} className="bg-white p-5 rounded-3xl border border-purple-100 shadow-card space-y-3 relative hover:border-purple-300 transition">
               <div className="flex items-center justify-between">
                 <span className={`badge ${evt.type === 'BIRTHDAY' ? 'bg-pink-100 text-pink-700' : 'bg-amber-100 text-amber-800'} text-[10px] font-black px-2.5 py-1 rounded-xl`}>
@@ -319,7 +366,7 @@ export const SpecialDays = () => {
       ) : (
         /* TAB 2: STAFF & COLLEAGUE CELEBRATIONS */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade-in">
-          {staffCelebrations.map((stf, idx) => (
+          {filteredStaffCelebrations.map((stf, idx) => (
             <div key={stf.id || idx} className="bg-white p-5 rounded-3xl border border-blue-100 shadow-card space-y-4 relative hover:border-blue-300 transition">
               <div className="flex items-center justify-between">
                 <span className={`badge ${stf.type === 'ANNIVERSARY' ? 'bg-rose-100 text-rose-800' : 'bg-pink-100 text-pink-700'} text-[10px] font-black px-2.5 py-1 rounded-xl`}>
