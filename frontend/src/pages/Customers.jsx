@@ -237,26 +237,29 @@ export const Customers = () => {
     alert(`Customer 360 profile (${editCustomerData.customerCode || editCustomerData.id}) updated successfully across CRM!`);
   };
 
-  const isStaffAdvisor = user?.role === 'EMPLOYEE' || user?.role === 'USER';
+  const isStaffAdvisor = user?.role === 'EMPLOYEE' || user?.role === 'USER' || user?.role === 'STAFF';
 
   const isAssignedToStaff = (c) => {
-    if (!isStaffAdvisor) return true; // Admin and Manager see all customers
-    if (!user || !user.name) return true;
+    // Admin & Manager access all client records
+    if (user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER') {
+      return true;
+    }
 
-    const activeName = user.name.toLowerCase().trim();
+    if (!user || (!user.name && !user.email)) return false;
+
+    const activeName = (user.name || '').toLowerCase().trim();
     const activeFirst = activeName.split(' ')[0];
     const activeEmail = (user.email || '').toLowerCase().trim();
+    const activeUid = user.uid || '';
 
     const assignedName = (c.assignedAdvisorName || c.assignedStaff || c.assignedToName || c.advisorName || '').toLowerCase().trim();
     const assignedEmail = (c.assignedStaffEmail || c.advisorEmail || '').toLowerCase().trim();
 
     if (assignedName && (assignedName === activeName || assignedName.split(' ')[0] === activeFirst)) return true;
     if (assignedEmail && activeEmail && assignedEmail === activeEmail) return true;
-    if (c.staffId && c.staffId === user.uid) return true;
+    if (c.staffId && c.staffId === activeUid) return true;
 
-    // Fallback: If customer has no advisor assigned yet, show to staff so staff can view/manage
-    if (!assignedName && !assignedEmail && !c.staffId) return true;
-
+    // STRICT PRIVACY: Do NOT show customers assigned to other staff members!
     return false;
   };
 
