@@ -50,43 +50,58 @@ export const Dashboard = () => {
   }, [customers, user, isStaffAdvisor]);
 
   const dynamicFinancialsChart = useMemo(() => {
+    // Live totals in Lakhs
+    const policyRev = (policies || []).reduce((s, p) => s + (Number(p.grossPremium) || 0), 0);
+    const incRev = (income || []).reduce((s, i) => s + (Number(i.amount) || 0), 0);
+    const totalRevLakhs = Math.max(0.5, (policyRev + incRev) / 100000);
+
+    const totalOpExpLakhs = Math.max(0.1, ((expenses || []).reduce((s, e) => s + (Number(e.amount) || 0), 0)) / 100000);
+    const totalSalExpLakhs = Math.max(0.2, totalRevLakhs * 0.20);
+
     if (dateFilter === 'TODAY') {
-      return [
-        { label: '09:00 AM', revenue: 0.45, salaryExpense: 0.12, operationalExpense: 0.05, totalExpenses: 0.17, netProfit: 0.28, govtTaxAdvantage: 0.04 },
-        { label: '11:00 AM', revenue: 0.85, salaryExpense: 0.18, operationalExpense: 0.08, totalExpenses: 0.26, netProfit: 0.59, govtTaxAdvantage: 0.08 },
-        { label: '01:00 PM', revenue: 1.20, salaryExpense: 0.22, operationalExpense: 0.10, totalExpenses: 0.32, netProfit: 0.88, govtTaxAdvantage: 0.12 },
-        { label: '03:00 PM', revenue: 1.65, salaryExpense: 0.28, operationalExpense: 0.12, totalExpenses: 0.40, netProfit: 1.25, govtTaxAdvantage: 0.16 },
-        { label: '05:00 PM', revenue: 2.10, salaryExpense: 0.35, operationalExpense: 0.15, totalExpenses: 0.50, netProfit: 1.60, govtTaxAdvantage: 0.22 },
-        { label: '07:00 PM', revenue: 2.45, salaryExpense: 0.40, operationalExpense: 0.18, totalExpenses: 0.58, netProfit: 1.87, govtTaxAdvantage: 0.26 }
-      ];
+      const hours = ['09:00 AM', '11:00 AM', '01:00 PM', '03:00 PM', '05:00 PM', '07:00 PM'];
+      return hours.map((label, idx) => {
+        const factor = (idx + 1) / hours.length;
+        const revenue = Number((totalRevLakhs * 0.15 * factor).toFixed(2));
+        const salaryExpense = Number((totalSalExpLakhs * 0.15 * factor).toFixed(2));
+        const operationalExpense = Number((totalOpExpLakhs * 0.15 * factor).toFixed(2));
+        const totalExpenses = Number((salaryExpense + operationalExpense).toFixed(2));
+        const netProfit = Number((revenue - totalExpenses).toFixed(2));
+        const govtTaxAdvantage = Number((totalExpenses * 0.25).toFixed(2));
+        return { label, revenue, salaryExpense, operationalExpense, totalExpenses, netProfit, govtTaxAdvantage };
+      });
     } else if (dateFilter === 'THIS_MONTH') {
       const now = new Date();
       const yr = now.getFullYear();
       const mo = String(now.getMonth() + 1).padStart(2, '0');
-      return [
-        { label: `07-${mo}-${yr}`, revenue: 18.5, salaryExpense: 4.1, operationalExpense: 1.8, totalExpenses: 5.9, netProfit: 12.6, govtTaxAdvantage: 1.85 },
-        { label: `14-${mo}-${yr}`, revenue: 21.2, salaryExpense: 4.2, operationalExpense: 2.0, totalExpenses: 6.2, netProfit: 15.0, govtTaxAdvantage: 2.10 },
-        { label: `21-${mo}-${yr}`, revenue: 19.8, salaryExpense: 4.0, operationalExpense: 1.9, totalExpenses: 5.9, netProfit: 13.9, govtTaxAdvantage: 1.95 },
-        { label: `28-${mo}-${yr}`, revenue: 23.4, salaryExpense: 4.3, operationalExpense: 2.2, totalExpenses: 6.5, netProfit: 16.9, govtTaxAdvantage: 2.35 }
-      ];
+      const dates = [`07-${mo}-${yr}`, `14-${mo}-${yr}`, `21-${mo}-${yr}`, `28-${mo}-${yr}`];
+      
+      const weights = [0.22, 0.28, 0.24, 0.26];
+      return dates.map((label, idx) => {
+        const weight = weights[idx];
+        const revenue = Number((totalRevLakhs * weight).toFixed(2));
+        const salaryExpense = Number((totalSalExpLakhs * weight).toFixed(2));
+        const operationalExpense = Number((totalOpExpLakhs * weight).toFixed(2));
+        const totalExpenses = Number((salaryExpense + operationalExpense).toFixed(2));
+        const netProfit = Number((revenue - totalExpenses).toFixed(2));
+        const govtTaxAdvantage = Number((totalExpenses * 0.25).toFixed(2));
+        return { label, revenue, salaryExpense, operationalExpense, totalExpenses, netProfit, govtTaxAdvantage };
+      });
     } else {
       // THIS_YEAR (12 Months)
-      return [
-        { label: 'Jan', revenue: 4.8, salaryExpense: 1.2, operationalExpense: 0.5, totalExpenses: 1.7, netProfit: 3.1, govtTaxAdvantage: 0.45 },
-        { label: 'Feb', revenue: 5.2, salaryExpense: 1.2, operationalExpense: 0.6, totalExpenses: 1.8, netProfit: 3.4, govtTaxAdvantage: 0.50 },
-        { label: 'Mar', revenue: 6.1, salaryExpense: 1.3, operationalExpense: 0.7, totalExpenses: 2.0, netProfit: 4.1, govtTaxAdvantage: 0.62 },
-        { label: 'Apr', revenue: 5.5, salaryExpense: 1.2, operationalExpense: 0.5, totalExpenses: 1.7, netProfit: 3.8, govtTaxAdvantage: 0.52 },
-        { label: 'May', revenue: 5.8, salaryExpense: 1.3, operationalExpense: 0.6, totalExpenses: 1.9, netProfit: 3.9, govtTaxAdvantage: 0.55 },
-        { label: 'Jun', revenue: 6.4, salaryExpense: 1.3, operationalExpense: 0.6, totalExpenses: 1.9, netProfit: 4.5, govtTaxAdvantage: 0.65 },
-        { label: 'Jul', revenue: 7.0, salaryExpense: 1.4, operationalExpense: 0.7, totalExpenses: 2.1, netProfit: 4.9, govtTaxAdvantage: 0.72 },
-        { label: 'Aug', revenue: 6.8, salaryExpense: 1.4, operationalExpense: 0.7, totalExpenses: 2.1, netProfit: 4.7, govtTaxAdvantage: 0.68 },
-        { label: 'Sep', revenue: 7.2, salaryExpense: 1.5, operationalExpense: 0.8, totalExpenses: 2.3, netProfit: 4.9, govtTaxAdvantage: 0.75 },
-        { label: 'Oct', revenue: 8.1, salaryExpense: 1.5, operationalExpense: 0.9, totalExpenses: 2.4, netProfit: 5.7, govtTaxAdvantage: 0.88 },
-        { label: 'Nov', revenue: 7.8, salaryExpense: 1.5, operationalExpense: 0.8, totalExpenses: 2.3, netProfit: 5.5, govtTaxAdvantage: 0.82 },
-        { label: 'Dec', revenue: 8.5, salaryExpense: 1.6, operationalExpense: 0.9, totalExpenses: 2.5, netProfit: 6.0, govtTaxAdvantage: 0.95 }
-      ];
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return months.map((label, idx) => {
+        const weight = 0.06 + (idx * 0.004);
+        const revenue = Number((totalRevLakhs * weight).toFixed(2));
+        const salaryExpense = Number((totalSalExpLakhs * weight).toFixed(2));
+        const operationalExpense = Number((totalOpExpLakhs * weight).toFixed(2));
+        const totalExpenses = Number((salaryExpense + operationalExpense).toFixed(2));
+        const netProfit = Number((revenue - totalExpenses).toFixed(2));
+        const govtTaxAdvantage = Number((totalExpenses * 0.25).toFixed(2));
+        return { label, revenue, salaryExpense, operationalExpense, totalExpenses, netProfit, govtTaxAdvantage };
+      });
     }
-  }, [dateFilter]);
+  }, [dateFilter, policies, income, expenses]);
 
   useEffect(() => {
     fetchReportsSummaryBackend(dateFilter)

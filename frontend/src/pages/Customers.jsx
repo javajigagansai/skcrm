@@ -243,6 +243,36 @@ export const Customers = () => {
     return false;
   };
 
+  const [colFilters, setColFilters] = useState({
+    date: '',
+    clientCategory: 'ALL',
+    name: '',
+    phone: '',
+    assignedStaff: 'ALL',
+    insurer: '',
+    salesPitch: '',
+    clientStatus: 'ALL',
+    advisorNotes: ''
+  });
+
+  const handleColFilterChange = (field, val) => {
+    setColFilters(prev => ({ ...prev, [field]: val }));
+  };
+
+  const clearAllColFilters = () => {
+    setColFilters({
+      date: '',
+      clientCategory: 'ALL',
+      name: '',
+      phone: '',
+      assignedStaff: 'ALL',
+      insurer: '',
+      salesPitch: '',
+      clientStatus: 'ALL',
+      advisorNotes: ''
+    });
+  };
+
   const filtered = customers.filter(c => {
     // Restrict staff view to assigned clients only
     if (!isAssignedToStaff(c)) return false;
@@ -256,8 +286,19 @@ export const Customers = () => {
 
     if (!matchesSearch) return false;
 
-    if (filterMarital === 'MARRIED') return c.maritalStatus === 'Married';
-    if (filterMarital === 'SINGLE') return c.maritalStatus === 'Single';
+    if (filterMarital === 'MARRIED' && c.maritalStatus !== 'Married') return false;
+    if (filterMarital === 'SINGLE' && c.maritalStatus !== 'Single') return false;
+
+    // Column level filters
+    if (colFilters.date && !(c.date || '').toLowerCase().includes(colFilters.date.toLowerCase())) return false;
+    if (colFilters.clientCategory !== 'ALL' && (c.clientCategory || 'New Lead') !== colFilters.clientCategory) return false;
+    if (colFilters.name && !(c.name || '').toLowerCase().includes(colFilters.name.toLowerCase())) return false;
+    if (colFilters.phone && !(c.phone || '').includes(colFilters.phone)) return false;
+    if (colFilters.assignedStaff !== 'ALL' && (c.assignedAdvisorName || 'Priya Sharma') !== colFilters.assignedStaff) return false;
+    if (colFilters.insurer && !(c.insuranceCompany || '').toLowerCase().includes(colFilters.insurer.toLowerCase())) return false;
+    if (colFilters.salesPitch && !(c.salesPitch || '').toLowerCase().includes(colFilters.salesPitch.toLowerCase())) return false;
+    if (colFilters.clientStatus !== 'ALL' && (c.clientStatus || 'Quotation Shared') !== colFilters.clientStatus) return false;
+    if (colFilters.advisorNotes && !(c.advisorNotes || '').toLowerCase().includes(colFilters.advisorNotes.toLowerCase())) return false;
 
     return true;
   });
@@ -268,7 +309,7 @@ export const Customers = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-            {isStaffAdvisor ? `My Assigned Client Portfolios (${filtered.length})` : `Customer 360° Directory (${filtered.length})`}
+            {isStaffAdvisor ? 'My Assigned Client Portfolios' : 'Customer 360° Directory'}
           </h1>
           <p className="text-xs text-slate-500 font-semibold">
             {isStaffAdvisor ? 'Showing client portfolios assigned to your staff profile.' : 'Complete master client directory with linked policies, family profiles, claims & holdings.'}
@@ -360,6 +401,108 @@ export const Customers = () => {
                 <th className="p-3.5 border-r border-slate-800">Client Status</th>
                 <th className="p-3.5 border-r border-slate-800">Advisor Notes</th>
                 <th className="p-3.5 text-center">360° Profile</th>
+              </tr>
+              {/* Interactive Column Filters Row */}
+              <tr className="bg-slate-850 border-b border-slate-700">
+                <th className="p-2 border-r border-slate-700">
+                  <input 
+                    type="text" 
+                    placeholder="Filter Date..." 
+                    value={colFilters.date} 
+                    onChange={(e) => handleColFilterChange('date', e.target.value)} 
+                    className="w-full px-2 py-1 bg-slate-800 text-white rounded border border-slate-700 text-[10px] outline-none focus:border-blue-500 font-medium" 
+                  />
+                </th>
+                <th className="p-2 border-r border-slate-700">
+                  <select 
+                    value={colFilters.clientCategory} 
+                    onChange={(e) => handleColFilterChange('clientCategory', e.target.value)} 
+                    className="w-full px-1.5 py-1 bg-slate-800 text-white rounded border border-slate-700 text-[10px] outline-none font-bold focus:border-blue-500"
+                  >
+                    <option value="ALL">All Categories</option>
+                    <option value="New Lead">New Lead</option>
+                    <option value="Existing Lead">Existing Lead</option>
+                    <option value="VIP Client">VIP Client</option>
+                  </select>
+                </th>
+                <th className="p-2 border-r border-slate-700">
+                  <input 
+                    type="text" 
+                    placeholder="Filter Name..." 
+                    value={colFilters.name} 
+                    onChange={(e) => handleColFilterChange('name', e.target.value)} 
+                    className="w-full px-2 py-1 bg-slate-800 text-white rounded border border-slate-700 text-[10px] outline-none focus:border-blue-500 font-medium" 
+                  />
+                </th>
+                <th className="p-2 border-r border-slate-700">
+                  <input 
+                    type="text" 
+                    placeholder="Filter Phone..." 
+                    value={colFilters.phone} 
+                    onChange={(e) => handleColFilterChange('phone', e.target.value)} 
+                    className="w-full px-2 py-1 bg-slate-800 text-white rounded border border-slate-700 text-[10px] outline-none focus:border-blue-500 font-medium" 
+                  />
+                </th>
+                <th className="p-2 border-r border-slate-700">
+                  <select 
+                    value={colFilters.assignedStaff} 
+                    onChange={(e) => handleColFilterChange('assignedStaff', e.target.value)} 
+                    className="w-full px-1.5 py-1 bg-slate-800 text-white rounded border border-slate-700 text-[10px] outline-none font-bold focus:border-blue-500"
+                  >
+                    <option value="ALL">All Staff</option>
+                    {staffList.map(st => <option key={st.name} value={st.name}>{st.name}</option>)}
+                  </select>
+                </th>
+                <th className="p-2 border-r border-slate-700">
+                  <input 
+                    type="text" 
+                    placeholder="Filter Insurer..." 
+                    value={colFilters.insurer} 
+                    onChange={(e) => handleColFilterChange('insurer', e.target.value)} 
+                    className="w-full px-2 py-1 bg-slate-800 text-white rounded border border-slate-700 text-[10px] outline-none focus:border-blue-500 font-medium" 
+                  />
+                </th>
+                <th className="p-2 border-r border-slate-700">
+                  <input 
+                    type="text" 
+                    placeholder="Filter Pitch..." 
+                    value={colFilters.salesPitch} 
+                    onChange={(e) => handleColFilterChange('salesPitch', e.target.value)} 
+                    className="w-full px-2 py-1 bg-slate-800 text-white rounded border border-slate-700 text-[10px] outline-none focus:border-blue-500 font-medium" 
+                  />
+                </th>
+                <th className="p-2 border-r border-slate-700">
+                  <select 
+                    value={colFilters.clientStatus} 
+                    onChange={(e) => handleColFilterChange('clientStatus', e.target.value)} 
+                    className="w-full px-1.5 py-1 bg-slate-800 text-white rounded border border-slate-700 text-[10px] outline-none font-bold focus:border-blue-500"
+                  >
+                    <option value="ALL">All Statuses</option>
+                    <option value="Quotation Shared">Quotation Shared</option>
+                    <option value="Under Review">Under Review</option>
+                    <option value="Interested">Interested</option>
+                    <option value="Closed">Closed</option>
+                    <option value="Active">Active</option>
+                  </select>
+                </th>
+                <th className="p-2 border-r border-slate-700">
+                  <input 
+                    type="text" 
+                    placeholder="Filter Notes..." 
+                    value={colFilters.advisorNotes} 
+                    onChange={(e) => handleColFilterChange('advisorNotes', e.target.value)} 
+                    className="w-full px-2 py-1 bg-slate-800 text-white rounded border border-slate-700 text-[10px] outline-none focus:border-blue-500 font-medium" 
+                  />
+                </th>
+                <th className="p-2 text-center">
+                  <button 
+                    onClick={clearAllColFilters} 
+                    className="px-2 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded text-[9px] font-black uppercase transition cursor-pointer"
+                    title="Reset all column filters"
+                  >
+                    Clear Filters
+                  </button>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 text-xs font-semibold text-slate-800">
