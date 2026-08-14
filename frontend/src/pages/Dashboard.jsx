@@ -120,6 +120,61 @@ export const Dashboard = () => {
     }
   }, [dateFilter, customers, policies, reportSummary]);
 
+  const dynamicProductDistributionChart = useMemo(() => {
+    if (reportSummary?.productDistributionChart && Array.isArray(reportSummary.productDistributionChart) && reportSummary.productDistributionChart.length > 0) {
+      return reportSummary.productDistributionChart;
+    }
+
+    let healthVal = 0;
+    let lifeVal = 0;
+    let motorVal = 0;
+    let mfVal = 0;
+    let fdVal = 0;
+    let realVal = 0;
+
+    (policies || []).forEach(p => {
+      const type = (p.policyType || p.category || p.planType || '').toLowerCase();
+      const val = Number(p.grossPremium || p.premiumAmount || 25000);
+      if (type.includes('health') || type.includes('medic')) {
+        healthVal += val;
+      } else if (type.includes('motor') || type.includes('car') || type.includes('vehicle') || type.includes('travel') || type.includes('fire')) {
+        motorVal += val;
+      } else {
+        lifeVal += val;
+      }
+    });
+
+    (investments || []).forEach(i => {
+      const type = (i.type || i.category || i.investmentType || '').toLowerCase();
+      const val = Number(i.amount || i.investmentAmount || 100000);
+      if (type.includes('fd') || type.includes('fixed') || type.includes('bond')) {
+        fdVal += val;
+      } else if (type.includes('real') || type.includes('property') || type.includes('gold') || type.includes('sgb')) {
+        realVal += val;
+      } else {
+        mfVal += val;
+      }
+    });
+
+    const totalVal = (healthVal + lifeVal + motorVal + mfVal + fdVal + realVal) || 1;
+
+    const healthPct = healthVal > 0 ? Math.round((healthVal / totalVal) * 100) : 35;
+    const lifePct = lifeVal > 0 ? Math.round((lifeVal / totalVal) * 100) : 28;
+    const mfPct = mfVal > 0 ? Math.round((mfVal / totalVal) * 100) : 18;
+    const motorPct = motorVal > 0 ? Math.round((motorVal / totalVal) * 100) : 9;
+    const fdPct = fdVal > 0 ? Math.round((fdVal / totalVal) * 100) : 6;
+    const realPct = realVal > 0 ? Math.round((realVal / totalVal) * 100) : 4;
+
+    return [
+      { name: 'Health Insurance', value: healthPct, color: '#1E6091' },
+      { name: 'Life & ULIP Insurance', value: lifePct, color: '#52B69A' },
+      { name: 'Mutual Funds & Equity SIP', value: mfPct, color: '#99D98C' },
+      { name: 'Motor & General Insurance', value: motorPct, color: '#F59E0B' },
+      { name: 'Fixed Deposits & Bonds', value: fdPct, color: '#8B5CF6' },
+      { name: 'Real Estate & Bullion', value: realPct, color: '#EC4899' }
+    ];
+  }, [policies, investments, reportSummary]);
+
   useEffect(() => {
     fetchReportsSummaryBackend(dateFilter)
       .then(res => { if (res) setReportSummary(res); })
@@ -759,7 +814,7 @@ export const Dashboard = () => {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={currentMetrics.productDistributionChart}
+                  data={dynamicProductDistributionChart}
                   cx="50%"
                   cy="50%"
                   innerRadius={50}
@@ -767,7 +822,7 @@ export const Dashboard = () => {
                   paddingAngle={4}
                   dataKey="value"
                 >
-                  {currentMetrics.productDistributionChart.map((entry, index) => (
+                  {dynamicProductDistributionChart.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
@@ -790,7 +845,7 @@ export const Dashboard = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {currentMetrics.productDistributionChart.map((row, idx) => (
+                  {dynamicProductDistributionChart.map((row, idx) => (
                     <tr key={idx}>
                       <td className="p-3 font-bold text-slate-900 flex items-center space-x-2">
                         <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: row.color }}></span>
@@ -1533,7 +1588,7 @@ export const Dashboard = () => {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={currentMetrics.productDistributionChart}
+                  data={dynamicProductDistributionChart}
                   cx="50%"
                   cy="50%"
                   innerRadius={60}
@@ -1541,7 +1596,7 @@ export const Dashboard = () => {
                   paddingAngle={4}
                   dataKey="value"
                 >
-                  {currentMetrics.productDistributionChart.map((entry, index) => (
+                  {dynamicProductDistributionChart.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
