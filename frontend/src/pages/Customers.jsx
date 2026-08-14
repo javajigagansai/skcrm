@@ -16,6 +16,18 @@ export const Customers = () => {
   const { openCustomer360 } = useCustomer360();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMarital, setFilterMarital] = useState('ALL');
+
+  const [colFilters, setColFilters] = useState({
+    date: '',
+    clientCategory: 'ALL',
+    name: '',
+    phone: '',
+    assignedStaff: 'ALL',
+    insurer: '',
+    salesPitch: '',
+    clientStatus: 'ALL',
+    advisorNotes: ''
+  });
   
   // Modals & Deletion State
   const [showAddModal, setShowAddModal] = useState(false);
@@ -242,18 +254,6 @@ export const Customers = () => {
 
     return false;
   };
-
-  const [colFilters, setColFilters] = useState({
-    date: '',
-    clientCategory: 'ALL',
-    name: '',
-    phone: '',
-    assignedStaff: 'ALL',
-    insurer: '',
-    salesPitch: '',
-    clientStatus: 'ALL',
-    advisorNotes: ''
-  });
 
   const handleColFilterChange = (field, val) => {
     setColFilters(prev => ({ ...prev, [field]: val }));
