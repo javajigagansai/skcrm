@@ -373,19 +373,19 @@ export const Customers = () => {
             onClick={() => setFilterMarital('ALL')}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition ${filterMarital === 'ALL' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'}`}
           >
-            All Customers ({customers.length})
+            All Customers
           </button>
           <button 
             onClick={() => setFilterMarital('MARRIED')}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition ${filterMarital === 'MARRIED' ? 'bg-pink-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'}`}
           >
-            💍 Married ({customers.filter(c => c.maritalStatus === 'Married').length})
+            💍 Married
           </button>
           <button 
             onClick={() => setFilterMarital('SINGLE')}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition ${filterMarital === 'SINGLE' ? 'bg-purple-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'}`}
           >
-            👤 Single ({customers.filter(c => c.maritalStatus === 'Single').length})
+            👤 Single
           </button>
         </div>
       </div>
