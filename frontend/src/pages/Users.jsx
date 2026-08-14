@@ -10,12 +10,7 @@ import {
 const INITIAL_USERS_SEED = [
   { uid: 'UID-STF-1001', name: 'Prakash Gajendiran', email: 'admin@sk-smart-investments.com', role: 'SUPER_ADMIN', password: 'Password@123', status: 'ACTIVE', phone: '9876543210', branch: 'Chennai Main Head Office' },
   { uid: 'UID-STF-1002', name: 'Branch Manager', email: 'manager@sk-smart-investments.com', role: 'MANAGER', password: 'Password@123', status: 'ACTIVE', phone: '9812345678', branch: 'Bangalore Regional Desk' },
-  { uid: 'UID-STF-1003', name: 'Priya Sharma', email: 'priya.sharma@sk-smart-investments.com', role: 'EMPLOYEE', password: 'Password@123', status: 'ACTIVE', phone: '9988776655', branch: 'Chennai Main Head Office' },
-  { uid: 'UID-STF-1004', name: 'Rahul Dravid', email: 'rahul.d@sksmart.com', role: 'EMPLOYEE', password: 'Password@123', status: 'ACTIVE', phone: '9711223344', branch: 'Hyderabad Branch' },
-  { uid: 'UID-STF-1005', name: 'Kavita Menon', email: 'kavita.m@sksmart.com', role: 'EMPLOYEE', password: 'Password@123', status: 'ACTIVE', phone: '9822334455', branch: 'Bangalore Regional Desk' },
-  { uid: 'UID-STF-1006', name: 'Greetings Officer', email: 'wishes@sksmart.com', role: 'GREETINGS_OFFICER', password: 'Password@123', status: 'ACTIVE', phone: '9655443322', branch: 'Chennai Main Head Office' },
-  { uid: 'UID-STF-1007', name: 'Anitha Selvam', email: 'anitha.s@sksmart.com', role: 'EMPLOYEE', password: 'Password@123', status: 'ACTIVE', phone: '9443322110', branch: 'Chennai Main Head Office' },
-  { uid: 'UID-STF-1008', name: 'Karthik Subramanian', email: 'karthik.s@sksmart.com', role: 'MANAGER', password: 'Password@123', status: 'ACTIVE', phone: '9112233445', branch: 'Coimbatore Regional Hub' }
+  { uid: 'UID-STF-1003', name: 'Priya Sharma', email: 'priya.sharma@sk-smart-investments.com', role: 'EMPLOYEE', password: 'Password@123', status: 'ACTIVE', phone: '9988776655', branch: 'Chennai Main Head Office' }
 ];
 
 export const Users = () => {
@@ -27,7 +22,14 @@ export const Users = () => {
     if (saved) {
       try { 
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Filter out legacy fake demo accounts if present
+          const cleaned = parsed.filter(u => 
+            !['Rahul Dravid', 'Kavita Menon', 'Greetings Officer', 'Anitha Selvam', 'Karthik Subramanian'].includes(u.name) &&
+            !['rahul.d@sksmart.com', 'kavita.m@sksmart.com', 'wishes@sksmart.com', 'anitha.s@sksmart.com', 'karthik.s@sksmart.com'].includes(u.email)
+          );
+          if (cleaned.length > 0) return cleaned;
+        }
       } catch (e) {}
     }
     return INITIAL_USERS_SEED;
@@ -58,6 +60,23 @@ export const Users = () => {
       window.dispatchEvent(new Event('storage_users_updated'));
     } catch (e) {}
   }, [users]);
+
+  // Listen to storage_users_updated event for instant synchronization from Staff Management
+  useEffect(() => {
+    const handleStorageUpdate = () => {
+      try {
+        const saved = localStorage.getItem('crm_v2_users_list');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setUsers(parsed);
+          }
+        }
+      } catch (e) {}
+    };
+    window.addEventListener('storage_users_updated', handleStorageUpdate);
+    return () => window.removeEventListener('storage_users_updated', handleStorageUpdate);
+  }, []);
 
   // Dynamically load remote users from Firestore and merge real-time
   useEffect(() => {
@@ -135,7 +154,12 @@ export const Users = () => {
       status: 'ACTIVE'
     };
 
-    setUsers(prev => [newStaffMember, ...prev]);
+    const updatedUsers = [newStaffMember, ...users];
+    setUsers(updatedUsers);
+    try {
+      localStorage.setItem('crm_v2_users_list', JSON.stringify(updatedUsers));
+      window.dispatchEvent(new Event('storage_users_updated'));
+    } catch (e) {}
     syncUserToFirestore(newStaffMember);
 
     setShowAddStaffModal(false);
@@ -208,6 +232,17 @@ export const Users = () => {
     return true;
   });
 
+  const handlePurgeFakeAccounts = () => {
+    if (!window.confirm('Are you sure you want to remove fake demo accounts from the credentials vault?')) return;
+    const cleanList = users.filter(u => 
+      !['Rahul Dravid', 'Kavita Menon', 'Greetings Officer', 'Anitha Selvam', 'Karthik Subramanian'].includes(u.name) &&
+      !['rahul.d@sksmart.com', 'kavita.m@sksmart.com', 'wishes@sksmart.com', 'anitha.s@sksmart.com', 'karthik.s@sksmart.com'].includes(u.email)
+    );
+    setUsers(cleanList);
+    localStorage.setItem('crm_v2_users_list', JSON.stringify(cleanList));
+    alert('Fake demo accounts purged! Only real active accounts remain in the vault.');
+  };
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -221,13 +256,23 @@ export const Users = () => {
         </div>
 
         {isAdminOrHigher && (
-          <button 
-            onClick={() => setShowAddStaffModal(true)}
-            className="flex items-center space-x-2 px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer self-start sm:self-auto"
-          >
-            <UserPlus className="h-4 w-4" />
-            <span>+ Create New Staff Member</span>
-          </button>
+          <div className="flex items-center space-x-2">
+            <button 
+              onClick={handlePurgeFakeAccounts}
+              className="px-3.5 py-2 rounded-2xl bg-rose-50 text-rose-700 hover:bg-rose-100 font-black text-xs border border-rose-200 transition cursor-pointer"
+              title="Remove fake sample demo accounts"
+            >
+              🧹 Purge Demo Accounts
+            </button>
+
+            <button 
+              onClick={() => setShowAddStaffModal(true)}
+              className="flex items-center space-x-2 px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer"
+            >
+              <UserPlus className="h-4 w-4" />
+              <span>+ Create New Staff Member</span>
+            </button>
+          </div>
         )}
       </div>
 

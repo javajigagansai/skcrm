@@ -24,6 +24,31 @@ export const Dashboard = () => {
   const [activeModal, setActiveModal] = useState(null);
   const [reportSummary, setReportSummary] = useState(null);
 
+  const isStaffAdvisor = user?.role === 'EMPLOYEE' || user?.role === 'USER';
+
+  const myAssignedCustomers = useMemo(() => {
+    if (!customers || !Array.isArray(customers)) return [];
+    if (!isStaffAdvisor) return customers;
+
+    const activeName = (user?.name || '').toLowerCase().trim();
+    const activeFirst = activeName.split(' ')[0];
+    const activeEmail = (user?.email || '').toLowerCase().trim();
+
+    return customers.filter(c => {
+      const assignedName = (c.assignedAdvisorName || c.assignedStaff || c.assignedToName || c.advisorName || '').toLowerCase().trim();
+      const assignedEmail = (c.assignedStaffEmail || c.advisorEmail || '').toLowerCase().trim();
+
+      if (assignedName && (assignedName === activeName || assignedName.split(' ')[0] === activeFirst)) return true;
+      if (assignedEmail && activeEmail && assignedEmail === activeEmail) return true;
+      if (c.staffId && c.staffId === user?.uid) return true;
+
+      // Fallback: If customer has no advisor assigned yet, show to staff so staff can view/manage
+      if (!assignedName && !assignedEmail && !c.staffId) return true;
+
+      return false;
+    });
+  }, [customers, user, isStaffAdvisor]);
+
   const dynamicFinancialsChart = useMemo(() => {
     if (dateFilter === 'TODAY') {
       return [
@@ -867,12 +892,18 @@ export const Dashboard = () => {
           title="Click to view detailed customer breakdown & analysis"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-extrabold text-slate-500 uppercase group-hover:text-blue-600 transition">Total Customers</span>
+            <span className="text-xs font-extrabold text-slate-500 uppercase group-hover:text-blue-600 transition">
+              {isStaffAdvisor ? 'My Assigned Clients' : 'Total Customers'}
+            </span>
             <div className="p-2 rounded-xl bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition"><Users className="h-4 w-4" /></div>
           </div>
-          <p className="text-2xl font-black text-slate-900">{currentMetrics.customers}</p>
+          <p className="text-2xl font-black text-slate-900">
+            {isStaffAdvisor ? myAssignedCustomers.length : currentMetrics.customers}
+          </p>
           <div className="flex items-center justify-between pt-1">
-            <span className="badge badge-green text-[10px]">Active Registered</span>
+            <span className="badge badge-green text-[10px]">
+              {isStaffAdvisor ? 'Assigned Portfolios' : 'Active Registered'}
+            </span>
             <span className="text-[10px] font-extrabold text-blue-600 hover:underline flex items-center space-x-0.5">
               <span>View Details</span>
               <ChevronRight className="h-3 w-3" />

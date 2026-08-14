@@ -251,7 +251,42 @@ export const Followups = () => {
     alert(`Follow-up step ${editingStage.stepId} updated & notification sent to ${editingStage.assignedTo}!`);
   };
 
+  const isStaffAdvisor = user?.role === 'EMPLOYEE' || user?.role === 'USER';
+
+  const isFollowupAssignedToStaff = (item) => {
+    if (!isStaffAdvisor) return true; // Admin and Manager see all records
+    if (!user || !user.name) return true;
+
+    const activeName = user.name.toLowerCase().trim();
+    const activeFirst = activeName.split(' ')[0];
+    const activeEmail = (user.email || '').toLowerCase().trim();
+
+    const assignedName = (item.currentAssignedTo || item.assignedTo || item.assignedStaff || '').toLowerCase().trim();
+    const assignedEmail = (item.assignedEmail || item.assignedToEmail || '').toLowerCase().trim();
+
+    if (assignedName && (assignedName === activeName || assignedName.split(' ')[0] === activeFirst)) return true;
+    if (assignedEmail && activeEmail && assignedEmail === activeEmail) return true;
+    if (item.assignedToId && item.assignedToId === user.uid) return true;
+
+    // Check if any stage in client history is assigned to staff
+    if (item.history && Array.isArray(item.history)) {
+      const hasHistoryMatch = item.history.some(h => {
+        const hName = (h.assignedTo || '').toLowerCase().trim();
+        return hName === activeName || (activeFirst && hName.split(' ')[0] === activeFirst);
+      });
+      if (hasHistoryMatch) return true;
+    }
+
+    // Fallback: If no staff is assigned yet, show to staff so they can manage
+    if (!assignedName && !assignedEmail && !item.assignedToId) return true;
+
+    return false;
+  };
+
   const filteredClients = clientData.filter(client => {
+    // Restrict staff view strictly to assigned followups
+    if (!isFollowupAssignedToStaff(client)) return false;
+
     const matchesSearch = 
       client.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.phone.includes(searchTerm) ||
@@ -261,9 +296,7 @@ export const Followups = () => {
 
     if (!matchesSearch) return false;
 
-    if (filterTab === 'MY_ASSIGNED') {
-      return client.currentAssignedTo?.toLowerCase().includes(user?.name?.split(' ')[0]?.toLowerCase() || '');
-    } else if (filterTab === 'PENDING') {
+    if (filterTab === 'PENDING') {
       return client.overallStatus === 'PENDING' || client.overallStatus === 'IN_PROGRESS';
     } else if (filterTab === 'COMPLETED') {
       return client.overallStatus === 'COMPLETED';
@@ -273,6 +306,9 @@ export const Followups = () => {
   });
 
   const filteredSpreadsheet = (spreadsheetData || []).filter(f => {
+    // Restrict staff view strictly to assigned followups
+    if (!isFollowupAssignedToStaff(f)) return false;
+
     const matchesSearch = 
       f.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       f.phone.includes(searchTerm) ||
@@ -281,9 +317,6 @@ export const Followups = () => {
       f.advisorNotes.toLowerCase().includes(searchTerm.toLowerCase());
 
     if (!matchesSearch) return false;
-    if (filterTab === 'MY_ASSIGNED') {
-      return f.assignedTo?.toLowerCase().includes(user?.name?.split(' ')[0]?.toLowerCase() || '');
-    }
     return true;
   });
 
@@ -352,20 +385,19 @@ export const Followups = () => {
         </div>
 
         <div className="flex items-center space-x-1.5 bg-slate-100 p-1 rounded-2xl">
-          {isAdminOrManager && (
+          {isAdminOrManager ? (
             <button 
               onClick={() => setFilterTab('ALL')}
               className={`px-3 py-1.5 rounded-xl text-xs font-black transition ${filterTab === 'ALL' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'}`}
             >
               All Records
             </button>
-          )}
-          {!isAdmin && (
+          ) : (
             <button 
               onClick={() => setFilterTab('MY_ASSIGNED')}
               className={`px-3 py-1.5 rounded-xl text-xs font-black transition ${filterTab === 'MY_ASSIGNED' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'}`}
             >
-              Assigned to Me
+              My Assigned Follow-ups
             </button>
           )}
           <button 

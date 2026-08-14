@@ -1,19 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
+import { db } from '../config/firebaseClient';
+import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
 import { 
-  Users, UserCheck, Award, TrendingUp, Search, Filter, Plus, Edit, Key, 
+  Users, UserCheck, UserPlus, Award, TrendingUp, Search, Filter, Plus, Edit, Key, 
   Trash2, X, Eye, EyeOff, ShieldCheck, CheckCircle2, ChevronRight, Phone, 
   Mail, Building2, Briefcase, FileText, Target, Sparkles, AlertCircle, ArrowUpRight
 } from 'lucide-react';
 
 const INITIAL_STAFF_SEED = [
   { uid: 'UID-STF-1003', name: 'Priya Sharma', email: 'priya.sharma@sk-smart-investments.com', role: 'EMPLOYEE', title: 'Senior Wealth Advisor', phone: '9988776655', branch: 'Chennai Main Head Office', status: 'ACTIVE', monthlyTarget: 500000, achievedRevenue: 420000, assignedClientsCount: 14, policiesIssuedCount: 18, commissionEarned: 42000, password: 'Password@123', joinDate: '2024-03-15' },
-  { uid: 'UID-STF-1004', name: 'Rahul Dravid', email: 'rahul.d@sksmart.com', role: 'EMPLOYEE', title: 'Life Insurance Specialist', phone: '9711223344', branch: 'Hyderabad Branch', status: 'ACTIVE', monthlyTarget: 400000, achievedRevenue: 310000, assignedClientsCount: 11, policiesIssuedCount: 12, commissionEarned: 31000, password: 'Password@123', joinDate: '2024-06-01' },
-  { uid: 'UID-STF-1005', name: 'Kavita Menon', email: 'kavita.m@sksmart.com', role: 'EMPLOYEE', title: 'Mutual Fund & SIP Advisor', phone: '9822334455', branch: 'Bangalore Regional Desk', status: 'ACTIVE', monthlyTarget: 350000, achievedRevenue: 280000, assignedClientsCount: 9, policiesIssuedCount: 10, commissionEarned: 28000, password: 'Password@123', joinDate: '2024-08-10' },
-  { uid: 'UID-STF-1007', name: 'Anitha Selvam', email: 'anitha.s@sksmart.com', role: 'EMPLOYEE', title: 'Health Insurance Officer', phone: '9443322110', branch: 'Chennai Main Head Office', status: 'ACTIVE', monthlyTarget: 300000, achievedRevenue: 220000, assignedClientsCount: 7, policiesIssuedCount: 8, commissionEarned: 22000, password: 'Password@123', joinDate: '2025-01-15' },
-  { uid: 'UID-STF-1002', name: 'Branch Manager', email: 'manager@sk-smart-investments.com', role: 'MANAGER', title: 'Regional Operations Manager', phone: '9812345678', branch: 'Bangalore Regional Desk', status: 'ACTIVE', monthlyTarget: 1000000, achievedRevenue: 890000, assignedClientsCount: 22, policiesIssuedCount: 32, commissionEarned: 89000, password: 'Password@123', joinDate: '2023-11-01' },
-  { uid: 'UID-STF-1008', name: 'Karthik Subramanian', email: 'karthik.s@sksmart.com', role: 'MANAGER', title: 'Coimbatore Branch Head', phone: '9112233445', branch: 'Coimbatore Regional Hub', status: 'ACTIVE', monthlyTarget: 600000, achievedRevenue: 540000, assignedClientsCount: 15, policiesIssuedCount: 20, commissionEarned: 54000, password: 'Password@123', joinDate: '2024-01-20' }
+  { uid: 'UID-STF-1002', name: 'Branch Manager', email: 'manager@sk-smart-investments.com', role: 'MANAGER', title: 'Regional Operations Manager', phone: '9812345678', branch: 'Bangalore Regional Desk', status: 'ACTIVE', monthlyTarget: 1000000, achievedRevenue: 890000, assignedClientsCount: 22, policiesIssuedCount: 32, commissionEarned: 89000, password: 'Password@123', joinDate: '2023-11-01' }
 ];
 
 export const StaffManagement = () => {
@@ -26,13 +24,11 @@ export const StaffManagement = () => {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          // Merge with initial seed details
-          const map = new Map(INITIAL_STAFF_SEED.map(s => [s.email, s]));
-          parsed.forEach(u => {
-            const existing = map.get(u.email) || {};
-            map.set(u.email, { ...existing, ...u });
-          });
-          return Array.from(map.values());
+          const cleaned = parsed.filter(u => 
+            !['Rahul Dravid', 'Kavita Menon', 'Greetings Officer', 'Anitha Selvam', 'Karthik Subramanian'].includes(u.name) &&
+            !['rahul.d@sksmart.com', 'kavita.m@sksmart.com', 'wishes@sksmart.com', 'anitha.s@sksmart.com', 'karthik.s@sksmart.com'].includes(u.email)
+          );
+          if (cleaned.length > 0) return cleaned;
         }
       } catch (e) {}
     }
@@ -68,6 +64,23 @@ export const StaffManagement = () => {
     } catch (e) {}
   }, [staffList]);
 
+  // Listen to storage_users_updated event for instant synchronization from User Management
+  useEffect(() => {
+    const handleStorageUpdate = () => {
+      try {
+        const saved = localStorage.getItem('crm_v2_users_list');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setStaffList(parsed);
+          }
+        }
+      } catch (e) {}
+    };
+    window.addEventListener('storage_users_updated', handleStorageUpdate);
+    return () => window.removeEventListener('storage_users_updated', handleStorageUpdate);
+  }, []);
+
   const togglePasswordVisibility = (uid) => {
     setShowPasswords(prev => ({ ...prev, [uid]: !prev[uid] }));
   };
@@ -90,7 +103,16 @@ export const StaffManagement = () => {
       joinDate: new Date().toISOString().split('T')[0]
     };
 
-    setStaffList(prev => [createdMember, ...prev]);
+    const updatedList = [createdMember, ...staffList];
+    setStaffList(updatedList);
+
+    // Save permanently to LocalStorage & Firestore users collection
+    try {
+      localStorage.setItem('crm_v2_users_list', JSON.stringify(updatedList));
+      window.dispatchEvent(new Event('storage_users_updated'));
+      setDoc(doc(db, 'users', createdMember.uid), createdMember, { merge: true }).catch(() => {});
+    } catch (e) {}
+
     setShowAddStaffModal(false);
     setNewStaffForm({
       name: '',

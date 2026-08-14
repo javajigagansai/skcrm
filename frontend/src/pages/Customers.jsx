@@ -216,7 +216,33 @@ export const Customers = () => {
     alert(`Customer details updated successfully!`);
   };
 
+  const isStaffAdvisor = user?.role === 'EMPLOYEE' || user?.role === 'USER';
+
+  const isAssignedToStaff = (c) => {
+    if (!isStaffAdvisor) return true; // Admin and Manager see all customers
+    if (!user || !user.name) return true;
+
+    const activeName = user.name.toLowerCase().trim();
+    const activeFirst = activeName.split(' ')[0];
+    const activeEmail = (user.email || '').toLowerCase().trim();
+
+    const assignedName = (c.assignedAdvisorName || c.assignedStaff || c.assignedToName || c.advisorName || '').toLowerCase().trim();
+    const assignedEmail = (c.assignedStaffEmail || c.advisorEmail || '').toLowerCase().trim();
+
+    if (assignedName && (assignedName === activeName || assignedName.split(' ')[0] === activeFirst)) return true;
+    if (assignedEmail && activeEmail && assignedEmail === activeEmail) return true;
+    if (c.staffId && c.staffId === user.uid) return true;
+
+    // Fallback: If customer has no advisor assigned yet, show to staff so staff can view/manage
+    if (!assignedName && !assignedEmail && !c.staffId) return true;
+
+    return false;
+  };
+
   const filtered = customers.filter(c => {
+    // Restrict staff view to assigned clients only
+    if (!isAssignedToStaff(c)) return false;
+
     const matchesSearch = 
       c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       c.phone.includes(searchTerm) ||
@@ -237,9 +263,11 @@ export const Customers = () => {
       {/* Header & Download Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Customer 360° Directory</h1>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+            {isStaffAdvisor ? `My Assigned Client Portfolios (${filtered.length})` : `Customer 360° Directory (${filtered.length})`}
+          </h1>
           <p className="text-xs text-slate-500 font-semibold">
-            Complete sample spreadsheet dataset with Date, Client Category, Mobile Number, Type Of Insurance, Insurance Company, Sales Pitch, Client Status &amp; Advisor Notes.
+            {isStaffAdvisor ? 'Showing client portfolios assigned to your staff profile.' : 'Complete master client directory with linked policies, family profiles, claims & holdings.'}
           </p>
         </div>
         
