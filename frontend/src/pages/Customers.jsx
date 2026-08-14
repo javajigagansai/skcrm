@@ -151,8 +151,7 @@ export const Customers = () => {
       return;
     }
     try {
-      await deleteCustomerBackend(customerToDelete.id);
-      setCustomers(customers.filter(c => c.id !== customerToDelete.id));
+      await deleteCustomer(customerToDelete.id);
       if (selectedCustomer && selectedCustomer.id === customerToDelete.id) {
         setSelectedCustomer(null);
       }

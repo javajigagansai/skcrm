@@ -35,11 +35,14 @@ export const Dashboard = () => {
         { label: '07:00 PM', revenue: 2.45, salaryExpense: 0.40, operationalExpense: 0.18, totalExpenses: 0.58, netProfit: 1.87, govtTaxAdvantage: 0.26 }
       ];
     } else if (dateFilter === 'THIS_MONTH') {
+      const now = new Date();
+      const yr = now.getFullYear();
+      const mo = String(now.getMonth() + 1).padStart(2, '0');
       return [
-        { label: 'Week 1', revenue: 18.5, salaryExpense: 4.1, operationalExpense: 1.8, totalExpenses: 5.9, netProfit: 12.6, govtTaxAdvantage: 1.85 },
-        { label: 'Week 2', revenue: 21.2, salaryExpense: 4.2, operationalExpense: 2.0, totalExpenses: 6.2, netProfit: 15.0, govtTaxAdvantage: 2.10 },
-        { label: 'Week 3', revenue: 19.8, salaryExpense: 4.0, operationalExpense: 1.9, totalExpenses: 5.9, netProfit: 13.9, govtTaxAdvantage: 1.95 },
-        { label: 'Week 4', revenue: 23.4, salaryExpense: 4.3, operationalExpense: 2.2, totalExpenses: 6.5, netProfit: 16.9, govtTaxAdvantage: 2.35 }
+        { label: `07-${mo}-${yr}`, revenue: 18.5, salaryExpense: 4.1, operationalExpense: 1.8, totalExpenses: 5.9, netProfit: 12.6, govtTaxAdvantage: 1.85 },
+        { label: `14-${mo}-${yr}`, revenue: 21.2, salaryExpense: 4.2, operationalExpense: 2.0, totalExpenses: 6.2, netProfit: 15.0, govtTaxAdvantage: 2.10 },
+        { label: `21-${mo}-${yr}`, revenue: 19.8, salaryExpense: 4.0, operationalExpense: 1.9, totalExpenses: 5.9, netProfit: 13.9, govtTaxAdvantage: 1.95 },
+        { label: `28-${mo}-${yr}`, revenue: 23.4, salaryExpense: 4.3, operationalExpense: 2.2, totalExpenses: 6.5, netProfit: 16.9, govtTaxAdvantage: 2.35 }
       ];
     } else {
       // THIS_YEAR (12 Months)
@@ -996,7 +999,8 @@ export const Dashboard = () => {
                 </div>
               </div>
             ))}
-            <div className="col-span-full p-6 text-center text-xs text-slate-400 font-semibold">
+            {customers.length === 0 && (
+              <div className="col-span-full p-6 text-center text-xs text-slate-400 font-semibold">
                 No customers registered yet. Click "Customer Directory" to create your first customer.
               </div>
             )}
@@ -1273,7 +1277,7 @@ export const Dashboard = () => {
           {/* Recharts Financial Outflow vs Net Profit Bar/Line Chart */}
           <div className="space-y-2">
             <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider">
-              Financial Comparison Chart ({dateFilter === 'TODAY' ? 'Today (Hourly 24h)' : dateFilter === 'THIS_MONTH' ? 'This Month (Weekly)' : 'This Year (12 Months)'}) — Revenue vs Expenses vs Net Profit vs Govt Tax Advantage
+              Financial Comparison Chart ({dateFilter === 'TODAY' ? 'Today (Hourly 24h)' : dateFilter === 'THIS_MONTH' ? 'This Month (By Date)' : 'This Year (12 Months)'}) — Revenue vs Expenses vs Net Profit vs Govt Tax Advantage
             </h4>
             <div className="h-[420px] w-full bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
               <ResponsiveContainer width="100%" height="100%">
