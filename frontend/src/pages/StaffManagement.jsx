@@ -459,13 +459,13 @@ export const StaffManagement = () => {
                 onClick={() => setActive360Tab('CLIENTS')}
                 className={`px-4 py-2 rounded-xl transition cursor-pointer ${active360Tab === 'CLIENTS' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 hover:bg-slate-100'}`}
               >
-                2. Assigned Clients ({getStaffAssignedClients(selectedStaff360).length})
+                2. Assigned Clients
               </button>
               <button 
                 onClick={() => setActive360Tab('POLICIES')}
                 className={`px-4 py-2 rounded-xl transition cursor-pointer ${active360Tab === 'POLICIES' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 hover:bg-slate-100'}`}
               >
-                3. Issued Policies ({getStaffIssuedPolicies(selectedStaff360).length})
+                3. Issued Policies
               </button>
             </div>
 

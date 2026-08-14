@@ -249,7 +249,7 @@ export const SpecialDays = () => {
             }`}
           >
             <PartyPopper className="h-4 w-4" />
-            <span>Customer &amp; Family Special Days ({customerEvents.length})</span>
+            <span>Customer &amp; Family Special Days</span>
           </button>
 
           <button
@@ -261,7 +261,7 @@ export const SpecialDays = () => {
             }`}
           >
             <UserCheck className="h-4 w-4" />
-            <span>Staff &amp; Colleague Celebrations ({staffCelebrations.length})</span>
+            <span>Staff &amp; Colleague Celebrations</span>
           </button>
         </div>
 
@@ -308,7 +308,7 @@ export const SpecialDays = () => {
             onClick={() => setDateRangeFilter('TODAY')}
             className={`px-4 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${dateRangeFilter === 'TODAY' ? 'bg-amber-500 text-white shadow-md' : 'text-slate-600 hover:text-slate-900'}`}
           >
-            🌟 Current Day Only ({customerEvents.filter(e => e.isToday).length || 2})
+            🌟 Current Day Only
           </button>
           <button 
             onClick={() => setDateRangeFilter('THIS_MONTH')}
@@ -320,7 +320,7 @@ export const SpecialDays = () => {
             onClick={() => setDateRangeFilter('ALL')}
             className={`px-4 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${dateRangeFilter === 'ALL' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-600 hover:text-slate-900'}`}
           >
-            📋 All Upcoming ({customerEvents.length})
+            📋 All Upcoming
           </button>
         </div>
       </div>

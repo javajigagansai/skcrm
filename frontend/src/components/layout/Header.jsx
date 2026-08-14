@@ -141,7 +141,7 @@ export const Header = () => {
               <div className="p-4 bg-slate-900 text-white flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Bell className="h-4 w-4 text-blue-400" />
-                  <h3 className="text-xs font-black uppercase tracking-wider">Real-Time Notifications ({notifications.length})</h3>
+                  <h3 className="text-xs font-black uppercase tracking-wider">Real-Time Notifications</h3>
                 </div>
                 {unreadNotificationCount > 0 && (
                   <button 

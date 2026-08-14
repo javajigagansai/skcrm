@@ -174,25 +174,25 @@ export const Renewals = () => {
             onClick={() => setStatusFilter('ALL')}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${statusFilter === 'ALL' ? 'bg-slate-900 text-white shadow' : 'text-slate-600 hover:text-slate-900'}`}
           >
-            All ({renewalsList.length})
+            All
           </button>
           <button 
             onClick={() => setStatusFilter('DUE_SOON')}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${statusFilter === 'DUE_SOON' ? 'bg-amber-500 text-white shadow' : 'text-slate-600 hover:text-slate-900'}`}
           >
-            ⏳ Due Soon ({totalDueCount})
+            ⏳ Due Soon
           </button>
           <button 
             onClick={() => setStatusFilter('EXPIRED')}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${statusFilter === 'EXPIRED' ? 'bg-rose-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'}`}
           >
-            🚨 Urgent / Expired ({totalExpiredCount})
+            🚨 Urgent / Expired
           </button>
           <button 
             onClick={() => setStatusFilter('RENEWED')}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${statusFilter === 'RENEWED' ? 'bg-emerald-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'}`}
           >
-            ✅ Renewed ({totalRenewedCount})
+            ✅ Renewed
           </button>
         </div>
       </div>
