@@ -1,56 +1,23 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useNotification } from '../../context/NotificationContext';
 import { useNavigate } from 'react-router-dom';
-import { TeamChatDrawer } from '../chat/TeamChatDrawer';
-import { Bell, Search, Shield, LogOut, User, Users, Briefcase, ChevronDown, X, PartyPopper, CheckCircle2, AlertCircle, Clock, MessageSquare, AtSign } from 'lucide-react';
+import { Bell, Search, Shield, LogOut, User, ChevronDown, X, PartyPopper, CheckCircle2, AlertCircle, Clock, CheckSquare } from 'lucide-react';
 
 export const Header = () => {
   const { user, logout } = useAuth();
+  const { notifications, unreadNotificationCount, markNotificationAsRead, markAllNotificationsAsRead } = useNotification();
   const navigate = useNavigate();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [showTeamChat, setShowTeamChat] = useState(false);
 
   const searchRef = useRef(null);
   const notifRef = useRef(null);
 
   const isManagerOrAdmin = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER';
-
-  const defaultNotifications = [];
-
-  const [notifications, setNotifications] = useState(() => {
-    const saved = localStorage.getItem('crm_v2_admin_manager_notifications');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch (e) {}
-    }
-    return defaultNotifications;
-  });
-
-  const visibleNotifications = notifications.filter(n => {
-    if (n.forAll) return true;
-
-    // Check if specifically targeted to the logged-in staff member by name
-    if (n.targetStaffName && user?.name) {
-      const activeFirstName = user.name.split(' ')[0].toLowerCase();
-      const targetFirstName = n.targetStaffName.split(' ')[0].toLowerCase();
-      if (activeFirstName === targetFirstName) return true;
-    }
-
-    // Check if targeted to management roles (Super Admin, Admin, Manager)
-    if (n.targetRoles && n.targetRoles.length > 0) {
-      return isManagerOrAdmin && n.targetRoles.includes(user?.role);
-    }
-
-    return false;
-  });
-
-  const unreadCount = visibleNotifications.filter(n => !n.read).length;
 
   const MOCK_INDEX = [];
 
@@ -81,18 +48,14 @@ export const Header = () => {
     setIsOpen(false);
   };
 
-  const handleNotifClick = (notif) => {
-    setNotifications(notifications.map(n => n.id === notif.id ? { ...n, read: true } : n));
+  const handleNotifClick = async (notif) => {
+    await markNotificationAsRead(notif.id);
     setShowNotifications(false);
-    if (notif.type === 'chat_tag') {
-      setShowTeamChat(true);
-    } else {
+    if (notif.taskId) {
+      navigate('/tasks');
+    } else if (notif.path) {
       navigate(notif.path);
     }
-  };
-
-  const markAllRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, read: true })));
   };
 
   return (
@@ -157,28 +120,17 @@ export const Header = () => {
           <span>{user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' ? 'Admin' : user?.role === 'MANAGER' ? 'Manager' : user?.role === 'GREETINGS_OFFICER' ? 'Greetings Officer' : 'Staff Advisor'}</span>
         </div>
 
-        {/* Employee Team Chat Drawer Button */}
-        <button
-          onClick={() => setShowTeamChat(true)}
-          className="flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-black transition cursor-pointer relative"
-          title="Open Employee Team Chat Box"
-        >
-          <MessageSquare className="h-4 w-4 text-blue-600" />
-          <span className="hidden md:inline">Team Chat</span>
-          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-        </button>
-
-        {/* Interactive Notification Bell */}
+        {/* Interactive Real-Time Notification Bell */}
         <div className="relative" ref={notifRef}>
           <button 
             onClick={() => setShowNotifications(!showNotifications)}
             className="p-2 rounded-xl text-slate-600 hover:bg-slate-100 relative transition cursor-pointer" 
-            title="Notifications"
+            title="Real-Time Notifications"
           >
             <Bell className="h-5 w-5" />
-            {unreadCount > 0 && (
-              <span className="absolute top-1 right-1 h-4 w-4 rounded-full bg-rose-500 text-white font-black text-[9px] flex items-center justify-center ring-2 ring-white">
-                {unreadCount}
+            {unreadNotificationCount > 0 && (
+              <span className="absolute top-1 right-1 h-4 w-4 rounded-full bg-rose-500 text-white font-black text-[9px] flex items-center justify-center ring-2 ring-white animate-pulse">
+                {unreadNotificationCount}
               </span>
             )}
           </button>
@@ -189,11 +141,11 @@ export const Header = () => {
               <div className="p-4 bg-slate-900 text-white flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Bell className="h-4 w-4 text-blue-400" />
-                  <h3 className="text-xs font-black uppercase tracking-wider">System Notifications</h3>
+                  <h3 className="text-xs font-black uppercase tracking-wider">Real-Time Notifications ({notifications.length})</h3>
                 </div>
-                {unreadCount > 0 && (
+                {unreadNotificationCount > 0 && (
                   <button 
-                    onClick={markAllRead} 
+                    onClick={markAllNotificationsAsRead} 
                     className="text-[10px] font-extrabold text-blue-300 hover:text-white transition cursor-pointer"
                   >
                     Mark All as Read
@@ -202,30 +154,37 @@ export const Header = () => {
               </div>
 
               <div className="divide-y divide-slate-100 max-h-80 overflow-y-auto">
-                {visibleNotifications.map(n => (
+                {notifications.map(n => (
                   <div 
                     key={n.id}
                     onClick={() => handleNotifClick(n)}
-                    className={`p-3.5 hover:bg-slate-50 transition cursor-pointer flex items-start space-x-3 ${!n.read ? 'bg-blue-50/40' : ''}`}
+                    className={`p-3.5 hover:bg-slate-50 transition cursor-pointer flex items-start space-x-3 ${(!n.isRead && !n.read) ? 'bg-blue-50/50 font-semibold' : 'bg-white'}`}
                   >
-                    <div className={`p-2 rounded-xl shrink-0 mt-0.5 ${n.type === 'chat_tag' ? 'bg-indigo-100 text-indigo-700' : n.type === 'greetings' ? 'bg-pink-100 text-pink-600' : n.type === 'investment' ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600'}`}>
-                      {n.type === 'chat_tag' ? <AtSign className="h-4 w-4 text-indigo-600" /> : n.type === 'greetings' ? <PartyPopper className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+                    <div className={`p-2 rounded-xl shrink-0 mt-0.5 ${n.type === 'TASK_ASSIGNED' ? 'bg-amber-100 text-amber-700' : n.type === 'NEW_MESSAGE' ? 'bg-indigo-100 text-indigo-700' : 'bg-blue-100 text-blue-600'}`}>
+                      {n.type === 'TASK_ASSIGNED' ? <CheckSquare className="h-4 w-4 text-amber-600" /> : <AlertCircle className="h-4 w-4 text-blue-600" />}
                     </div>
                     <div className="flex-1 space-y-0.5">
                       <div className="flex items-center justify-between">
-                        <p className={`text-xs ${!n.read ? 'font-black text-slate-900' : 'font-semibold text-slate-700'}`}>{n.title}</p>
-                        {!n.read && <span className="h-2 w-2 rounded-full bg-blue-600"></span>}
+                        <p className={`text-xs ${(!n.isRead && !n.read) ? 'font-black text-slate-900' : 'font-semibold text-slate-700'}`}>{n.title}</p>
+                        {(!n.isRead && !n.read) && <span className="h-2 w-2 rounded-full bg-blue-600 shrink-0"></span>}
                       </div>
-                      <p className="text-[11px] text-slate-500 leading-snug">{n.desc}</p>
-                      <span className="text-[10px] text-slate-400 font-bold block pt-1">{n.time}</span>
+                      <p className="text-[11px] text-slate-500 leading-snug">{n.message || n.desc}</p>
+                      <span className="text-[10px] text-slate-400 font-bold block pt-1">
+                        {n.createdAt?.toDate ? n.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now'}
+                      </span>
                     </div>
                   </div>
                 ))}
+                {notifications.length === 0 && (
+                  <div className="p-6 text-center text-xs text-slate-400 font-semibold">
+                    No new notifications.
+                  </div>
+                )}
               </div>
 
               <div className="p-2 bg-slate-50 text-center border-t border-slate-100 flex items-center justify-center space-x-1">
                 <span className="text-[10px] font-black text-red-600 uppercase tracking-wider">SK SMART INVESTMENTS</span>
-                <span className="text-[10px] font-bold text-black uppercase tracking-wider">• Insurance and Investments Specialist</span>
+                <span className="text-[10px] font-bold text-black uppercase tracking-wider">• Real-Time Notification System</span>
               </div>
             </div>
           )}
@@ -278,11 +237,6 @@ export const Header = () => {
           )}
         </div>
       </div>
-
-      {/* Global Employee Team Chat Drawer */}
-      <TeamChatDrawer isOpen={showTeamChat} onClose={() => setShowTeamChat(false)} />
     </header>
   );
 };
-
-

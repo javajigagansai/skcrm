@@ -1,14 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
+import { useNotification } from '../context/NotificationContext';
 import { useCustomer360 } from '../context/Customer360Context';
-import { Plus, CheckSquare, Clock, AlertCircle, X, Sparkles } from 'lucide-react';
+import { Plus, CheckSquare, Clock, AlertCircle, X, Sparkles, UserCheck } from 'lucide-react';
+
+const DEFAULT_STAFF = ['Priya Sharma', 'Rahul Dravid', 'Kavita Menon', 'Anitha Selvam', 'Karthik Subramanian', 'Branch Manager'];
 
 export const Tasks = () => {
   const { user } = useAuth();
   const { tasks, addTask, updateTaskStatus } = useData();
+  const { sendNotification } = useNotification();
   const { openCustomer360 } = useCustomer360();
   const [showAddModal, setShowAddModal] = useState(false);
+
+  const [staffList, setStaffList] = useState(() => {
+    try {
+      const saved = localStorage.getItem('crm_v2_users_list');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map(u => u.name).filter(Boolean);
+        }
+      }
+    } catch (e) {}
+    return DEFAULT_STAFF;
+  });
+
+  useEffect(() => {
+    const handleUsersUpdate = () => {
+      try {
+        const saved = localStorage.getItem('crm_v2_users_list');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setStaffList(parsed.map(u => u.name).filter(Boolean));
+          }
+        }
+      } catch (e) {}
+    };
+    window.addEventListener('storage_users_updated', handleUsersUpdate);
+    return () => window.removeEventListener('storage_users_updated', handleUsersUpdate);
+  }, []);
 
   const [newTask, setNewTask] = useState({
     title: '',
@@ -23,7 +56,23 @@ export const Tasks = () => {
   const handleCreateTask = async (e) => {
     e.preventDefault();
     if (!newTask.title) return;
-    await addTask(newTask);
+    
+    const taskObj = {
+      ...newTask,
+      id: 'TASK-' + Math.floor(1000 + Math.random() * 9000)
+    };
+
+    await addTask(taskObj);
+
+    // Trigger Real-Time Notification in Firestore
+    await sendNotification({
+      recipientName: newTask.assignedStaff,
+      type: 'TASK_ASSIGNED',
+      title: 'New Task Assigned 📋',
+      message: `${newTask.title}: ${newTask.description}`,
+      taskId: taskObj.id
+    });
+
     setShowAddModal(false);
     setNewTask({
       title: '',
@@ -34,7 +83,7 @@ export const Tasks = () => {
       priority: 'MEDIUM',
       status: 'PENDING'
     });
-    alert('Task created successfully!');
+    alert(`Task "${taskObj.title}" created and assigned to ${taskObj.assignedStaff}!`);
   };
 
   const handleStatusChange = (id, status) => {
@@ -45,8 +94,8 @@ export const Tasks = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Task & Follow-up Desk</h1>
-          <p className="text-xs text-slate-500 font-semibold">Assign tasks, track deadlines, and monitor advisor execution.</p>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Task &amp; Follow-up Desk</h1>
+          <p className="text-xs text-slate-500 font-semibold">Assign tasks, track deadlines, and monitor advisor execution in real-time.</p>
         </div>
         {user?.role !== 'VIEWER' && (
           <button 
@@ -88,8 +137,11 @@ export const Tasks = () => {
               )}
               <p className="text-xs text-slate-500 mt-1">{t.description}</p>
             </div>
-            <div className="flex items-center justify-between text-[11px] text-slate-400 font-bold border-t pt-2">
-              <span>Assigned To: {t.assignedStaff || t.assignedToName || 'Priya Sharma'}</span>
+            <div className="flex items-center justify-between text-[11px] text-slate-500 font-bold border-t pt-2">
+              <span className="flex items-center space-x-1">
+                <UserCheck className="h-3.5 w-3.5 text-blue-600" />
+                <span>Assigned To: <strong className="text-slate-900">{t.assignedStaff || t.assignedToName || 'Priya Sharma'}</strong></span>
+              </span>
               <span>Due: {t.dueDate}</span>
             </div>
           </div>
@@ -104,19 +156,33 @@ export const Tasks = () => {
               <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600"><X className="h-5 w-5" /></button>
             </div>
 
-            <form onSubmit={handleCreateTask} className="space-y-3">
+            <form onSubmit={handleCreateTask} className="space-y-3 text-xs font-semibold">
               <div>
                 <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Task Title</label>
-                <input type="text" required value={newTask.title} onChange={(e) => setNewTask({...newTask, title: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-xs outline-none" />
+                <input type="text" required value={newTask.title} onChange={(e) => setNewTask({...newTask, title: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600 font-bold" placeholder="e.g. Follow up on Health SIP Policy" />
               </div>
+              
+              <div>
+                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Assign to Staff Advisor</label>
+                <select 
+                  value={newTask.assignedStaff} 
+                  onChange={(e) => setNewTask({...newTask, assignedStaff: e.target.value})} 
+                  className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white"
+                >
+                  {staffList.map((st, idx) => (
+                    <option key={idx} value={st}>{st}</option>
+                  ))}
+                </select>
+              </div>
+
               <div>
                 <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Description</label>
-                <textarea required value={newTask.description} onChange={(e) => setNewTask({...newTask, description: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-xs outline-none" rows="3"></textarea>
+                <textarea required value={newTask.description} onChange={(e) => setNewTask({...newTask, description: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600 font-medium" rows="3" placeholder="Provide task instructions..."></textarea>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Priority</label>
-                  <select value={newTask.priority} onChange={(e) => setNewTask({...newTask, priority: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-xs outline-none">
+                  <select value={newTask.priority} onChange={(e) => setNewTask({...newTask, priority: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white">
                     <option value="HIGH">HIGH</option>
                     <option value="MEDIUM">MEDIUM</option>
                     <option value="LOW">LOW</option>
@@ -124,10 +190,10 @@ export const Tasks = () => {
                 </div>
                 <div>
                   <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Due Date</label>
-                  <input type="date" value={newTask.dueDate} onChange={(e) => setNewTask({...newTask, dueDate: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-xs outline-none" />
+                  <input type="date" value={newTask.dueDate} onChange={(e) => setNewTask({...newTask, dueDate: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600 font-mono font-bold" />
                 </div>
               </div>
-              <button type="submit" className="w-full py-2.5 rounded-xl bg-blue-600 text-white font-extrabold text-xs shadow hover:bg-blue-700">Save Task</button>
+              <button type="submit" className="w-full py-2.5 rounded-xl bg-blue-600 text-white font-extrabold text-xs shadow hover:bg-blue-700 cursor-pointer">Save &amp; Assign Task</button>
             </form>
           </div>
         </div>

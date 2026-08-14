@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
 import { Customer360Provider } from './context/Customer360Context';
+import { NotificationProvider } from './context/NotificationContext';
 import { AppRoutes } from './routes/AppRoutes';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import './index.css';
@@ -38,11 +39,13 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <ErrorBoundary>
       <BrowserRouter>
         <AuthProvider>
-          <DataProvider>
-            <Customer360Provider>
-              <AppRoutes />
-            </Customer360Provider>
-          </DataProvider>
+          <NotificationProvider>
+            <DataProvider>
+              <Customer360Provider>
+                <AppRoutes />
+              </Customer360Provider>
+            </DataProvider>
+          </NotificationProvider>
         </AuthProvider>
       </BrowserRouter>
     </ErrorBoundary>
