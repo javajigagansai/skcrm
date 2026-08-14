@@ -97,7 +97,7 @@ export const Tasks = () => {
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">Task &amp; Follow-up Desk</h1>
           <p className="text-xs text-slate-500 font-semibold">Assign tasks, track deadlines, and monitor advisor execution in real-time.</p>
         </div>
-        {user?.role !== 'VIEWER' && (
+        {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
           <button 
             onClick={() => setShowAddModal(true)}
             className="flex items-center space-x-2 px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer self-start sm:self-auto"
