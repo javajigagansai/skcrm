@@ -177,6 +177,7 @@ export const Tasks = () => {
                 <span>Assigned To: <strong className="text-slate-900">{t.assignedStaff || t.assignedToName || 'Priya Sharma'}</strong></span>
               </span>
               <span>Due: {t.dueDate}</span>
+            </div>
           </div>
         ))
       ) : (

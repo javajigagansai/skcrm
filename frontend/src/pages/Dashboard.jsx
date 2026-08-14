@@ -869,8 +869,8 @@ export const Dashboard = () => {
         </div>
       )}
 
-      {/* EVERYONE'S DASHBOARD: STAFF & COLLEAGUE CELEBRATIONS BANNER */}
-      {greetingsReport && (
+      {/* ADMIN & MANAGER / GREETINGS OFFICER DASHBOARD: STAFF & COLLEAGUE CELEBRATIONS BANNER */}
+      {greetingsReport && !isStaffAdvisor && (
         <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 text-white p-5 sm:p-6 rounded-3xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 border border-blue-400/30">
           <div className="flex items-center space-x-4">
             <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-md shrink-0">
