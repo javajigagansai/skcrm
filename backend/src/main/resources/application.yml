@@ -1,0 +1,17 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: investment-crm-backend
+
+firebase:
+  project-id: sk-smart-crm-prod
+  credential-path: serviceAccountKey.json
+
+logging:
+  level:
+    root: INFO
+    com.investmentcrm: DEBUG

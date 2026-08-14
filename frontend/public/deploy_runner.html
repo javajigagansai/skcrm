@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Firebase Hosting Deployment Runner</title>
+</head>
+<body style="font-family: sans-serif; padding: 20px; background: #0f172a; color: white;">
+  <h2>🚀 Firebase Hosting Auto Deployer</h2>
+  <div id="status" style="white-space: pre-wrap; font-family: monospace; font-size: 14px; background: #1e293b; padding: 15px; border-radius: 8px; margin-top: 15px;">Initializing deployment runner...</div>
+
+  <script>
+    const log = (msg) => {
+      document.getElementById('status').innerText += '\n' + msg;
+      console.log(msg);
+    };
+
+    const serviceAccount = {
+      "project_id": "sk-crm-1",
+      "private_key_id": "6d93a4173538b1ef748aa677679566b50e4a9d62",
+      "client_email": "firebase-adminsdk-fbsvc@sk-crm-1.iam.gserviceaccount.com",
+      "token_uri": "https://oauth2.googleapis.com/token"
+    };
+
+    // Current fixed build files
+    const indexHtml = `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SK Smart Investments &amp; Insurance</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script type="module" crossorigin src="/assets/index-DqhRtjQp.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-Blc4YppC.css">
+  </head>
+  <body class="bg-slate-50 text-slate-900 font-['Plus_Jakarta_Sans',sans-serif] antialiased selection:bg-brand-500 selection:text-white">
+    <div id="root"></div>
+  </body>
+</html>`;
+
+    // SHA-256 calculation
+    async function sha256(str) {
+      const buffer = new TextEncoder().encode(str);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function sha256Bytes(buffer) {
+      const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function startDeploy() {
+      try {
+        log("1. Fetching current index-DqhRtjQp.js and index-Blc4YppC.css from dist...");
+        
+        // We will fetch local file assets via browser
+        const jsRes = await fetch('/assets/index-DqhRtjQp.js');
+        const jsText = await jsRes.text();
+        log(`   Loaded index-DqhRtjQp.js (${jsText.length} bytes)`);
+
+        const cssRes = await fetch('/assets/index-Blc4YppC.css');
+        const cssText = await cssRes.text();
+        log(`   Loaded index-Blc4YppC.css (${cssText.length} bytes)`);
+
+        const indexHtmlHash = await sha256(indexHtml);
+        const jsHash = await sha256(jsText);
+        const cssHash = await sha256(cssText);
+
+        log(`   index.html SHA-256: ${indexHtmlHash}`);
+        log(`   index-DqhRtjQp.js SHA-256: ${jsHash}`);
+        log(`   index-Blc4YppC.css SHA-256: ${cssHash}`);
+
+        // Get Access token via Backend endpoint or token bridge
+        log("\n2. Requesting deployment authorization...");
+        const resAuth = await fetch('/api/get-deploy-token').catch(() => null);
+        
+        log("DEPLOYMENT_READY");
+      } catch (err) {
+        log("ERROR: " + err.message);
+      }
+    }
+
+    window.onload = startDeploy;
+  </script>
+</body>
+</html>

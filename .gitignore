@@ -1,0 +1,22 @@
+# Node.js / Vite Dependencies
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Java / Spring Boot Build Outputs
+target/
+*.class
+*.jar
+*.war
+
+# IDE & Editor Files
+.idea/
+.vscode/
+*.iml
+.DS_Store
+
+# Secrets & Environment Variables
+.env
+serviceAccountKey.json
+*.pem
