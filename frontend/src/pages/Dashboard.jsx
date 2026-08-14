@@ -171,35 +171,34 @@ export const Dashboard = () => {
 
   const staffBusinessLeaderboard = useMemo(() => {
     const staffMap = {};
-    policies.forEach(p => {
-      const name = p.assignedStaff || 'Priya Sharma';
+
+    // 1. Compute real-time business totals from active policies
+    (policies || []).forEach(p => {
+      const name = (p.assignedStaff || p.assignedTo || p.advisorName || 'Priya Sharma').trim();
       if (!staffMap[name]) staffMap[name] = { name, businessAmount: 0, policyCount: 0 };
-      staffMap[name].businessAmount += Number(p.grossPremium || 25000);
+      staffMap[name].businessAmount += Number(p.grossPremium || p.premiumAmount || 0);
       staffMap[name].policyCount += 1;
     });
-    investments.forEach(i => {
-      const name = i.advisorName || 'Priya Sharma';
+
+    // 2. Compute real-time business totals from active investments
+    (investments || []).forEach(i => {
+      const name = (i.advisorName || i.assignedStaff || 'Priya Sharma').trim();
       if (!staffMap[name]) staffMap[name] = { name, businessAmount: 0, policyCount: 0 };
-      staffMap[name].businessAmount += Number(i.amount || 100000);
+      staffMap[name].businessAmount += Number(i.amount || i.investmentAmount || 0);
       staffMap[name].policyCount += 1;
     });
-    if (!staffMap['Priya Sharma']) staffMap['Priya Sharma'] = { name: 'Priya Sharma', businessAmount: 4850000, policyCount: 18 };
-    if (!staffMap['Branch Manager']) staffMap['Branch Manager'] = { name: 'Branch Manager', businessAmount: 3200000, policyCount: 12 };
-    if (!staffMap['Greetings Officer']) staffMap['Greetings Officer'] = { name: 'Greetings Officer', businessAmount: 1450000, policyCount: 6 };
 
     return Object.values(staffMap).sort((a, b) => b.businessAmount - a.businessAmount);
   }, [policies, investments]);
 
   const staffClientLeaderboard = useMemo(() => {
     const staffMap = {};
-    customers.forEach(c => {
-      const name = c.assignedAdvisorName || 'Priya Sharma';
+
+    (customers || []).forEach(c => {
+      const name = (c.assignedAdvisorName || c.assignedStaff || c.assignedToName || c.advisorName || 'Priya Sharma').trim();
       if (!staffMap[name]) staffMap[name] = { name, clientCount: 0 };
       staffMap[name].clientCount += 1;
     });
-    if (!staffMap['Priya Sharma']) staffMap['Priya Sharma'] = { name: 'Priya Sharma', clientCount: 14 };
-    if (!staffMap['Branch Manager']) staffMap['Branch Manager'] = { name: 'Branch Manager', clientCount: 9 };
-    if (!staffMap['Greetings Officer']) staffMap['Greetings Officer'] = { name: 'Greetings Officer', clientCount: 5 };
 
     return Object.values(staffMap).sort((a, b) => b.clientCount - a.clientCount);
   }, [customers]);
