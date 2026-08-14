@@ -441,6 +441,26 @@ export const DataProvider = ({ children }) => {
     });
   };
 
+  const updateCustomer = (updatedCustData) => {
+    if (!updatedCustData || !updatedCustData.id) return;
+    setCustomers(prev => prev.map(c => c.id === updatedCustData.id ? { ...c, ...updatedCustData } : c));
+    
+    try {
+      const stored = JSON.parse(localStorage.getItem('crm_v2_customers') || '[]');
+      const newStored = stored.map(c => c.id === updatedCustData.id ? { ...c, ...updatedCustData } : c);
+      localStorage.setItem('crm_v2_customers', JSON.stringify(newStored));
+    } catch (e) {}
+
+    addAuditLog({
+      userName: 'Staff Advisor',
+      userRole: 'STAFF',
+      action: 'UPDATE_CUSTOMER',
+      module: 'Customers',
+      affectedRecord: `${updatedCustData.customerCode || updatedCustData.id} (${updatedCustData.name})`,
+      details: 'Updated customer 360 profile details'
+    });
+  };
+
   const addPolicy = (polData) => {
     const id = polData.id || `POL-SK-${Math.floor(1000 + Math.random() * 9000)}`;
     const newPol = { ...polData, id, startDate: polData.startDate || new Date().toISOString().split('T')[0] };

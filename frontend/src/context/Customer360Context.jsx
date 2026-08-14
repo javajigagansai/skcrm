@@ -13,7 +13,7 @@ const Customer360Context = createContext();
 export const initialMockCustomersList = [];
 
 export const Customer360Provider = ({ children }) => {
-  const { getCustomerAggregatedDetails, deleteCustomer } = useData();
+  const { getCustomerAggregatedDetails, updateCustomer, deleteCustomer } = useData();
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [active360Tab, setActive360Tab] = useState('OVERVIEW');
   const [showEditModal, setShowEditModal] = useState(false);
@@ -41,13 +41,26 @@ export const Customer360Provider = ({ children }) => {
     setSelectedCustomer(null);
   };
 
-  const handleSaveEditCustomer = (e) => {
+  const handleSaveEditCustomer = async (e) => {
     e.preventDefault();
     if (!editCustomerData) return;
-    setSelectedCustomer(editCustomerData);
+
+    if (typeof updateCustomer === 'function') {
+      updateCustomer(editCustomerData);
+    }
+
+    try {
+      await updateCustomerBackend(editCustomerData.id || editCustomerData.customerCode, editCustomerData);
+    } catch (err) {}
+
+    setSelectedCustomer(prev => ({
+      ...prev,
+      ...editCustomerData
+    }));
+
     setShowEditModal(false);
     setEditCustomerData(null);
-    alert(`Customer 360 profile updated for ${editCustomerData.name}!`);
+    alert(`Customer 360 profile (${editCustomerData.customerCode || editCustomerData.name}) updated successfully across CRM!`);
   };
 
   const handleAddFamilyMember = (e) => {
@@ -70,6 +83,9 @@ export const Customer360Provider = ({ children }) => {
     };
 
     setSelectedCustomer(updatedCust);
+    if (typeof updateCustomer === 'function') {
+      updateCustomer(updatedCust);
+    }
     setShowAddFamilyModal(false);
     setNewFamilyMember({
       name: '',

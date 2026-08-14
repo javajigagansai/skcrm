@@ -12,7 +12,7 @@ import {
 
 export const Customers = () => {
   const { user } = useAuth();
-  const { customers, addCustomer, deleteCustomer } = useData();
+  const { customers, addCustomer, updateCustomer, deleteCustomer } = useData();
   const { openCustomer360 } = useCustomer360();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMarital, setFilterMarital] = useState('ALL');
@@ -165,13 +165,16 @@ export const Customers = () => {
 
   const handleAddFamilyMember = (e) => {
     e.preventDefault();
-    if (!newFamilyMember.name.trim()) return;
+    if (!newFamilyMember.name) {
+      alert('Please fill in Family Member Name');
+      return;
+    }
 
     const createdMember = {
-      id: `FM-${Date.now()}`,
-      name: newFamilyMember.name.trim(),
+      id: 'FM-' + Math.floor(1000 + Math.random() * 9000),
+      name: newFamilyMember.name,
       relation: newFamilyMember.relation,
-      gender: newFamilyMember.gender || (newFamilyMember.relation === 'Spouse' || newFamilyMember.relation === 'Mother' || newFamilyMember.relation === 'Daughter' || newFamilyMember.relation === 'Sister' ? 'Female' : 'Male'),
+      gender: newFamilyMember.gender,
       dob: newFamilyMember.dob,
       anniversaryDate: newFamilyMember.relation === 'Spouse' ? newFamilyMember.anniversaryDate : '',
       phone: newFamilyMember.phone
@@ -183,7 +186,7 @@ export const Customers = () => {
         familyMembers: [...(selectedCustomer.familyMembers || []), createdMember]
       };
       setSelectedCustomer(updatedCust);
-      setCustomers(customers.map(c => c.id === updatedCust.id ? updatedCust : c));
+      updateCustomer(updatedCust);
     } else {
       setNewCustomer({
         ...newCustomer,
@@ -207,13 +210,14 @@ export const Customers = () => {
     e.preventDefault();
     if (!editCustomerData) return;
 
-    setCustomers(customers.map(c => c.id === editCustomerData.id ? editCustomerData : c));
+    updateCustomer(editCustomerData);
+
     if (selectedCustomer && selectedCustomer.id === editCustomerData.id) {
       setSelectedCustomer(editCustomerData);
     }
     setShowEditModal(false);
     setEditCustomerData(null);
-    alert(`Customer details updated successfully!`);
+    alert(`Customer 360 profile (${editCustomerData.customerCode || editCustomerData.id}) updated successfully across CRM!`);
   };
 
   const isStaffAdvisor = user?.role === 'EMPLOYEE' || user?.role === 'USER';
