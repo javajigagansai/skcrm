@@ -248,6 +248,37 @@ export const Dashboard = () => {
     });
   }, [policies, user]);
 
+  const myAssignedLeads = useMemo(() => {
+    if (!leads || !Array.isArray(leads)) return [];
+    if (!user || !user.name) return [];
+
+    const activeName = (user.name || '').toLowerCase().trim();
+    const activeFirst = activeName.split(' ')[0];
+
+    return leads.filter(l => {
+      const assigned = (l.assignedStaff || l.assignedTo || l.advisorName || '').toLowerCase().trim();
+      return assigned && (assigned === activeName || (activeFirst.length > 2 && assigned.split(' ')[0] === activeFirst));
+    });
+  }, [leads, user]);
+
+  const myAssignedInvestments = useMemo(() => {
+    if (!investments || !Array.isArray(investments)) return [];
+    if (!user || !user.name) return [];
+
+    const activeName = (user.name || '').toLowerCase().trim();
+    const activeFirst = activeName.split(' ')[0];
+
+    return investments.filter(i => {
+      const assigned = (i.advisorName || i.assignedStaff || i.assignedTo || '').toLowerCase().trim();
+      return assigned && (assigned === activeName || (activeFirst.length > 2 && assigned.split(' ')[0] === activeFirst));
+    });
+  }, [investments, user]);
+
+  const displayedCustomers = useMemo(() => {
+    if (!isStaffAdvisor) return customers;
+    return myAssignedCustomers.length > 0 ? myAssignedCustomers : customers;
+  }, [isStaffAdvisor, myAssignedCustomers, customers]);
+
   const staffBusinessLeaderboard = useMemo(() => {
     const staffMap = {};
 
@@ -334,9 +365,10 @@ export const Dashboard = () => {
   }, [staffBusinessLeaderboard, reportSummary]);
 
   const currentMetrics = {
-    customers: customers.length > 0 ? customers.length.toLocaleString() : (reportSummary?.totalCustomers !== undefined ? reportSummary.totalCustomers.toLocaleString() : '0'),
-    activeLeads: leads.length > 0 ? leads.filter(l => l.leadStatus !== 'CONVERTED').length.toLocaleString() : (reportSummary?.totalActiveLeads !== undefined ? reportSummary.totalActiveLeads.toLocaleString() : '0'),
-    investmentVolume: investments.length > 0 ? `₹${(investments.reduce((s, i) => s + (Number(i.amount) || 0), 0) / 10000000).toFixed(2)} Cr` : (reportSummary?.totalInvestmentVolume ? `₹${(reportSummary.totalInvestmentVolume / 10000000).toFixed(2)} Cr` : '₹0.00'),
+    customers: isStaffAdvisor ? myAssignedCustomers.length.toString() : (customers.length > 0 ? customers.length.toLocaleString() : '0'),
+    activeLeads: isStaffAdvisor ? myAssignedLeads.filter(l => l.leadStatus !== 'CONVERTED').length.toString() : (leads.length > 0 ? leads.filter(l => l.leadStatus !== 'CONVERTED').length.toLocaleString() : '0'),
+    investmentVolume: isStaffAdvisor ? `₹${(myAssignedInvestments.reduce((s, i) => s + (Number(i.amount) || 0), 0) / 100000).toFixed(2)} Lakhs` : (investments.length > 0 ? `₹${(investments.reduce((s, i) => s + (Number(i.amount) || 0), 0) / 10000000).toFixed(2)} Cr` : '₹0.00'),
+    activePolicies: isStaffAdvisor ? myAssignedPolicies.length : policies.length,
     acquisitionsChart: dynamicAcquisitionsChart,
     incomeExpenseChart: dynamicFinancialsChart,
     conversionClaimsChart: dynamicConversionClaimsChart,
@@ -1054,9 +1086,9 @@ export const Dashboard = () => {
             <span className="text-xs font-extrabold text-slate-500 uppercase group-hover:text-purple-600 transition">Active Policies</span>
             <div className="p-2 rounded-xl bg-purple-50 text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition"><FileText className="h-4 w-4" /></div>
           </div>
-          <p className="text-2xl font-black text-slate-900">{reportSummary?.totalInvestmentsCount !== undefined ? reportSummary.totalInvestmentsCount.toLocaleString() : '0'}</p>
+          <p className="text-2xl font-black text-slate-900">{currentMetrics.activePolicies.toLocaleString()}</p>
           <div className="flex items-center justify-between pt-1">
-            <span className="badge badge-purple text-[10px]">{reportSummary?.totalInvestmentsCount || 0} Active Folios</span>
+            <span className="badge badge-purple text-[10px]">{currentMetrics.activePolicies} Active Folios</span>
             <span className="text-[10px] font-extrabold text-purple-600 hover:underline flex items-center space-x-0.5">
               <span>View Details</span>
               <ChevronRight className="h-3 w-3" />
@@ -1113,69 +1145,66 @@ export const Dashboard = () => {
         )}
       </div>
 
-      {/* DASHBOARD LIVE CUSTOMER DIRECTORY (HIDDEN FROM STAFF) */}
-      {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-card space-y-4">
-          <div className="flex items-center justify-between border-b pb-3">
-            <div>
-              <h3 className="text-base font-black text-slate-900 flex items-center space-x-2">
-                <Users className="h-5 w-5 text-blue-600" />
-                <span>Registered Customers &amp; Account Profiles</span>
-              </h3>
-              <p className="text-xs text-slate-500 font-semibold">Click any customer below to view their unified 360° profile with linked policies, claims &amp; holdings.</p>
-            </div>
-            <button 
-              onClick={() => navigate('/customers')}
-              className="px-3.5 py-2 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white font-extrabold text-xs transition cursor-pointer flex items-center space-x-1"
-            >
-              <span>View All</span>
-              <ChevronRight className="h-3.5 w-3.5" />
-            </button>
+      {/* DASHBOARD LIVE CUSTOMER DIRECTORY */}
+      <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-card space-y-4">
+        <div className="flex items-center justify-between border-b pb-3">
+          <div>
+            <h3 className="text-base font-black text-slate-900 flex items-center space-x-2">
+              <Users className="h-5 w-5 text-blue-600" />
+              <span>Registered Customers &amp; Account Profiles</span>
+            </h3>
+            <p className="text-xs text-slate-500 font-semibold">Click any customer below to view their unified 360° profile with linked policies, claims &amp; holdings.</p>
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {customers.map(c => (
-              <div key={c.id} className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200 hover:border-blue-300 hover:bg-white hover:shadow-md transition space-y-2 group">
-                <div className="flex items-center justify-between">
-                  <button
-                    onClick={() => openCustomer360(c.name)}
-                    className="font-black text-slate-900 group-hover:text-blue-600 hover:underline transition cursor-pointer text-left flex items-center space-x-1.5"
-                  >
-                    <span>{c.name}</span>
-                    <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-                  </button>
-                  <span className="badge bg-blue-100 text-blue-800 text-[10px] font-black">{c.customerCode || c.id}</span>
-                </div>
-
-                <div className="text-xs text-slate-600 space-y-1">
-                  <p>📞 Phone: <strong>{c.phone || c.mobileNumber || '9876543210'}</strong></p>
-                  <p>📍 City: <strong>{c.city || 'Chennai'}</strong></p>
-                  <p>👤 Advisor: <strong className="text-purple-700">{c.assignedAdvisorName || 'Priya Sharma'}</strong></p>
-                </div>
-
-                <div className="pt-2 border-t border-slate-200 flex items-center justify-between">
-                  <span className="badge badge-green text-[9px] font-bold">Active KYC</span>
-                  <button
-                    onClick={() => openCustomer360(c.name)}
-                    className="px-3 py-1 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-[10px] transition cursor-pointer shadow-xs"
-                  >
-                    Open 360° Profile
-                  </button>
-                </div>
-              </div>
-            ))}
-            {customers.length === 0 && (
-              <div className="col-span-full p-6 text-center text-xs text-slate-400 font-semibold">
-                No customers registered yet. Click "Customer Directory" to create your first customer.
-              </div>
-            )}
-          </div>
+          <button 
+            onClick={() => navigate('/customers')}
+            className="px-3.5 py-2 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white font-extrabold text-xs transition cursor-pointer flex items-center space-x-1"
+          >
+            <span>View All</span>
+            <ChevronRight className="h-3.5 w-3.5" />
+          </button>
         </div>
-      )}
 
-      {/* DASHBOARD STAFF PERFORMANCE LEADERBOARDS (HIDDEN FROM STAFF) */}
-      {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {displayedCustomers.map(c => (
+            <div key={c.id} className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200 hover:border-blue-300 hover:bg-white hover:shadow-md transition space-y-2 group">
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={() => openCustomer360(c.name)}
+                  className="font-black text-slate-900 group-hover:text-blue-600 hover:underline transition cursor-pointer text-left flex items-center space-x-1.5"
+                >
+                  <span>{c.name}</span>
+                  <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                </button>
+                <span className="badge bg-blue-100 text-blue-800 text-[10px] font-black">{c.customerCode || c.id}</span>
+              </div>
+
+              <div className="text-xs text-slate-600 space-y-1">
+                <p>📞 Phone: <strong>{c.phone || c.mobileNumber || '9876543210'}</strong></p>
+                <p>📍 City: <strong>{c.city || 'Chennai'}</strong></p>
+                <p>👤 Advisor: <strong className="text-purple-700">{c.assignedAdvisorName || 'Priya Sharma'}</strong></p>
+              </div>
+
+              <div className="pt-2 border-t border-slate-200 flex items-center justify-between">
+                <span className="badge badge-green text-[9px] font-bold">Active KYC</span>
+                <button
+                  onClick={() => openCustomer360(c.name)}
+                  className="px-3 py-1 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-[10px] transition cursor-pointer shadow-xs"
+                >
+                  Open 360° Profile
+                </button>
+              </div>
+            </div>
+          ))}
+          {displayedCustomers.length === 0 && (
+            <div className="col-span-full p-6 text-center text-xs text-slate-400 font-semibold">
+              No customers registered yet. Click "Customer Directory" to create your first customer.
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* DASHBOARD STAFF PERFORMANCE LEADERBOARDS */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* LEADERBOARD A: STAFF GENERATING MOST BUSINESS */}
           <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-card space-y-4">
             <div className="flex items-center justify-between border-b pb-3">
@@ -1575,81 +1604,77 @@ export const Dashboard = () => {
           </div>
         </div>
 
-        {/* GRAPH 4: Staff Advisor Performance Targets (HIDDEN FROM STAFF) */}
-        {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
-          <div 
-            onClick={() => setActiveModal('STAFF_PERFORMANCE_CHART')}
-            className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-card space-y-4 hover:border-amber-400 hover:shadow-md transition cursor-pointer group"
-            title="Click to view staff advisor leaderboard details"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-extrabold text-slate-900 group-hover:text-amber-600 transition flex items-center space-x-1.5">
-                  <span>4. Staff Advisor Targets vs Achieved ({dateFilter === 'THIS_YEAR' ? 'Total' : 'Lakhs'})</span>
-                  <ArrowUpRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition" />
-                </h3>
-                <p className="text-[11px] text-slate-500">Revenue Contribution per Advisor ({dateFilter})</p>
-              </div>
-              <span className="badge badge-amber text-[10px]">Staff Leaderboard • Click Details 🔍</span>
-            </div>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={dynamicStaffPerformanceChart}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                  <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700 }} />
-                  <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700 }} />
-                  <Tooltip cursor={{ fill: '#F1F5F9' }} />
-                  <Legend />
-                  <Bar dataKey="target" fill="#94A3B8" radius={[6, 6, 0, 0]} name="Target" />
-                  <Bar dataKey="achieved" fill="#F59E0B" radius={[6, 6, 0, 0]} name="Achieved" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* GRAPH 5: Product Portfolio Distribution Donut Chart (HIDDEN FROM STAFF) */}
-      {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
+        {/* GRAPH 4: Staff Advisor Performance Targets */}
         <div 
-          onClick={() => setActiveModal('PRODUCT_DISTRIBUTION_CHART')}
-          className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-card space-y-4 hover:border-brand hover:shadow-md transition cursor-pointer group"
-          title="Click to view detailed product share breakdown"
+          onClick={() => setActiveModal('STAFF_PERFORMANCE_CHART')}
+          className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-card space-y-4 hover:border-amber-400 hover:shadow-md transition cursor-pointer group"
+          title="Click to view staff advisor leaderboard details"
         >
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-extrabold text-slate-900 group-hover:text-blue-600 transition flex items-center space-x-1.5">
-                <span>5. Insurance &amp; Financial Portfolio Share (%)</span>
+              <h3 className="text-sm font-extrabold text-slate-900 group-hover:text-amber-600 transition flex items-center space-x-1.5">
+                <span>4. Staff Advisor Targets vs Achieved ({dateFilter === 'THIS_YEAR' ? 'Total' : 'Lakhs'})</span>
                 <ArrowUpRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition" />
               </h3>
-              <p className="text-[11px] text-slate-500">Distribution across Health, Life, SIP, FDs &amp; Real Estate ({dateFilter})</p>
+              <p className="text-[11px] text-slate-500">Revenue Contribution per Advisor ({dateFilter})</p>
             </div>
-            <span className="badge badge-brand text-[10px]">Product Mix • Click Details 🔍</span>
+            <span className="badge badge-amber text-[10px]">Staff Leaderboard • Click Details 🔍</span>
           </div>
-
-          <div className="h-64 flex items-center justify-center">
+          <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={dynamicProductDistributionChart}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={95}
-                  paddingAngle={4}
-                  dataKey="value"
-                >
-                  {dynamicProductDistributionChart.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
+              <BarChart data={dynamicStaffPerformanceChart}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700 }} />
+                <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700 }} />
+                <Tooltip cursor={{ fill: '#F1F5F9' }} />
                 <Legend />
-              </PieChart>
+                <Bar dataKey="target" fill="#94A3B8" radius={[6, 6, 0, 0]} name="Target" />
+                <Bar dataKey="achieved" fill="#F59E0B" radius={[6, 6, 0, 0]} name="Achieved" />
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
-      )}
+      </div>
+
+      {/* GRAPH 5: Product Portfolio Distribution Donut Chart */}
+      <div 
+        onClick={() => setActiveModal('PRODUCT_DISTRIBUTION_CHART')}
+        className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-card space-y-4 hover:border-brand hover:shadow-md transition cursor-pointer group"
+        title="Click to view detailed product share breakdown"
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-extrabold text-slate-900 group-hover:text-blue-600 transition flex items-center space-x-1.5">
+              <span>5. Insurance &amp; Financial Portfolio Share (%)</span>
+              <ArrowUpRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition" />
+            </h3>
+            <p className="text-[11px] text-slate-500">Distribution across Health, Life, SIP, FDs &amp; Real Estate ({dateFilter})</p>
+          </div>
+          <span className="badge badge-brand text-[10px]">Product Mix • Click Details 🔍</span>
+        </div>
+
+        <div className="h-64 flex items-center justify-center">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={dynamicProductDistributionChart}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={95}
+                paddingAngle={4}
+                dataKey="value"
+              >
+                {dynamicProductDistributionChart.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
     </div>
   );
 };
