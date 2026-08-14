@@ -18,7 +18,7 @@ export const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { openCustomer360 } = useCustomer360();
-  const { customers, leads, policies, investments } = useData();
+  const { customers, leads, policies, investments, income, expenses } = useData();
 
   const [dateFilter, setDateFilter] = useState('THIS_MONTH');
   const [activeModal, setActiveModal] = useState(null);

@@ -80,9 +80,9 @@ export const Customers = () => {
     name: '',
     email: '',
     phone: '',
-    gender: '',
+    gender: 'Male',
     dob: '',
-    maritalStatus: '',
+    maritalStatus: 'Single',
     anniversaryDate: '',
     city: '',
     address: '',
@@ -90,7 +90,12 @@ export const Customers = () => {
     aadhaar: '',
     occupation: '',
     incomeBracket: '',
-    assignedAdvisorName: user?.name || '',
+    insuranceCompany: 'Tata AIA Life',
+    insuranceType: 'LIFE',
+    salesPitch: 'Savings & Retirement Plan',
+    clientStatus: 'Quotation Shared',
+    advisorNotes: '',
+    assignedAdvisorName: user?.name || 'Priya Sharma',
     familyMembers: []
   });
 
@@ -1388,6 +1393,89 @@ export const Customers = () => {
                       <option key={idx} value={st.name}>{st.name} ({st.role || 'Staff'})</option>
                     ))}
                   </select>
+                </div>
+              </div>
+
+              {/* SECTION: ACTIVE POLICY & INSURER DETAILS */}
+              <div className="bg-blue-50/70 p-4 rounded-2xl border border-blue-200 space-y-3">
+                <h4 className="text-xs font-black uppercase text-blue-900 tracking-wider flex items-center space-x-1.5">
+                  <ShieldCheck className="h-4 w-4 text-blue-600" />
+                  <span>Active Policy &amp; Insurer Details</span>
+                </h4>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-black uppercase text-blue-900 mb-1">Insurance Company / Insurer</label>
+                    <select 
+                      value={newCustomer.insuranceCompany} 
+                      onChange={(e) => setNewCustomer({...newCustomer, insuranceCompany: e.target.value})} 
+                      className="w-full px-3 py-2 rounded-xl border border-blue-200 text-xs font-extrabold text-slate-900 bg-white outline-none focus:ring-2 focus:ring-blue-600"
+                    >
+                      <option value="Tata AIA Life">Tata AIA Life 🛡️</option>
+                      <option value="Star Health Insurance">Star Health Insurance 🏥</option>
+                      <option value="HDFC ERGO Health">HDFC ERGO Health 💙</option>
+                      <option value="Niva Bupa Health">Niva Bupa Health 🧡</option>
+                      <option value="ICICI Prudential Life">ICICI Prudential Life 🏢</option>
+                      <option value="LIC of India">LIC of India 🏦</option>
+                      <option value="SBI Life Insurance">SBI Life Insurance 💚</option>
+                      <option value="Max Life Insurance">Max Life Insurance ⭐</option>
+                      <option value="Bajaj Allianz">Bajaj Allianz 🚗</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-black uppercase text-blue-900 mb-1">Policy Type / Category</label>
+                    <select 
+                      value={newCustomer.insuranceType} 
+                      onChange={(e) => setNewCustomer({...newCustomer, insuranceType: e.target.value})} 
+                      className="w-full px-3 py-2 rounded-xl border border-blue-200 text-xs font-bold text-slate-800 bg-white outline-none focus:ring-2 focus:ring-blue-600"
+                    >
+                      <option value="LIFE">Life Insurance (LIFE)</option>
+                      <option value="HEALTH">Health / Medical (HEALTH)</option>
+                      <option value="MOTOR">Motor / Vehicle (MOTOR)</option>
+                      <option value="FIRE">Fire &amp; Asset Protection (FIRE)</option>
+                      <option value="SIP">Mutual Fund SIP (SIP)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Sales Pitch / Proposed Product</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. Retirement Savings Plan" 
+                      value={newCustomer.salesPitch} 
+                      onChange={(e) => setNewCustomer({...newCustomer, salesPitch: e.target.value})} 
+                      className="w-full px-3 py-2 rounded-xl border text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-600 bg-white" 
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Client Pipeline Status</label>
+                    <select 
+                      value={newCustomer.clientStatus} 
+                      onChange={(e) => setNewCustomer({...newCustomer, clientStatus: e.target.value})} 
+                      className="w-full px-3 py-2 rounded-xl border text-xs font-bold text-slate-800 bg-white outline-none focus:ring-2 focus:ring-blue-600"
+                    >
+                      <option value="Quotation Shared">Quotation Shared 📄</option>
+                      <option value="Under Review">Under Review ⏳</option>
+                      <option value="Interested">Interested 👍</option>
+                      <option value="Active">Active Client ✅</option>
+                      <option value="Closed">Closed / Converted 🎉</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Advisor Notes &amp; Observations</label>
+                  <textarea 
+                    rows="2"
+                    placeholder="Enter notes about client requirements or pitch details..."
+                    value={newCustomer.advisorNotes}
+                    onChange={(e) => setNewCustomer({...newCustomer, advisorNotes: e.target.value})}
+                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600 bg-white"
+                  />
                 </div>
               </div>
 
