@@ -168,13 +168,59 @@ export const StaffManagement = () => {
     return true;
   });
 
-  // Calculate dynamic staff 360 data
-  const getStaffAssignedClients = (staffName) => {
-    return (customers || []).filter(c => c.assignedAdvisorName?.toLowerCase() === staffName?.toLowerCase());
+  const getStaffAssignedClients = (staffObj) => {
+    if (!staffObj) return [];
+    const stName = (typeof staffObj === 'string' ? staffObj : staffObj.name || '').toLowerCase().trim();
+    const stFirst = stName.split(' ')[0];
+    const stEmail = (typeof staffObj === 'object' ? staffObj.email || '' : '').toLowerCase().trim();
+    const stUid = typeof staffObj === 'object' ? staffObj.uid : null;
+
+    return (customers || []).filter(c => {
+      const cAdvisor = (c.assignedAdvisorName || c.assignedStaff || c.assignedToName || c.advisorName || '').toLowerCase().trim();
+      const cEmail = (c.assignedStaffEmail || c.advisorEmail || '').toLowerCase().trim();
+      if (cAdvisor && (cAdvisor === stName || (stFirst && cAdvisor.split(' ')[0] === stFirst))) return true;
+      if (cEmail && stEmail && cEmail === stEmail) return true;
+      if (stUid && c.staffId && c.staffId === stUid) return true;
+      return false;
+    });
   };
 
-  const getStaffIssuedPolicies = (staffName) => {
-    return (policies || []).filter(p => p.assignedStaff?.toLowerCase() === staffName?.toLowerCase());
+  const getStaffIssuedPolicies = (staffObj) => {
+    if (!staffObj) return [];
+    const stName = (typeof staffObj === 'string' ? staffObj : staffObj.name || '').toLowerCase().trim();
+    const stFirst = stName.split(' ')[0];
+    const stEmail = (typeof staffObj === 'object' ? staffObj.email || '' : '').toLowerCase().trim();
+
+    return (policies || []).filter(p => {
+      const pStaff = (p.assignedStaff || p.advisorName || p.staffName || '').toLowerCase().trim();
+      const pEmail = (p.assignedStaffEmail || '').toLowerCase().trim();
+      if (pStaff && (pStaff === stName || (stFirst && pStaff.split(' ')[0] === stFirst))) return true;
+      if (pEmail && stEmail && pEmail === stEmail) return true;
+      return false;
+    });
+  };
+
+  const getStaffLiveMetrics = (st) => {
+    if (!st) return { clientsCount: 0, policiesCount: 0, achievedRevenue: 0, commissionEarned: 0 };
+    const assignedClients = getStaffAssignedClients(st);
+    const issuedPolicies = getStaffIssuedPolicies(st);
+
+    const clientsCount = assignedClients.length;
+    const policiesCount = issuedPolicies.length;
+
+    let achievedRevenue = issuedPolicies.reduce((sum, p) => sum + (Number(p.grossPremium) || 0), 0);
+    if (achievedRevenue === 0 && st.achievedRevenue) {
+      achievedRevenue = Number(st.achievedRevenue) || 0;
+    }
+
+    const commissionEarned = Math.round(achievedRevenue * 0.10);
+
+    return {
+      clientsCount,
+      policiesCount,
+      achievedRevenue,
+      commissionEarned
+    };
   };
 
   return (
@@ -208,19 +254,25 @@ export const StaffManagement = () => {
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-card space-y-1">
           <span className="text-[11px] font-black uppercase text-slate-500">Total Assigned Clients</span>
-          <p className="text-2xl font-black text-blue-700">{customers.length || 63}</p>
+          <p className="text-2xl font-black text-blue-700">{customers.length}</p>
           <span className="badge badge-brand text-[10px]">Client Portfolios Distributed</span>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-card space-y-1">
           <span className="text-[11px] font-black uppercase text-slate-500">Total Revenue Generated</span>
-          <p className="text-2xl font-black text-emerald-700">₹26.70 Lakhs</p>
+          <p className="text-2xl font-black text-emerald-700">₹{((policies || []).reduce((sum, p) => sum + (Number(p.grossPremium) || 0), 0) / 100000).toFixed(2)} Lakhs</p>
           <span className="badge badge-green text-[10px]">Cumulative Business</span>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-card space-y-1">
           <span className="text-[11px] font-black uppercase text-slate-500">Avg Target Achievement</span>
-          <p className="text-2xl font-black text-purple-700">82.4%</p>
+          <p className="text-2xl font-black text-purple-700">
+            {staffList.length > 0 ? (staffList.reduce((acc, st) => {
+              const m = getStaffLiveMetrics(st);
+              const target = st.monthlyTarget || 400000;
+              return acc + Math.min(100, Math.round((m.achievedRevenue / target) * 100));
+            }, 0) / staffList.length).toFixed(1) : 0}%
+          </p>
           <span className="badge badge-purple text-[10px]">Monthly Target Progress</span>
         </div>
       </div>
@@ -238,17 +290,17 @@ export const StaffManagement = () => {
           />
         </div>
 
-        <div className="flex items-center space-x-3">
-          <select
+        <div className="flex items-center space-x-2 w-full sm:w-auto">
+          <Filter className="h-4 w-4 text-slate-400" />
+          <select 
             value={selectedBranchFilter}
             onChange={(e) => setSelectedBranchFilter(e.target.value)}
-            className="px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-bold bg-white outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer"
+            className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-extrabold bg-white outline-none focus:ring-2 focus:ring-blue-600"
           >
-            <option value="ALL">All Branches ({staffList.length})</option>
-            <option value="Chennai Main Head Office">Chennai Head Office</option>
+            <option value="ALL">All Branches</option>
+            <option value="Chennai Main Head Office">Chennai Main Head Office</option>
             <option value="Bangalore Regional Desk">Bangalore Regional Desk</option>
-            <option value="Hyderabad Branch">Hyderabad Branch</option>
-            <option value="Coimbatore Regional Hub">Coimbatore Regional Hub</option>
+            <option value="Hyderabad Branch Office">Hyderabad Branch Office</option>
           </select>
         </div>
       </div>
@@ -256,8 +308,9 @@ export const StaffManagement = () => {
       {/* Staff Grid Cards View */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {filteredStaff.map(st => {
+          const metrics = getStaffLiveMetrics(st);
           const target = st.monthlyTarget || 400000;
-          const achieved = st.achievedRevenue || 250000;
+          const achieved = metrics.achievedRevenue;
           const progressPct = Math.min(100, Math.round((achieved / target) * 100));
 
           return (
@@ -319,15 +372,15 @@ export const StaffManagement = () => {
               <div className="grid grid-cols-3 gap-2 text-center text-[10px] pt-1">
                 <div className="bg-blue-50/60 p-2 rounded-xl border border-blue-100">
                   <span className="block text-slate-500 font-extrabold">Clients</span>
-                  <span className="font-black text-blue-900 text-xs">{st.assignedClientsCount || 10}</span>
+                  <span className="font-black text-blue-900 text-xs">{metrics.clientsCount}</span>
                 </div>
                 <div className="bg-purple-50/60 p-2 rounded-xl border border-purple-100">
                   <span className="block text-slate-500 font-extrabold">Policies</span>
-                  <span className="font-black text-purple-900 text-xs">{st.policiesIssuedCount || 14}</span>
+                  <span className="font-black text-purple-900 text-xs">{metrics.policiesCount}</span>
                 </div>
                 <div className="bg-emerald-50/60 p-2 rounded-xl border border-emerald-100">
                   <span className="block text-slate-500 font-extrabold">Commission</span>
-                  <span className="font-black text-emerald-900 text-xs">₹{(st.commissionEarned || 35000).toLocaleString()}</span>
+                  <span className="font-black text-emerald-900 text-xs">₹{metrics.commissionEarned.toLocaleString()}</span>
                 </div>
               </div>
 
@@ -406,13 +459,13 @@ export const StaffManagement = () => {
                 onClick={() => setActive360Tab('CLIENTS')}
                 className={`px-4 py-2 rounded-xl transition cursor-pointer ${active360Tab === 'CLIENTS' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 hover:bg-slate-100'}`}
               >
-                2. Assigned Clients ({getStaffAssignedClients(selectedStaff360.name).length})
+                2. Assigned Clients ({getStaffAssignedClients(selectedStaff360).length})
               </button>
               <button 
                 onClick={() => setActive360Tab('POLICIES')}
                 className={`px-4 py-2 rounded-xl transition cursor-pointer ${active360Tab === 'POLICIES' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 hover:bg-slate-100'}`}
               >
-                3. Issued Policies ({getStaffIssuedPolicies(selectedStaff360.name).length})
+                3. Issued Policies ({getStaffIssuedPolicies(selectedStaff360).length})
               </button>
             </div>
 
@@ -471,11 +524,11 @@ export const StaffManagement = () => {
                     </div>
                     <div>
                       <span className="text-[10px] uppercase text-slate-300 block font-extrabold">Achieved Revenue</span>
-                      <span className="text-lg font-black text-emerald-400">₹{((selectedStaff360.achievedRevenue || 310000) / 100000).toFixed(2)} L</span>
+                      <span className="text-lg font-black text-emerald-400">₹{(getStaffLiveMetrics(selectedStaff360).achievedRevenue / 100000).toFixed(2)} L</span>
                     </div>
                     <div>
                       <span className="text-[10px] uppercase text-slate-300 block font-extrabold">Commission Earned</span>
-                      <span className="text-lg font-black text-amber-300">₹{(selectedStaff360.commissionEarned || 31000).toLocaleString()}</span>
+                      <span className="text-lg font-black text-amber-300">₹{getStaffLiveMetrics(selectedStaff360).commissionEarned.toLocaleString()}</span>
                     </div>
                   </div>
                 </div>
@@ -498,7 +551,7 @@ export const StaffManagement = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {getStaffAssignedClients(selectedStaff360.name).map(c => (
+                      {getStaffAssignedClients(selectedStaff360).map(c => (
                         <tr key={c.id} className="hover:bg-slate-50 transition">
                           <td className="p-3 font-extrabold text-slate-900">{c.name}</td>
                           <td className="p-3 font-mono">{c.phone || c.mobileNumber || '9876543210'}</td>
@@ -507,7 +560,7 @@ export const StaffManagement = () => {
                           <td className="p-3"><span className="badge badge-green text-[10px]">Active</span></td>
                         </tr>
                       ))}
-                      {getStaffAssignedClients(selectedStaff360.name).length === 0 && (
+                      {getStaffAssignedClients(selectedStaff360).length === 0 && (
                         <tr>
                           <td colSpan="5" className="p-6 text-center text-slate-400">No clients currently assigned to this staff member.</td>
                         </tr>
@@ -534,18 +587,18 @@ export const StaffManagement = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {getStaffIssuedPolicies(selectedStaff360.name).map(p => (
+                      {getStaffIssuedPolicies(selectedStaff360).map(p => (
                         <tr key={p.id} className="hover:bg-slate-50 transition">
                           <td className="p-3 font-mono font-bold text-blue-700">{p.id}</td>
                           <td className="p-3 font-black text-slate-900">{p.customerName}</td>
                           <td className="p-3">{p.insuranceCompany}</td>
-                          <td className="p-3 font-black text-emerald-700">₹{(p.grossPremium || 25000).toLocaleString()}</td>
+                          <td className="p-3 font-mono text-emerald-700 font-bold">₹{p.grossPremium?.toLocaleString()}</td>
                           <td className="p-3"><span className="badge badge-green text-[10px]">{p.status}</span></td>
                         </tr>
                       ))}
-                      {getStaffIssuedPolicies(selectedStaff360.name).length === 0 && (
+                      {getStaffIssuedPolicies(selectedStaff360).length === 0 && (
                         <tr>
-                          <td colSpan="5" className="p-6 text-center text-slate-400">No policies recorded for this advisor yet.</td>
+                          <td colSpan="5" className="p-6 text-center text-slate-400">No policies issued by this staff member yet.</td>
                         </tr>
                       )}
                     </tbody>

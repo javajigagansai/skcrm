@@ -52,7 +52,7 @@ const initialCustomersSeed = [
     aadhaar: '8812-3341-9012',
     occupation: 'Senior Product Manager',
     incomeBracket: '₹ 15L - ₹ 25L',
-    assignedAdvisorName: 'Kavita Menon',
+    assignedAdvisorName: 'Priya Sharma',
     status: 'Active',
     familyMembers: []
   },
@@ -73,7 +73,7 @@ const initialCustomersSeed = [
     aadhaar: '7765-4432-1100',
     occupation: 'Business Owner',
     incomeBracket: '₹ 50L - ₹ 1Cr',
-    assignedAdvisorName: 'Rahul Dravid',
+    assignedAdvisorName: 'Priya Sharma',
     status: 'Active',
     familyMembers: [
       { id: 'FM-3', name: 'Sunita Kumar', relation: 'Spouse', gender: 'Female', dob: '1984-07-11', anniversaryDate: '2010-04-15', phone: '9988776656' }
@@ -104,7 +104,7 @@ const initialPoliciesSeed = [
     startDate: '2025-03-15',
     expiryDate: '2026-03-14',
     status: 'ACTIVE',
-    assignedStaff: 'Kavita Menon'
+    assignedStaff: 'Priya Sharma'
   },
   {
     id: 'POL-1003',
@@ -116,7 +116,7 @@ const initialPoliciesSeed = [
     startDate: '2024-08-20',
     expiryDate: '2026-08-19',
     status: 'DUE_RENEWAL',
-    assignedStaff: 'Rahul Dravid'
+    assignedStaff: 'Priya Sharma'
   }
 ];
 
@@ -203,7 +203,7 @@ const initialLeadsSeed = [
     leadSource: 'Referral',
     leadStatus: 'WARM',
     city: 'Mumbai',
-    assignedStaff: 'Rahul Dravid',
+    assignedStaff: 'Priya Sharma',
     estimatedValue: 40000,
     createdDate: '2025-08-05'
   }
@@ -227,8 +227,8 @@ const initialFollowupsSeed = [
     stageName: 'Renewals Reminder & Payment Link',
     date: '2026-08-18 02:30 PM',
     type: 'WhatsApp & Call',
-    assignedTo: 'Rahul Dravid',
-    createdBy: 'Rahul Dravid',
+    assignedTo: 'Priya Sharma',
+    createdBy: 'Branch Manager',
     conversationNotes: 'Sent online payment portal link for Tata AIA renewal.',
     status: 'PENDING'
   }
@@ -241,7 +241,7 @@ const initialTasksSeed = [
     title: 'Collect KYC Pan & Aadhaar Self-Attested Copy',
     dueDate: '2026-08-16',
     priority: 'HIGH',
-    assignedStaff: 'Kavita Menon',
+    assignedStaff: 'Priya Sharma',
     status: 'PENDING'
   },
   {
