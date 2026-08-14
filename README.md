@@ -23,6 +23,7 @@ Use the following 3 official account credentials to test role-based permissions 
 | :--- | :---: | :---: | :---: |
 | **Dashboard** | ✅ All | ✅ Team | ✅ Own |
 | **User Management** | ✅ Full | ⚠️ Limited | ❌ |
+| **Staff Management & 360°** | ✅ All | ✅ Team | ❌ |
 | **Customer Management** | ✅ All | ✅ Team | ✅ Assigned |
 | **Lead Management** | ✅ All | ✅ Team | ✅ Assigned |
 | **Policy Management** | ✅ All | ✅ Team | ✅ Assigned |

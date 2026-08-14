@@ -37,6 +37,7 @@ const Expenses = lazyRetry(() => import('../pages/Expenses').then(m => ({ defaul
 const Tasks = lazyRetry(() => import('../pages/Tasks').then(m => ({ default: m.Tasks })));
 const Reports = lazyRetry(() => import('../pages/Reports').then(m => ({ default: m.Reports })));
 const Users = lazyRetry(() => import('../pages/Users').then(m => ({ default: m.Users })));
+const StaffManagement = lazyRetry(() => import('../pages/StaffManagement').then(m => ({ default: m.StaffManagement })));
 const AuditLogs = lazyRetry(() => import('../pages/AuditLogs').then(m => ({ default: m.AuditLogs })));
 const SpecialDays = lazyRetry(() => import('../pages/SpecialDays').then(m => ({ default: m.SpecialDays })));
 const Profile = lazyRetry(() => import('../pages/Profile').then(m => ({ default: m.Profile })));
@@ -114,6 +115,7 @@ export const AppRoutes = () => {
       <Route path="/tasks" element={<RoleProtectedRoute allowedRoles={WORKER_ROLES}><Tasks /></RoleProtectedRoute>} />
       <Route path="/reports" element={<RoleProtectedRoute allowedRoles={MID_MANAGEMENT_ROLES}><Reports /></RoleProtectedRoute>} />
       <Route path="/users" element={<RoleProtectedRoute allowedRoles={MID_MANAGEMENT_ROLES}><Users /></RoleProtectedRoute>} />
+      <Route path="/staff-management" element={<RoleProtectedRoute allowedRoles={MID_MANAGEMENT_ROLES}><StaffManagement /></RoleProtectedRoute>} />
       <Route path="/audit-logs" element={<RoleProtectedRoute allowedRoles={MID_MANAGEMENT_ROLES}><AuditLogs /></RoleProtectedRoute>} />
       <Route path="/profile" element={<RoleProtectedRoute allowedRoles={ALL_ROLES}><Profile /></RoleProtectedRoute>} />
       <Route path="/settings" element={<RoleProtectedRoute allowedRoles={ADMIN_ROLES}><Settings /></RoleProtectedRoute>} />

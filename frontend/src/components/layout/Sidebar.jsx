@@ -39,6 +39,7 @@ export const Sidebar = () => {
     { label: 'Expense Tracker', path: '/expenses', icon: TrendingDown, roles: ['SUPER_ADMIN', 'ADMIN', 'MANAGER'] },
     { label: 'Task Management', path: '/tasks', icon: CheckSquare, roles: ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'EMPLOYEE', 'USER'] },
     { label: 'User Management', path: '/users', icon: Award, roles: ['SUPER_ADMIN', 'ADMIN', 'MANAGER'] },
+    { label: 'Staff Management', path: '/staff-management', icon: Users, roles: ['SUPER_ADMIN', 'ADMIN', 'MANAGER'] },
     { label: 'Reports & Analytics', path: '/reports', icon: BarChart3, roles: ['SUPER_ADMIN', 'ADMIN', 'MANAGER'] },
     { label: 'Audit Logs', path: '/audit-logs', icon: ShieldCheck, roles: ['SUPER_ADMIN', 'ADMIN', 'MANAGER'] },
     { label: 'My Profile', path: '/profile', icon: User, roles: ['SUPER_ADMIN', 'ADMIN', 'GREETINGS_OFFICER', 'MANAGER', 'EMPLOYEE', 'USER'] },
