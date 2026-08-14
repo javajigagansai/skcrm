@@ -1313,7 +1313,6 @@ export const Dashboard = () => {
             </div>
           </div>
         </div>
-      )}
 
       {/* BAR GRAPH 1 & 2 GRID - Full Width for Maximum Day-to-Day Spacing */}
       <div className="grid grid-cols-1 gap-8">
