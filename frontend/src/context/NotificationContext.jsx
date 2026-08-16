@@ -25,28 +25,36 @@ export const NotificationProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Helper to filter notifications targeted to active user
+  // Helper to filter notifications targeted strictly to active user
   const filterNotificationsForUser = (notifList) => {
     if (!user) return [];
     const activeName = (user.name || '').toLowerCase().trim();
-    const activeFirst = activeName.split(' ')[0];
     const activeEmail = (user.email || '').toLowerCase().trim();
     const activeUid = user.uid || '';
     const activeRole = user.role || '';
 
     return notifList.filter(item => {
-      if (user.role === 'SUPER_ADMIN' || user.role === 'ADMIN') return true;
+      // 1. System-wide broadcast notifications
       if (item.forAll === true) return true;
-      if (item.recipientId && item.recipientId === activeUid) return true;
-      if (item.recipientEmail && item.recipientEmail.toLowerCase() === activeEmail) return true;
-      if (item.targetRoles && Array.isArray(item.targetRoles) && item.targetRoles.includes(activeRole)) return true;
 
+      // 2. Match by Canonical Staff UID (primary key)
+      if (item.recipientId && activeUid && item.recipientId === activeUid) return true;
+
+      // 3. Match by Email
+      if (item.recipientEmail && activeEmail && item.recipientEmail.toLowerCase() === activeEmail) return true;
+
+      // 4. Match by Exact Recipient Name
       if (item.recipientName) {
         const recName = item.recipientName.toLowerCase().trim();
-        const recFirst = recName.split(' ')[0];
-        if (recName === activeName || recFirst === activeFirst || activeName.includes(recFirst)) {
+        if (recName && recName === activeName) {
           return true;
         }
+      }
+
+      // 5. Target Role match (only if no specific individual recipient was assigned)
+      const hasSpecificRecipient = Boolean(item.recipientId || item.recipientEmail || item.recipientName);
+      if (!hasSpecificRecipient && item.targetRoles && Array.isArray(item.targetRoles) && item.targetRoles.includes(activeRole)) {
+        return true;
       }
 
       return false;
@@ -74,8 +82,12 @@ export const NotificationProvider = ({ children }) => {
     const handleCustomNotif = (e) => {
       syncLocalNotifications();
       if (e.detail) {
-        setToastNotification(e.detail);
-        setTimeout(() => setToastNotification(null), 5000);
+        // ONLY show toast alert if notification is targeted strictly to the currently logged in user
+        const isForMe = filterNotificationsForUser([e.detail]).length > 0;
+        if (isForMe) {
+          setToastNotification(e.detail);
+          setTimeout(() => setToastNotification(null), 5000);
+        }
       }
     };
 
