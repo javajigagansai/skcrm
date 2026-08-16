@@ -82,13 +82,17 @@ export const Policies = () => {
 
   const handleIssuePolicy = (e) => {
     e.preventDefault();
+    if (!newPolicy.customerName || !newPolicy.grossPremium) {
+      alert('Please fill in Customer Name and Gross Premium');
+      return;
+    }
+
     const company = newPolicy.insuranceCompany === 'CUSTOM' ? newPolicy.customCompany : newPolicy.insuranceCompany;
     const category = newPolicy.type === 'CUSTOM' ? newPolicy.customType : newPolicy.type;
 
-    if (!company || !newPolicy.customerName) {
-      alert("Please specify Customer Name and Insurance Provider!");
-      return;
-    }
+    const matchedStaff = staffList.find(s => s.name === newPolicy.assignedStaff || s.uid === newPolicy.assignedStaffId);
+    const assignedStaffId = matchedStaff?.uid || newPolicy.assignedStaffId || user?.uid || 'UID-STF-1003';
+    const assignedStaffName = matchedStaff?.name || newPolicy.assignedStaff || user?.name || 'Priya Sharma';
 
     const created = addPolicy({
       customerName: newPolicy.customerName,
@@ -99,7 +103,10 @@ export const Policies = () => {
       startDate: newPolicy.startDate,
       expiryDate: newPolicy.expiryDate,
       status: 'ACTIVE',
-      assignedStaff: newPolicy.assignedStaff || 'Priya Sharma (Senior Advisor)'
+      assignedStaffId,
+      assignedStaffName,
+      assignedStaff: assignedStaffName,
+      branchId: matchedStaff?.branch || 'BR-KNM-001'
     });
 
     if (newPolicy.insuranceCompany === 'CUSTOM' && newPolicy.customCompany && !insuranceCompanies.includes(newPolicy.customCompany)) {
@@ -117,9 +124,9 @@ export const Policies = () => {
       grossPremium: 25000,
       startDate: new Date().toISOString().split('T')[0],
       expiryDate: '2027-08-08',
-      assignedStaff: 'Priya Sharma (Senior Advisor)'
+      assignedStaff: user?.name || 'Priya Sharma'
     });
-    alert(`Policy ${created.id} issued successfully for ${created.customerName}!`);
+    alert(`Policy ${created.id} issued successfully for ${created.customerName}! Assigned to ${assignedStaffName}.`);
   };
 
   const handleSaveEditPolicy = (e) => {

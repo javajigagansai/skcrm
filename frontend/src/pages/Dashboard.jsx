@@ -1203,8 +1203,9 @@ export const Dashboard = () => {
         </div>
       </div>
 
-      {/* DASHBOARD STAFF PERFORMANCE LEADERBOARDS */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* DASHBOARD STAFF PERFORMANCE LEADERBOARDS (MANAGERS & ADMINS ONLY) */}
+      {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER' || user?.role === 'BRANCH_MANAGER') && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* LEADERBOARD A: STAFF GENERATING MOST BUSINESS */}
           <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-card space-y-4">
             <div className="flex items-center justify-between border-b pb-3">
@@ -1313,6 +1314,7 @@ export const Dashboard = () => {
             </div>
           </div>
         </div>
+      )}
 
       {/* BAR GRAPH 1 & 2 GRID - Full Width for Maximum Day-to-Day Spacing */}
       <div className="grid grid-cols-1 gap-8">

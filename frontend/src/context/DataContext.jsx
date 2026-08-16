@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import { useAuth } from './AuthContext';
+import { filterScopedRecords, canAccessCustomer } from '../utils/rbac';
 import { 
   fetchCustomersBackend, createCustomerBackend, deleteCustomerBackend,
   fetchLeadsBackend, createLeadBackend,
@@ -30,7 +32,11 @@ const initialCustomersSeed = [
     aadhaar: '9920-4819-1234',
     occupation: 'Software Architect',
     incomeBracket: '₹ 25L - ₹ 50L',
+    assignedStaffId: 'UID-STF-1003',
+    assignedStaffName: 'Priya Sharma',
     assignedAdvisorName: 'Priya Sharma',
+    assignedStaffEmail: 'priya.sharma@sk-smart-investments.com',
+    branchId: 'BR-KNM-001',
     status: 'Active',
     familyMembers: [
       { id: 'FM-1', name: 'Neha Sharma', relation: 'Spouse', gender: 'Female', dob: '1990-08-22', anniversaryDate: '2016-11-20', phone: '9876543211' },
@@ -54,7 +60,11 @@ const initialCustomersSeed = [
     aadhaar: '8812-3341-9012',
     occupation: 'Senior Product Manager',
     incomeBracket: '₹ 15L - ₹ 25L',
+    assignedStaffId: 'UID-STF-1003',
+    assignedStaffName: 'Priya Sharma',
     assignedAdvisorName: 'Priya Sharma',
+    assignedStaffEmail: 'priya.sharma@sk-smart-investments.com',
+    branchId: 'BR-KNM-001',
     status: 'Active',
     familyMembers: []
   },
@@ -75,7 +85,11 @@ const initialCustomersSeed = [
     aadhaar: '7765-4432-1100',
     occupation: 'Business Owner',
     incomeBracket: '₹ 50L - ₹ 1Cr',
+    assignedStaffId: 'UID-STF-1003',
+    assignedStaffName: 'Priya Sharma',
     assignedAdvisorName: 'Priya Sharma',
+    assignedStaffEmail: 'priya.sharma@sk-smart-investments.com',
+    branchId: 'BR-KNM-001',
     status: 'Active',
     familyMembers: [
       { id: 'FM-3', name: 'Sunita Kumar', relation: 'Spouse', gender: 'Female', dob: '1984-07-11', anniversaryDate: '2010-04-15', phone: '9988776656' }
@@ -89,12 +103,15 @@ const initialPoliciesSeed = [
     customerName: 'Rahul Sharma',
     insuranceCompany: 'Star Health Insurance',
     type: 'Comprehensive Family Optima',
-    sumInsured: 1500000,
-    grossPremium: 32000,
-    startDate: '2025-01-10',
-    expiryDate: '2026-01-09',
+    sumInsured: 1000000,
+    grossPremium: 28500,
+    startDate: '2025-01-15',
+    expiryDate: '2026-01-14',
     status: 'ACTIVE',
-    assignedStaff: 'Priya Sharma'
+    assignedStaffId: 'UID-STF-1003',
+    assignedStaffName: 'Priya Sharma',
+    assignedStaff: 'Priya Sharma',
+    branchId: 'BR-KNM-001'
   },
   {
     id: 'POL-1002',
@@ -106,7 +123,10 @@ const initialPoliciesSeed = [
     startDate: '2025-03-15',
     expiryDate: '2026-03-14',
     status: 'ACTIVE',
-    assignedStaff: 'Priya Sharma'
+    assignedStaffId: 'UID-STF-1003',
+    assignedStaffName: 'Priya Sharma',
+    assignedStaff: 'Priya Sharma',
+    branchId: 'BR-KNM-001'
   },
   {
     id: 'POL-1003',
@@ -118,7 +138,10 @@ const initialPoliciesSeed = [
     startDate: '2024-08-20',
     expiryDate: '2026-08-19',
     status: 'DUE_RENEWAL',
-    assignedStaff: 'Priya Sharma'
+    assignedStaffId: 'UID-STF-1003',
+    assignedStaffName: 'Priya Sharma',
+    assignedStaff: 'Priya Sharma',
+    branchId: 'BR-KNM-001'
   }
 ];
 
@@ -131,7 +154,10 @@ const initialInvestmentsSeed = [
     amount: 25000,
     folioNumber: '10928374/88',
     status: 'APPROVED',
-    date: '2025-02-01'
+    date: '2025-02-01',
+    assignedStaffId: 'UID-STF-1003',
+    assignedStaffName: 'Priya Sharma',
+    branchId: 'BR-KNM-001'
   },
   {
     id: 'INV-2002',
@@ -141,7 +167,10 @@ const initialInvestmentsSeed = [
     amount: 500000,
     folioNumber: '99201827/12',
     status: 'APPROVED',
-    date: '2025-01-15'
+    date: '2025-01-15',
+    assignedStaffId: 'UID-STF-1003',
+    assignedStaffName: 'Priya Sharma',
+    branchId: 'BR-KNM-001'
   },
   {
     id: 'INV-2003',
@@ -151,7 +180,10 @@ const initialInvestmentsSeed = [
     amount: 300000,
     folioNumber: 'FD-SBI-99120',
     status: 'PENDING',
-    date: '2025-05-10'
+    date: '2025-05-10',
+    assignedStaffId: 'UID-STF-1003',
+    assignedStaffName: 'Priya Sharma',
+    branchId: 'BR-KNM-001'
   }
 ];
 
@@ -164,9 +196,12 @@ const initialClaimsSeed = [
     claimAmount: 45000,
     settlementAmount: 45000,
     hospitalOrGarage: 'Apollo Hospital Chennai',
+    assignedStaffId: 'UID-STF-1003',
+    assignedStaffName: 'Priya Sharma',
     assignedStaff: 'Priya Sharma',
     claimDate: '2025-06-12',
-    status: 'SETTLED'
+    status: 'SETTLED',
+    branchId: 'BR-KNM-001'
   },
   {
     id: 'CLM-3002',
@@ -176,9 +211,12 @@ const initialClaimsSeed = [
     claimAmount: 18000,
     settlementAmount: 0,
     hospitalOrGarage: 'Fortis Hospital Bangalore',
-    assignedStaff: 'Kavita Menon',
+    assignedStaffId: 'UID-STF-1003',
+    assignedStaffName: 'Priya Sharma',
+    assignedStaff: 'Priya Sharma',
     claimDate: '2025-07-28',
-    status: 'IN_REVIEW'
+    status: 'IN_REVIEW',
+    branchId: 'BR-KNM-001'
   }
 ];
 
@@ -192,9 +230,12 @@ const initialLeadsSeed = [
     leadSource: 'Website Inquiry',
     leadStatus: 'HOT',
     city: 'Delhi',
+    assignedStaffId: 'UID-STF-1003',
+    assignedStaffName: 'Priya Sharma',
     assignedStaff: 'Priya Sharma',
     estimatedValue: 75000,
-    createdDate: '2025-08-01'
+    createdDate: '2025-08-01',
+    branchId: 'BR-KNM-001'
   },
   {
     id: 'LD-4002',
@@ -205,9 +246,12 @@ const initialLeadsSeed = [
     leadSource: 'Referral',
     leadStatus: 'WARM',
     city: 'Mumbai',
+    assignedStaffId: 'UID-STF-1003',
+    assignedStaffName: 'Priya Sharma',
     assignedStaff: 'Priya Sharma',
     estimatedValue: 40000,
-    createdDate: '2025-08-05'
+    createdDate: '2025-08-05',
+    branchId: 'BR-KNM-001'
   }
 ];
 
@@ -218,10 +262,13 @@ const initialFollowupsSeed = [
     stageName: 'Annual Policy Review & Top-Up',
     date: '2026-08-15 10:00 AM',
     type: 'Phone Call',
+    assignedStaffId: 'UID-STF-1003',
+    assignedStaffName: 'Priya Sharma',
     assignedTo: 'Priya Sharma',
     createdBy: 'Priya Sharma',
     conversationNotes: 'Client expressed interest in adding super top-up policy for parents.',
-    status: 'PENDING'
+    status: 'PENDING',
+    branchId: 'BR-KNM-001'
   },
   {
     id: 'FLW-5002',
@@ -229,10 +276,13 @@ const initialFollowupsSeed = [
     stageName: 'Renewals Reminder & Payment Link',
     date: '2026-08-18 02:30 PM',
     type: 'WhatsApp & Call',
+    assignedStaffId: 'UID-STF-1003',
+    assignedStaffName: 'Priya Sharma',
     assignedTo: 'Priya Sharma',
     createdBy: 'Branch Manager',
     conversationNotes: 'Sent online payment portal link for Tata AIA renewal.',
-    status: 'PENDING'
+    status: 'PENDING',
+    branchId: 'BR-KNM-001'
   }
 ];
 
@@ -243,8 +293,11 @@ const initialTasksSeed = [
     title: 'Collect KYC Pan & Aadhaar Self-Attested Copy',
     dueDate: '2026-08-16',
     priority: 'HIGH',
+    assignedStaffId: 'UID-STF-1003',
+    assignedStaffName: 'Priya Sharma',
     assignedStaff: 'Priya Sharma',
-    status: 'PENDING'
+    status: 'PENDING',
+    branchId: 'BR-KNM-001'
   },
   {
     id: 'TSK-6002',
@@ -252,13 +305,18 @@ const initialTasksSeed = [
     title: 'Deliver Star Health Physical Insurance Smartcard',
     dueDate: '2026-08-20',
     priority: 'MEDIUM',
+    assignedStaffId: 'UID-STF-1003',
+    assignedStaffName: 'Priya Sharma',
     assignedStaff: 'Priya Sharma',
-    status: 'COMPLETED'
+    status: 'COMPLETED',
+    branchId: 'BR-KNM-001'
   }
 ];
 
 export const DataProvider = ({ children }) => {
-  const [customers, setCustomers] = useState(() => {
+  const { user } = useAuth();
+
+  const [rawCustomers, setCustomers] = useState(() => {
     const saved = localStorage.getItem('crm_v2_customers');
     if (saved) {
       try { return JSON.parse(saved); } catch (e) {}
@@ -266,7 +324,7 @@ export const DataProvider = ({ children }) => {
     return initialCustomersSeed;
   });
 
-  const [policies, setPolicies] = useState(() => {
+  const [rawPolicies, setPolicies] = useState(() => {
     const saved = localStorage.getItem('crm_v2_policies');
     if (saved) {
       try { return JSON.parse(saved); } catch (e) {}
@@ -274,7 +332,7 @@ export const DataProvider = ({ children }) => {
     return initialPoliciesSeed;
   });
 
-  const [investments, setInvestments] = useState(() => {
+  const [rawInvestments, setInvestments] = useState(() => {
     const saved = localStorage.getItem('crm_v2_investments');
     if (saved) {
       try { return JSON.parse(saved); } catch (e) {}
@@ -282,7 +340,7 @@ export const DataProvider = ({ children }) => {
     return initialInvestmentsSeed;
   });
 
-  const [claims, setClaims] = useState(() => {
+  const [rawClaims, setClaims] = useState(() => {
     const saved = localStorage.getItem('crm_v2_claims');
     if (saved) {
       try { return JSON.parse(saved); } catch (e) {}
@@ -290,7 +348,7 @@ export const DataProvider = ({ children }) => {
     return initialClaimsSeed;
   });
 
-  const [leads, setLeads] = useState(() => {
+  const [rawLeads, setLeads] = useState(() => {
     const saved = localStorage.getItem('crm_v2_leads');
     if (saved) {
       try { return JSON.parse(saved); } catch (e) {}
@@ -298,7 +356,7 @@ export const DataProvider = ({ children }) => {
     return initialLeadsSeed;
   });
 
-  const [followups, setFollowups] = useState(() => {
+  const [rawFollowups, setFollowups] = useState(() => {
     const saved = localStorage.getItem('crm_v2_followups');
     if (saved) {
       try { return JSON.parse(saved); } catch (e) {}
@@ -306,7 +364,7 @@ export const DataProvider = ({ children }) => {
     return initialFollowupsSeed;
   });
 
-  const [tasks, setTasks] = useState(() => {
+  const [rawTasks, setTasks] = useState(() => {
     const saved = localStorage.getItem('crm_v2_tasks');
     if (saved) {
       try { return JSON.parse(saved); } catch (e) {}
@@ -314,7 +372,7 @@ export const DataProvider = ({ children }) => {
     return initialTasksSeed;
   });
 
-  const [income, setIncome] = useState(() => {
+  const [rawIncome, setIncome] = useState(() => {
     const saved = localStorage.getItem('crm_v2_income');
     if (saved) {
       try { return JSON.parse(saved); } catch (e) {}
@@ -322,7 +380,7 @@ export const DataProvider = ({ children }) => {
     return [];
   });
 
-  const [expenses, setExpenses] = useState(() => {
+  const [rawExpenses, setExpenses] = useState(() => {
     const saved = localStorage.getItem('crm_v2_expenses');
     if (saved) {
       try { return JSON.parse(saved); } catch (e) {}
@@ -330,33 +388,60 @@ export const DataProvider = ({ children }) => {
     return [];
   });
 
-  const [auditLogs, setAuditLogs] = useState(() => {
+  const [rawAuditLogs, setAuditLogs] = useState(() => {
     const saved = localStorage.getItem('crm_v2_audit_logs');
     if (saved) {
       try { return JSON.parse(saved); } catch (e) {}
     }
     return [
       { id: 'LOG-1001', userName: 'Prakash Gajendiran', userRole: 'SUPER_ADMIN', action: 'USER_LOGIN', module: 'Auth', affectedRecord: 'Session', timestamp: '2026-08-13 09:15:20', details: 'Super Admin logged in successfully' },
-      { id: 'LOG-1002', userName: 'Priya Sharma', userRole: 'EMPLOYEE', action: 'CREATE_CLIENT', module: 'Customers', affectedRecord: 'Rahul Sharma (SK-CUST-101)', timestamp: '2026-08-13 09:30:10', details: 'New customer profile registered' },
-      { id: 'LOG-1003', userName: 'Branch Manager', userRole: 'MANAGER', action: 'FILE_CLAIM', module: 'Claims', affectedRecord: 'CLM-2026-001', timestamp: '2026-08-13 10:05:44', details: 'Health insurance claim submitted for ₹1,50,000' },
-      { id: 'LOG-1004', userName: 'Priya Sharma', userRole: 'EMPLOYEE', action: 'UPDATE_FOLLOWUP', module: 'Followups', affectedRecord: 'Priya Menon', timestamp: '2026-08-13 11:20:15', details: 'Scheduled callback for quotation review' },
-      { id: 'LOG-1005', userName: 'Prakash Gajendiran', userRole: 'SUPER_ADMIN', action: 'STAFF_REASSIGNMENT', module: 'Staff Portal', affectedRecord: 'Anand Kumar', timestamp: '2026-08-13 12:00:00', details: 'Reassigned 5 client portfolios to Priya Sharma' }
+      { id: 'LOG-1002', userName: 'Priya Sharma', userRole: 'EMPLOYEE', action: 'CREATE_CLIENT', module: 'Customers', affectedRecord: 'Rahul Sharma (SK-CUST-101)', timestamp: '2026-08-13 09:30:10', details: 'New customer profile registered' }
     ];
   });
 
-  // Sync to LocalStorage
-  useEffect(() => { localStorage.setItem('crm_v2_audit_logs', JSON.stringify(auditLogs)); }, [auditLogs]);
-  useEffect(() => { localStorage.setItem('crm_v2_customers', JSON.stringify(customers)); }, [customers]);
-  useEffect(() => { localStorage.setItem('crm_v2_policies', JSON.stringify(policies)); }, [policies]);
-  useEffect(() => { localStorage.setItem('crm_v2_investments', JSON.stringify(investments)); }, [investments]);
-  useEffect(() => { localStorage.setItem('crm_v2_claims', JSON.stringify(claims)); }, [claims]);
-  useEffect(() => { localStorage.setItem('crm_v2_leads', JSON.stringify(leads)); }, [leads]);
-  useEffect(() => { localStorage.setItem('crm_v2_followups', JSON.stringify(followups)); }, [followups]);
-  useEffect(() => { localStorage.setItem('crm_v2_tasks', JSON.stringify(tasks)); }, [tasks]);
-  useEffect(() => { localStorage.setItem('crm_v2_income', JSON.stringify(income)); }, [income]);
-  useEffect(() => { localStorage.setItem('crm_v2_expenses', JSON.stringify(expenses)); }, [expenses]);
+  // Listen for auth user changed or logged out events to purge stale memory
+  useEffect(() => {
+    const handleAuthLogout = () => {
+      setCustomers(initialCustomersSeed);
+      setPolicies(initialPoliciesSeed);
+      setInvestments(initialInvestmentsSeed);
+      setClaims(initialClaimsSeed);
+      setLeads(initialLeadsSeed);
+      setFollowups(initialFollowupsSeed);
+      setTasks(initialTasksSeed);
+      setIncome([]);
+      setExpenses([]);
+    };
 
-  // Load from Firestore asynchronously without blocking initial render
+    window.addEventListener('auth_user_logged_out', handleAuthLogout);
+    return () => window.removeEventListener('auth_user_logged_out', handleAuthLogout);
+  }, []);
+
+  // Dynamically scoped data views based on active user's authorized role & staff ID
+  const customers = useMemo(() => filterScopedRecords(user, rawCustomers), [user, rawCustomers]);
+  const policies = useMemo(() => filterScopedRecords(user, rawPolicies), [user, rawPolicies]);
+  const investments = useMemo(() => filterScopedRecords(user, rawInvestments), [user, rawInvestments]);
+  const claims = useMemo(() => filterScopedRecords(user, rawClaims), [user, rawClaims]);
+  const leads = useMemo(() => filterScopedRecords(user, rawLeads), [user, rawLeads]);
+  const followups = useMemo(() => filterScopedRecords(user, rawFollowups), [user, rawFollowups]);
+  const tasks = useMemo(() => filterScopedRecords(user, rawTasks), [user, rawTasks]);
+  const income = useMemo(() => (user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER' ? rawIncome : []), [user, rawIncome]);
+  const expenses = useMemo(() => (user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER' ? rawExpenses : []), [user, rawExpenses]);
+  const auditLogs = useMemo(() => filterScopedRecords(user, rawAuditLogs), [user, rawAuditLogs]);
+
+  // Sync state changes to LocalStorage
+  useEffect(() => { localStorage.setItem('crm_v2_audit_logs', JSON.stringify(rawAuditLogs)); }, [rawAuditLogs]);
+  useEffect(() => { localStorage.setItem('crm_v2_customers', JSON.stringify(rawCustomers)); }, [rawCustomers]);
+  useEffect(() => { localStorage.setItem('crm_v2_policies', JSON.stringify(rawPolicies)); }, [rawPolicies]);
+  useEffect(() => { localStorage.setItem('crm_v2_investments', JSON.stringify(rawInvestments)); }, [rawInvestments]);
+  useEffect(() => { localStorage.setItem('crm_v2_claims', JSON.stringify(rawClaims)); }, [rawClaims]);
+  useEffect(() => { localStorage.setItem('crm_v2_leads', JSON.stringify(rawLeads)); }, [rawLeads]);
+  useEffect(() => { localStorage.setItem('crm_v2_followups', JSON.stringify(rawFollowups)); }, [rawFollowups]);
+  useEffect(() => { localStorage.setItem('crm_v2_tasks', JSON.stringify(rawTasks)); }, [rawTasks]);
+  useEffect(() => { localStorage.setItem('crm_v2_income', JSON.stringify(rawIncome)); }, [rawIncome]);
+  useEffect(() => { localStorage.setItem('crm_v2_expenses', JSON.stringify(rawExpenses)); }, [rawExpenses]);
+
+  // Async remote sync
   useEffect(() => {
     const fetchRemoteData = async () => {
       try {
@@ -401,110 +486,216 @@ export const DataProvider = ({ children }) => {
     fetchRemoteData();
   }, []);
 
-  // Real-time synchronization listener across tabs & portals
-  useEffect(() => {
-    const syncRealtimeData = () => {
-      try {
-        const storedCusts = localStorage.getItem('crm_v2_customers');
-        if (storedCusts) {
-          const parsed = JSON.parse(storedCusts);
-          if (Array.isArray(parsed) && parsed.length > 0) setCustomers(parsed);
-        }
-      } catch (e) {}
+  /**
+   * notifyCustomerAssignment
+   * Fires a notification to the assigned staff AND auto-creates a follow-up Task.
+   *
+   * @param {object|string} staffInfo  - Full staff object { uid, name, email } OR just a name string (legacy).
+   * @param {string}        customerName - The customer's display name.
+   * @param {boolean}       isReassignment - true if this is a reassignment, false for new assignment.
+   * @param {string}        assignedByName - Name of the admin/manager who made the assignment.
+   */
+  const notifyCustomerAssignment = async (staffInfo, customerName, isReassignment = false, assignedByName = null) => {
+    if (!staffInfo) return;
+
+    // Accept both a full staff object and a legacy name string
+    const staffName  = typeof staffInfo === 'string' ? staffInfo : (staffInfo.name  || '');
+    const staffUid   = typeof staffInfo === 'string' ? ''        : (staffInfo.uid   || '');
+    const staffEmail = typeof staffInfo === 'string' ? ''        : (staffInfo.email || '');
+
+    if (!staffName) return;
+
+    const notifId = 'NOTIF-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+    const byLine  = assignedByName ? ` by ${assignedByName}` : '';
+
+    const notifObj = {
+      id:             notifId,
+      recipientId:    staffUid,
+      recipientName:  staffName,
+      recipientEmail: staffEmail,
+      senderId:       user?.uid   || 'SYSTEM',
+      senderName:     user?.name  || 'System Administrator',
+      type:           'CUSTOMER_ASSIGNED',
+      title:          isReassignment
+        ? '👤 Customer Portfolio Reassigned to You'
+        : '👤 New Customer Assigned to Your Portfolio!',
+      message:        isReassignment
+        ? `Customer "${customerName}" has been reassigned to your portfolio${byLine}. Please reach out and introduce yourself.`
+        : `New customer "${customerName}" has been added and assigned to your portfolio${byLine}. Schedule a welcome call within 24 hours.`,
+      isRead:    false,
+      read:      false,
+      createdAt: new Date().toISOString()
     };
 
-    window.addEventListener('storage_customers_updated', syncRealtimeData);
-    window.addEventListener('storage', syncRealtimeData);
-    return () => {
-      window.removeEventListener('storage_customers_updated', syncRealtimeData);
-      window.removeEventListener('storage', syncRealtimeData);
-    };
-  }, []);
+    // 1. Persist to localStorage + dispatch event → bell icon updates immediately
+    try {
+      const stored = JSON.parse(localStorage.getItem('crm_v2_notifications') || '[]');
+      localStorage.setItem('crm_v2_notifications', JSON.stringify([notifObj, ...stored]));
+      window.dispatchEvent(new CustomEvent('storage_notifications_updated', { detail: notifObj }));
+    } catch (e) {}
 
-  const notifyCustomerAssignment = async (advisorName, customerName, isReassignment = false) => {
-    if (!advisorName) return;
+    // 2. Write to Firestore for cloud persistence & cross-device sync
     try {
       await addDoc(collection(db, 'notifications'), {
-        recipientName: advisorName,
-        type: 'CUSTOMER_ASSIGNED',
-        title: isReassignment ? '👤 Customer Portfolio Reassigned to You' : '👤 New Customer Portfolio Assigned!',
-        message: isReassignment
-          ? `Customer "${customerName}" has been assigned to your staff profile for advisor management.`
-          : `New Customer "${customerName}" has been created and assigned to your staff portfolio.`,
-        isRead: false,
-        read: false,
+        ...notifObj,
         createdAt: serverTimestamp()
       });
     } catch (e) {}
 
+    // 3. Legacy event for any other listeners
     try {
       window.dispatchEvent(new CustomEvent('storage_customer_assigned', {
-        detail: { advisorName, customerName }
+        detail: { advisorName: staffName, customerName }
       }));
+    } catch (e) {}
+
+    // 4. Auto-create a Task for the assigned staff
+    //    (setTasks is available via closure; it's initialized before this is ever called)
+    try {
+      const taskDue = new Date();
+      taskDue.setDate(taskDue.getDate() + 1); // Due tomorrow
+
+      const autoTask = {
+        id:            'TASK-AUTO-' + Date.now(),
+        title:         isReassignment
+          ? `📋 Follow up with reassigned customer: ${customerName}`
+          : `📞 Welcome call – New customer: ${customerName}`,
+        description:   isReassignment
+          ? `${customerName} has been reassigned to your portfolio${byLine}. Introduce yourself and confirm their policy details.`
+          : `${customerName} is newly assigned to your portfolio${byLine}. Schedule an introductory call and collect any outstanding documents.`,
+        customerName,
+        assignedStaff:   staffName,
+        assignedStaffId: staffUid,
+        assignedTo:      staffName,
+        staffId:         staffUid,
+        dueDate:         taskDue.toISOString().split('T')[0],
+        priority:        'HIGH',
+        status:          'PENDING',
+        type:            'CUSTOMER_ASSIGNMENT',
+        autoGenerated:   true,
+        createdAt:       new Date().toISOString()
+      };
+
+      setTasks(prev => [autoTask, ...prev]);
+      try { createTaskBackend(autoTask); } catch (_) {}
     } catch (e) {}
   };
 
-  // CRUD Actions
+  // CRUD Actions with Canonical Staff Identification
   const addCustomer = async (custData) => {
-    const id = custData.id || `SK-CUST-${100 + customers.length + 1}`;
-    const newCust = { ...custData, id, customerCode: id, createdAt: new Date().toISOString() };
+    const id = custData.id || `SK-CUST-${100 + rawCustomers.length + 1}`;
+    const assignedStaffId = custData.assignedStaffId || custData.staffId || user?.uid || 'UID-STF-1003';
+    const assignedStaffName = custData.assignedStaffName || custData.assignedAdvisorName || custData.assignedStaff || user?.name || 'Priya Sharma';
+    const assignedStaffEmail = custData.assignedStaffEmail || custData.advisorEmail || user?.email || 'priya.sharma@sk-smart-investments.com';
+    const branchId = custData.branchId || custData.branch || user?.branchId || 'BR-KNM-001';
+
+    const newCust = {
+      ...custData,
+      id,
+      customerCode: id,
+      assignedStaffId,
+      assignedStaffName,
+      assignedAdvisorName: assignedStaffName,
+      assignedStaffEmail,
+      branchId,
+      createdAt: new Date().toISOString()
+    };
+
     setCustomers(prev => [newCust, ...prev]);
     try { await createCustomerBackend(newCust); } catch (e) {}
     
-    if (newCust.assignedAdvisorName) {
-      notifyCustomerAssignment(newCust.assignedAdvisorName, newCust.name, false);
+    if (newCust.assignedStaffName || newCust.assignedAdvisorName) {
+      notifyCustomerAssignment(
+        { uid: newCust.assignedStaffId, name: newCust.assignedStaffName || newCust.assignedAdvisorName, email: newCust.assignedStaffEmail },
+        newCust.name,
+        false,
+        user?.name
+      );
     }
 
     addAuditLog({
-      userName: newCust.assignedAdvisorName || 'Staff Advisor',
-      userRole: 'STAFF',
+      userName: user?.name || newCust.assignedAdvisorName || 'Staff Advisor',
+      userRole: user?.role || 'STAFF',
       action: 'CREATE_CLIENT',
       module: 'Customers',
       affectedRecord: `${newCust.name} (${newCust.customerCode})`,
-      details: 'Created new customer profile'
+      details: `Created customer profile assigned to ${assignedStaffName}`
     });
     return newCust;
   };
 
-  const updateCustomer = (idOrData, updatedFields) => {
+  /**
+   * updateCustomer - Update a customer record in state and localStorage.
+   * @param {object|string} idOrData - Full customer data object OR customer ID string.
+   * @param {object|null}   reassignmentMeta - Optional. When provided the staff was changed:
+   *   { previousStaffId, previousStaffName, newStaffId, newStaffName }
+   *   This triggers a dedicated REASSIGN_CUSTOMER audit log entry.
+   */
+  const updateCustomer = (idOrData, reassignmentMeta = null) => {
     if (!idOrData) return;
     const targetId = typeof idOrData === 'object' ? idOrData.id || idOrData.customerCode : idOrData;
-    const updateObj = typeof idOrData === 'object' ? idOrData : updatedFields || {};
+    const updateObj = typeof idOrData === 'object' ? idOrData : {};
 
     setCustomers(prev => prev.map(c => {
       if (c.id === targetId || c.customerCode === targetId || c.name === targetId) {
-        return { ...c, ...updateObj };
+        // PERMANENT FIX: if an explicit assignedStaffId is provided in the update, it ALWAYS wins.
+        // We only fall back to the old UID when NO new UID is provided at all.
+        const incomingStaffId = updateObj.assignedStaffId || updateObj.staffId;
+        const finalStaffId    = incomingStaffId ? incomingStaffId : c.assignedStaffId;
+        const finalStaffName  = updateObj.assignedStaffName || updateObj.assignedAdvisorName || updateObj.assignedStaff || c.assignedStaffName;
+
+        return {
+          ...c,
+          ...updateObj,
+          assignedStaffId:     finalStaffId,
+          assignedStaffName:   finalStaffName,
+          assignedAdvisorName: finalStaffName,
+        };
       }
       return c;
     }));
 
-    try {
-      const stored = JSON.parse(localStorage.getItem('crm_v2_customers') || '[]');
-      const newStored = stored.map(c => (c.id === targetId || c.customerCode === targetId || c.name === targetId) ? { ...c, ...updateObj } : c);
-      localStorage.setItem('crm_v2_customers', JSON.stringify(newStored));
-      window.dispatchEvent(new Event('storage_customers_updated'));
-    } catch (e) {}
-
-    if (updateObj.assignedAdvisorName) {
-      notifyCustomerAssignment(updateObj.assignedAdvisorName, updateObj.name || String(targetId), true);
+    // Notify on any staff name change (e.g. toast/bell notification)
+    const newName  = updateObj.assignedStaffName || updateObj.assignedAdvisorName || updateObj.assignedStaff;
+    const newUid   = updateObj.assignedStaffId   || updateObj.staffId || '';
+    const newEmail = updateObj.assignedStaffEmail || '';
+    if (newName) {
+      notifyCustomerAssignment(
+        { uid: newUid, name: newName, email: newEmail },
+        updateObj.name || String(targetId),
+        true,
+        user?.name
+      );
     }
 
-    addAuditLog({
-      userName: updateObj.assignedAdvisorName || 'Staff Advisor',
-      userRole: 'STAFF',
-      action: 'UPDATE_CUSTOMER',
-      module: 'Customers',
-      affectedRecord: String(targetId),
-      details: 'Updated customer 360 profile details & relationships'
-    });
+    // Write audit log — specialized entry for reassignments
+    if (reassignmentMeta) {
+      addAuditLog({
+        userName:  user?.name || 'Admin',
+        userRole:  user?.role || 'ADMIN',
+        action:    'REASSIGN_CUSTOMER',
+        module:    'Customers',
+        affectedRecord: `${updateObj.name || String(targetId)} (${targetId})`,
+        details:   `Staff reassigned from "${reassignmentMeta.previousStaffName}" [${reassignmentMeta.previousStaffId}] → "${reassignmentMeta.newStaffName}" [${reassignmentMeta.newStaffId}]`
+      });
+    } else {
+      addAuditLog({
+        userName:  user?.name || 'Staff Advisor',
+        userRole:  user?.role || 'STAFF',
+        action:    'UPDATE_CUSTOMER',
+        module:    'Customers',
+        affectedRecord: String(targetId),
+        details:   'Updated customer profile details & relationships'
+      });
+    }
   };
 
   const deleteCustomer = async (id) => {
     setCustomers(prev => prev.filter(c => c.id !== id && c.name !== id));
     try { await deleteCustomerBackend(id); } catch (e) {}
     addAuditLog({
-      userName: 'Admin User',
-      userRole: 'ADMIN',
+      userName: user?.name || 'Admin User',
+      userRole: user?.role || 'ADMIN',
       action: 'DELETE_CLIENT',
       module: 'Customers',
       affectedRecord: String(id),
@@ -514,185 +705,171 @@ export const DataProvider = ({ children }) => {
 
   const addPolicy = (polData) => {
     const id = polData.id || `POL-SK-${Math.floor(1000 + Math.random() * 9000)}`;
-    const newPol = { ...polData, id, startDate: polData.startDate || new Date().toISOString().split('T')[0] };
+    const assignedStaffId = polData.assignedStaffId || polData.staffId || user?.uid || 'UID-STF-1003';
+    const assignedStaffName = polData.assignedStaffName || polData.assignedStaff || user?.name || 'Priya Sharma';
+
+    const newPol = { 
+      ...polData, 
+      id, 
+      assignedStaffId,
+      assignedStaffName,
+      assignedStaff: assignedStaffName,
+      startDate: polData.startDate || new Date().toISOString().split('T')[0] 
+    };
+
     setPolicies(prev => [newPol, ...prev]);
-    
-    // Auto-create/link customer if not exists
-    if (polData.customerName) {
-      setCustomers(prev => {
-        const exists = prev.some(c => c.name.toLowerCase() === polData.customerName.toLowerCase());
-        if (!exists) {
-          return [{
-            id: `CUST-${Date.now()}`,
-            customerCode: `SK-CUST-${Math.floor(100 + Math.random() * 900)}`,
-            name: polData.customerName,
-            phone: polData.phone || '',
-            insuranceCompany: polData.insuranceCompany || '',
-            insuranceType: polData.type || '',
-            status: 'Active',
-            familyMembers: []
-          }, ...prev];
-        }
-        return prev;
-      });
-    }
 
     addAuditLog({
-      userName: polData.assignedStaff || 'Staff Advisor',
-      userRole: 'STAFF',
+      userName: user?.name || 'Staff Advisor',
+      userRole: user?.role || 'STAFF',
       action: 'CREATE_POLICY',
       module: 'Policies',
-      affectedRecord: `${newPol.id} (${newPol.customerName})`,
-      details: `Issued ${newPol.type || 'Insurance'} policy`
+      affectedRecord: `${newPol.insuranceCompany} (${id})`,
+      details: `Issued policy for ${newPol.customerName}`
     });
-
     return newPol;
   };
 
-  const addInvestment = async (invData) => {
-    const id = invData.id || `INV-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-    const newInv = { ...invData, id, date: invData.date || new Date().toISOString().split('T')[0] };
+  const addInvestment = (invData) => {
+    const id = invData.id || `INV-SK-${Math.floor(1000 + Math.random() * 9000)}`;
+    const assignedStaffId = invData.assignedStaffId || invData.staffId || user?.uid || 'UID-STF-1003';
+    const assignedStaffName = invData.assignedStaffName || invData.advisorName || user?.name || 'Priya Sharma';
+
+    const newInv = {
+      ...invData,
+      id,
+      assignedStaffId,
+      assignedStaffName,
+      status: invData.status || 'PENDING',
+      date: invData.date || new Date().toISOString().split('T')[0]
+    };
+
     setInvestments(prev => [newInv, ...prev]);
-    try { await createInvestmentBackend(newInv); } catch (e) {}
-    addAuditLog({
-      userName: invData.advisorName || 'Staff Advisor',
-      userRole: 'STAFF',
-      action: 'CREATE_INVESTMENT',
-      module: 'Investments',
-      affectedRecord: `${newInv.id} (${newInv.customerName})`,
-      details: `Recorded ₹${newInv.amount} investment in ${newInv.provider}`
-    });
+    try { createInvestmentBackend(newInv); } catch (e) {}
     return newInv;
   };
 
-  const updateInvestmentStatus = (id, status) => {
-    setInvestments(prev => prev.map(i => i.id === id ? { ...i, status } : i));
+  const updateInvestmentStatus = (id, newStatus) => {
+    setInvestments(prev => prev.map(inv => inv.id === id ? { ...inv, status: newStatus } : inv));
   };
 
   const addClaim = (claimData) => {
-    const id = claimData.id || `CLM-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-    const newClaim = { 
-      ...claimData, 
-      id, 
+    const id = claimData.id || `CLM-SK-${Math.floor(1000 + Math.random() * 9000)}`;
+    const assignedStaffId = claimData.assignedStaffId || claimData.staffId || user?.uid || 'UID-STF-1003';
+    const assignedStaffName = claimData.assignedStaffName || claimData.assignedStaff || user?.name || 'Priya Sharma';
+
+    const newClaim = {
+      ...claimData,
+      id,
+      assignedStaffId,
+      assignedStaffName,
+      assignedStaff: assignedStaffName,
       claimDate: claimData.claimDate || new Date().toISOString().split('T')[0],
-      status: claimData.status || 'SUBMITTED'
+      status: 'SUBMITTED'
     };
+
     setClaims(prev => [newClaim, ...prev]);
-    addAuditLog({
-      userName: claimData.assignedStaff || 'Staff Advisor',
-      userRole: 'STAFF',
-      action: 'FILE_CLAIM',
-      module: 'Claims',
-      affectedRecord: `${newClaim.id} (${newClaim.customerName})`,
-      details: `Filed claim for ₹${newClaim.claimAmount}`
-    });
     return newClaim;
   };
 
-  const updateClaimStatus = (id, status, settlementAmount) => {
-    setClaims(prev => prev.map(c => c.id === id ? { 
-      ...c, 
-      status, 
-      settlementAmount: status === 'SETTLED' ? (settlementAmount || c.claimAmount) : c.settlementAmount 
-    } : c));
-    addAuditLog({
-      userName: 'Claims Officer',
-      userRole: 'MANAGER',
-      action: 'UPDATE_CLAIM_STATUS',
-      module: 'Claims',
-      affectedRecord: String(id),
-      details: `Claim status updated to ${status}`
-    });
+  const updateClaimStatus = (id, newStatus) => {
+    setClaims(prev => prev.map(clm => clm.id === id ? { ...clm, status: newStatus } : clm));
   };
 
-  const addLead = async (leadData) => {
-    const id = leadData.id || `LD-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-    const newLead = { ...leadData, id, createdDate: new Date().toISOString().split('T')[0] };
+  const addLead = (leadData) => {
+    const id = leadData.id || `LD-SK-${Math.floor(1000 + Math.random() * 9000)}`;
+    const assignedStaffId = leadData.assignedStaffId || leadData.staffId || user?.uid || 'UID-STF-1003';
+    const assignedStaffName = leadData.assignedStaffName || leadData.assignedStaff || user?.name || 'Priya Sharma';
+
+    const newLead = {
+      ...leadData,
+      id,
+      assignedStaffId,
+      assignedStaffName,
+      assignedStaff: assignedStaffName,
+      createdDate: new Date().toISOString().split('T')[0]
+    };
+
     setLeads(prev => [newLead, ...prev]);
-    try { await createLeadBackend(newLead); } catch (e) {}
+    try { createLeadBackend(newLead); } catch (e) {}
     return newLead;
   };
 
   const convertLeadToCustomer = (leadId) => {
-    const lead = leads.find(l => l.id === leadId);
+    const lead = rawLeads.find(l => l.id === leadId);
     if (!lead) return;
 
-    setLeads(prev => prev.map(l => l.id === leadId ? { ...l, leadStatus: 'CONVERTED' } : l));
-
-    // Create Customer
     addCustomer({
       name: lead.customerName,
       phone: lead.phone,
       email: lead.email,
-      city: lead.city,
-      assignedAdvisorName: lead.assignedStaff,
-      occupation: lead.productInterest,
-      status: 'Active',
-      familyMembers: []
+      city: lead.city || 'Chennai',
+      assignedStaffId: lead.assignedStaffId,
+      assignedStaffName: lead.assignedStaffName,
+      assignedAdvisorName: lead.assignedStaffName || lead.assignedStaff
     });
 
-    addAuditLog({
-      userName: lead.assignedStaff || 'Staff Advisor',
-      userRole: 'STAFF',
-      action: 'CONVERT_LEAD',
-      module: 'Leads',
-      affectedRecord: lead.customerName,
-      details: 'Converted lead into active customer profile'
-    });
+    setLeads(prev => prev.map(l => l.id === leadId ? { ...l, leadStatus: 'CONVERTED' } : l));
   };
 
-  const addFollowup = (followupData) => {
-    const id = followupData.id || `FLW-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-    const newFlw = { ...followupData, id };
+  const addFollowup = (flwData) => {
+    const id = flwData.id || `FLW-SK-${Math.floor(1000 + Math.random() * 9000)}`;
+    const assignedStaffId = flwData.assignedStaffId || flwData.staffId || user?.uid || 'UID-STF-1003';
+    const assignedStaffName = flwData.assignedStaffName || flwData.assignedTo || user?.name || 'Priya Sharma';
+
+    const newFlw = {
+      ...flwData,
+      id,
+      assignedStaffId,
+      assignedStaffName,
+      assignedTo: assignedStaffName,
+      createdBy: user?.name || 'Staff Advisor',
+      status: 'PENDING'
+    };
+
     setFollowups(prev => [newFlw, ...prev]);
-    addAuditLog({
-      userName: followupData.assignedTo || 'Staff Advisor',
-      userRole: 'STAFF',
-      action: 'ADD_FOLLOWUP',
-      module: 'Followups',
-      affectedRecord: followupData.clientName || followupData.customerName,
-      details: `Recorded followup stage: ${followupData.stageName || 'Interaction'}`
-    });
     return newFlw;
   };
 
-  const addTask = async (taskData) => {
-    const id = taskData.id || `TSK-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-    const newTask = { ...taskData, id, status: taskData.status || 'PENDING' };
+  const addTask = (taskData) => {
+    const id = taskData.id || `TSK-SK-${Math.floor(1000 + Math.random() * 9000)}`;
+    const assignedStaffId = taskData.assignedStaffId || taskData.staffId || user?.uid || 'UID-STF-1003';
+    const assignedStaffName = taskData.assignedStaffName || taskData.assignedStaff || user?.name || 'Priya Sharma';
+
+    const newTask = {
+      ...taskData,
+      id,
+      assignedStaffId,
+      assignedStaffName,
+      assignedStaff: assignedStaffName,
+      status: 'PENDING'
+    };
+
     setTasks(prev => [newTask, ...prev]);
-    try { await createTaskBackend(newTask); } catch (e) {}
-    addAuditLog({
-      userName: taskData.assignedStaff || 'Staff Advisor',
-      userRole: 'STAFF',
-      action: 'CREATE_TASK',
-      module: 'Tasks',
-      affectedRecord: newTask.title,
-      details: `Assigned new task due ${newTask.dueDate}`
-    });
+    try { createTaskBackend(newTask); } catch (e) {}
     return newTask;
   };
 
-  const updateTaskStatus = (id, status) => {
-    setTasks(prev => prev.map(t => t.id === id ? { ...t, status } : t));
+  const updateTaskStatus = (id, newStatus) => {
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, status: newStatus } : t));
   };
 
-  const addIncome = async (incData) => {
-    const id = incData.id || `INC-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+  const addIncome = (incData) => {
+    const id = incData.id || `INC-SK-${Math.floor(1000 + Math.random() * 9000)}`;
     const newInc = { ...incData, id, date: incData.date || new Date().toISOString().split('T')[0] };
     setIncome(prev => [newInc, ...prev]);
-    try { await createIncomeBackend(newInc); } catch (e) {}
+    try { createIncomeBackend(newInc); } catch (e) {}
     return newInc;
   };
 
-  const addExpense = async (expData) => {
-    const id = expData.id || `EXP-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+  const addExpense = (expData) => {
+    const id = expData.id || `EXP-SK-${Math.floor(1000 + Math.random() * 9000)}`;
     const newExp = { ...expData, id, date: expData.date || new Date().toISOString().split('T')[0] };
     setExpenses(prev => [newExp, ...prev]);
-    try { await createExpenseBackend(newExp); } catch (e) {}
+    try { createExpenseBackend(newExp); } catch (e) {}
     return newExp;
   };
 
-  // Dynamic aggregation for Customer 360: Matches by name, ID, phone, or email
   const getCustomerAggregatedDetails = (customerOrName) => {
     if (!customerOrName) return null;
 
@@ -706,18 +883,24 @@ export const DataProvider = ({ children }) => {
       searchName = customerOrName.trim();
     }
 
-    // Try to find the master customer in `customers` dataset by ID or Name
-    const masterCustomer = customers.find(c => 
+    const masterCustomer = rawCustomers.find(c => 
       (searchId && (c.id?.toLowerCase().trim() === searchId.toLowerCase().trim() || c.customerCode?.toLowerCase().trim() === searchId.toLowerCase().trim())) ||
       (searchName && c.name?.toLowerCase().trim() === searchName.toLowerCase().trim())
     );
+
+    // Security check: Verify active user has permission to open this customer 360 profile
+    if (masterCustomer && !canAccessCustomer(user, masterCustomer)) {
+      return {
+        accessDenied: true,
+        message: 'Unauthorized Access: You do not have authorization to view this customer portfolio.'
+      };
+    }
 
     const effectiveName = masterCustomer?.name || searchName;
     const effectiveCode = masterCustomer?.customerCode || masterCustomer?.id || searchId;
 
     const matchingName = (n) => n && effectiveName && n.toLowerCase().trim() === effectiveName.toLowerCase().trim();
     
-    // Prioritize matching by unique customerCode / customerId over string name comparison
     const matchingRecord = (rec) => {
       if (!rec) return false;
       const recCode = rec.customerCode || rec.customerId || rec.customer_id;
@@ -727,15 +910,13 @@ export const DataProvider = ({ children }) => {
       return matchingName(rec.customerName || rec.clientName || rec.name);
     };
 
-    // Aggregate matching records from all datasets
-    const userPolicies = policies.filter(matchingRecord);
-    const userInvestments = investments.filter(matchingRecord);
-    const userClaims = claims.filter(matchingRecord);
-    const userFollowups = followups.filter(matchingRecord);
-    const userTasks = tasks.filter(matchingRecord);
-    const userLeads = leads.filter(matchingRecord);
+    const userPolicies = rawPolicies.filter(matchingRecord);
+    const userInvestments = rawInvestments.filter(matchingRecord);
+    const userClaims = rawClaims.filter(matchingRecord);
+    const userFollowups = rawFollowups.filter(matchingRecord);
+    const userTasks = rawTasks.filter(matchingRecord);
+    const userLeads = rawLeads.filter(matchingRecord);
 
-    // Consolidate policy renewals
     const userRenewals = userPolicies.map(p => ({
       id: `RNW-${p.id}`,
       policyNo: p.id,
@@ -744,7 +925,7 @@ export const DataProvider = ({ children }) => {
       type: p.type,
       premiumAmount: p.grossPremium,
       dueDate: p.expiryDate,
-      assignedStaff: p.assignedStaff,
+      assignedStaff: p.assignedStaffName || p.assignedStaff,
       status: new Date(p.expiryDate) < new Date() ? 'EXPIRED' : 'DUE_SOON'
     }));
 
@@ -756,7 +937,7 @@ export const DataProvider = ({ children }) => {
       email: userLeads[0]?.email || `${effectiveName.toLowerCase().replace(/\s+/g, '')}@example.com`,
       gender: 'Male',
       city: userLeads[0]?.city || 'Chennai',
-      assignedAdvisorName: userPolicies[0]?.assignedStaff || userLeads[0]?.assignedStaff || 'Priya Sharma',
+      assignedAdvisorName: userPolicies[0]?.assignedStaffName || userPolicies[0]?.assignedStaff || 'Priya Sharma',
       status: 'Active',
       familyMembers: []
     };
@@ -776,8 +957,8 @@ export const DataProvider = ({ children }) => {
   const addAuditLog = (logData) => {
     const newLog = {
       id: `LOG-${Math.floor(1000 + Math.random() * 9000)}`,
-      userName: logData.userName || 'System User',
-      userRole: logData.userRole || 'STAFF',
+      userName: logData.userName || user?.name || 'System User',
+      userRole: logData.userRole || user?.role || 'STAFF',
       action: logData.action || 'MUTATION',
       module: logData.module || 'General',
       affectedRecord: logData.affectedRecord || '-',
@@ -800,6 +981,11 @@ export const DataProvider = ({ children }) => {
       income,
       expenses,
       auditLogs,
+      rawCustomers,
+      rawPolicies,
+      rawInvestments,
+      rawClaims,
+      rawLeads,
       addCustomer,
       updateCustomer,
       deleteCustomer,

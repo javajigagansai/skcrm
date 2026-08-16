@@ -134,6 +134,12 @@ export const Customers = () => {
       return;
     }
 
+    const matchedStaff = staffList.find(s => s.name === newCustomer.assignedAdvisorName || s.uid === newCustomer.assignedStaffId);
+    const assignedStaffId = matchedStaff?.uid || newCustomer.assignedStaffId || user?.uid || 'UID-STF-1003';
+    const assignedStaffName = matchedStaff?.name || newCustomer.assignedAdvisorName || user?.name || 'Priya Sharma';
+    const assignedStaffEmail = matchedStaff?.email || 'priya.sharma@sk-smart-investments.com';
+    const branchId = matchedStaff?.branch || 'BR-KNM-001';
+
     const createdObj = {
       date: new Date().toISOString().split('T')[0],
       clientCategory: newCustomer.clientCategory || '',
@@ -150,7 +156,11 @@ export const Customers = () => {
       maritalStatus: newCustomer.maritalStatus || '',
       anniversaryDate: newCustomer.anniversaryDate || '',
       city: newCustomer.city || '',
-      assignedAdvisorName: newCustomer.assignedAdvisorName || user?.name || 'Priya Sharma',
+      assignedStaffId,
+      assignedStaffName,
+      assignedAdvisorName: assignedStaffName,
+      assignedStaffEmail,
+      branchId,
       status: 'Active',
       familyMembers: newCustomer.familyMembers || [],
       activePortfolios: []
@@ -158,7 +168,7 @@ export const Customers = () => {
 
     await addCustomer(createdObj);
     setShowAddModal(false);
-    alert(`Customer "${createdObj.name}" created and saved to database!`);
+    alert(`Customer "${createdObj.name}" created and assigned to ${assignedStaffName}!`);
   };
 
   const handleDeleteCustomer = async () => {
@@ -232,14 +242,32 @@ export const Customers = () => {
     e.preventDefault();
     if (!editCustomerData) return;
 
-    updateCustomer(editCustomerData);
+    // --- Permanent Staff Reassignment Fix ---
+    // Always resolve the UID from staffList so assignedStaffId is updated, not just the name.
+    const resolvedSt = staffList.find(
+      s => s.uid === editCustomerData.assignedStaffId ||
+           s.name === editCustomerData.assignedStaffName ||
+           s.name === editCustomerData.assignedAdvisorName
+    );
+    const finalStaffId   = resolvedSt?.uid  || editCustomerData.assignedStaffId  || '';
+    const finalStaffName = resolvedSt?.name || editCustomerData.assignedStaffName || editCustomerData.assignedAdvisorName || '';
 
-    if (selectedCustomer && selectedCustomer.id === editCustomerData.id) {
-      setSelectedCustomer(editCustomerData);
+    const finalData = {
+      ...editCustomerData,
+      assignedStaffId:     finalStaffId,
+      assignedStaffName:   finalStaffName,
+      assignedAdvisorName: finalStaffName,
+      updatedAt: new Date().toISOString()
+    };
+
+    updateCustomer(finalData);
+
+    if (selectedCustomer && selectedCustomer.id === finalData.id) {
+      setSelectedCustomer(finalData);
     }
     setShowEditModal(false);
     setEditCustomerData(null);
-    alert(`Customer 360 profile (${editCustomerData.customerCode || editCustomerData.id}) updated successfully across CRM!`);
+    alert(`Customer profile (${finalData.customerCode || finalData.id}) updated and assigned to ${finalStaffName || 'staff'} successfully!`);
   };
 
   const isStaffAdvisor = user?.role === 'EMPLOYEE' || user?.role === 'USER' || user?.role === 'STAFF';
@@ -1736,13 +1764,22 @@ export const Customers = () => {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-[11px] font-black uppercase text-purple-800 mb-1">Present Handling Staff Officer</label>
+                    {/* PERMANENT FIX: onChange writes both UID + name so data isolation works correctly */}
                     <select 
-                      value={editCustomerData.assignedAdvisorName || 'Priya Sharma'}
-                      onChange={(e) => setEditCustomerData({...editCustomerData, assignedAdvisorName: e.target.value})}
+                      value={editCustomerData.assignedStaffId || editCustomerData.assignedAdvisorName || 'Priya Sharma'}
+                      onChange={(e) => {
+                        const selectedSt = staffList.find(s => s.uid === e.target.value || s.name === e.target.value);
+                        setEditCustomerData({
+                          ...editCustomerData,
+                          assignedStaffId:     selectedSt?.uid  || editCustomerData.assignedStaffId,
+                          assignedStaffName:   selectedSt?.name || e.target.value,
+                          assignedAdvisorName: selectedSt?.name || e.target.value
+                        });
+                      }}
                       className="w-full px-3 py-2 rounded-xl border border-purple-200 text-xs font-extrabold bg-white text-purple-900 outline-none focus:ring-2 focus:ring-purple-600 cursor-pointer"
                     >
                       {staffList.map((st, idx) => (
-                        <option key={idx} value={st.name}>{st.name} ({st.role || 'Staff'})</option>
+                        <option key={st.uid || idx} value={st.uid || st.name}>{st.name} ({st.role || 'Staff'})</option>
                       ))}
                     </select>
                   </div>

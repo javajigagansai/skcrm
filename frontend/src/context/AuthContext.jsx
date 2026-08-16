@@ -96,11 +96,21 @@ export const AuthProvider = ({ children }) => {
         }
       } catch (e) {}
 
+      // Helper to generate a deterministic stable UID from email if missing
+      const getStableUid = (staffObj) => {
+        if (staffObj.uid) return staffObj.uid;
+        const e = (staffObj.email || '').toLowerCase().trim();
+        if (e === 'admin@sk-smart-investments.com') return 'UID-STF-1001';
+        if (e === 'manager@sk-smart-investments.com') return 'UID-STF-1002';
+        if (e === 'priya.sharma@sk-smart-investments.com') return 'UID-STF-1003';
+        return 'UID-STF-' + e.replace(/[^a-z0-9]/g, '-');
+      };
+
       // If staff account exists in system list
       if (matchedStaff) {
         if (!matchedStaff.password || matchedStaff.password === password || password === 'Password@123') {
           const activeUser = {
-            uid: matchedStaff.uid || 'USR-STF-' + Date.now(),
+            uid: getStableUid(matchedStaff),
             email: matchedStaff.email,
             name: matchedStaff.name,
             role: matchedStaff.role || 'EMPLOYEE',
@@ -109,6 +119,7 @@ export const AuthProvider = ({ children }) => {
           };
           setUser(activeUser);
           localStorage.setItem('crm_v2_active_user', JSON.stringify(activeUser));
+          window.dispatchEvent(new CustomEvent('auth_user_changed', { detail: activeUser }));
           return activeUser;
         }
       }
@@ -119,11 +130,12 @@ export const AuthProvider = ({ children }) => {
         const activeUser = await fetchFirestoreUserProfile(userCred.user);
         setUser(activeUser);
         localStorage.setItem('crm_v2_active_user', JSON.stringify(activeUser));
+        window.dispatchEvent(new CustomEvent('auth_user_changed', { detail: activeUser }));
         return activeUser;
       } catch (firebaseErr) {
         if (matchedStaff) {
           const activeUser = {
-            uid: matchedStaff.uid || 'USR-STF-' + Date.now(),
+            uid: getStableUid(matchedStaff),
             email: matchedStaff.email,
             name: matchedStaff.name,
             role: matchedStaff.role || 'EMPLOYEE',
@@ -132,6 +144,7 @@ export const AuthProvider = ({ children }) => {
           };
           setUser(activeUser);
           localStorage.setItem('crm_v2_active_user', JSON.stringify(activeUser));
+          window.dispatchEvent(new CustomEvent('auth_user_changed', { detail: activeUser }));
           return activeUser;
         }
         throw firebaseErr;
@@ -143,8 +156,12 @@ export const AuthProvider = ({ children }) => {
                      formattedEmail.includes('manager') ? 'MANAGER' :
                      formattedEmail.includes('wishes') ? 'GREETINGS_OFFICER' : 'EMPLOYEE';
         
+        const fallbackUid = formattedEmail.includes('admin') ? 'UID-STF-1001' :
+                            formattedEmail.includes('manager') ? 'UID-STF-1002' :
+                            formattedEmail.includes('priya') ? 'UID-STF-1003' : 'UID-STF-' + formattedEmail.replace(/[^a-z0-9]/g, '-');
+
         const fallbackUser = {
-          uid: 'USR-LOCAL-' + Date.now(),
+          uid: fallbackUid,
           email: formattedEmail || 'admin@sk-smart-investments.com',
           name: (formattedEmail.split('@')[0] || 'User').toUpperCase(),
           role: role,
@@ -153,6 +170,7 @@ export const AuthProvider = ({ children }) => {
         };
         setUser(fallbackUser);
         localStorage.setItem('crm_v2_active_user', JSON.stringify(fallbackUser));
+        window.dispatchEvent(new CustomEvent('auth_user_changed', { detail: fallbackUser }));
         return fallbackUser;
       }
 
@@ -173,8 +191,20 @@ export const AuthProvider = ({ children }) => {
     try {
       await firebaseSignOut(auth).catch(() => {});
     } finally {
+      // Purge all role-sensitive session caches on logout to eliminate cross-session data leaks
       localStorage.removeItem('crm_v2_active_user');
+      localStorage.removeItem('crm_v2_customers');
+      localStorage.removeItem('crm_v2_policies');
+      localStorage.removeItem('crm_v2_investments');
+      localStorage.removeItem('crm_v2_claims');
+      localStorage.removeItem('crm_v2_leads');
+      localStorage.removeItem('crm_v2_followups');
+      localStorage.removeItem('crm_v2_tasks');
+      localStorage.removeItem('crm_v2_income');
+      localStorage.removeItem('crm_v2_expenses');
+
       setUser(null);
+      window.dispatchEvent(new CustomEvent('auth_user_logged_out'));
     }
   };
 

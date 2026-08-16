@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
-  X, UserCheck, Users, ShieldCheck, Award, Sparkles, IndianRupee, 
+  X, UserCheck, Users, ShieldCheck, ShieldAlert, Award, Sparkles, IndianRupee, 
   FileText, Heart, Phone, Mail, MapPin, CreditCard, ChevronRight, 
   Edit3, Download, Plus, CheckCircle2, Trash2
 } from 'lucide-react';
@@ -12,8 +12,37 @@ const Customer360Context = createContext();
 
 export const initialMockCustomersList = [];
 
+/** Load staff list from localStorage (kept in sync by StaffManagement) */
+const loadStaffListFromStorage = () => {
+  try {
+    const saved = localStorage.getItem('crm_v2_users_list');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (e) {}
+  return [
+    { uid: 'UID-STF-1003', name: 'Priya Sharma', role: 'EMPLOYEE' },
+    { uid: 'UID-STF-1004', name: 'Rahul Dravid', role: 'EMPLOYEE' },
+    { uid: 'UID-STF-1005', name: 'Kavita Menon', role: 'EMPLOYEE' }
+  ];
+};
+
 export const Customer360Provider = ({ children }) => {
   const { getCustomerAggregatedDetails, updateCustomer, deleteCustomer } = useData();
+
+  // Staff list — required so the edit modal can write the UID, not just the name
+  const [staffList360, setStaffList360] = useState(loadStaffListFromStorage);
+
+  useEffect(() => {
+    const sync = () => setStaffList360(loadStaffListFromStorage());
+    window.addEventListener('storage_users_updated', sync);
+    window.addEventListener('storage', sync);
+    return () => {
+      window.removeEventListener('storage_users_updated', sync);
+      window.removeEventListener('storage', sync);
+    };
+  }, []);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [active360Tab, setActive360Tab] = useState('OVERVIEW');
   const [showEditModal, setShowEditModal] = useState(false);
@@ -39,28 +68,60 @@ export const Customer360Provider = ({ children }) => {
 
   const closeCustomer360 = () => {
     setSelectedCustomer(null);
+    setShowEditModal(false);
+    setShowAddFamilyModal(false);
   };
 
   const handleSaveEditCustomer = async (e) => {
     e.preventDefault();
-    if (!editCustomerData) return;
+    if (!editCustomerData || !selectedCustomer) return;
+
+    // --- Permanent Staff Reassignment Fix ---
+    // Ensure assignedStaffId is ALWAYS resolved from the staffList before saving.
+    // This prevents stale UID from lingering when only the name was changed.
+    const resolvedStaff = staffList360.find(
+      s => s.uid === editCustomerData.assignedStaffId || s.name === editCustomerData.assignedStaffName || s.name === editCustomerData.assignedAdvisorName
+    );
+    const finalAssignedStaffId   = resolvedStaff?.uid  || editCustomerData.assignedStaffId  || selectedCustomer.assignedStaffId;
+    const finalAssignedStaffName = resolvedStaff?.name || editCustomerData.assignedStaffName || editCustomerData.assignedAdvisorName || selectedCustomer.assignedStaffName;
+
+    const finalData = {
+      ...editCustomerData,
+      assignedStaffId:   finalAssignedStaffId,
+      assignedStaffName: finalAssignedStaffName,
+      assignedAdvisorName: finalAssignedStaffName,
+      updatedAt: new Date().toISOString()
+    };
+
+    // Detect reassignment event for audit trail
+    const wasReassigned = finalAssignedStaffId !== selectedCustomer.assignedStaffId;
 
     if (typeof updateCustomer === 'function') {
-      updateCustomer(editCustomerData);
+      // Pass reassignment flag so DataContext can log it
+      updateCustomer(finalData, wasReassigned ? {
+        previousStaffId: selectedCustomer.assignedStaffId,
+        previousStaffName: selectedCustomer.assignedStaffName,
+        newStaffId: finalAssignedStaffId,
+        newStaffName: finalAssignedStaffName
+      } : null);
     }
 
     try {
-      await updateCustomerBackend(editCustomerData.id || editCustomerData.customerCode, editCustomerData);
+      await updateCustomerBackend(finalData.id || finalData.customerCode, finalData);
     } catch (err) {}
 
     setSelectedCustomer(prev => ({
       ...prev,
-      ...editCustomerData
+      ...finalData
     }));
 
     setShowEditModal(false);
     setEditCustomerData(null);
-    alert(`Customer 360 profile (${editCustomerData.customerCode || editCustomerData.name}) updated successfully across CRM!`);
+
+    const msg = wasReassigned
+      ? `Customer reassigned from "${selectedCustomer.assignedStaffName}" → "${finalAssignedStaffName}" successfully!`
+      : `Customer 360 profile (${finalData.customerCode || finalData.name}) updated successfully across CRM!`;
+    alert(msg);
   };
 
   const handleAddFamilyMember = (e) => {
@@ -121,7 +182,24 @@ export const Customer360Provider = ({ children }) => {
       {/* GLOBAL CUSTOMER 360 MODAL */}
       {selectedCustomer && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white max-w-5xl w-full rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-8 animate-fadeIn">
+          {selectedCustomer.accessDenied ? (
+            <div className="bg-white max-w-md w-full rounded-3xl shadow-2xl border border-slate-200 p-8 text-center space-y-4 animate-fadeIn my-8">
+              <div className="w-16 h-16 rounded-3xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto shadow-inner border border-rose-200">
+                <ShieldAlert className="h-8 w-8" />
+              </div>
+              <h3 className="text-xl font-black text-slate-900">Access Restricted</h3>
+              <p className="text-xs text-slate-600 font-semibold leading-relaxed">
+                {selectedCustomer.message || 'You do not have authorization to view this customer portfolio.'}
+              </p>
+              <button
+                onClick={closeCustomer360}
+                className="w-full py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs transition cursor-pointer shadow-md"
+              >
+                Close Profile
+              </button>
+            </div>
+          ) : (
+            <div className="bg-white max-w-5xl w-full rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-8 animate-fadeIn">
             
             {/* Modal Header */}
             <div className="p-6 bg-gradient-to-r from-slate-900 via-[#1E6091] to-slate-900 text-white flex items-start justify-between">
@@ -742,9 +820,9 @@ export const Customer360Provider = ({ children }) => {
                   <span>Delete Customer</span>
                 </button>
               </div>
+              </div>
             </div>
-
-          </div>
+          )}
         </div>
       )}
 
@@ -986,13 +1064,27 @@ export const Customer360Provider = ({ children }) => {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-[11px] font-black uppercase text-purple-800 mb-1">Present Handling Staff Officer</label>
-                    <input 
-                      type="text"
-                      placeholder="Type staff advisor name..."
-                      value={editCustomerData.assignedAdvisorName || ''}
-                      onChange={(e) => setEditCustomerData({...editCustomerData, assignedAdvisorName: e.target.value})}
-                      className="w-full px-3 py-2 rounded-xl border border-purple-200 text-xs font-extrabold bg-white text-purple-900 outline-none focus:ring-2 focus:ring-purple-600"
-                    />
+                    {/* PERMANENT FIX: select by uid so assignedStaffId is atomically updated */}
+                    <select
+                      value={editCustomerData.assignedStaffId || ''}
+                      onChange={(e) => {
+                        const selectedSt = staffList360.find(s => s.uid === e.target.value);
+                        setEditCustomerData({
+                          ...editCustomerData,
+                          assignedStaffId:   selectedSt?.uid  || e.target.value,
+                          assignedStaffName: selectedSt?.name || editCustomerData.assignedStaffName,
+                          assignedAdvisorName: selectedSt?.name || editCustomerData.assignedAdvisorName
+                        });
+                      }}
+                      className="w-full px-3 py-2 rounded-xl border border-purple-200 text-xs font-extrabold bg-white text-purple-900 outline-none focus:ring-2 focus:ring-purple-600 cursor-pointer"
+                    >
+                      <option value="">-- Select Staff Officer --</option>
+                      {staffList360.map((st, idx) => (
+                        <option key={st.uid || idx} value={st.uid || st.name}>
+                          {st.name} ({st.role || 'Staff'})
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Insurance Type</label>

@@ -1,8 +1,105 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isSuperAdmin() {
+      return isAuthenticated() && 
+        (getUserData().role == 'SUPER_ADMIN' || getUserData().role == 'ADMIN');
+    }
+
+    function isManager() {
+      return isAuthenticated() && 
+        (getUserData().role == 'MANAGER' || getUserData().role == 'BRANCH_MANAGER');
+    }
+
+    function isStaffOwner(resourceData) {
+      return isAuthenticated() && 
+        (resourceData.assignedStaffId == request.auth.uid || 
+         resourceData.staffId == request.auth.uid);
+    }
+
+    function isBranchMatch(resourceData) {
+      return isAuthenticated() && 
+        (resourceData.branchId == getUserData().branchId || 
+         resourceData.branch == getUserData().branch);
+    }
+
+    // Collection Security Rules
+
+    // Users Collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isSuperAdmin() || request.auth.uid == userId;
+    }
+
+    // Customers Collection
+    match /customers/{customerId} {
+      allow read: if isSuperAdmin() || isManager() || isStaffOwner(resource.data);
+      allow create: if isAuthenticated();
+      allow update: if isSuperAdmin() || (isManager() && isBranchMatch(resource.data)) || isStaffOwner(resource.data);
+      allow delete: if isSuperAdmin();
+    }
+
+    // Policies Collection
+    match /policies/{policyId} {
+      allow read: if isSuperAdmin() || isManager() || isStaffOwner(resource.data);
+      allow create: if isAuthenticated();
+      allow update: if isSuperAdmin() || (isManager() && isBranchMatch(resource.data)) || isStaffOwner(resource.data);
+      allow delete: if isSuperAdmin();
+    }
+
+    // Investments Collection
+    match /investments/{investmentId} {
+      allow read: if isSuperAdmin() || isManager() || isStaffOwner(resource.data);
+      allow create: if isAuthenticated();
+      allow update: if isSuperAdmin() || (isManager() && isBranchMatch(resource.data)) || isStaffOwner(resource.data);
+      allow delete: if isSuperAdmin();
+    }
+
+    // Claims Collection
+    match /claims/{claimId} {
+      allow read: if isSuperAdmin() || isManager() || isStaffOwner(resource.data);
+      allow create: if isAuthenticated();
+      allow update: if isSuperAdmin() || isManager() || isStaffOwner(resource.data);
+      allow delete: if isSuperAdmin();
+    }
+
+    // Leads Collection
+    match /leads/{leadId} {
+      allow read: if isSuperAdmin() || isManager() || isStaffOwner(resource.data);
+      allow create: if isAuthenticated();
+      allow update: if isSuperAdmin() || (isManager() && isBranchMatch(resource.data)) || isStaffOwner(resource.data);
+      allow delete: if isSuperAdmin();
+    }
+
+    // Tasks & Notifications
+    match /tasks/{taskId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /notifications/{notifId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Audit Logs
+    match /audit_logs/{logId} {
+      allow read: if isSuperAdmin() || isManager();
+      allow create: if isAuthenticated();
+      allow update, delete: if isSuperAdmin();
+    }
+
+    // Fallback rule for any other collection
     match /{document=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if isAuthenticated();
     }
   }
 }
