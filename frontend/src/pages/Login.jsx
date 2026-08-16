@@ -50,12 +50,8 @@ export const Login = () => {
         </svg>
       </div>
 
-      {/* Large Watermark Text Background */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0">
-        <span className="text-[14rem] font-black text-slate-900/30 tracking-widest uppercase blur-xs">
-          SK SMART
-        </span>
-      </div>
+
+
 
       {/* Main Login Center Card (White Background) */}
       <div className="w-full max-w-sm sm:max-w-md bg-white/95 backdrop-blur-md rounded-[28px] border border-slate-100 shadow-2xl p-7 sm:p-9 space-y-6 relative z-10 text-slate-900">

@@ -418,17 +418,71 @@ export const DataProvider = ({ children }) => {
   const expenses = useMemo(() => (user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER' ? rawExpenses : []), [user, rawExpenses]);
   const auditLogs = useMemo(() => filterScopedRecords(user, rawAuditLogs), [user, rawAuditLogs]);
 
-  // Sync state changes to LocalStorage
-  useEffect(() => { localStorage.setItem('crm_v2_audit_logs', JSON.stringify(rawAuditLogs)); }, [rawAuditLogs]);
-  useEffect(() => { localStorage.setItem('crm_v2_customers', JSON.stringify(rawCustomers)); }, [rawCustomers]);
-  useEffect(() => { localStorage.setItem('crm_v2_policies', JSON.stringify(rawPolicies)); }, [rawPolicies]);
+  // Sync state changes to LocalStorage + broadcast update event so other open sessions update
+  useEffect(() => { localStorage.setItem('crm_v2_audit_logs',   JSON.stringify(rawAuditLogs));   }, [rawAuditLogs]);
+  useEffect(() => {
+    localStorage.setItem('crm_v2_customers', JSON.stringify(rawCustomers));
+    window.dispatchEvent(new CustomEvent('crm_data_updated', { detail: { key: 'crm_v2_customers' } }));
+  }, [rawCustomers]);
+  useEffect(() => {
+    localStorage.setItem('crm_v2_policies', JSON.stringify(rawPolicies));
+    window.dispatchEvent(new CustomEvent('crm_data_updated', { detail: { key: 'crm_v2_policies' } }));
+  }, [rawPolicies]);
   useEffect(() => { localStorage.setItem('crm_v2_investments', JSON.stringify(rawInvestments)); }, [rawInvestments]);
-  useEffect(() => { localStorage.setItem('crm_v2_claims', JSON.stringify(rawClaims)); }, [rawClaims]);
-  useEffect(() => { localStorage.setItem('crm_v2_leads', JSON.stringify(rawLeads)); }, [rawLeads]);
-  useEffect(() => { localStorage.setItem('crm_v2_followups', JSON.stringify(rawFollowups)); }, [rawFollowups]);
-  useEffect(() => { localStorage.setItem('crm_v2_tasks', JSON.stringify(rawTasks)); }, [rawTasks]);
-  useEffect(() => { localStorage.setItem('crm_v2_income', JSON.stringify(rawIncome)); }, [rawIncome]);
+  useEffect(() => { localStorage.setItem('crm_v2_claims',      JSON.stringify(rawClaims));      }, [rawClaims]);
+  useEffect(() => { localStorage.setItem('crm_v2_leads',       JSON.stringify(rawLeads));       }, [rawLeads]);
+  useEffect(() => { localStorage.setItem('crm_v2_followups',   JSON.stringify(rawFollowups));   }, [rawFollowups]);
+  useEffect(() => {
+    localStorage.setItem('crm_v2_tasks', JSON.stringify(rawTasks));
+    window.dispatchEvent(new CustomEvent('crm_data_updated', { detail: { key: 'crm_v2_tasks' } }));
+  }, [rawTasks]);
+  useEffect(() => { localStorage.setItem('crm_v2_income',   JSON.stringify(rawIncome));   }, [rawIncome]);
   useEffect(() => { localStorage.setItem('crm_v2_expenses', JSON.stringify(rawExpenses)); }, [rawExpenses]);
+
+  // Real-time cross-session sync:
+  // When another session (e.g. admin tab) writes to localStorage, the native 'storage'
+  // event fires in THIS session (e.g. staff tab). Reload the changed collection so
+  // the staff's dashboard and Customer 360 update immediately without a page refresh.
+  useEffect(() => {
+    const reloadFromStorage = (key, setter) => {
+      try {
+        const val = localStorage.getItem(key);
+        if (val) {
+          const parsed = JSON.parse(val);
+          if (Array.isArray(parsed)) setter(parsed);
+        }
+      } catch (e) {}
+    };
+
+    // Native storage event fires across browser tabs (different-tab updates)
+    const handleStorageEvent = (e) => {
+      if (e.key === 'crm_v2_customers')  reloadFromStorage('crm_v2_customers',  setCustomers);
+      if (e.key === 'crm_v2_policies')   reloadFromStorage('crm_v2_policies',   setPolicies);
+      if (e.key === 'crm_v2_tasks')      reloadFromStorage('crm_v2_tasks',      setTasks);
+      if (e.key === 'crm_v2_leads')      reloadFromStorage('crm_v2_leads',      setLeads);
+      if (e.key === 'crm_v2_followups')  reloadFromStorage('crm_v2_followups',  setFollowups);
+      if (e.key === 'crm_v2_investments')reloadFromStorage('crm_v2_investments',setInvestments);
+      if (e.key === 'crm_v2_claims')     reloadFromStorage('crm_v2_claims',     setClaims);
+    };
+
+    // crm_data_updated fires within the same tab when WE write (storage event doesn't)
+    // This covers the case where admin assigns while staff is on the same browser session
+    const handleCrmUpdate = (e) => {
+      const key = e?.detail?.key;
+      if (key === 'crm_v2_customers')  reloadFromStorage('crm_v2_customers',  setCustomers);
+      if (key === 'crm_v2_policies')   reloadFromStorage('crm_v2_policies',   setPolicies);
+      if (key === 'crm_v2_tasks')      reloadFromStorage('crm_v2_tasks',      setTasks);
+    };
+
+    window.addEventListener('storage',          handleStorageEvent);
+    window.addEventListener('crm_data_updated', handleCrmUpdate);
+    return () => {
+      window.removeEventListener('storage',          handleStorageEvent);
+      window.removeEventListener('crm_data_updated', handleCrmUpdate);
+    };
+  }, []);
+
+
 
   // Async remote sync
   useEffect(() => {
