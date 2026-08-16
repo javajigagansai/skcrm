@@ -399,23 +399,12 @@ export const DataProvider = ({ children }) => {
     ];
   });
 
-  // Listen for auth user changed or logged out events to purge stale memory
-  useEffect(() => {
-    const handleAuthLogout = () => {
-      setCustomers(initialCustomersSeed);
-      setPolicies(initialPoliciesSeed);
-      setInvestments(initialInvestmentsSeed);
-      setClaims(initialClaimsSeed);
-      setLeads(initialLeadsSeed);
-      setFollowups(initialFollowupsSeed);
-      setTasks(initialTasksSeed);
-      setIncome([]);
-      setExpenses([]);
-    };
+  // NOTE: We intentionally do NOT reset business data (customers, policies, etc.) on logout.
+  // Data isolation is enforced by filterScopedRecords() inside each useMemo below.
+  // When `user` changes (login/logout), useMemo recomputes the scoped views automatically.
+  // Resetting to seed data on logout would permanently destroy real assignments.
 
-    window.addEventListener('auth_user_logged_out', handleAuthLogout);
-    return () => window.removeEventListener('auth_user_logged_out', handleAuthLogout);
-  }, []);
+
 
   // Dynamically scoped data views based on active user's authorized role & staff ID
   const customers = useMemo(() => filterScopedRecords(user, rawCustomers), [user, rawCustomers]);

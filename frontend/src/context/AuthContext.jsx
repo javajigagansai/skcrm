@@ -191,17 +191,11 @@ export const AuthProvider = ({ children }) => {
     try {
       await firebaseSignOut(auth).catch(() => {});
     } finally {
-      // Purge all role-sensitive session caches on logout to eliminate cross-session data leaks
+      // Only purge the ACTIVE USER SESSION token.
+      // Business data (customers, policies, etc.) must NOT be deleted here —
+      // it is the shared CRM database. Role-based visibility is handled by
+      // filterScopedRecords() inside DataContext's useMemo, not by wiping data.
       localStorage.removeItem('crm_v2_active_user');
-      localStorage.removeItem('crm_v2_customers');
-      localStorage.removeItem('crm_v2_policies');
-      localStorage.removeItem('crm_v2_investments');
-      localStorage.removeItem('crm_v2_claims');
-      localStorage.removeItem('crm_v2_leads');
-      localStorage.removeItem('crm_v2_followups');
-      localStorage.removeItem('crm_v2_tasks');
-      localStorage.removeItem('crm_v2_income');
-      localStorage.removeItem('crm_v2_expenses');
 
       setUser(null);
       window.dispatchEvent(new CustomEvent('auth_user_logged_out'));
