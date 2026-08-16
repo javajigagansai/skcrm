@@ -1,186 +1,266 @@
-# SK Smart Investments – Enterprise CRM Platform
+# 🏆 SK Smart Investments – Enterprise Financial & Insurance CRM v2
 
-> **Insurance and Investments Specialist**  
-> *Official Production Site:* [https://sk-crm-1.web.app](https://sk-crm-1.web.app)
+> **Comprehensive End-to-End Enterprise CRM & Wealth Management System**  
+> *Official Production Site:* [https://sk-crm-1.web.app](https://sk-crm-1.web.app)  
+> *Official GitHub Repository:* [https://github.com/javajigagansai/skcrm](https://github.com/javajigagansai/skcrm)
 
 ---
 
-## 🔑 Account Credentials
+## 📌 Executive Overview
 
-Use the following 3 official account credentials to test role-based permissions and access levels on [https://sk-crm-1.web.app](https://sk-crm-1.web.app):
+**SK Smart Investments CRM v2** is a state-of-the-art, enterprise-grade Customer Relationship Management (CRM) and Wealth Management platform engineered specifically for financial advisors, insurance brokerages, and wealth management firms. 
 
-| Role / Account Type | Email Address | Password | Access Level & Workspace Overview |
+The platform connects real-time database state across client onboarding, lead conversion pipelines, multi-line policy administration, mutual fund & fixed income portfolio tracking, automated policy renewal alerts, claim settlement SLA tracking, automated birthday/anniversary greeting engines, and confidential administrative financial ledgers.
+
+---
+
+## 🔑 Access Credentials & Official Logins
+
+Use the following official credentials to test role-based permissions and access levels live on [https://sk-crm-1.web.app](https://sk-crm-1.web.app):
+
+| Role / Account Type | Email Address | Password | Access Level & Workspace Scope |
 | :--- | :--- | :--- | :--- |
-| 👑 **Super Admin / Admin** | `admin@sk-smart-investments.com` | `Password@123` | **Full Unrestricted Access**: Executive Dashboard, User Management, Audit Logs, Customer 360, Claims, Reports, System Settings. |
-| 🏢 **Branch Manager** | `manager@sk-smart-investments.com` | `Password@123` | **Management Access**: Branch Analytics, Team Performance Leaderboards, Claims Approval, Follow-ups, Income/Expense Registers. |
-| 💼 **Staff Advisor (Employee)** | `priya.sharma@sk-smart-investments.com` | `Password@123` | **Scoped Operations**: Scoped view of assigned client portfolios (*Priya Sharma*), policy issuing, mutual fund SIPs, claims filing. |
+| 👑 **Super Admin / Executive** | `admin@sk-smart-investments.com` | `Password@123` | **Full Unrestricted Access**: Executive Real-time Dashboard, Company Financial Ledger, Payroll, User Management, Audit Logs, Customer 360°, Claims Approval, System Settings. |
+| 🏢 **Branch Manager** | `manager@sk-smart-investments.com` | `Password@123` | **Branch & Team Management**: Team Workload & Revenue Leaderboards, Claims Verification, Follow-ups, Income/Expense Registers, Branch Reports. |
+| 💼 **Staff Advisor (Employee)** | `priya.sharma@sk-smart-investments.com` | `Password@123` | **Scoped Operations**: Scoped view of assigned client portfolios (*Priya Sharma*), policy issuing, mutual fund SIPs, customer interaction logs, claims filing. |
+
+---
+
+## 🛠️ Architecture & Technology Stack
+
+The platform is architected with a decoupled frontend-backend model built for speed, real-time reactive UI updates, and enterprise security:
+
+```
+                  ┌─────────────────────────────────────────────────────────┐
+                  │                 Vite + React 18 Frontend                │
+                  │    Tailwind CSS • Lucide Icons • Recharts • jsPDF      │
+                  └───────────────────────────┬─────────────────────────────┘
+                                              │
+                                              ▼
+                  ┌─────────────────────────────────────────────────────────┐
+                  │                React Context API Layer                  │
+                  │ AuthContext • DataContext • Customer360Context • Notif  │
+                  └───────────────────────────┬─────────────────────────────┘
+                                              │
+                     ┌────────────────────────┴────────────────────────┐
+                     ▼                                                 ▼
+     ┌───────────────────────────────┐                 ┌───────────────────────────────┐
+     │ Firebase Cloud Firestore DB   │                 │ Node.js / Express Backend     │
+     │ Real-time collections & sync  │                 │ RESTful APIs • Audit Engine   │
+     └───────────────────────────────┘                 └───────────────────────────────┘
+```
+
+### Core Technologies:
+- **Frontend Framework**: React 18 with Vite build bundler
+- **Styling & UI Design**: Modern Vanilla CSS + Tailwind CSS, Glassmorphism, Responsive Grid System
+- **Icons & Visuals**: Lucide React Icon Suite
+- **Data Visualization**: Recharts (Dynamic Bar, Line, Area, and Pie/Donut Charts)
+- **Database & Authentication**: Firebase Authentication & Cloud Firestore Real-time Database
+- **Backend Runtime**: Node.js, Express.js REST API Architecture
+- **PDF Generation Engine**: jsPDF & html2canvas for instant client statement exports
 
 ---
 
 ## 👥 Master Role & Permissions Matrix
 
-| Feature | Admin | Manager | Staff |
+| Feature Module | Super Admin | Branch Manager | Staff Advisor |
 | :--- | :---: | :---: | :---: |
-| **Dashboard** | ✅ All | ✅ Team | ✅ Own |
-| **User Management** | ✅ Full | ⚠️ Limited | ❌ |
-| **Staff Management & 360°** | ✅ All | ✅ Team | ❌ |
-| **Customer Management** | ✅ All | ✅ Team | ✅ Assigned |
-| **Lead Management** | ✅ All | ✅ Team | ✅ Assigned |
-| **Policy Management** | ✅ All | ✅ Team | ✅ Assigned |
-| **Renewal Management** | ✅ All | ✅ Team | ✅ Assigned |
-| **Claims** | ✅ All | ✅ Team | ✅ Assigned |
-| **Commission** | ✅ All | ✅ Team | ✅ Own |
-| **Tasks** | ✅ All | ✅ Team | ✅ Own |
-| **Reports** | ✅ All | ✅ Team | ❌ Restricted |
-| **Insurer Management** | ✅ | ❌ | ❌ |
-| **Role & Permissions** | ✅ | ❌ | ❌ |
-| **System Settings** | ✅ | ❌ | ❌ |
-| **Special Days & Wishes** | ✅ All | ✅ Team | ❌ Restricted |
-| **Audit Logs** | ✅ All | ⚠️ Limited | ❌ |
+| **Executive Real-time Dashboard** | ✅ All Firm Metrics | ✅ Branch View | ✅ Assigned Metrics |
+| **Customer 360° Unified Drawer** | ✅ All Profiles | ✅ Team Profiles | ✅ Assigned Clients |
+| **Lead Pipeline Management** | ✅ Full Access | ✅ Team Leads | ✅ Assigned Leads |
+| **Insurance Policy Management** | ✅ Full Access | ✅ Branch Policies | ✅ Assigned Policies |
+| **Investment Portfolio & AUM** | ✅ Full Access | ✅ Branch AUM | ✅ Assigned Portfolios |
+| **Policy Renewals & Expiry** | ✅ Full Access | ✅ Team Renewals | ✅ Assigned Renewals |
+| **Claims Filing & Settlement** | ✅ Approve / Reject | ✅ Verify / Process | ✅ File New Claims |
+| **Staff Workload & Revenue Leaderboards** | ✅ Full View | ✅ Branch View | ✅ Visible |
+| **Confidential Financial Ledger** | ✅ Full Access | ⚠️ Income / Expense | ❌ Restricted |
+| **Special Days & Automated Greetings** | ✅ Full Engine | ✅ Team Greetings | ❌ Restricted |
+| **User & Staff Management** | ✅ Full Access | ⚠️ Staff View | ❌ Restricted |
+| **System Security & Audit Trail** | ✅ Complete Logs | ⚠️ Limited Audit | ❌ Restricted |
 
 ---
 
-## 📋 Comprehensive Feature Audit & Verification Checklist
+## 📌 Pin-to-Pin Feature Breakdown & Module Guide
 
-Every single feature listed below has been implemented, verified, and audited in the **SK Smart Investments CRM** codebase:
-
-### 1. Lead Management
-- [x] **Capture leads from website, calls, forms, referrals**: `Leads.jsx` multi-channel lead intake.
-- [x] **Lead assignment to agents**: `assignedStaff` allocation per lead.
-- [x] **Lead status tracking**: `NEW` ➔ `QUALIFIED` ➔ `QUOTATION_SENT` ➔ `CALLBACK_SCHEDULED` ➔ `CONVERTED`.
-- [x] **Follow-up reminders**: Scheduled callback alerts and notification drawer.
-- [x] **Lead conversion tracking**: 1-click `convertLeadToCustomer()` creating active customer profiles.
-
-### 2. Customer Management & Customer 360°
-- [x] **Customer profiles**: Master records in `Customers.jsx`.
-- [x] **Contact details**: Phone, Email, Address, City, DOB, PAN, Aadhaar UID.
-- [x] **Family/dependent information**: Custom relationship mapping (`relation: "Other" -> relationshipName: "Business Partner"`).
-- [x] **KYC/document storage**: KYC compliance status and document metadata storage.
-- [x] **Complete customer interaction history**: 0ms Customer 360° slide-over profile aggregating linked policies, claims, SIPs, follow-ups, and family.
-
-### 3. Policy Management
-- [x] **Create and manage policies**: `Policies.jsx` policy issuing.
-- [x] **Policy number and insurer details**: Multi-carrier support (Tata AIA Life, Star Health, Niva Bupa, HDFC ERGO, ICICI Lombard, LIC, etc.).
-- [x] **Policy type and coverage**: *LIFE*, *HEALTH*, *MOTOR*, *TRAVEL*, *PROPERTY*.
-- [x] **Premium amount**: Gross premium tracking in ₹.
-- [x] **Start & expiry dates**: Policy activation and renewal due dates.
-- [x] **Policy status**: `Active`, `Expiring Soon`, `Lapsed`.
-- [x] **Policy document management**: 1-click Policy Certificate PDF export.
-
-### 4. Renewal Management
-- [x] **Upcoming renewal dashboard**: `Renewals.jsx` dedicated renewal tracking desk.
-- [x] **Automatic renewal reminders**: Auto-categorization of policies into `DUE_SOON` and `EXPIRED`.
-- [x] **SMS/email/WhatsApp notifications**: 1-click notification sharing triggers.
-- [x] **Renewal follow-up tracking**: Renewal callback status tracking.
-- [x] **Renewal history**: Historical renewal interaction logs.
-- [x] **Lapsed-policy tracking**: Identifies lapsed client policies for recovery.
-
-### 5. Agent / Employee Management
-- [x] **Agent profiles**: Detailed staff advisor profiles in `Users.jsx`.
-- [x] **Agent-wise customer allocation**: Scoped portfolio distribution (`assignedAdvisorName`).
-- [x] **Agent performance tracking**: Top Client-Handling Staff Workload Leaderboard showing client count and percentage share.
-- [x] **Target management**: Revenue leaderboards calculating combined premiums and investment amounts.
-- [x] **Commission tracking**: Policy-wise agent commission calculations in `Income.jsx`.
-- [x] **Team/branch management**: `BR-KNM-001` branch isolation.
-
-### 6. Follow-Up & Task Management
-- [x] **Schedule callbacks**: 5-stage sales interaction pipeline.
-- [x] **Follow-up reminders**: System notification alerts.
-- [x] **Task assignment**: Operational tasks desk in `Tasks.jsx`.
-- [x] **Meeting scheduling**: Callback & branch meeting scheduler.
-- [x] **Call notes**: Advisor conversation notes.
-- [x] **Follow-up history**: Consolidated 1-client interaction history.
-
-### 7. Commission Management
-- [x] **Agent commission calculation**: Calculated via $\sum \text{grossPremium} \times \text{commissionRate}$.
-- [x] **Commission statements**: Payout registers in `Income.jsx`.
-- [x] **Policy-wise commission**: Calculated per policy carrier.
-- [x] **Renewal commission**: Renewal commission receipts.
-- [x] **Pending commission tracking**: Track unpaid advisor commissions.
-
-### 8. Claims Management
-- [x] **Claim registration**: Fast claim submission modal (`+ File New Claim`) on `Claims.jsx`.
-- [x] **Claim status tracking**: Track cashless hospitalization claims (`SUBMITTED`, `IN_REVIEW`, `SETTLED`).
-- [x] **Claim documents**: Claim filing metadata.
-- [x] **Claim follow-ups**: Status updates and audit trail.
-- [x] **Settlement status**: Claims Settlement Ratio calculation: $(\text{Settled Claims} / \text{Total Claims}) \times 100$.
-- [x] **Claim history**: Customer 360° Claims tab.
-
-### 9. Payment & Premium Tracking
-- [x] **Premium payment tracking**: Monitor paid, due, and outstanding premium collections.
-- [x] **Due payments**: Renewal due alerts.
-- [x] **Payment history**: Transaction log.
-- [x] **Outstanding amounts**: Unpaid premium tracking.
-- [x] **Receipt management**: Income and receipt registers.
-
-### 10. Reports & Analytics
-- [x] **Sales reports**: Recharts sales pipeline charts.
-- [x] **Policy reports**: Active & lapsed policy summaries.
-- [x] **Renewal reports**: Upcoming renewal statements.
-- [x] **Agent performance**: Leaderboards for business volume and client workload.
-- [x] **Commission reports**: Income registers.
-- [x] **Claims reports**: Settlement ratio and disbursement analytics.
-- [x] **Premium collection reports**: Total premium collection metrics.
-- [x] **Conversion analytics**: Lead-to-customer conversion rates.
+### 1. 📊 Executive Real-Time Dashboard (`Dashboard.jsx`)
+- **Real-Time Data Context**: Binds 100% to live `customers`, `leads`, `policies`, `investments`, `income`, `expenses`, `claims`, and `users` data.
+- **Dynamic Chart 1: Monthly New Client Acquisitions & Policy Issuances**:
+  - Displays client onboarding velocity and policy issuance numbers across **Today**, **This Month**, and **This Year**.
+- **Dynamic Chart 2: Income vs Operational Expense Variance**:
+  - Real-time comparison of gross commission revenue vs operational overheads and staff payroll outgo.
+- **Dynamic Chart 3: Lead Conversion vs Claims Settlement Ratio (%)**:
+  - Category-by-category breakdown across Health, Life, Mutual Funds, Motor, and Real Estate.
+- **Dynamic Chart 4: Staff Advisor Targets vs Achieved**:
+  - Visual ranking of staff advisors comparing target volume against achieved business Lakhs.
+- **Dynamic Chart 5: Product Portfolio Share (%)**:
+  - Donut chart representing portfolio asset allocation across Health, Life, SIP, FDs, and Real Estate.
+- **Interactive Analytics Modals**: Click any chart card to view deep-dive tabular ledgers with PDF export options.
 
 ---
 
-### 🔹 Advanced Features Checklist
-- [x] **Multi-insurer management**: Multi-carrier support (Tata AIA, Star Health, Niva Bupa, HDFC ERGO, ICICI Lombard, LIC, etc.).
-- [x] **Multiple insurance product management**: Support for health, life, motor, travel, and mutual fund SIP products.
-- [x] **Quotation generation**: Plan comparison and quote sharing.
-- [x] **Proposal management**: Proposal review and policy issuing.
-- [x] **Document upload & verification**: KYC compliance status.
-- [x] **Automated notifications**: Notification drawer and status alerts.
-- [x] **Email integration**: Email client links and notification triggers.
-- [x] **SMS integration**: SMS callback triggers.
-- [x] **WhatsApp integration**: 1-click WhatsApp quote sharing.
-- [x] **Calendar integration**: Birthday & anniversary calendar in `SpecialDays.jsx`.
-- [x] **Role-based access control**: Enforced across Admin, Manager, and Staff roles.
-- [x] **Branch management**: Branch isolation (`BR-KNM-001`).
-- [x] **Audit logs**: Real-time security activity audit desk in `AuditLogs.jsx`.
-- [x] **Dashboard with KPIs**: Total Customers, Active Policies, Investments Volume, Settlement Ratio.
-- [x] **Customer portal**: Customer 360° slide-over profile.
-- [x] **Agent portal**: Staff advisor scoped portal.
-- [x] **Mobile-friendly CRM**: Responsive layout across all viewports.
-- [x] **Data import/export**: Native Excel `.xlsx` and PDF exports.
-- [x] **Advanced search & filters**: Instant search by Customer Code, Name, Policy No, Insurer, or Claim ID.
+### 2. 👤 Customer 360° Profile System (`Customer360Drawer.jsx`)
+- **Unified Client Hub**: Search any client to open a slide-over 360° drawer.
+- **Demographics & Family Tree**: Displays primary client details, spouse, children, anniversary dates, and KYC verification status.
+- **Linked Financial Assets**: Tabular view of all active insurance policies, mutual fund folios, fixed deposits, and real estate assets held by the client.
+- **Claims & Follow-Up History**: Chronological history of filed claims, approval statuses, and advisor follow-up notes.
 
 ---
 
-## 🛠️ Technology Stack
-
-### Frontend
-- **Framework**: React 18 (Vite Bundler)
-- **Styling**: TailwindCSS + Vanilla CSS3
-- **Icons**: Lucide React
-- **Data Visualization**: Recharts Analytics
-- **Routing**: React Router DOM v6
-- **Spreadsheet & PDF**: Native XML Spreadsheet Exporter & PDF Generator
-
-### Backend API
-- **Framework**: Java 17 + Spring Boot 3.x
-- **Security**: Firebase Authentication JWT Filter + Custom `UserRoleEvaluator`
-- **Database**: Google Cloud Firestore (NoSQL Document Store)
-- **Deployment**: Firebase Hosting (SPA Rewrite Architecture)
+### 3. 🎯 Lead Management Pipeline (`Leads.jsx`)
+- **Multi-Channel Intake**: Capture leads from website inquiries, phone calls, referral networks, and offline campaigns.
+- **Status Progression Pipeline**:
+  - `NEW` ➔ `QUALIFIED` ➔ `QUOTATION_SENT` ➔ `CALLBACK_SCHEDULED` ➔ `CONVERTED`.
+- **Advisor Allocation**: Assign leads directly to staff members with automated workload balancing.
+- **Quotation Generator**: Create instant insurance & SIP investment quotes.
 
 ---
 
-## 🚀 Local Development & Deployment
+### 4. 📜 Insurance Policy Administration (`Policies.jsx`)
+- **Multi-Line Policy Register**: Supports Health Insurance, Term Life, ULIPs, Motor (Two-wheeler/Car), Commercial, and General Insurance.
+- **Premium Computation**: Computes gross premium, net premium, GST component, and broker commission percentage.
+- **Policy Document Storage**: Links policy numbers, insurer names, sum insured, start dates, and maturity dates.
 
-To run locally:
-```bash
-cd frontend
-npm run dev
-# Server will start on http://localhost:5173
+---
+
+### 5. 💰 Wealth & Investment Portfolio Management (`Investments.jsx`)
+- **Asset Classes Supported**:
+  - Mutual Funds (Monthly SIP & Lump-sum equity/hybrid/debt)
+  - Fixed Deposits & Corporate Bonds
+  - Real Estate & Gold Bullion holdings
+- **AUM Valuation**: Dynamically calculates total Assets Under Management (AUM) per advisor and firm-wide.
+
+---
+
+### 6. 🔔 Policy Renewal Alerts & Expiry Tracking (`Renewals.jsx`)
+- **Expiry Dashboard**: Displays policies due for renewal within 30 days, 15 days, and overdue policies.
+- **Automated Reminders**: Trigger instant WhatsApp, SMS, or Email renewal notices to clients with pre-filled premium details.
+- **Grace Period Monitoring**: Ensures clients never suffer a lapse in insurance coverage.
+
+---
+
+### 7. 🏥 Claims Filing & Settlement SLA (`Claims.jsx`)
+- **End-to-End Tracking**: File claims with policy details, hospital/garage names, and claimed amount.
+- **SLA Resolution Timer**: Monitors SLA completion target (Health: 2 Days, Motor: 3 Days, Life: 1 Day).
+- **Approval Workflow**: Managers and Admins can update status to `SUBMITTED`, `UNDER_PROCESS`, `APPROVED`, or `PAID`.
+
+---
+
+### 8. 🎉 Special Days & Automated Greetings (`SpecialDays.jsx`)
+- **Automated Wish Engine**: Automatically detects customer birthdays and wedding anniversaries occurring today.
+- **Greeting Templates**: Pre-configured WhatsApp and Email templates.
+- **Daily Execution Logs**: Tracks daily greetings completed per staff advisor.
+
+---
+
+### 9. 📈 Financial Ledger (Income & Expense Management) (`Income.jsx`, `Expenses.jsx`)
+- **Commission Ledger**: Records incoming commission payments from insurance companies and AMC fund houses.
+- **Operating Expenditure Ledger**: Tracks office rent, software subscriptions, infrastructure, marketing outgo, and employee salary expenses.
+- **Net Operating Profit**: Real-time balance ledger subtracting total outgo from gross income.
+
+---
+
+### 10. 👥 Staff & User Management (`Users.jsx`, `StaffManagement.jsx`)
+- **Staff Directory**: List of all registered staff advisors with phone numbers, emails, and roles.
+- **Workload Leaderboard**: Monitors active vs completed clients per staff advisor.
+- **Revenue Leaderboard**: Ranks staff members by business volume generated.
+
+---
+
+### 11. 🛡️ System Audit Logs & Security (`AuditLogs.jsx`)
+- **Immutable Action Trail**: Logs every create, update, delete, login, and export action.
+- **Metadata Captured**: Timestamp, User Email, Action Type, Target Record ID, and IP Address.
+
+---
+
+## 🗄️ Database Schemas & Data Structures
+
+### 1. Customer Schema (`customers` Collection)
+```json
+{
+  "id": "CUST-101",
+  "customerCode": "SK-CUST-101",
+  "name": "Rahul Sharma",
+  "email": "rahul.sharma@example.com",
+  "phone": "9876543210",
+  "gender": "Male",
+  "dob": "1988-05-14",
+  "maritalStatus": "Married",
+  "anniversaryDate": "2016-11-20",
+  "city": "Chennai",
+  "assignedAdvisorName": "Priya Sharma",
+  "status": "Active"
+}
 ```
 
-To deploy live to Firebase Hosting:
+### 2. Policy Schema (`policies` Collection)
+```json
+{
+  "id": "POL-8821",
+  "policyNumber": "POL-882190",
+  "customerName": "Rahul Sharma",
+  "insuranceCompany": "Star Health Insurance",
+  "category": "Health Insurance",
+  "grossPremium": 28500,
+  "sumInsured": 1000000,
+  "startDate": "2025-01-15",
+  "expiryDate": "2026-01-14",
+  "assignedStaff": "Priya Sharma",
+  "status": "Active"
+}
+```
+
+---
+
+## 💻 Local Installation & Setup Guide
+
+To run **SK Smart Investments CRM v2** on your local machine:
+
+### Prerequisites:
+- Node.js (v18.0.0 or higher)
+- npm (v9.0.0 or higher)
+
+### 1. Clone Repository:
+```bash
+git clone https://github.com/javajigagansai/skcrm.git
+cd skcrm
+```
+
+### 2. Install Dependencies:
 ```bash
 cd frontend
+npm install
+```
+
+### 3. Run Local Development Server:
+```bash
+npm run dev
+```
+Open your browser at `http://localhost:5173`.
+
+### 4. Build Production Bundle:
+```bash
 npm run build
+```
+
+### 5. Deploy to Firebase Hosting:
+```bash
 cd ..
 npx firebase deploy --only hosting
 ```
 
-Live Production Site: **[https://sk-crm-1.web.app](https://sk-crm-1.web.app)**
+---
+
+## 📦 GitHub Synchronization Commands
+
+To push local code updates to the main branch:
+
+```powershell
+cd "c:\Users\V Saimanogna\Downloads\investment-crm-v2"
+git add .
+git commit -m "Update master project documentation and pin-to-pin system breakdown"
+git push origin main
+```
+
+---
+
+*Copyright © 2026 SK Smart Investments. All Rights Reserved.*
