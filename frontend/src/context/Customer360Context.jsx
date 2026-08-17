@@ -7,6 +7,7 @@ import {
 import { exportCustomer360PDF } from '../utils/exportUtils';
 import { updateCustomerBackend, deleteCustomerBackend } from '../services/apiService';
 import { useData } from './DataContext';
+import { useAuth } from './AuthContext';
 
 const Customer360Context = createContext();
 
@@ -29,6 +30,7 @@ const loadStaffListFromStorage = () => {
 };
 
 export const Customer360Provider = ({ children }) => {
+  const { user } = useAuth();
   const { getCustomerAggregatedDetails, updateCustomer, deleteCustomer } = useData();
 
   // Staff list — required so the edit modal can write the UID, not just the name
@@ -806,19 +808,22 @@ export const Customer360Provider = ({ children }) => {
                   <Download className="h-3.5 w-3.5" />
                   <span>Export 360 Profile (PDF)</span>
                 </button>
-                <button 
-                  onClick={() => {
-                    if (window.confirm(`Are you sure you want to PERMANENTLY DELETE customer profile "${selectedCustomer.name}" (${selectedCustomer.id})?`)) {
-                      deleteCustomerBackend(selectedCustomer.id).catch(() => {});
-                      closeCustomer360();
-                      alert(`Customer "${selectedCustomer.name}" deleted successfully.`);
-                    }
-                  }}
-                  className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs transition cursor-pointer flex items-center space-x-1.5"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  <span>Delete Customer</span>
-                </button>
+                {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
+                  <button 
+                    onClick={() => {
+                      if (window.confirm(`Are you sure you want to PERMANENTLY DELETE customer profile "${selectedCustomer.name}" (${selectedCustomer.id})?`)) {
+                        deleteCustomer(selectedCustomer.id);
+                        deleteCustomerBackend(selectedCustomer.id).catch(() => {});
+                        closeCustomer360();
+                        alert(`Customer "${selectedCustomer.name}" deleted successfully.`);
+                      }
+                    }}
+                    className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs transition cursor-pointer flex items-center space-x-1.5"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span>Delete Customer</span>
+                  </button>
+                )}
               </div>
               </div>
             </div>

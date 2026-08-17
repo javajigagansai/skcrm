@@ -111,21 +111,7 @@ export const Customers = () => {
     phone: ''
   });
 
-  const loadCustomers = async () => {
-    setLoading(true);
-    try {
-      const data = await fetchCustomersBackend();
-      setCustomers(Array.isArray(data) ? data : []);
-    } catch (err) {
-      setCustomers([]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  useEffect(() => {
-    loadCustomers();
-  }, []);
 
   const handleAddCustomer = async (e) => {
     e.preventDefault();
@@ -609,17 +595,19 @@ export const Customers = () => {
                             <span>View 360°</span>
                             <ChevronRight className="h-3.5 w-3.5" />
                           </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setCustomerToDelete(c);
-                              setDeleteConfirmText('');
-                            }}
-                            className="p-1.5 text-rose-600 hover:bg-rose-100 rounded-xl transition cursor-pointer border border-rose-200"
-                            title="Delete Customer Profile"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+                          {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setCustomerToDelete(c);
+                                setDeleteConfirmText('');
+                              }}
+                              className="p-1.5 text-rose-600 hover:bg-rose-100 rounded-xl transition cursor-pointer border border-rose-200"
+                              title="Delete Customer Profile"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

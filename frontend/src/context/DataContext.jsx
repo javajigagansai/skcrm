@@ -2,15 +2,15 @@ import React, { createContext, useContext, useState, useEffect, useMemo } from '
 import { useAuth } from './AuthContext';
 import { filterScopedRecords, canAccessCustomer } from '../utils/rbac';
 import { 
-  fetchCustomersBackend, createCustomerBackend, deleteCustomerBackend,
-  fetchLeadsBackend, createLeadBackend,
+  fetchCustomersBackend, createCustomerBackend, updateCustomerBackend, deleteCustomerBackend,
+  fetchLeadsBackend, createLeadBackend, updateLeadBackend, deleteLeadBackend,
   fetchInvestmentsBackend, createInvestmentBackend,
   fetchIncomeBackend, createIncomeBackend,
   fetchExpensesBackend, createExpenseBackend,
   fetchTasksBackend, createTaskBackend
 } from '../services/apiService';
 import { db } from '../config/firebaseClient';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, doc, setDoc, deleteDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 
 const DataContext = createContext();
 
@@ -484,49 +484,119 @@ export const DataProvider = ({ children }) => {
 
 
 
-  // Async remote sync
+  // Real-time Firestore snapshot listeners for zero-latency cross-device database synchronization
   useEffect(() => {
-    const fetchRemoteData = async () => {
-      try {
-        const [cData, lData, iData, tData] = await Promise.allSettled([
-          fetchCustomersBackend(),
-          fetchLeadsBackend(),
-          fetchInvestmentsBackend(),
-          fetchTasksBackend()
-        ]);
+    // 1. Customers
+    const unsubCustomers = onSnapshot(collection(db, 'customers'), (snap) => {
+      if (!snap.empty) {
+        const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        setCustomers(items);
+      } else {
+        initialCustomersSeed.forEach(async (c) => {
+          try { await setDoc(doc(db, 'customers', c.id), c, { merge: true }); } catch (e) {}
+        });
+      }
+    }, err => console.warn("Firestore customers snapshot error:", err));
 
-        if (cData.status === 'fulfilled' && Array.isArray(cData.value) && cData.value.length > 0) {
-          setCustomers(prev => {
-            const map = new Map(prev.map(item => [item.id, item]));
-            cData.value.forEach(item => map.set(item.id, { ...map.get(item.id), ...item }));
-            return Array.from(map.values());
-          });
-        }
-        if (lData.status === 'fulfilled' && Array.isArray(lData.value) && lData.value.length > 0) {
-          setLeads(prev => {
-            const map = new Map(prev.map(item => [item.id, item]));
-            lData.value.forEach(item => map.set(item.id, { ...map.get(item.id), ...item }));
-            return Array.from(map.values());
-          });
-        }
-        if (iData.status === 'fulfilled' && Array.isArray(iData.value) && iData.value.length > 0) {
-          setInvestments(prev => {
-            const map = new Map(prev.map(item => [item.id, item]));
-            iData.value.forEach(item => map.set(item.id, { ...map.get(item.id), ...item }));
-            return Array.from(map.values());
-          });
-        }
-        if (tData.status === 'fulfilled' && Array.isArray(tData.value) && tData.value.length > 0) {
-          setTasks(prev => {
-            const map = new Map(prev.map(item => [item.id, item]));
-            tData.value.forEach(item => map.set(item.id, { ...map.get(item.id), ...item }));
-            return Array.from(map.values());
-          });
-        }
-      } catch (err) {}
+    // 2. Policies
+    const unsubPolicies = onSnapshot(collection(db, 'policies'), (snap) => {
+      if (!snap.empty) {
+        const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        setPolicies(items);
+      } else {
+        initialPoliciesSeed.forEach(async (p) => {
+          try { await setDoc(doc(db, 'policies', p.id), p, { merge: true }); } catch (e) {}
+        });
+      }
+    }, err => console.warn("Firestore policies snapshot error:", err));
+
+    // 3. Investments
+    const unsubInvestments = onSnapshot(collection(db, 'investments'), (snap) => {
+      if (!snap.empty) {
+        const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        setInvestments(items);
+      } else {
+        initialInvestmentsSeed.forEach(async (i) => {
+          try { await setDoc(doc(db, 'investments', i.id), i, { merge: true }); } catch (e) {}
+        });
+      }
+    }, err => console.warn("Firestore investments snapshot error:", err));
+
+    // 4. Claims
+    const unsubClaims = onSnapshot(collection(db, 'claims'), (snap) => {
+      if (!snap.empty) {
+        const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        setClaims(items);
+      } else {
+        initialClaimsSeed.forEach(async (clm) => {
+          try { await setDoc(doc(db, 'claims', clm.id), clm, { merge: true }); } catch (e) {}
+        });
+      }
+    }, err => console.warn("Firestore claims snapshot error:", err));
+
+    // 5. Leads
+    const unsubLeads = onSnapshot(collection(db, 'leads'), (snap) => {
+      if (!snap.empty) {
+        const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        setLeads(items);
+      } else {
+        initialLeadsSeed.forEach(async (l) => {
+          try { await setDoc(doc(db, 'leads', l.id), l, { merge: true }); } catch (e) {}
+        });
+      }
+    }, err => console.warn("Firestore leads snapshot error:", err));
+
+    // 6. Followups
+    const unsubFollowups = onSnapshot(collection(db, 'followups'), (snap) => {
+      if (!snap.empty) {
+        const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        setFollowups(items);
+      } else {
+        initialFollowupsSeed.forEach(async (f) => {
+          try { await setDoc(doc(db, 'followups', f.id), f, { merge: true }); } catch (e) {}
+        });
+      }
+    }, err => console.warn("Firestore followups snapshot error:", err));
+
+    // 7. Tasks
+    const unsubTasks = onSnapshot(collection(db, 'tasks'), (snap) => {
+      if (!snap.empty) {
+        const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        setTasks(items);
+      } else {
+        initialTasksSeed.forEach(async (t) => {
+          try { await setDoc(doc(db, 'tasks', t.id), t, { merge: true }); } catch (e) {}
+        });
+      }
+    }, err => console.warn("Firestore tasks snapshot error:", err));
+
+    // 8. Income
+    const unsubIncome = onSnapshot(collection(db, 'income'), (snap) => {
+      if (!snap.empty) {
+        const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        setIncome(items);
+      }
+    }, err => console.warn("Firestore income snapshot error:", err));
+
+    // 9. Expenses
+    const unsubExpenses = onSnapshot(collection(db, 'expenses'), (snap) => {
+      if (!snap.empty) {
+        const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        setExpenses(items);
+      }
+    }, err => console.warn("Firestore expenses snapshot error:", err));
+
+    return () => {
+      unsubCustomers();
+      unsubPolicies();
+      unsubInvestments();
+      unsubClaims();
+      unsubLeads();
+      unsubFollowups();
+      unsubTasks();
+      unsubIncome();
+      unsubExpenses();
     };
-
-    fetchRemoteData();
   }, []);
 
   /**
@@ -674,29 +744,38 @@ export const DataProvider = ({ children }) => {
    *   { previousStaffId, previousStaffName, newStaffId, newStaffName }
    *   This triggers a dedicated REASSIGN_CUSTOMER audit log entry.
    */
-  const updateCustomer = (idOrData, reassignmentMeta = null) => {
+  const updateCustomer = async (idOrData, reassignmentMeta = null) => {
     if (!idOrData) return;
     const targetId = typeof idOrData === 'object' ? idOrData.id || idOrData.customerCode : idOrData;
     const updateObj = typeof idOrData === 'object' ? idOrData : {};
 
+    let finalUpdatedRecord = null;
+
     setCustomers(prev => prev.map(c => {
       if (c.id === targetId || c.customerCode === targetId || c.name === targetId) {
-        // PERMANENT FIX: if an explicit assignedStaffId is provided in the update, it ALWAYS wins.
-        // We only fall back to the old UID when NO new UID is provided at all.
         const incomingStaffId = updateObj.assignedStaffId || updateObj.staffId;
         const finalStaffId    = incomingStaffId ? incomingStaffId : c.assignedStaffId;
         const finalStaffName  = updateObj.assignedStaffName || updateObj.assignedAdvisorName || updateObj.assignedStaff || c.assignedStaffName;
 
-        return {
+        finalUpdatedRecord = {
           ...c,
           ...updateObj,
           assignedStaffId:     finalStaffId,
           assignedStaffName:   finalStaffName,
           assignedAdvisorName: finalStaffName,
         };
+        return finalUpdatedRecord;
       }
       return c;
     }));
+
+    if (finalUpdatedRecord) {
+      try {
+        await updateCustomerBackend(targetId, finalUpdatedRecord);
+      } catch (e) {
+        try { await setDoc(doc(db, 'customers', targetId), finalUpdatedRecord, { merge: true }); } catch (_) {}
+      }
+    }
 
     // Notify on any staff name change (e.g. toast/bell notification)
     const newName  = updateObj.assignedStaffName || updateObj.assignedAdvisorName || updateObj.assignedStaff;
@@ -746,7 +825,7 @@ export const DataProvider = ({ children }) => {
     });
   };
 
-  const addPolicy = (polData) => {
+  const addPolicy = async (polData) => {
     const id = polData.id || `POL-SK-${Math.floor(1000 + Math.random() * 9000)}`;
     const assignedStaffId = polData.assignedStaffId || polData.staffId || user?.uid || 'UID-STF-1003';
     const assignedStaffName = polData.assignedStaffName || polData.assignedStaff || user?.name || 'Priya Sharma';
@@ -761,6 +840,7 @@ export const DataProvider = ({ children }) => {
     };
 
     setPolicies(prev => [newPol, ...prev]);
+    try { await setDoc(doc(db, 'policies', id), newPol, { merge: true }); } catch (e) {}
 
     addAuditLog({
       userName: user?.name || 'Staff Advisor',
@@ -792,11 +872,12 @@ export const DataProvider = ({ children }) => {
     return newInv;
   };
 
-  const updateInvestmentStatus = (id, newStatus) => {
+  const updateInvestmentStatus = async (id, newStatus) => {
     setInvestments(prev => prev.map(inv => inv.id === id ? { ...inv, status: newStatus } : inv));
+    try { await setDoc(doc(db, 'investments', id), { status: newStatus }, { merge: true }); } catch (e) {}
   };
 
-  const addClaim = (claimData) => {
+  const addClaim = async (claimData) => {
     const id = claimData.id || `CLM-SK-${Math.floor(1000 + Math.random() * 9000)}`;
     const assignedStaffId = claimData.assignedStaffId || claimData.staffId || user?.uid || 'UID-STF-1003';
     const assignedStaffName = claimData.assignedStaffName || claimData.assignedStaff || user?.name || 'Priya Sharma';
@@ -812,11 +893,13 @@ export const DataProvider = ({ children }) => {
     };
 
     setClaims(prev => [newClaim, ...prev]);
+    try { await setDoc(doc(db, 'claims', id), newClaim, { merge: true }); } catch (e) {}
     return newClaim;
   };
 
-  const updateClaimStatus = (id, newStatus) => {
+  const updateClaimStatus = async (id, newStatus) => {
     setClaims(prev => prev.map(clm => clm.id === id ? { ...clm, status: newStatus } : clm));
+    try { await setDoc(doc(db, 'claims', id), { status: newStatus }, { merge: true }); } catch (e) {}
   };
 
   const addLead = (leadData) => {
@@ -838,7 +921,7 @@ export const DataProvider = ({ children }) => {
     return newLead;
   };
 
-  const convertLeadToCustomer = (leadId) => {
+  const convertLeadToCustomer = async (leadId) => {
     const lead = rawLeads.find(l => l.id === leadId);
     if (!lead) return;
 
@@ -853,9 +936,10 @@ export const DataProvider = ({ children }) => {
     });
 
     setLeads(prev => prev.map(l => l.id === leadId ? { ...l, leadStatus: 'CONVERTED' } : l));
+    try { await setDoc(doc(db, 'leads', leadId), { leadStatus: 'CONVERTED' }, { merge: true }); } catch (e) {}
   };
 
-  const addFollowup = (flwData) => {
+  const addFollowup = async (flwData) => {
     const id = flwData.id || `FLW-SK-${Math.floor(1000 + Math.random() * 9000)}`;
     const assignedStaffId = flwData.assignedStaffId || flwData.staffId || user?.uid || 'UID-STF-1003';
     const assignedStaffName = flwData.assignedStaffName || flwData.assignedTo || user?.name || 'Priya Sharma';
@@ -871,6 +955,7 @@ export const DataProvider = ({ children }) => {
     };
 
     setFollowups(prev => [newFlw, ...prev]);
+    try { await setDoc(doc(db, 'followups', id), newFlw, { merge: true }); } catch (e) {}
     return newFlw;
   };
 
@@ -893,8 +978,9 @@ export const DataProvider = ({ children }) => {
     return newTask;
   };
 
-  const updateTaskStatus = (id, newStatus) => {
+  const updateTaskStatus = async (id, newStatus) => {
     setTasks(prev => prev.map(t => t.id === id ? { ...t, status: newStatus } : t));
+    try { await setDoc(doc(db, 'tasks', id), { status: newStatus }, { merge: true }); } catch (e) {}
   };
 
   const addIncome = (incData) => {

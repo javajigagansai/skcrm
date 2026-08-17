@@ -117,7 +117,7 @@ export const AppRoutes = () => {
       <Route path="/users" element={<RoleProtectedRoute allowedRoles={MID_MANAGEMENT_ROLES}><Users /></RoleProtectedRoute>} />
       <Route path="/staff-management" element={<RoleProtectedRoute allowedRoles={MID_MANAGEMENT_ROLES}><StaffManagement /></RoleProtectedRoute>} />
       <Route path="/audit-logs" element={<RoleProtectedRoute allowedRoles={MID_MANAGEMENT_ROLES}><AuditLogs /></RoleProtectedRoute>} />
-      <Route path="/profile" element={<RoleProtectedRoute allowedRoles={ALL_ROLES}><Profile /></RoleProtectedRoute>} />
+      <Route path="/profile" element={<RoleProtectedRoute allowedRoles={MID_MANAGEMENT_ROLES}><Profile /></RoleProtectedRoute>} />
       <Route path="/settings" element={<RoleProtectedRoute allowedRoles={ADMIN_ROLES}><Settings /></RoleProtectedRoute>} />
       <Route path="*" element={<RootRedirect />} />
     </Routes>

@@ -9,6 +9,8 @@ export const Expenses = () => {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
 
+  const [categoryOption, setCategoryOption] = useState('Salary');
+  const [customCategory, setCustomCategory] = useState('');
   const [newExp, setNewExp] = useState({
     category: 'Salary',
     description: '',
@@ -35,8 +37,20 @@ export const Expenses = () => {
   const handleCreateExpense = async (e) => {
     e.preventDefault();
     try {
-      await createExpenseBackend(newExp);
+      const finalExpData = {
+        ...newExp,
+        category: categoryOption === 'Other' ? (customCategory.trim() || 'Other') : newExp.category
+      };
+      await createExpenseBackend(finalExpData);
       setShowAddModal(false);
+      setCategoryOption('Salary');
+      setCustomCategory('');
+      setNewExp({
+        category: 'Salary',
+        description: '',
+        amount: 15000,
+        expenseDate: new Date().toISOString().split('T')[0]
+      });
       loadExpenses();
       alert('Expense record saved successfully!');
     } catch (err) {
@@ -98,7 +112,19 @@ export const Expenses = () => {
             <form onSubmit={handleCreateExpense} className="space-y-3">
               <div>
                 <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Expense Category</label>
-                <select value={newExp.category} onChange={(e) => setNewExp({...newExp, category: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-xs outline-none">
+                <select 
+                  value={categoryOption} 
+                  onChange={(e) => {
+                    const sel = e.target.value;
+                    setCategoryOption(sel);
+                    if (sel !== 'Other') {
+                      setNewExp({ ...newExp, category: sel });
+                    } else {
+                      setNewExp({ ...newExp, category: customCategory.trim() || 'Other' });
+                    }
+                  }} 
+                  className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:border-blue-500"
+                >
                   <option value="Salary">Salary</option>
                   <option value="Rent">Rent</option>
                   <option value="Electricity">Electricity</option>
@@ -107,7 +133,25 @@ export const Expenses = () => {
                   <option value="Marketing">Marketing</option>
                   <option value="Office Supplies">Office Supplies</option>
                   <option value="Miscellaneous">Miscellaneous</option>
+                  <option value="Other">Other</option>
                 </select>
+
+                {categoryOption === 'Other' && (
+                  <div className="mt-2.5">
+                    <label className="block text-[11px] font-black uppercase text-blue-600 mb-1">Specify Custom Category</label>
+                    <input 
+                      type="text" 
+                      required 
+                      placeholder="e.g. Client Entertainment, Travel Allowance..." 
+                      value={customCategory} 
+                      onChange={(e) => {
+                        setCustomCategory(e.target.value);
+                        setNewExp({ ...newExp, category: e.target.value.trim() || 'Other' });
+                      }} 
+                      className="w-full px-3 py-2 rounded-xl border border-blue-300 text-xs outline-none bg-blue-50/30 focus:border-blue-500" 
+                    />
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Description</label>

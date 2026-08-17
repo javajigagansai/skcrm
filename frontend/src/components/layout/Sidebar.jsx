@@ -42,7 +42,7 @@ export const Sidebar = () => {
     { label: 'Staff Management', path: '/staff-management', icon: Users, roles: ['SUPER_ADMIN', 'ADMIN', 'MANAGER'] },
     { label: 'Reports & Analytics', path: '/reports', icon: BarChart3, roles: ['SUPER_ADMIN', 'ADMIN', 'MANAGER'] },
     { label: 'Audit Logs', path: '/audit-logs', icon: ShieldCheck, roles: ['SUPER_ADMIN', 'ADMIN', 'MANAGER'] },
-    { label: 'My Profile', path: '/profile', icon: User, roles: ['SUPER_ADMIN', 'ADMIN', 'GREETINGS_OFFICER', 'MANAGER', 'EMPLOYEE', 'USER'] },
+    { label: 'My Profile', path: '/profile', icon: User, roles: ['SUPER_ADMIN', 'ADMIN', 'MANAGER'] },
     { label: 'System Settings', path: '/settings', icon: Settings, roles: ['SUPER_ADMIN', 'ADMIN'] },
   ];
 

@@ -213,16 +213,18 @@ export const Header = () => {
                 <p className="text-xs font-extrabold text-slate-900 truncate">{user?.name}</p>
                 <p className="text-[10px] text-slate-400 truncate">{user?.email}</p>
               </div>
-              <button 
-                onClick={() => {
-                  setShowUserMenu(false);
-                  navigate('/profile');
-                }}
-                className="w-full flex items-center space-x-2 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition cursor-pointer"
-              >
-                <User className="h-4 w-4 text-blue-600" />
-                <span>My Profile</span>
-              </button>
+              {isManagerOrAdmin && (
+                <button 
+                  onClick={() => {
+                    setShowUserMenu(false);
+                    navigate('/profile');
+                  }}
+                  className="w-full flex items-center space-x-2 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition cursor-pointer"
+                >
+                  <User className="h-4 w-4 text-blue-600" />
+                  <span>My Profile</span>
+                </button>
+              )}
               <button 
                 onClick={() => {
                   logout();

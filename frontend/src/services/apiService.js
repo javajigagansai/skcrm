@@ -8,72 +8,41 @@ const firestoreFallbackHandler = async (endpoint, options) => {
   const method = (options.method || 'GET').toUpperCase();
   const body = options.body ? JSON.parse(options.body) : {};
 
-  if (endpoint.startsWith('/api/customers')) {
-    if (method === 'GET') {
-      const snap = await getDocs(collection(db, 'customers'));
-      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    } else if (method === 'POST') {
-      const id = body.id || 'CUST-' + Date.now();
-      const docData = { ...body, id, customerCode: id, createdAt: new Date().toISOString() };
-      await setDoc(doc(db, 'customers', id), docData);
-      return docData;
-    } else if (method === 'DELETE') {
-      const parts = endpoint.split('/');
-      const id = parts[parts.length - 1];
-      await deleteDoc(doc(db, 'customers', id));
-      return { message: 'Customer deleted', id };
+  // Extract collection name and document ID from endpoint
+  // Examples: /api/customers -> collection 'customers', id null
+  //           /api/customers/CUST-101 -> collection 'customers', id 'CUST-101'
+  const match = endpoint.match(/^\/api\/([a-zA-Z0-9_-]+)(?:\/([a-zA-Z0-9_-]+))?/);
+
+  if (match) {
+    const colName = match[1];
+    const docId = match[2] || body.id;
+
+    if (colName && colName !== 'reports') {
+      if (method === 'GET') {
+        if (docId) {
+          const snap = await getDoc(doc(db, colName, docId));
+          return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+        } else {
+          const snap = await getDocs(collection(db, colName));
+          return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        }
+      } else if (method === 'POST' || method === 'PUT' || method === 'PATCH') {
+        const id = docId || `${colName.toUpperCase().slice(0, 3)}-${Date.now()}`;
+        const docData = { ...body, id, updatedAt: new Date().toISOString() };
+        if (colName === 'customers') docData.customerCode = id;
+        await setDoc(doc(db, colName, id), docData, { merge: true });
+        return docData;
+      } else if (method === 'DELETE') {
+        const id = docId || body.id;
+        if (id) {
+          await deleteDoc(doc(db, colName, id));
+        }
+        return { message: `${colName} item deleted`, id };
+      }
     }
-  } else if (endpoint.startsWith('/api/investments')) {
-    if (method === 'GET') {
-      const snap = await getDocs(collection(db, 'investments'));
-      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    } else if (method === 'POST') {
-      const id = body.id || 'INV-2026-' + Date.now();
-      const docData = { ...body, id, createdAt: new Date().toISOString() };
-      await setDoc(doc(db, 'investments', id), docData);
-      return docData;
-    }
-  } else if (endpoint.startsWith('/api/leads')) {
-    if (method === 'GET') {
-      const snap = await getDocs(collection(db, 'leads'));
-      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    } else if (method === 'POST') {
-      const id = body.id || 'LD-2026-' + Date.now();
-      const docData = { ...body, id, createdAt: new Date().toISOString() };
-      await setDoc(doc(db, 'leads', id), docData);
-      return docData;
-    }
-  } else if (endpoint.startsWith('/api/income')) {
-    if (method === 'GET') {
-      const snap = await getDocs(collection(db, 'income'));
-      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    } else if (method === 'POST') {
-      const id = body.id || 'INC-' + Date.now();
-      const docData = { ...body, id, createdAt: new Date().toISOString() };
-      await setDoc(doc(db, 'income', id), docData);
-      return docData;
-    }
-  } else if (endpoint.startsWith('/api/expenses')) {
-    if (method === 'GET') {
-      const snap = await getDocs(collection(db, 'expenses'));
-      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    } else if (method === 'POST') {
-      const id = body.id || 'EXP-' + Date.now();
-      const docData = { ...body, id, createdAt: new Date().toISOString() };
-      await setDoc(doc(db, 'expenses', id), docData);
-      return docData;
-    }
-  } else if (endpoint.startsWith('/api/tasks')) {
-    if (method === 'GET') {
-      const snap = await getDocs(collection(db, 'tasks'));
-      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    } else if (method === 'POST') {
-      const id = body.id || 'TSK-' + Date.now();
-      const docData = { ...body, id, createdAt: new Date().toISOString() };
-      await setDoc(doc(db, 'tasks', id), docData);
-      return docData;
-    }
-  } else if (endpoint.startsWith('/api/reports/summary')) {
+  }
+
+  if (endpoint.startsWith('/api/reports/summary')) {
     const custSnap = await getDocs(collection(db, 'customers'));
     const invSnap = await getDocs(collection(db, 'investments'));
     const leadsSnap = await getDocs(collection(db, 'leads'));
