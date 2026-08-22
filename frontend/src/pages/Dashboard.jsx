@@ -1617,11 +1617,10 @@ export const Dashboard = () => {
           </div>
         </div>
 
-        {/* NEW CARD 1 & 2: Company & Employee Expenditure (Admin Only) */}
+        {/* Company Expenditure (Admin Only) */}
         {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') && (
-          <>
-            <div 
-              onClick={() => setActiveModal('COMPANY_EXPENDITURE')}
+          <div 
+            onClick={() => setActiveModal('COMPANY_EXPENDITURE')}
               className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-card space-y-2 hover:border-amber-500 hover:shadow-lg transition cursor-pointer group relative"
               title="Click to view detailed company operating expenditure breakdown"
             >
@@ -1642,30 +1641,6 @@ export const Dashboard = () => {
                 </span>
               </div>
             </div>
-
-            <div 
-              onClick={() => setActiveModal('EMPLOYEE_SALARY_SPEND')}
-              className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-card space-y-2 hover:border-rose-500 hover:shadow-lg transition cursor-pointer group relative"
-              title="Click to view detailed staff payroll & salary spend breakdown"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold text-slate-500 uppercase group-hover:text-rose-600 transition">Employee Salary Spend</span>
-                <div className="p-2 rounded-xl bg-rose-50 text-rose-600 group-hover:bg-rose-600 group-hover:text-white transition"><TrendingDown className="h-4 w-4" /></div>
-              </div>
-              <p className="text-2xl font-black text-slate-900">
-                ₹{(employeeSalarySpend.totalAmount / 100000).toFixed(2)} L
-              </p>
-              <div className="flex items-center justify-between pt-1">
-                <span className="badge bg-rose-100 text-rose-800 text-[10px]">
-                  {employeeSalarySpend.staffMembers.length} Active Staff Payroll
-                </span>
-                <span className="text-[10px] font-extrabold text-rose-600 hover:underline flex items-center space-x-0.5">
-                  <span>View Details</span>
-                  <ChevronRight className="h-3 w-3" />
-                </span>
-              </div>
-            </div>
-          </>
         )}
       </div>
 
