@@ -1655,7 +1655,7 @@ export const Dashboard = () => {
               <div>
                 <h3 className="text-sm font-black text-slate-900 flex items-center space-x-2">
                   <Award className="h-5 w-5 text-amber-500" />
-                  <span>Staff Doing Most Business (Revenue Leaderboard)</span>
+                  <span>Staff Revenue Leaderboard</span>
                 </h3>
               </div>
               <span className="badge badge-amber text-[10px] uppercase font-black">Business Rank 🏆</span>
