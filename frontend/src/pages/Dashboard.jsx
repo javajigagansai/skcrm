@@ -1759,52 +1759,7 @@ export const Dashboard = () => {
 
       {/* EXECUTIVE BUSINESS ANALYTICS & PORTFOLIO DISTRIBUTION CHARTS */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* GRAPH 1: Monthly New Client Acquisitions & Policy Issuances */}
-        <div 
-          onClick={() => setActiveModal('CLIENT_ACQUISITIONS_CHART')}
-          className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-card space-y-4 hover:border-blue-400 hover:shadow-md transition cursor-pointer group"
-          title="Click to view full client acquisition & policy issuance details"
-        >
-          <div className="flex items-center justify-between border-b pb-3">
-            <div>
-              <h3 className="text-sm font-extrabold text-slate-900 group-hover:text-blue-600 transition flex items-center space-x-1.5">
-                <span>Monthly New Client Acquisitions &amp; Policy Issuances</span>
-                <ArrowUpRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition" />
-              </h3>
-            </div>
-            <span className="badge badge-brand text-[10px]">Acquisitions</span>
-          </div>
-
-          <div className="h-[340px] w-full bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart 
-                data={dynamicAcquisitionsChart}
-                margin={{ top: 15, right: 20, left: -10, bottom: dateFilter === 'THIS_MONTH' ? 20 : 0 }}
-                barGap={6}
-                barCategoryGap="40%"
-              >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                <XAxis 
-                  dataKey="month" 
-                  tickLine={false} 
-                  axisLine={false} 
-                  interval={0}
-                  angle={dateFilter === 'THIS_MONTH' ? -45 : 0}
-                  textAnchor={dateFilter === 'THIS_MONTH' ? 'end' : 'middle'}
-                  height={dateFilter === 'THIS_MONTH' ? 55 : 30}
-                  tick={{ fontSize: dateFilter === 'THIS_MONTH' ? 10 : 11, fontWeight: 700 }} 
-                />
-                <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700 }} />
-                <Tooltip cursor={{ fill: '#F1F5F9' }} />
-                <Legend wrapperStyle={{ paddingTop: '10px' }} />
-                <Bar dataKey="newClients" fill="#1E6091" radius={[6, 6, 0, 0]} barSize={dateFilter === 'THIS_MONTH' ? 12 : 24} name="New Clients Onboarded" />
-                <Bar dataKey="policiesIssued" fill="#52B69A" radius={[6, 6, 0, 0]} barSize={dateFilter === 'THIS_MONTH' ? 12 : 24} name="Policies & SIPs Issued" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* GRAPH 2: Income vs Expense Variance */}
+        {/* GRAPH 1: Income vs Expense Variance */}
         <div 
           onClick={() => setActiveModal('INCOME_EXPENSE_CHART')}
           className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-card space-y-4 hover:border-emerald-400 hover:shadow-md transition cursor-pointer group"
@@ -1848,108 +1803,44 @@ export const Dashboard = () => {
             </ResponsiveContainer>
           </div>
         </div>
-      </div>
 
-
-      {/* BAR GRAPH 3 & 4 GRID */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* GRAPH 3: Lead Conversion vs Claims Settlement % */}
+        {/* GRAPH 2: Product Portfolio Distribution Donut Chart */}
         <div 
-          onClick={() => setActiveModal('CONVERSION_CLAIMS_CHART')}
-          className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-card space-y-4 hover:border-purple-400 hover:shadow-md transition cursor-pointer group"
-          title="Click to view category conversion & claim settlement details"
+          onClick={() => setActiveModal('PRODUCT_DISTRIBUTION_CHART')}
+          className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-card space-y-4 hover:border-brand hover:shadow-md transition cursor-pointer group"
+          title="Click to view detailed product share breakdown"
         >
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between border-b pb-3">
             <div>
-              <h3 className="text-sm font-extrabold text-slate-900 group-hover:text-purple-600 transition flex items-center space-x-1.5">
-                <span>Lead Conversion vs Claims Settlement (%)</span>
+              <h3 className="text-sm font-extrabold text-slate-900 group-hover:text-blue-600 transition flex items-center space-x-1.5">
+                <span>Insurance &amp; Financial Portfolio Share (%)</span>
                 <ArrowUpRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition" />
               </h3>
             </div>
-            <span className="badge badge-purple text-[10px]">Category Performance</span>
+            <span className="badge badge-brand text-[10px]">Product Mix</span>
           </div>
-          <div className="h-64">
+
+          <div className="h-[340px] w-full bg-slate-50/50 p-4 rounded-2xl border border-slate-100 flex items-center justify-center">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={dynamicConversionClaimsChart}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                <XAxis dataKey="category" tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700 }} />
-                <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700 }} />
-                <Tooltip cursor={{ fill: '#F1F5F9' }} />
-                <Legend />
-                <Bar dataKey="leadConversion" fill="#6366F1" radius={[6, 6, 0, 0]} name="Lead Conversion %" />
-                <Bar dataKey="claimSettlement" fill="#14B8A6" radius={[6, 6, 0, 0]} name="Claim Settlement %" />
-              </BarChart>
+              <PieChart>
+                <Pie
+                  data={dynamicProductDistributionChart}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={65}
+                  outerRadius={105}
+                  paddingAngle={4}
+                  dataKey="value"
+                >
+                  {dynamicProductDistributionChart.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend wrapperStyle={{ paddingTop: '10px' }} />
+              </PieChart>
             </ResponsiveContainer>
           </div>
-        </div>
-
-        {/* GRAPH 4: Staff Advisor Performance Targets */}
-        <div 
-          onClick={() => setActiveModal('STAFF_PERFORMANCE_CHART')}
-          className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-card space-y-4 hover:border-amber-400 hover:shadow-md transition cursor-pointer group"
-          title="Click to view staff advisor leaderboard details"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-extrabold text-slate-900 group-hover:text-amber-600 transition flex items-center space-x-1.5">
-                <span>Staff Advisor Targets vs Achieved ({dateFilter === 'THIS_YEAR' ? 'Total' : 'Lakhs'})</span>
-                <ArrowUpRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition" />
-              </h3>
-            </div>
-            <span className="badge badge-amber text-[10px]">Staff Leaderboard</span>
-          </div>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={dynamicStaffPerformanceChart}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700 }} />
-                <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700 }} />
-                <Tooltip cursor={{ fill: '#F1F5F9' }} />
-                <Legend />
-                <Bar dataKey="target" fill="#94A3B8" radius={[6, 6, 0, 0]} name="Target" />
-                <Bar dataKey="achieved" fill="#F59E0B" radius={[6, 6, 0, 0]} name="Achieved" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-
-      {/* GRAPH 5: Product Portfolio Distribution Donut Chart */}
-      <div 
-        onClick={() => setActiveModal('PRODUCT_DISTRIBUTION_CHART')}
-        className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-card space-y-4 hover:border-brand hover:shadow-md transition cursor-pointer group"
-        title="Click to view detailed product share breakdown"
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-sm font-extrabold text-slate-900 group-hover:text-blue-600 transition flex items-center space-x-1.5">
-              <span>Insurance &amp; Financial Portfolio Share (%)</span>
-              <ArrowUpRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition" />
-            </h3>
-          </div>
-          <span className="badge badge-brand text-[10px]">Product Mix</span>
-        </div>
-
-        <div className="h-64 flex items-center justify-center">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={dynamicProductDistributionChart}
-                cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={95}
-                paddingAngle={4}
-                dataKey="value"
-              >
-                {dynamicProductDistributionChart.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
         </div>
       </div>
     </div>
