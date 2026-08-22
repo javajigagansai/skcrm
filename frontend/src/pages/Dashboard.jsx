@@ -1760,7 +1760,7 @@ export const Dashboard = () => {
               <div>
                 <h3 className="text-sm font-black text-slate-900 flex items-center space-x-2">
                   <Users className="h-5 w-5 text-indigo-600" />
-                  <span>2. Staff Handling Most Clients (Workload Leaderboard)</span>
+                  <span>Staff Workload Leaderboard</span>
                 </h3>
               </div>
               <span className="badge badge-purple text-[10px] uppercase font-black">Client Workload 📊</span>
