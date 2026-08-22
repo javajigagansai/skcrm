@@ -71,6 +71,39 @@ const firestoreFallbackHandler = async (endpoint, options) => {
     };
   }
 
+  if (endpoint.startsWith('/api/admin/policy-categories-overview') || endpoint.startsWith('/admin/policy-categories-overview')) {
+    const savedUser = localStorage.getItem('crm_v2_active_user');
+    let userRole = 'USER';
+    if (savedUser) {
+      try { userRole = JSON.parse(savedUser)?.role || 'USER'; } catch (e) {}
+    }
+    if (userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN') {
+      throw new Error('Access Denied: Only Admins can view Policy Category Overview');
+    }
+
+    const polSnap = await getDocs(collection(db, 'policies'));
+    const categoryCounts = {};
+    const companyBreakdown = {};
+
+    polSnap.docs.forEach(d => {
+      const p = d.data();
+      const cat = p.category || p.type || 'General Insurance';
+      const comp = p.insuranceCompany || p.company || 'General Provider';
+
+      categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+
+      if (!companyBreakdown[comp]) companyBreakdown[comp] = {};
+      companyBreakdown[comp][cat] = (companyBreakdown[comp][cat] || 0) + 1;
+    });
+
+    return {
+      title: 'Policy Category Overview',
+      totalPolicies: polSnap.size,
+      categoryCounts,
+      companyBreakdown
+    };
+  }
+
   return method === 'GET' ? [] : body;
 };
 
@@ -189,3 +222,4 @@ export const createTaskBackend = (data) => apiCall('/api/tasks', { method: 'POST
 export const updateTaskStatusBackend = (id, status) => apiCall(`/api/tasks/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
 export const fetchAuditLogsBackend = () => apiCall('/admin/audit-logs');
 export const fetchReportsSummaryBackend = (period = 'MONTHLY') => apiCall(`/api/reports/summary?period=${period}`);
+export const fetchPolicyCategoriesOverviewBackend = () => apiCall('/api/admin/policy-categories-overview');

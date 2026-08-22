@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/admin")
+@RequestMapping({"/admin", "/api/admin"})
 public class AdminController {
 
     private final FirestoreService firestoreService;
@@ -116,5 +116,52 @@ public class AdminController {
         }
         List<Map<String, Object>> logs = firestoreService.getAllDocuments("auditLogs");
         return ResponseEntity.ok(logs);
+    }
+
+    @GetMapping("/policy-categories-overview")
+    public ResponseEntity<?> getPolicyCategoryOverview() {
+        // Strict Backend Authorization Guard: Admin only (Manager ❌, Staff ❌)
+        if (!roleEvaluator.isAdminOrHigher()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
+                "error", "Access Denied: Only Admins can view Policy Category Overview"
+            ));
+        }
+
+        List<Map<String, Object>> policies = firestoreService.getAllDocuments("policies");
+
+        // Aggregation by category across all companies
+        Map<String, Long> categoryCounts = new HashMap<>();
+        Map<String, Map<String, Long>> companyCategoryCounts = new HashMap<>();
+
+        for (Map<String, Object> p : policies) {
+            String cat = (String) p.get("category");
+            if (cat == null || cat.isBlank()) {
+                cat = (String) p.get("type");
+            }
+            if (cat == null || cat.isBlank()) {
+                cat = "General";
+            }
+
+            String company = (String) p.get("insuranceCompany");
+            if (company == null || company.isBlank()) {
+                company = (String) p.get("company");
+            }
+            if (company == null || company.isBlank()) {
+                company = "General Provider";
+            }
+
+            categoryCounts.put(cat, categoryCounts.getOrDefault(cat, 0L) + 1L);
+
+            companyCategoryCounts.putIfAbsent(company, new HashMap<>());
+            Map<String, Long> compMap = companyCategoryCounts.get(company);
+            compMap.put(cat, compMap.getOrDefault(cat, 0L) + 1L);
+        }
+
+        return ResponseEntity.ok(Map.of(
+            "title", "Policy Category Overview",
+            "totalPolicies", policies.size(),
+            "categoryCounts", categoryCounts,
+            "companyBreakdown", companyCategoryCounts
+        ));
     }
 }
