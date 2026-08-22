@@ -323,10 +323,30 @@ export const Followups = () => {
     return true;
   });
 
+  const exportDataList = useMemo(() => {
+    const list = [];
+    (clientData || []).forEach(c => {
+      (c.history || []).forEach(h => {
+        list.push({
+          date: h.date,
+          clientCategory: c.category,
+          prospectName: c.clientName,
+          phone: c.phone,
+          insuranceType: c.insuranceTypeInterest,
+          insuranceCompany: 'Star Health / Tata AIA',
+          salesPitch: h.stageName,
+          clientStatus: h.status,
+          advisorNotes: h.conversationNotes
+        });
+      });
+    });
+    return list;
+  }, [clientData]);
+
   return (
     <div className="space-y-6">
-      {/* Header & Download Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* HEADER BAR WITH EXPORT ACTIONS */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-card">
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">Client Follow-up Progression &amp; Sales Register</h1>
           <p className="text-xs text-slate-500 font-semibold">1-Client Consolidated Progression View + Complete Sample Spreadsheet Register with PDF &amp; Excel (.xlsx) Exports.</p>
@@ -336,7 +356,7 @@ export const Followups = () => {
           {isAdminOrManager && (
             <>
               <button 
-                onClick={() => exportFollowupsPDF(spreadsheetData || [])}
+                onClick={() => exportFollowupsPDF(exportDataList)}
                 className="flex items-center space-x-1.5 px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer"
                 title="Download PDF Report"
               >
@@ -345,7 +365,7 @@ export const Followups = () => {
               </button>
 
               <button 
-                onClick={() => exportFollowupsExcel(spreadsheetData || [])}
+                onClick={() => exportFollowupsExcel(exportDataList)}
                 className="flex items-center space-x-1.5 px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer"
                 title="Download Excel (.xlsx) Spreadsheet"
               >

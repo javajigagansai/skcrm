@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useCustomer360 } from '../context/Customer360Context';
-import { exportCustomer360PDF, exportCustomerRegistryPDF, exportFollowupsPDF, exportFollowupsExcel } from '../utils/exportUtils';
+import { exportCustomer360PDF, exportCustomerRegistryPDF, exportFollowupsPDF, exportCustomerDirectoryExcel, exportFollowupsExcel } from '../utils/exportUtils';
 import { 
   Plus, Search, UserCheck, X, Heart, Cake, Calendar, Users, 
   Briefcase, ShieldCheck, FileText, Phone, Mail, MapPin, CreditCard, 
@@ -356,7 +356,7 @@ export const Customers = () => {
               </button>
 
               <button 
-                onClick={() => exportFollowupsExcel(filtered)}
+                onClick={() => exportCustomerDirectoryExcel(filtered)}
                 className="flex items-center space-x-1.5 px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer"
                 title="Download Excel (.xlsx) Spreadsheet"
               >

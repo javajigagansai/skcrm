@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCustomer360 } from '../context/Customer360Context';
 import { useData } from '../context/DataContext';
-import { exportCustomerRegistryPDF } from '../utils/exportUtils';
+import { exportFollowupsPDF, exportInvestmentsExcel } from '../utils/exportUtils';
 import { 
   Plus, Search, CheckCircle2, Briefcase, IndianRupee, ShieldCheck, 
-  Clock, X, Edit3, Trash2, Building2, Download, Sparkles, ExternalLink
+  Clock, X, Edit3, Trash2, Building2, Download, Sparkles, ExternalLink,
+  Filter, RotateCcw, FileSpreadsheet
 } from 'lucide-react';
 
 export const Investments = () => {
@@ -41,9 +42,22 @@ export const Investments = () => {
   const [showManageProvidersModal, setShowManageProvidersModal] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterCategory, setFilterCategory] = useState('ALL');
+  const [filterProvider, setFilterProvider] = useState('ALL');
+  const [filterStatus, setFilterStatus] = useState('ALL');
+  const [filterAmountRange, setFilterAmountRange] = useState('ALL');
+
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingInvestment, setEditingInvestment] = useState(null);
+
+  const clearAllFilters = () => {
+    setSearchTerm('');
+    setFilterCategory('ALL');
+    setFilterProvider('ALL');
+    setFilterStatus('ALL');
+    setFilterAmountRange('ALL');
+  };
 
   // New Investment Form State
   const [newInv, setNewInv] = useState({
@@ -161,13 +175,54 @@ export const Investments = () => {
     }
   };
 
-  const filteredInvestments = investments.filter(inv =>
-    inv.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    inv.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    inv.provider?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    inv.type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    inv.folioNumber?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredInvestments = useMemo(() => {
+    return (investments || []).filter(inv => {
+      const term = searchTerm.toLowerCase().trim();
+      const matchesSearch = !term ||
+        (inv.customerName || '').toLowerCase().includes(term) ||
+        (inv.id || '').toLowerCase().includes(term) ||
+        (inv.provider || '').toLowerCase().includes(term) ||
+        (inv.type || inv.category || '').toLowerCase().includes(term) ||
+        (inv.folioNumber || '').toLowerCase().includes(term);
+
+      if (!matchesSearch) return false;
+
+      if (filterCategory !== 'ALL') {
+        const catLower = (inv.type || inv.category || '').toLowerCase();
+        if (filterCategory === 'MUTUAL_FUNDS' && !catLower.includes('fund') && !catLower.includes('sip') && !catLower.includes('equity')) return false;
+        if (filterCategory === 'FIXED_DEPOSIT' && !catLower.includes('fd') && !catLower.includes('fixed') && !catLower.includes('bond')) return false;
+        if (filterCategory === 'REAL_ESTATE' && !catLower.includes('real') && !catLower.includes('gold') && !catLower.includes('sgb')) return false;
+      }
+
+      if (filterProvider !== 'ALL') {
+        const provName = (inv.provider || '').toLowerCase();
+        if (!provName.includes(filterProvider.toLowerCase())) return false;
+      }
+
+      if (filterStatus !== 'ALL') {
+        const invStatus = (inv.status || 'ACTIVE').toUpperCase();
+        if (filterStatus === 'ACTIVE' && invStatus !== 'ACTIVE') return false;
+        if (filterStatus === 'PENDING' && invStatus !== 'PENDING') return false;
+        if (filterStatus === 'MATURED' && invStatus !== 'MATURED' && invStatus !== 'REDEEMED') return false;
+      }
+
+      if (filterAmountRange !== 'ALL') {
+        const amt = Number(inv.amount || 0);
+        if (filterAmountRange === 'BELOW_50K' && amt >= 50000) return false;
+        if (filterAmountRange === '50K_2L' && (amt < 50000 || amt > 200000)) return false;
+        if (filterAmountRange === '2L_10L' && (amt < 200000 || amt > 1000000)) return false;
+        if (filterAmountRange === 'ABOVE_10L' && amt <= 1000000) return false;
+      }
+
+      return true;
+    });
+  }, [investments, searchTerm, filterCategory, filterProvider, filterStatus, filterAmountRange]);
+
+  const activeFiltersCount = (searchTerm ? 1 : 0) +
+    (filterCategory !== 'ALL' ? 1 : 0) +
+    (filterProvider !== 'ALL' ? 1 : 0) +
+    (filterStatus !== 'ALL' ? 1 : 0) +
+    (filterAmountRange !== 'ALL' ? 1 : 0);
 
   return (
     <div className="space-y-6">
@@ -178,7 +233,29 @@ export const Investments = () => {
           <p className="text-xs text-slate-500 font-semibold">Manage Mutual Funds, SIPs, FDs, Sovereign Bonds &amp; Fund House AMCs.</p>
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          {isAdmin && (
+            <>
+              <button 
+                onClick={() => exportFollowupsPDF(filteredInvestments)}
+                className="flex items-center space-x-1.5 px-3.5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer"
+                title="Download PDF Report"
+              >
+                <Download className="h-4 w-4" />
+                <span>Export PDF</span>
+              </button>
+
+              <button 
+                onClick={() => exportInvestmentsExcel(filteredInvestments)}
+                className="flex items-center space-x-1.5 px-3.5 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer"
+                title="Download Excel (.xlsx) Spreadsheet"
+              >
+                <FileSpreadsheet className="h-4 w-4" />
+                <span>Export Excel (.xlsx)</span>
+              </button>
+            </>
+          )}
+
           <button 
             onClick={() => setShowManageProvidersModal(true)}
             className="flex items-center space-x-2 px-4 py-2.5 rounded-2xl bg-purple-50 hover:bg-purple-100 text-purple-700 font-extrabold text-xs shadow-xs border border-purple-200 transition cursor-pointer"
@@ -199,17 +276,104 @@ export const Investments = () => {
         </div>
       </div>
 
-      {/* Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-card">
-        <div className="relative max-w-md">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <input 
-            type="text"
-            placeholder="Search by Client Name, Investment ID, AMC Provider or Folio..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-blue-600 outline-none"
-          />
+      {/* CUSTOMER 360 STYLE ADVANCED MULTI-FILTER CONTROL BAR */}
+      <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-card space-y-4">
+        <div className="flex items-center justify-between border-b pb-3">
+          <div className="flex items-center space-x-2">
+            <Filter className="h-4 w-4 text-blue-600" />
+            <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+              Customer 360° Investment Filters
+            </h3>
+            {activeFiltersCount > 0 && (
+              <span className="badge badge-brand text-[10px] font-black px-2 py-0.5">
+                {activeFiltersCount} Active {activeFiltersCount === 1 ? 'Filter' : 'Filters'}
+              </span>
+            )}
+          </div>
+
+          {activeFiltersCount > 0 && (
+            <button
+              onClick={clearAllFilters}
+              className="flex items-center space-x-1 text-xs font-bold text-rose-600 hover:text-rose-700 hover:underline transition cursor-pointer"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              <span>Reset All Filters</span>
+            </button>
+          )}
+        </div>
+
+        {/* Filter Controls Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          
+          {/* Search Bar */}
+          <div className="sm:col-span-2 lg:col-span-2 relative">
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">Search Keywords</label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+              <input 
+                type="text"
+                placeholder="Folio No, Client, AMC House, Asset Category..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold focus:ring-2 focus:ring-blue-600 outline-none"
+              />
+            </div>
+          </div>
+
+          {/* Asset Category Filter */}
+          <div>
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">Asset Category</label>
+            <select
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50/50 cursor-pointer"
+            >
+              <option value="ALL">All Asset Types</option>
+              <option value="MUTUAL_FUNDS">Mutual Funds &amp; SIPs</option>
+              <option value="FIXED_DEPOSIT">Fixed Deposits &amp; Bonds</option>
+              <option value="REAL_ESTATE">Real Estate &amp; Gold SGB</option>
+            </select>
+          </div>
+
+          {/* AMC / Provider Filter */}
+          <div>
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">AMC / Fund House</label>
+            <select
+              value={filterProvider}
+              onChange={(e) => setFilterProvider(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50/50 cursor-pointer"
+            >
+              <option value="ALL">All AMC / Providers</option>
+              {investmentProviders.map(p => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Amount Range Filter */}
+          <div>
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">Investment Amount</label>
+            <select
+              value={filterAmountRange}
+              onChange={(e) => setFilterAmountRange(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50/50 cursor-pointer"
+            >
+              <option value="ALL">All Amounts</option>
+              <option value="BELOW_50K">Below ₹50,000</option>
+              <option value="50K_2L">₹50,000 - ₹2,00,000</option>
+              <option value="2L_10L">₹2,00,000 - ₹10,00,000</option>
+              <option value="ABOVE_10L">Above ₹10,00,000</option>
+            </select>
+          </div>
+
+        </div>
+
+        {/* Summary Bar */}
+        <div className="flex items-center justify-between text-xs text-slate-500 font-bold border-t pt-3">
+          <span>Showing <strong className="text-slate-900">{filteredInvestments.length}</strong> of <strong className="text-slate-900">{investments.length}</strong> total investment folios</span>
+          {filteredInvestments.length === 0 && (
+            <span className="text-rose-600 font-extrabold">No matching investment records found.</span>
+          )}
         </div>
       </div>
 

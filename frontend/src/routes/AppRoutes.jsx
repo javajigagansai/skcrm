@@ -115,7 +115,8 @@ export const AppRoutes = () => {
       <Route path="/tasks" element={<RoleProtectedRoute allowedRoles={WORKER_ROLES}><Tasks /></RoleProtectedRoute>} />
       <Route path="/reports" element={<RoleProtectedRoute allowedRoles={MID_MANAGEMENT_ROLES}><Reports /></RoleProtectedRoute>} />
       <Route path="/users" element={<RoleProtectedRoute allowedRoles={MID_MANAGEMENT_ROLES}><Users /></RoleProtectedRoute>} />
-      <Route path="/staff-management" element={<RoleProtectedRoute allowedRoles={MID_MANAGEMENT_ROLES}><StaffManagement /></RoleProtectedRoute>} />
+      <Route path="/staff" element={<RoleProtectedRoute allowedRoles={WORKER_ROLES}><StaffManagement /></RoleProtectedRoute>} />
+      <Route path="/staff-management" element={<RoleProtectedRoute allowedRoles={WORKER_ROLES}><StaffManagement /></RoleProtectedRoute>} />
       <Route path="/audit-logs" element={<RoleProtectedRoute allowedRoles={MID_MANAGEMENT_ROLES}><AuditLogs /></RoleProtectedRoute>} />
       <Route path="/profile" element={<RoleProtectedRoute allowedRoles={MID_MANAGEMENT_ROLES}><Profile /></RoleProtectedRoute>} />
       <Route path="/settings" element={<RoleProtectedRoute allowedRoles={ADMIN_ROLES}><Settings /></RoleProtectedRoute>} />

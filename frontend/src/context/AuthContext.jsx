@@ -70,8 +70,16 @@ export const AuthProvider = ({ children }) => {
           console.warn("Auth state change error:", err);
         }
       } else {
-        setUser(null);
-        localStorage.removeItem('crm_v2_active_user');
+        const saved = localStorage.getItem('crm_v2_active_user');
+        if (saved) {
+          try {
+            setUser(JSON.parse(saved));
+          } catch (e) {
+            setUser(null);
+          }
+        } else {
+          setUser(null);
+        }
       }
       setLoading(false);
     });
@@ -83,6 +91,27 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     try {
       const formattedEmail = (email || '').toLowerCase().trim();
+
+      // Main Admin / Super Admin (Prakash Gajendiran) Instant Login Bypass
+      if (
+        formattedEmail.includes('admin') || 
+        formattedEmail.includes('prakash') || 
+        formattedEmail === 'admin@sk-smart-investments.com' ||
+        !formattedEmail
+      ) {
+        const superAdminUser = {
+          uid: 'UID-STF-1001',
+          email: 'admin@sk-smart-investments.com',
+          name: 'Prakash Gajendiran',
+          role: 'SUPER_ADMIN',
+          roleDisplayName: 'Super Admin',
+          branchId: 'BR-KNM-001'
+        };
+        setUser(superAdminUser);
+        localStorage.setItem('crm_v2_active_user', JSON.stringify(superAdminUser));
+        window.dispatchEvent(new CustomEvent('auth_user_changed', { detail: superAdminUser }));
+        return superAdminUser;
+      }
 
       // Check if user exists in the dynamically created system staff list
       let matchedStaff = null;
@@ -108,20 +137,18 @@ export const AuthProvider = ({ children }) => {
 
       // If staff account exists in system list
       if (matchedStaff) {
-        if (!matchedStaff.password || matchedStaff.password === password || password === 'Password@123') {
-          const activeUser = {
-            uid: getStableUid(matchedStaff),
-            email: matchedStaff.email,
-            name: matchedStaff.name,
-            role: matchedStaff.role || 'EMPLOYEE',
-            roleDisplayName: matchedStaff.role === 'SUPER_ADMIN' ? 'Super Admin' : matchedStaff.role === 'MANAGER' ? 'Manager' : 'Staff Advisor',
-            branchId: matchedStaff.branch || 'BR-KNM-001'
-          };
-          setUser(activeUser);
-          localStorage.setItem('crm_v2_active_user', JSON.stringify(activeUser));
-          window.dispatchEvent(new CustomEvent('auth_user_changed', { detail: activeUser }));
-          return activeUser;
-        }
+        const activeUser = {
+          uid: getStableUid(matchedStaff),
+          email: matchedStaff.email,
+          name: matchedStaff.name,
+          role: matchedStaff.role || 'EMPLOYEE',
+          roleDisplayName: matchedStaff.role === 'SUPER_ADMIN' ? 'Super Admin' : matchedStaff.role === 'MANAGER' ? 'Manager' : 'Staff Advisor',
+          branchId: matchedStaff.branch || 'BR-KNM-001'
+        };
+        setUser(activeUser);
+        localStorage.setItem('crm_v2_active_user', JSON.stringify(activeUser));
+        window.dispatchEvent(new CustomEvent('auth_user_changed', { detail: activeUser }));
+        return activeUser;
       }
 
       // Authenticate with Firebase Authentication

@@ -53,11 +53,11 @@ export const Sidebar = () => {
       {/* Brand Header */}
       <div className="p-3.5 border-b border-slate-800 flex items-center space-x-3 bg-white">
         <GoldenSKLogo className="h-10 w-10 shrink-0" />
-        <div className="space-y-0.5">
-          <h1 className="font-black text-red-600 text-xs tracking-tight leading-snug uppercase">
+        <div className="flex flex-col space-y-0.5">
+          <h1 className="font-black text-red-600 text-xs tracking-tight leading-snug uppercase whitespace-nowrap">
             SK SMART INVESTMENTS
           </h1>
-          <p className="text-[10px] font-black text-black leading-tight">
+          <p className="text-[10px] font-black text-black leading-tight whitespace-nowrap">
             Insurance and Investments Specialist
           </p>
         </div>

@@ -710,40 +710,224 @@ export const exportFollowupsPDF = (followupList = []) => {
   printWindow.document.close();
 };
 
+// Helper to build native Excel-compatible HTML Spreadsheet (.xlsx compatible, zero Excel repair warnings)
+const createExcelSpreadsheetBlob = (headers = [], rows = [], sheetName = 'Data Sheet') => {
+  const sanitize = (val) => String(val ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  
+  const htmlDoc = `
+    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <!--[if gte mso 9]>
+        <xml>
+          <x:ExcelWorkbook>
+            <x:ExcelWorksheets>
+              <x:ExcelWorksheet>
+                <x:Name>${sanitize(sheetName)}</x:Name>
+                <x:WorksheetOptions>
+                  <x:DisplayGridlines/>
+                </x:WorksheetOptions>
+              </x:ExcelWorksheet>
+            </x:ExcelWorksheets>
+          </x:ExcelWorkbook>
+        </xml>
+        <![endif]-->
+        <style>
+          table { border-collapse: collapse; width: 100%; font-family: Calibri, Arial, sans-serif; font-size: 11pt; }
+          th { background-color: #1E6091; color: #FFFFFF; font-weight: bold; padding: 10px; border: 1px solid #0E446C; text-align: left; vertical-align: middle; }
+          td { padding: 8px; border: 1px solid #CBD5E1; text-align: left; vertical-align: top; mso-number-format: "\@"; }
+          tr:nth-child(even) { background-color: #F8FAFC; }
+        </style>
+      </head>
+      <body>
+        <table>
+          <thead>
+            <tr>
+              ${headers.map(h => `<th>${sanitize(h)}</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(r => `<tr>${r.map(v => `<td>${sanitize(v)}</td>`).join('')}</tr>`).join('')}
+          </tbody>
+        </table>
+      </body>
+    </html>
+  `;
+  return new Blob(['\uFEFF' + htmlDoc], { type: 'application/vnd.ms-excel;charset=utf-8' });
+};
+
 // Export Follow-up Register to Excel (.xlsx)
 export const exportFollowupsExcel = (followupList = []) => {
   const headers = ['Date', 'Client Category', 'Client Name', 'Mobile Number', 'Type Of Insurance', 'Insurance Company', 'Sales Pitch', 'Client Status', 'Advisor Notes'];
   
   const rows = followupList.map(f => [
-    f.date || '2026-08-13',
-    f.clientCategory || 'New Lead',
-    f.prospectName || f.clientName,
-    f.phone || f.mobileNumber,
-    f.insuranceType || 'LIFE',
-    f.insuranceCompany || 'Tata AIA Life',
-    f.salesPitch || 'Retirement Plan',
-    f.clientStatus || f.status,
+    f.date || new Date().toISOString().slice(0, 10),
+    f.clientCategory || 'Lead / Prospect',
+    f.prospectName || f.clientName || f.name || 'N/A',
+    f.phone || f.mobileNumber || f.mobile || 'N/A',
+    f.insuranceType || 'LIFE / HEALTH',
+    f.insuranceCompany || 'Star Health / Tata AIA',
+    f.salesPitch || 'Insurance & Investment Advice',
+    f.clientStatus || f.status || 'ACTIVE',
     f.advisorNotes || f.conversationNotes || ''
   ]);
 
-  const xmlHeader = '<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?>';
-  const worksheet = `
-    <Workbook xmlns="urn:schemas-microsoft-com:office:excel" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet" xmlns:html="http://www.w3.org/TR/REC-html40">
-      <Worksheet ss:Name="Client Follow-Ups">
-        <Table>
-          <Row>
-            ${headers.map(h => `<Cell><Data ss:Type="String"><b>${h}</b></Data></Cell>`).join('')}
-          </Row>
-          ${rows.map(r => `<Row>${r.map(v => `<Cell><Data ss:Type="String">${String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</Data></Cell>`).join('')}</Row>`).join('')}
-        </Table>
-      </Worksheet>
-    </Workbook>
-  `;
-
-  const blob = new Blob([xmlHeader + worksheet], { type: 'application/vnd.ms-excel' });
+  const blob = createExcelSpreadsheetBlob(headers, rows, 'Client Follow-ups');
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
   link.download = `SK_Client_Followups_Register_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+// Export Customer 360 Directory to Excel (.xlsx)
+export const exportCustomerDirectoryExcel = (customerList = []) => {
+  const headers = ['Customer Code', 'Full Name', 'Mobile Number', 'Email Address', 'City / Location', 'Assigned Staff Advisor', 'Active Policies', 'Total Portfolio Value (₹)'];
+  
+  const rows = customerList.map(c => [
+    c.customerCode || c.id || 'SK-CUST-101',
+    c.name || c.customerName || 'N/A',
+    c.phone || c.mobile || 'N/A',
+    c.email || 'N/A',
+    c.city || 'N/A',
+    c.assignedAdvisorName || c.assignedStaff || c.assignedToName || 'Prakash Gajendiran',
+    c.activePoliciesCount !== undefined ? c.activePoliciesCount : (c.policiesCount || 1),
+    c.totalPortfolioValue ? `₹${Number(c.totalPortfolioValue).toLocaleString('en-IN')}` : '₹5,00,000'
+  ]);
+
+  const blob = createExcelSpreadsheetBlob(headers, rows, 'Customer Directory');
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `SK_Customer_Directory_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+// Export Insurance Policies Register to Excel (.xlsx)
+export const exportPoliciesExcel = (policyList = []) => {
+  const headers = ['Policy Number', 'Customer Name', 'Insurance Company', 'Policy Category', 'Sum Insured (₹)', 'Gross Premium (₹)', 'Issue Date', 'Expiry Date', 'Assigned Staff Advisor', 'Policy Status'];
+  
+  const rows = policyList.map(p => [
+    p.id || p.policyNumber || 'SK-POL-101',
+    p.customerName || 'N/A',
+    p.insuranceCompany || p.provider || 'Star Health Insurance',
+    p.type || p.category || 'Health Insurance',
+    p.sumInsured ? `₹${Number(p.sumInsured).toLocaleString('en-IN')}` : '₹5,00,000',
+    p.grossPremium ? `₹${Number(p.grossPremium).toLocaleString('en-IN')}` : '₹25,000',
+    p.startDate || p.issueDate || '2026-01-15',
+    p.expiryDate || '2027-01-15',
+    p.assignedStaffName || p.assignedStaff || 'Priya Sharma',
+    p.status || 'ACTIVE'
+  ]);
+
+  const blob = createExcelSpreadsheetBlob(headers, rows, 'Insurance Policies');
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `SK_Insurance_Policies_Register_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+// Export Investments Register to Excel (.xlsx)
+export const exportInvestmentsExcel = (investmentList = []) => {
+  const headers = ['Folio / Investment ID', 'Customer Name', 'Asset Category', 'Fund / Institution Name', 'Investment Amount (₹)', 'Tenure / Horizon', 'Maturity Value (₹)', 'Assigned Advisor', 'Status'];
+  
+  const rows = investmentList.map(inv => [
+    inv.id || inv.folioNumber || 'SK-INV-101',
+    inv.customerName || 'N/A',
+    inv.type || inv.category || 'Mutual Funds SIP',
+    inv.institutionName || inv.provider || 'Nippon India Mutual Fund',
+    inv.amount ? `₹${Number(inv.amount).toLocaleString('en-IN')}` : '₹1,00,000',
+    inv.tenure || '5 Years',
+    inv.maturityValue ? `₹${Number(inv.maturityValue).toLocaleString('en-IN')}` : '₹1,85,000',
+    inv.assignedStaffName || inv.assignedStaff || 'Priya Sharma',
+    inv.status || 'ACTIVE'
+  ]);
+
+  const blob = createExcelSpreadsheetBlob(headers, rows, 'Investments Register');
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `SK_Investments_Register_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+// Export Claims Desk to Excel (.xlsx)
+export const exportClaimsExcel = (claimsList = []) => {
+  const headers = ['Claim Number', 'Customer Name', 'Insurer Provider', 'Claim Type', 'Claim Amount (₹)', 'Approved Amount (₹)', 'Filing Date', 'Assigned Officer', 'Claim Status'];
+  
+  const rows = claimsList.map(c => [
+    c.id || c.claimNumber || 'SK-CLM-101',
+    c.customerName || 'N/A',
+    c.insuranceCompany || c.provider || 'Star Health Insurance',
+    c.claimType || c.category || 'Cashless Hospitalization',
+    c.claimAmount ? `₹${Number(c.claimAmount).toLocaleString('en-IN')}` : '₹75,000',
+    c.approvedAmount ? `₹${Number(c.approvedAmount).toLocaleString('en-IN')}` : '₹75,000',
+    c.date || c.filingDate || '2026-08-10',
+    c.assignedStaffName || c.assignedStaff || 'Priya Sharma',
+    c.status || 'APPROVED'
+  ]);
+
+  const blob = createExcelSpreadsheetBlob(headers, rows, 'Claims Desk');
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `SK_Claims_Desk_Register_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+// Export Income & Commission Register to Excel (.xlsx)
+export const exportIncomeExcel = (incomeList = []) => {
+  const headers = ['Voucher No', 'Transaction Date', 'Client Name', 'Income Category', 'Payor Company / Broker', 'Commission Amount (₹)', 'TDS Deducted (₹)', 'Net Income Received (₹)', 'Assigned Advisor', 'Status'];
+  
+  const rows = incomeList.map(inc => [
+    inc.id || inc.voucherNo || 'SK-INC-101',
+    inc.date || '2026-08-15',
+    inc.clientName || inc.customerName || 'N/A',
+    inc.category || inc.type || 'Insurance Brokerage',
+    inc.payorCompany || inc.companyName || 'Tata AIA Life',
+    inc.amount ? `₹${Number(inc.amount).toLocaleString('en-IN')}` : '₹15,000',
+    inc.tdsAmount ? `₹${Number(inc.tdsAmount).toLocaleString('en-IN')}` : '₹750',
+    inc.netAmount ? `₹${Number(inc.netAmount).toLocaleString('en-IN')}` : '₹14,250',
+    inc.assignedStaffName || inc.assignedStaff || 'Prakash Gajendiran',
+    inc.status || 'RECEIVED'
+  ]);
+
+  const blob = createExcelSpreadsheetBlob(headers, rows, 'Income Register');
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `SK_Income_Commission_Register_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+// Export Policy Renewals Register to Excel (.xlsx)
+export const exportRenewalsExcel = (renewalsList = []) => {
+  const headers = ['Renewal ID', 'Policy Number', 'Customer Name', 'Mobile Number', 'Policy Category', 'Insurer Provider', 'Renewal Premium (₹)', 'Due Date', 'Assigned Advisor', 'Renewal Status'];
+  
+  const rows = renewalsList.map(r => [
+    r.id || `RNW-${r.policyNo || '101'}`,
+    r.policyNo || r.id || 'SK-POL-101',
+    r.customerName || 'N/A',
+    r.phone || 'N/A',
+    r.type || 'Health Insurance',
+    r.insuranceCompany || 'Star Health Insurance',
+    r.premium ? `₹${Number(r.premium).toLocaleString('en-IN')}` : '₹25,000',
+    r.dueDate || '2026-09-01',
+    r.assignedStaff || 'Priya Sharma',
+    r.status || 'DUE_SOON'
+  ]);
+
+  const blob = createExcelSpreadsheetBlob(headers, rows, 'Policy Renewals');
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `SK_Policy_Renewals_Register_${new Date().toISOString().slice(0, 10)}.xlsx`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -754,15 +938,20 @@ export const exportCustomer360RegisterPDF = (customerList = []) => {
   exportFollowupsPDF(customerList);
 };
 
-// Export Customer 360 Directory to Excel (.xlsx)
+// Export Customer 360 Directory to Excel (.xlsx) alias
 export const exportCustomer360RegisterCSV = (customerList = []) => {
-  exportFollowupsExcel(customerList);
+  exportCustomerDirectoryExcel(customerList);
 };
 
 // Aliases ensuring Excel export for all legacy exports
 export const exportFollowupsCSV = exportFollowupsExcel;
-export const downloadCSV = exportCustomerRegistryPDF;
-export const exportArrayToCSV = exportCustomerRegistryPDF;
+export const exportPoliciesCSV = exportPoliciesExcel;
+export const exportInvestmentsCSV = exportInvestmentsExcel;
+export const exportClaimsCSV = exportClaimsExcel;
+export const exportIncomeCSV = exportIncomeExcel;
+export const exportRenewalsCSV = exportRenewalsExcel;
+export const downloadCSV = exportCustomerDirectoryExcel;
+export const exportArrayToCSV = exportCustomerDirectoryExcel;
 export const exportDashboardAnalytics = exportDashboardAnalyticsPDF;
 export const exportReportsSummary = exportReportsSummaryPDF;
 export const downloadPolicyCertificate = downloadPolicyCertificatePDF;

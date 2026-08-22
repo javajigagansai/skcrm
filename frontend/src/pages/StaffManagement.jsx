@@ -10,8 +10,10 @@ import {
 } from 'lucide-react';
 
 const INITIAL_STAFF_SEED = [
-  { uid: 'UID-STF-1003', name: 'Priya Sharma', email: 'priya.sharma@sk-smart-investments.com', role: 'EMPLOYEE', title: 'Senior Wealth Advisor', phone: '9988776655', branch: 'Chennai Main Head Office', status: 'ACTIVE', monthlyTarget: 500000, achievedRevenue: 420000, assignedClientsCount: 14, policiesIssuedCount: 18, commissionEarned: 42000, password: 'Password@123', joinDate: '2024-03-15' },
-  { uid: 'UID-STF-1002', name: 'Branch Manager', email: 'manager@sk-smart-investments.com', role: 'MANAGER', title: 'Regional Operations Manager', phone: '9812345678', branch: 'Bangalore Regional Desk', status: 'ACTIVE', monthlyTarget: 1000000, achievedRevenue: 890000, assignedClientsCount: 22, policiesIssuedCount: 32, commissionEarned: 89000, password: 'Password@123', joinDate: '2023-11-01' }
+  { uid: 'UID-STF-1001', name: 'Prakash Gajendiran', email: 'admin@sk-smart-investments.com', role: 'SUPER_ADMIN', title: 'Super Admin / Executive Director', phone: '9876543210', branch: 'Chennai Main HQ Desk', status: 'ACTIVE', fixedSalary: 680000, monthlyTarget: 1500000, achievedRevenue: 1420000, assignedClientsCount: 28, policiesIssuedCount: 45, commissionEarned: 142000, password: 'Password@123', joinDate: '2023-01-01' },
+  { uid: 'UID-STF-1002', name: 'Branch Manager', email: 'manager@sk-smart-investments.com', role: 'MANAGER', title: 'Regional Operations Manager', phone: '9812345678', branch: 'Bangalore Regional Desk', status: 'ACTIVE', fixedSalary: 540000, monthlyTarget: 1000000, achievedRevenue: 890000, assignedClientsCount: 22, policiesIssuedCount: 32, commissionEarned: 89000, password: 'Password@123', joinDate: '2023-11-01' },
+  { uid: 'UID-STF-1003', name: 'Priya Sharma', email: 'priya.sharma@sk-smart-investments.com', role: 'EMPLOYEE', title: 'Senior Wealth Advisor', phone: '9988776655', branch: 'Chennai Main Head Office', status: 'ACTIVE', fixedSalary: 270000, monthlyTarget: 500000, achievedRevenue: 420000, assignedClientsCount: 14, policiesIssuedCount: 18, commissionEarned: 42000, password: 'Password@123', joinDate: '2024-03-15' },
+  { uid: 'UID-STF-1004', name: 'Anitha Selvam', email: 'anitha.s@sk-smart-investments.com', role: 'EMPLOYEE', title: 'Greetings & Retention Officer', phone: '9944332211', branch: 'Client Support Operations Desk', status: 'ACTIVE', fixedSalary: 150000, monthlyTarget: 300000, achievedRevenue: 280000, assignedClientsCount: 10, policiesIssuedCount: 12, commissionEarned: 28000, password: 'Password@123', joinDate: '2024-05-01' }
 ];
 
 export const StaffManagement = () => {
@@ -41,9 +43,22 @@ export const StaffManagement = () => {
   const [active360Tab, setActive360Tab] = useState('OVERVIEW');
   const [showAddStaffModal, setShowAddStaffModal] = useState(false);
   const [showEditTargetModal, setShowEditTargetModal] = useState(false);
+  const [showEditStaffModal, setShowEditStaffModal] = useState(false);
   const [targetStaff, setTargetStaff] = useState(null);
+  const [editingStaff, setEditingStaff] = useState(null);
   const [newTargetAmount, setNewTargetAmount] = useState('');
   const [showPasswords, setShowPasswords] = useState({});
+
+  const [editStaffForm, setEditStaffForm] = useState({
+    name: '',
+    email: '',
+    role: 'EMPLOYEE',
+    title: 'Staff Advisor',
+    phone: '',
+    branch: 'Chennai Main Head Office',
+    fixedSalary: 270000,
+    monthlyTarget: 400000
+  });
 
   const [newStaffForm, setNewStaffForm] = useState({
     name: '',
@@ -52,6 +67,7 @@ export const StaffManagement = () => {
     title: 'Staff Advisor',
     phone: '',
     branch: 'Chennai Main Head Office',
+    fixedSalary: 250000,
     monthlyTarget: 400000,
     password: 'Password@123'
   });
@@ -125,6 +141,78 @@ export const StaffManagement = () => {
       password: 'Password@123'
     });
     alert(`Staff Member "${createdMember.name}" created successfully!`);
+  };
+
+  const handleOpenEditStaff = (st) => {
+    setEditingStaff(st);
+    setEditStaffForm({
+      name: st.name || '',
+      email: st.email || '',
+      role: st.role || 'EMPLOYEE',
+      title: st.title || 'Staff Advisor',
+      phone: st.phone || '',
+      branch: st.branch || 'Chennai Main Head Office',
+      fixedSalary: st.fixedSalary !== undefined ? st.fixedSalary : 270000,
+      monthlyTarget: st.monthlyTarget || 400000
+    });
+    setShowEditStaffModal(true);
+  };
+
+  const handleUpdateStaff = (e) => {
+    e.preventDefault();
+    if (!editingStaff) return;
+
+    const updatedList = staffList.map(s => {
+      if (s.uid === editingStaff.uid) {
+        return {
+          ...s,
+          name: editStaffForm.name,
+          email: editStaffForm.email,
+          role: editStaffForm.role,
+          title: editStaffForm.title,
+          phone: editStaffForm.phone,
+          branch: editStaffForm.branch,
+          fixedSalary: Number(editStaffForm.fixedSalary) || 0,
+          monthlyTarget: Number(editStaffForm.monthlyTarget) || 0
+        };
+      }
+      return s;
+    });
+
+    setStaffList(updatedList);
+
+    if (selectedStaff360 && selectedStaff360.uid === editingStaff.uid) {
+      setSelectedStaff360(prev => ({
+        ...prev,
+        name: editStaffForm.name,
+        email: editStaffForm.email,
+        role: editStaffForm.role,
+        title: editStaffForm.title,
+        phone: editStaffForm.phone,
+        branch: editStaffForm.branch,
+        fixedSalary: Number(editStaffForm.fixedSalary) || 0,
+        monthlyTarget: Number(editStaffForm.monthlyTarget) || 0
+      }));
+    }
+
+    try {
+      localStorage.setItem('crm_v2_users_list', JSON.stringify(updatedList));
+      window.dispatchEvent(new Event('storage_users_updated'));
+      setDoc(doc(db, 'users', editingStaff.uid), {
+        name: editStaffForm.name,
+        email: editStaffForm.email,
+        role: editStaffForm.role,
+        title: editStaffForm.title,
+        phone: editStaffForm.phone,
+        branch: editStaffForm.branch,
+        fixedSalary: Number(editStaffForm.fixedSalary) || 0,
+        monthlyTarget: Number(editStaffForm.monthlyTarget) || 0
+      }, { merge: true }).catch(() => {});
+    } catch (err) {}
+
+    setShowEditStaffModal(false);
+    setEditingStaff(null);
+    alert(`Staff Member "${editStaffForm.name}" details and fixed salary updated successfully!`);
   };
 
   const handleUpdateTarget = (e) => {
@@ -253,9 +341,11 @@ export const StaffManagement = () => {
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-card space-y-1">
-          <span className="text-[11px] font-black uppercase text-slate-500">Total Assigned Clients</span>
-          <p className="text-2xl font-black text-blue-700">{customers.length}</p>
-          <span className="badge badge-brand text-[10px]">Client Portfolios Distributed</span>
+          <span className="text-[11px] font-black uppercase text-slate-500">Total Employee Salary Spend</span>
+          <p className="text-2xl font-black text-rose-600">
+            ₹{(staffList.filter(s => s.status === 'ACTIVE').reduce((sum, st) => sum + Number(st.fixedSalary !== undefined ? st.fixedSalary : (st.monthlyTarget ? Math.round(st.monthlyTarget * 0.5) : 250000)), 0) / 100000).toFixed(2)} Lakhs
+          </p>
+          <span className="badge badge-red text-[10px]">Monthly Staff Payroll Outgo</span>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-card space-y-1">
@@ -265,7 +355,7 @@ export const StaffManagement = () => {
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-card space-y-1">
-          <span className="text-[11px] font-black uppercase text-slate-500">Avg Target Achievement</span>
+          <span className="text-[11px] font-black uppercase text-slate-500">Avg Target Progress</span>
           <p className="text-2xl font-black text-purple-700">
             {staffList.length > 0 ? (staffList.reduce((acc, st) => {
               const m = getStaffLiveMetrics(st);
@@ -273,7 +363,7 @@ export const StaffManagement = () => {
               return acc + Math.min(100, Math.round((m.achievedRevenue / target) * 100));
             }, 0) / staffList.length).toFixed(1) : 0}%
           </p>
-          <span className="badge badge-purple text-[10px]">Monthly Target Progress</span>
+          <span className="badge badge-purple text-[10px]">Target Achievement Rate</span>
         </div>
       </div>
 
@@ -353,8 +443,12 @@ export const StaffManagement = () => {
               {/* Business & Target Meter */}
               <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 space-y-2 text-xs">
                 <div className="flex items-center justify-between text-[11px] font-extrabold">
-                  <span className="text-slate-600 uppercase">Monthly Revenue Target</span>
-                  <span className="text-blue-700">₹{(target / 100000).toFixed(1)} Lakhs</span>
+                  <span className="text-slate-600 uppercase">Fixed Monthly Salary:</span>
+                  <span className="text-rose-600 font-black">₹{Number(st.fixedSalary !== undefined ? st.fixedSalary : 270000).toLocaleString()}/mo</span>
+                </div>
+                <div className="flex items-center justify-between text-[11px] font-extrabold pt-0.5">
+                  <span className="text-slate-600 uppercase">Monthly Target:</span>
+                  <span className="text-blue-700 font-black">₹{(target / 100000).toFixed(1)} Lakhs</span>
                 </div>
                 <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
                   <div 
@@ -385,17 +479,26 @@ export const StaffManagement = () => {
               </div>
 
               {/* Action Buttons */}
-              <div className="pt-2 border-t border-slate-200 flex items-center justify-between">
+              <div className="pt-2 border-t border-slate-200 flex items-center justify-between gap-1">
+                <button
+                  onClick={() => handleOpenEditStaff(st)}
+                  className="px-2.5 py-1.5 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 font-extrabold text-[10px] transition cursor-pointer flex items-center space-x-1"
+                  title="Edit staff details and fixed salary"
+                >
+                  <Edit className="h-3 w-3" />
+                  <span>Edit Staff</span>
+                </button>
+
                 <button
                   onClick={() => {
                     setTargetStaff(st);
                     setNewTargetAmount(st.monthlyTarget || 400000);
                     setShowEditTargetModal(true);
                   }}
-                  className="px-3 py-1.5 rounded-xl bg-amber-50 text-amber-800 hover:bg-amber-100 font-extrabold text-[10px] transition cursor-pointer flex items-center space-x-1"
+                  className="px-2.5 py-1.5 rounded-xl bg-amber-50 text-amber-800 hover:bg-amber-100 font-extrabold text-[10px] transition cursor-pointer flex items-center space-x-1"
                 >
                   <Target className="h-3 w-3" />
-                  <span>Set Target</span>
+                  <span>Target</span>
                 </button>
 
                 <button
@@ -403,9 +506,9 @@ export const StaffManagement = () => {
                     setSelectedStaff360(st);
                     setActive360Tab('OVERVIEW');
                   }}
-                  className="px-4 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-[11px] transition cursor-pointer shadow-xs flex items-center space-x-1"
+                  className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-[11px] transition cursor-pointer shadow-xs flex items-center space-x-1"
                 >
-                  <span>Open Staff 360°</span>
+                  <span>360°</span>
                   <ChevronRight className="h-3.5 w-3.5" />
                 </button>
               </div>
@@ -646,6 +749,119 @@ export const StaffManagement = () => {
         </div>
       )}
 
+      {/* MODAL: EDIT STAFF DETAILS & FIXED SALARY */}
+      {showEditStaffModal && editingStaff && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-100">
+            <div className="flex items-center justify-between border-b pb-3">
+              <h3 className="text-base font-black text-slate-900 flex items-center space-x-2">
+                <Edit className="h-5 w-5 text-blue-600" />
+                <span>Edit Staff Member &amp; Salary</span>
+              </h3>
+              <button onClick={() => setShowEditStaffModal(false)} className="text-slate-400 hover:text-slate-600"><X className="h-5 w-5" /></button>
+            </div>
+
+            <form onSubmit={handleUpdateStaff} className="space-y-3 text-xs font-semibold">
+              <div>
+                <label className="block text-slate-700 mb-1 font-extrabold uppercase">Full Name</label>
+                <input 
+                  type="text" 
+                  required
+                  value={editStaffForm.name}
+                  onChange={(e) => setEditStaffForm({ ...editStaffForm, name: e.target.value })}
+                  className="w-full p-2 rounded-xl border border-slate-200 font-bold outline-none focus:ring-2 focus:ring-blue-600"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 mb-1 font-extrabold uppercase">Work Email Address</label>
+                <input 
+                  type="email" 
+                  required
+                  value={editStaffForm.email}
+                  onChange={(e) => setEditStaffForm({ ...editStaffForm, email: e.target.value })}
+                  className="w-full p-2 rounded-xl border border-slate-200 font-mono font-bold outline-none focus:ring-2 focus:ring-blue-600"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 mb-1 font-extrabold uppercase">Role Designation</label>
+                  <select 
+                    value={editStaffForm.role}
+                    onChange={(e) => setEditStaffForm({ ...editStaffForm, role: e.target.value })}
+                    className="w-full p-2 rounded-xl border border-slate-200 font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white"
+                  >
+                    <option value="SUPER_ADMIN">Super Admin</option>
+                    <option value="MANAGER">Branch Manager</option>
+                    <option value="EMPLOYEE">Staff Advisor</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-700 mb-1 font-extrabold uppercase">Title / Designation</label>
+                  <input 
+                    type="text" 
+                    value={editStaffForm.title}
+                    onChange={(e) => setEditStaffForm({ ...editStaffForm, title: e.target.value })}
+                    className="w-full p-2 rounded-xl border border-slate-200 font-bold outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 mb-1 font-extrabold uppercase text-rose-600">Fixed Monthly Salary (₹)</label>
+                  <input 
+                    type="number" 
+                    required
+                    value={editStaffForm.fixedSalary}
+                    onChange={(e) => setEditStaffForm({ ...editStaffForm, fixedSalary: e.target.value })}
+                    className="w-full p-2.5 rounded-xl border border-rose-300 font-mono font-black text-rose-700 outline-none focus:ring-2 focus:ring-rose-500 bg-rose-50/50"
+                    placeholder="e.g. 270000"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-700 mb-1 font-extrabold uppercase">Monthly Target (₹)</label>
+                  <input 
+                    type="number" 
+                    value={editStaffForm.monthlyTarget}
+                    onChange={(e) => setEditStaffForm({ ...editStaffForm, monthlyTarget: e.target.value })}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 font-mono font-bold outline-none focus:ring-2 focus:ring-blue-600"
+                    placeholder="e.g. 500000"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 mb-1 font-extrabold uppercase">Phone Number</label>
+                  <input 
+                    type="text" 
+                    value={editStaffForm.phone}
+                    onChange={(e) => setEditStaffForm({ ...editStaffForm, phone: e.target.value })}
+                    className="w-full p-2 rounded-xl border border-slate-200 font-mono font-bold outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-700 mb-1 font-extrabold uppercase">Assigned Branch</label>
+                  <input 
+                    type="text" 
+                    value={editStaffForm.branch}
+                    onChange={(e) => setEditStaffForm({ ...editStaffForm, branch: e.target.value })}
+                    className="w-full p-2 rounded-xl border border-slate-200 font-bold outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2 flex justify-end space-x-2">
+                <button type="button" onClick={() => setShowEditStaffModal(false)} className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold">Cancel</button>
+                <button type="submit" className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black shadow-md">Save Staff &amp; Salary Changes</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* MODAL: CREATE NEW STAFF MEMBER */}
       {showAddStaffModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
@@ -694,6 +910,20 @@ export const StaffManagement = () => {
                   </select>
                 </div>
                 <div>
+                  <label className="block text-slate-700 mb-1 font-extrabold uppercase text-rose-600">Fixed Monthly Salary (₹)</label>
+                  <input 
+                    type="number" 
+                    required
+                    value={newStaffForm.fixedSalary}
+                    onChange={(e) => setNewStaffForm({ ...newStaffForm, fixedSalary: e.target.value })}
+                    className="w-full p-2.5 rounded-xl border border-rose-300 font-mono font-black text-rose-700 outline-none focus:ring-2 focus:ring-rose-500 bg-rose-50/50"
+                    placeholder="250000"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
                   <label className="block text-slate-700 mb-1 font-extrabold uppercase">Phone Number</label>
                   <input 
                     type="text" 
@@ -703,16 +933,15 @@ export const StaffManagement = () => {
                     placeholder="9876543210"
                   />
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-700 mb-1 font-extrabold uppercase">Assigned Branch</label>
-                <input 
-                  type="text" 
-                  value={newStaffForm.branch}
-                  onChange={(e) => setNewStaffForm({ ...newStaffForm, branch: e.target.value })}
-                  className="w-full p-2 rounded-xl border border-slate-200 font-bold outline-none focus:ring-2 focus:ring-blue-600"
-                />
+                <div>
+                  <label className="block text-slate-700 mb-1 font-extrabold uppercase">Assigned Branch</label>
+                  <input 
+                    type="text" 
+                    value={newStaffForm.branch}
+                    onChange={(e) => setNewStaffForm({ ...newStaffForm, branch: e.target.value })}
+                    className="w-full p-2 rounded-xl border border-slate-200 font-bold outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                </div>
               </div>
 
               <div className="pt-2 flex justify-end space-x-2">

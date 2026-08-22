@@ -1,16 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCustomer360 } from '../context/Customer360Context';
 import { useData } from '../context/DataContext';
-import { Plus, Search, ShieldCheck, CheckCircle2, Clock, AlertCircle, X, UserCheck, Sparkles } from 'lucide-react';
+import { exportFollowupsPDF, exportClaimsExcel } from '../utils/exportUtils';
+import { Plus, Search, ShieldCheck, CheckCircle2, Clock, AlertCircle, X, UserCheck, Sparkles, Filter, RotateCcw, FileSpreadsheet, Download } from 'lucide-react';
 
 export const Claims = () => {
   const { user } = useAuth();
   const { openCustomer360 } = useCustomer360();
   const { claims, addClaim, updateClaimStatus } = useData();
+  const isAdmin = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN';
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('ALL');
+  const [filterCompany, setFilterCompany] = useState('ALL');
+  const [filterAmountRange, setFilterAmountRange] = useState('ALL');
+
   const [showAddModal, setShowAddModal] = useState(false);
+
+  const clearAllFilters = () => {
+    setSearchTerm('');
+    setFilterStatus('ALL');
+    setFilterCompany('ALL');
+    setFilterAmountRange('ALL');
+  };
 
   const [newClaim, setNewClaim] = useState({
     policyNo: '',
@@ -41,11 +54,56 @@ export const Claims = () => {
     updateClaimStatus(id, newStatus);
   };
 
-  const filtered = claims.filter(c =>
-    c.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.policyNo.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filtered = useMemo(() => {
+    return (claims || []).filter(c => {
+      const term = searchTerm.toLowerCase().trim();
+      const matchesSearch = !term ||
+        (c.id || '').toLowerCase().includes(term) ||
+        (c.customerName || '').toLowerCase().includes(term) ||
+        (c.policyNo || '').toLowerCase().includes(term) ||
+        (c.insuranceCompany || '').toLowerCase().includes(term) ||
+        (c.claimType || c.category || '').toLowerCase().includes(term) ||
+        (c.hospitalOrGarage || '').toLowerCase().includes(term);
+
+      if (!matchesSearch) return false;
+
+      if (filterStatus !== 'ALL') {
+        const st = (c.status || 'UNDER_REVIEW').toUpperCase();
+        if (filterStatus === 'UNDER_REVIEW' && st !== 'UNDER_REVIEW' && st !== 'PENDING') return false;
+        if (filterStatus === 'APPROVED' && st !== 'APPROVED' && st !== 'SETTLED') return false;
+        if (filterStatus === 'SETTLED' && st !== 'SETTLED' && st !== 'PAID') return false;
+        if (filterStatus === 'REJECTED' && st !== 'REJECTED') return false;
+      }
+
+      if (filterCompany !== 'ALL') {
+        const companyName = (c.insuranceCompany || '').toLowerCase();
+        if (!companyName.includes(filterCompany.toLowerCase())) return false;
+      }
+
+      if (filterAmountRange !== 'ALL') {
+        const amt = Number(c.claimAmount || 0);
+        if (filterAmountRange === 'BELOW_50K' && amt >= 50000) return false;
+        if (filterAmountRange === '50K_2L' && (amt < 50000 || amt > 200000)) return false;
+        if (filterAmountRange === 'ABOVE_2L' && amt <= 200000) return false;
+      }
+
+      return true;
+    });
+  }, [claims, searchTerm, filterStatus, filterCompany, filterAmountRange]);
+
+  const activeFiltersCount = (searchTerm ? 1 : 0) +
+    (filterStatus !== 'ALL' ? 1 : 0) +
+    (filterCompany !== 'ALL' ? 1 : 0) +
+    (filterAmountRange !== 'ALL' ? 1 : 0);
+
+  // Extract unique insurer names from claims
+  const uniqueInsurers = useMemo(() => {
+    const set = new Set();
+    (claims || []).forEach(c => {
+      if (c.insuranceCompany) set.add(c.insuranceCompany);
+    });
+    return Array.from(set);
+  }, [claims]);
 
   return (
     <div className="space-y-6">
@@ -55,13 +113,37 @@ export const Claims = () => {
           <p className="text-xs text-slate-500 font-semibold">Track cashless hospitalization &amp; reimbursement claim settlements.</p>
         </div>
 
-        <button 
-          onClick={() => setShowAddModal(true)}
-          className="flex items-center space-x-2 px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer self-start sm:self-auto"
-        >
-          <Plus className="h-4 w-4" />
-          <span>File New Claim</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2.5">
+          {isAdmin && (
+            <>
+              <button 
+                onClick={() => exportFollowupsPDF(filtered)}
+                className="flex items-center space-x-1.5 px-3.5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer"
+                title="Download PDF Report"
+              >
+                <Download className="h-4 w-4" />
+                <span>Export PDF</span>
+              </button>
+
+              <button 
+                onClick={() => exportClaimsExcel(filtered)}
+                className="flex items-center space-x-1.5 px-3.5 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer"
+                title="Download Excel (.xlsx) Spreadsheet"
+              >
+                <FileSpreadsheet className="h-4 w-4" />
+                <span>Export Excel (.xlsx)</span>
+              </button>
+            </>
+          )}
+
+          <button 
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center space-x-2 px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer self-start sm:self-auto"
+          >
+            <Plus className="h-4 w-4" />
+            <span>File New Claim</span>
+          </button>
+        </div>
       </div>
 
       {/* KPI Cards */}
@@ -74,29 +156,102 @@ export const Claims = () => {
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-card space-y-1">
           <span className="text-xs font-extrabold text-slate-500 uppercase">Claims Settlement Ratio</span>
           <p className="text-2xl font-black text-emerald-600">
-            {claims.length > 0 ? `${((claims.filter(c => c.status === 'SETTLED').length / claims.length) * 100).toFixed(1)}%` : '0%'}
+            {claims.length > 0 ? `${((claims.filter(c => c.status === 'SETTLED' || c.status === 'APPROVED').length / claims.length) * 100).toFixed(1)}%` : '0%'}
           </p>
           <span className="badge badge-green text-[10px]">Fast-Track Approval</span>
         </div>
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-card space-y-1">
           <span className="text-xs font-extrabold text-slate-500 uppercase">Total Settled Value</span>
           <p className="text-2xl font-black text-slate-900">
-            ₹ {claims.filter(c => c.status === 'SETTLED').reduce((sum, c) => sum + (c.settlementAmount || 0), 0).toLocaleString()}
+            ₹ {claims.filter(c => c.status === 'SETTLED' || c.status === 'APPROVED').reduce((sum, c) => sum + Number(c.claimAmount || c.settlementAmount || 0), 0).toLocaleString()}
           </p>
           <span className="badge badge-purple text-[10px]">Disbursed to Clients</span>
         </div>
       </div>
 
-      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-card">
-        <div className="relative max-w-md">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <input 
-            type="text"
-            placeholder="Search by Claim ID, Client Name or Policy No..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-blue-600 outline-none"
-          />
+      {/* CUSTOMER 360 STYLE ADVANCED MULTI-FILTER CONTROL BAR */}
+      <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-card space-y-4">
+        <div className="flex items-center justify-between border-b pb-3">
+          <div className="flex items-center space-x-2">
+            <Filter className="h-4 w-4 text-blue-600" />
+            <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+              Customer 360° Claims Filters
+            </h3>
+            {activeFiltersCount > 0 && (
+              <span className="badge badge-brand text-[10px] font-black px-2 py-0.5">
+                {activeFiltersCount} Active {activeFiltersCount === 1 ? 'Filter' : 'Filters'}
+              </span>
+            )}
+          </div>
+
+          {activeFiltersCount > 0 && (
+            <button
+              onClick={clearAllFilters}
+              className="flex items-center space-x-1 text-xs font-bold text-rose-600 hover:text-rose-700 hover:underline transition cursor-pointer"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              <span>Reset All Filters</span>
+            </button>
+          )}
+        </div>
+
+        {/* Filter Controls Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+          
+          {/* Search Bar */}
+          <div className="sm:col-span-2 relative">
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">Search Keywords</label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+              <input 
+                type="text"
+                placeholder="Claim ID, Client, Policy No, Insurer, Hospital..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold focus:ring-2 focus:ring-blue-600 outline-none"
+              />
+            </div>
+          </div>
+
+          {/* Status Filter */}
+          <div>
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">Claim Status</label>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50/50 cursor-pointer"
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="UNDER_REVIEW">Under Review / Submitted</option>
+              <option value="APPROVED">Approved / In Process</option>
+              <option value="SETTLED">Settled &amp; Disbursed</option>
+              <option value="REJECTED">Rejected</option>
+            </select>
+          </div>
+
+          {/* Claim Amount Filter */}
+          <div>
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">Claim Amount Range</label>
+            <select
+              value={filterAmountRange}
+              onChange={(e) => setFilterAmountRange(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50/50 cursor-pointer"
+            >
+              <option value="ALL">All Claim Amounts</option>
+              <option value="BELOW_50K">Below ₹50,000</option>
+              <option value="50K_2L">₹50,000 - ₹2,00,000</option>
+              <option value="ABOVE_2L">Above ₹2,00,000</option>
+            </select>
+          </div>
+
+        </div>
+
+        {/* Summary Bar */}
+        <div className="flex items-center justify-between text-xs text-slate-500 font-bold border-t pt-3">
+          <span>Showing <strong className="text-slate-900">{filtered.length}</strong> of <strong className="text-slate-900">{claims.length}</strong> total claim records</span>
+          {filtered.length === 0 && (
+            <span className="text-rose-600 font-extrabold">No matching claim files found.</span>
+          )}
         </div>
       </div>
 

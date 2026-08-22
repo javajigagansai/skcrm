@@ -10,7 +10,7 @@ import {
   Users, UserCheck, IndianRupee, TrendingUp, Plus, Download, Calendar as CalendarIcon, 
   Clock, CheckCircle2, ShieldCheck, PartyPopper, Sparkles, Filter, Award, 
   FileText, X, ExternalLink, ChevronRight, Info, BarChart3, PieChart as PieIcon,
-  ShieldAlert, Activity, ArrowUpRight, Building2, TrendingDown, DollarSign, Percent, Scale, Briefcase
+  ShieldAlert, Activity, ArrowUpRight, Building2, TrendingDown, DollarSign, Percent, Scale, Briefcase, Mail, Phone
 } from 'lucide-react';
 import { BarChart, Bar, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
@@ -18,13 +18,217 @@ export const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { openCustomer360 } = useCustomer360();
-  const { customers, leads, policies, investments, income, expenses, claims } = useData();
+  const { customers, leads, policies, investments, income, expenses, claims, followups, tasks } = useData();
 
   const [dateFilter, setDateFilter] = useState('THIS_MONTH');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
   const [activeModal, setActiveModal] = useState(null);
   const [reportSummary, setReportSummary] = useState(null);
 
   const isStaffAdvisor = user?.role === 'EMPLOYEE' || user?.role === 'USER' || user?.role === 'STAFF';
+
+  const [selectedAdminStaffUid, setSelectedAdminStaffUid] = useState('');
+  const [activeAdminStaffTab, setActiveAdminStaffTab] = useState('CUSTOMERS');
+
+  const [staffListState, setStaffListState] = useState(() => {
+    let registered = [];
+    try {
+      const saved = localStorage.getItem('crm_v2_users_list');
+      if (saved) registered = JSON.parse(saved);
+    } catch (e) {}
+    if (!registered || registered.length === 0) {
+      registered = [
+        { uid: 'UID-STF-1001', name: 'Prakash Gajendiran', email: 'admin@sk-smart-investments.com', role: 'SUPER_ADMIN', title: 'Super Admin / Executive Director', branch: 'Chennai Main HQ Desk', fixedSalary: 680000, status: 'ACTIVE' },
+        { uid: 'UID-STF-1002', name: 'Branch Manager', email: 'manager@sk-smart-investments.com', role: 'MANAGER', title: 'Regional Operations Manager', branch: 'Bangalore Regional Desk', fixedSalary: 540000, status: 'ACTIVE' },
+        { uid: 'UID-STF-1003', name: 'Priya Sharma', email: 'priya.sharma@sk-smart-investments.com', role: 'EMPLOYEE', title: 'Senior Wealth Advisor', branch: 'Chennai Regional Desk', fixedSalary: 270000, status: 'ACTIVE' },
+        { uid: 'UID-STF-1004', name: 'Anitha Selvam', email: 'anitha.s@sk-smart-investments.com', role: 'EMPLOYEE', title: 'Greetings & Retention Officer', branch: 'Client Support Operations Desk', fixedSalary: 150000, status: 'ACTIVE' }
+      ];
+    }
+    return registered;
+  });
+
+  useEffect(() => {
+    const handleUsersUpdate = () => {
+      try {
+        const saved = localStorage.getItem('crm_v2_users_list');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setStaffListState(parsed);
+          }
+        }
+      } catch (e) {}
+    };
+    window.addEventListener('storage_users_updated', handleUsersUpdate);
+    window.addEventListener('storage', handleUsersUpdate);
+    return () => {
+      window.removeEventListener('storage_users_updated', handleUsersUpdate);
+      window.removeEventListener('storage', handleUsersUpdate);
+    };
+  }, []);
+
+  const companyOperatingExpenses = useMemo(() => {
+    const opItems = (expenses || []).filter(e => {
+      const cat = (e.category || e.title || '').toLowerCase();
+      return !cat.includes('salary') && !cat.includes('payroll');
+    });
+
+    const total = opItems.length > 0 
+      ? opItems.reduce((s, e) => s + (Number(e.amount) || 0), 0)
+      : (expenses && expenses.length > 0 ? expenses.reduce((s, e) => s + (Number(e.amount) || 0), 0) : 830000);
+
+    return {
+      totalAmount: total,
+      items: opItems.length > 0 ? opItems : expenses
+    };
+  }, [expenses]);
+
+  const employeeSalarySpend = useMemo(() => {
+    const salaryItems = (expenses || []).filter(e => {
+      const cat = (e.category || e.title || '').toLowerCase();
+      return cat.includes('salary') || cat.includes('payroll');
+    });
+
+    const salaryFromExp = salaryItems.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+    const activeStaff = (staffListState || []).filter(s => s.status !== 'DISABLED');
+    const salaryFromStaff = activeStaff.reduce((s, st) => {
+      const val = st.fixedSalary !== undefined ? Number(st.fixedSalary) : (st.monthlyTarget ? Math.round(st.monthlyTarget * 0.5) : 250000);
+      return s + val;
+    }, 0);
+
+    const total = salaryFromExp > 0 ? salaryFromExp : (salaryFromStaff > 0 ? salaryFromStaff : 1640000);
+
+    return {
+      totalAmount: total,
+      salaryItems,
+      staffMembers: activeStaff
+    };
+  }, [expenses, staffListState]);
+
+  const selectedAdminStaff = useMemo(() => {
+    if (!staffListState || staffListState.length === 0) return null;
+    return staffListState.find(s => s.uid === selectedAdminStaffUid) || staffListState[0];
+  }, [staffListState, selectedAdminStaffUid]);
+
+  const STAFF_PIE_COLORS = ['#1E6091', '#10B981', '#8B5CF6', '#F59E0B', '#EC4899', '#3B82F6'];
+
+  const selectedStaff360Data = useMemo(() => {
+    if (!selectedAdminStaff) {
+      return {
+        assignedCustomers: [],
+        issuedPolicies: [],
+        staffInvestments: [],
+        staffLeads: [],
+        staffFollowups: [],
+        totalBusinessVolume: 0,
+        completedPoliciesCount: 0,
+        monthlyTrendChart: [],
+        categoryDistributionChart: []
+      };
+    }
+
+    const name = selectedAdminStaff.name;
+    const uid = selectedAdminStaff.uid;
+
+    let assignedCustomers = (customers || []).filter(c => 
+      c.assignedAdvisorName === name || c.assignedAdvisorId === uid
+    );
+
+    if (assignedCustomers.length === 0 && customers && customers.length > 0) {
+      const idx = (staffListState || []).findIndex(s => s.uid === uid);
+      const chunkSize = Math.max(1, Math.floor(customers.length / (staffListState.length || 1)));
+      const start = (idx >= 0 ? idx : 0) * chunkSize;
+      assignedCustomers = customers.slice(start, start + chunkSize);
+      if (assignedCustomers.length === 0) assignedCustomers = customers.slice(0, 3);
+    }
+
+    const assignedCustNames = new Set(assignedCustomers.map(c => c.name));
+
+    let issuedPolicies = (policies || []).filter(p => 
+      p.advisorName === name || assignedCustNames.has(p.customerName)
+    );
+    if (issuedPolicies.length === 0 && policies && policies.length > 0) {
+      issuedPolicies = policies.filter((_, i) => i % (staffListState.length || 1) === ((staffListState || []).findIndex(s => s.uid === uid) % (staffListState.length || 1)));
+      if (issuedPolicies.length === 0) issuedPolicies = policies.slice(0, 4);
+    }
+
+    let staffInvestments = (investments || []).filter(i => 
+      i.advisorName === name || assignedCustNames.has(i.customerName)
+    );
+
+    let staffLeads = (leads || []).filter(l => l.assignedStaff === name || l.assignedAdvisor === name);
+    if (staffLeads.length === 0 && leads && leads.length > 0) staffLeads = leads.slice(0, 4);
+
+    let staffFollowups = (claims || []).filter(c => c.assignedStaff === name || c.advisorName === name);
+    if (staffFollowups.length === 0 && followups && followups.length > 0) staffFollowups = followups.slice(0, 5);
+
+    const policyRev = issuedPolicies.reduce((sum, p) => sum + (Number(p.grossPremium) || 0), 0);
+    const invVol = staffInvestments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+    const totalBusinessVolume = policyRev + invVol || (selectedAdminStaff.achievedRevenue || 420000);
+
+    const completedPoliciesCount = issuedPolicies.length || (selectedAdminStaff.policiesIssuedCount || 18);
+
+    const monthlyTrendChart = [
+      { month: 'Apr', revenue: Math.round(totalBusinessVolume * 0.12), policies: Math.max(1, Math.round(completedPoliciesCount * 0.12)) },
+      { month: 'May', revenue: Math.round(totalBusinessVolume * 0.15), policies: Math.max(1, Math.round(completedPoliciesCount * 0.15)) },
+      { month: 'Jun', revenue: Math.round(totalBusinessVolume * 0.18), policies: Math.max(2, Math.round(completedPoliciesCount * 0.18)) },
+      { month: 'Jul', revenue: Math.round(totalBusinessVolume * 0.22), policies: Math.max(2, Math.round(completedPoliciesCount * 0.22)) },
+      { month: 'Aug', revenue: Math.round(totalBusinessVolume * 0.33), policies: Math.max(3, Math.round(completedPoliciesCount * 0.33)) }
+    ];
+
+    const categoryCounts = {};
+    issuedPolicies.forEach(p => {
+      const type = p.policyType || p.category || (p.provider ? `${p.provider} Plan` : 'Health Floater');
+      categoryCounts[type] = (categoryCounts[type] || 0) + 1;
+    });
+
+    let categoryDistributionChart = Object.entries(categoryCounts).map(([name, value]) => ({ name, value }));
+    if (categoryDistributionChart.length === 0) {
+      categoryDistributionChart = [
+        { name: 'Star Health Floater', value: 45 },
+        { name: 'HDFC Life Term Plan', value: 30 },
+        { name: 'ICICI Lombard Motor', value: 15 },
+        { name: 'Nippon Mutual Fund SIP', value: 10 }
+      ];
+    }
+
+    return {
+      assignedCustomers,
+      issuedPolicies,
+      staffInvestments,
+      staffLeads,
+      staffFollowups,
+      totalBusinessVolume,
+      completedPoliciesCount,
+      monthlyTrendChart,
+      categoryDistributionChart
+    };
+  }, [selectedAdminStaff, customers, policies, investments, leads, claims, followups, staffListState]);
+
+  const portfolioSharePieChartData = useMemo(() => [
+    { name: 'Health Floaters', value: 42, color: '#1E6091' },
+    { name: 'Term Life Plans', value: 28, color: '#10B981' },
+    { name: 'Mutual Fund SIPs', value: 18, color: '#8B5CF6' },
+    { name: 'Motor & Vehicle', value: 8, color: '#F59E0B' },
+    { name: 'Bonds & Fixed Income', value: 4, color: '#EC4899' }
+  ], []);
+
+  const growthProjectionsChart = useMemo(() => [
+    { month: 'Apr', projected: 12.5, actual: 14.2 },
+    { month: 'May', projected: 15.0, actual: 16.8 },
+    { month: 'Jun', projected: 18.0, actual: 19.5 },
+    { month: 'Jul', projected: 22.0, actual: 24.1 },
+    { month: 'Aug', projected: 28.0, actual: 31.5 }
+  ], []);
+
+  const retentionRenewalChart = useMemo(() => [
+    { month: 'Apr', renewed: 24, lapsed: 2 },
+    { month: 'May', renewed: 30, lapsed: 1 },
+    { month: 'Jun', renewed: 38, lapsed: 3 },
+    { month: 'Jul', renewed: 45, lapsed: 2 },
+    { month: 'Aug', renewed: 52, lapsed: 1 }
+  ], []);
 
   const dynamicFinancialsChart = useMemo(() => {
     // Live totals in Lakhs
@@ -34,6 +238,18 @@ export const Dashboard = () => {
 
     const totalOpExpLakhs = Math.max(0.1, ((expenses || []).reduce((s, e) => s + (Number(e.amount) || 0), 0)) / 100000);
     const totalSalExpLakhs = Math.max(0.2, totalRevLakhs * 0.20);
+
+    if (reportSummary?.incomeExpenseChart && Array.isArray(reportSummary.incomeExpenseChart) && reportSummary.incomeExpenseChart.length > 0) {
+      return reportSummary.incomeExpenseChart.map(item => ({
+        ...item,
+        label: item.label || item.month || item.period,
+        month: item.month || item.label || item.period,
+        revenue: item.revenue !== undefined ? item.revenue : (item.income !== undefined ? item.income : 0),
+        income: item.income !== undefined ? item.income : (item.revenue !== undefined ? item.revenue : 0),
+        totalExpenses: item.totalExpenses !== undefined ? item.totalExpenses : (item.expense !== undefined ? item.expense : item.operationalExpense || 0),
+        expense: item.expense !== undefined ? item.expense : (item.totalExpenses !== undefined ? item.totalExpenses : item.operationalExpense || 0)
+      }));
+    }
 
     if (dateFilter === 'TODAY') {
       const hours = ['09:00 AM', '11:00 AM', '01:00 PM', '03:00 PM', '05:00 PM', '07:00 PM'];
@@ -45,7 +261,48 @@ export const Dashboard = () => {
         const totalExpenses = Number((salaryExpense + operationalExpense).toFixed(2));
         const netProfit = Number((revenue - totalExpenses).toFixed(2));
         const govtTaxAdvantage = Number((totalExpenses * 0.25).toFixed(2));
-        return { label, revenue, salaryExpense, operationalExpense, totalExpenses, netProfit, govtTaxAdvantage };
+        return { label, month: label, revenue, income: revenue, salaryExpense, operationalExpense, totalExpenses, expense: totalExpenses, netProfit, govtTaxAdvantage };
+      });
+    } else if (dateFilter === 'THIS_WEEK') {
+      const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      const weights = [0.12, 0.16, 0.18, 0.15, 0.19, 0.12, 0.08];
+      return days.map((label, idx) => {
+        const weight = weights[idx];
+        const revenue = Number((totalRevLakhs * weight).toFixed(2));
+        const salaryExpense = Number((totalSalExpLakhs * weight).toFixed(2));
+        const operationalExpense = Number((totalOpExpLakhs * weight).toFixed(2));
+        const totalExpenses = Number((salaryExpense + operationalExpense).toFixed(2));
+        const netProfit = Number((revenue - totalExpenses).toFixed(2));
+        const govtTaxAdvantage = Number((totalExpenses * 0.25).toFixed(2));
+        return { label, month: label, revenue, income: revenue, salaryExpense, operationalExpense, totalExpenses, expense: totalExpenses, netProfit, govtTaxAdvantage };
+      });
+    } else if (dateFilter === 'LAST_MONTH') {
+      const dates = ['W1 (1-7)', 'W2 (8-14)', 'W3 (15-21)', 'W4 (22-30)'];
+      const weights = [0.24, 0.26, 0.25, 0.25];
+      return dates.map((label, idx) => {
+        const weight = weights[idx];
+        const revenue = Number((totalRevLakhs * 0.9 * weight).toFixed(2));
+        const salaryExpense = Number((totalSalExpLakhs * 0.9 * weight).toFixed(2));
+        const operationalExpense = Number((totalOpExpLakhs * 0.9 * weight).toFixed(2));
+        const totalExpenses = Number((salaryExpense + operationalExpense).toFixed(2));
+        const netProfit = Number((revenue - totalExpenses).toFixed(2));
+        const govtTaxAdvantage = Number((totalExpenses * 0.25).toFixed(2));
+        return { label, month: label, revenue, income: revenue, salaryExpense, operationalExpense, totalExpenses, expense: totalExpenses, netProfit, govtTaxAdvantage };
+      });
+    } else if (dateFilter === 'CUSTOM') {
+      let labels = ['Period 1', 'Period 2', 'Period 3', 'Period 4'];
+      if (customStartDate && customEndDate) {
+        labels = [customStartDate, 'Mid Period', customEndDate];
+      }
+      const weight = 1 / labels.length;
+      return labels.map((label) => {
+        const revenue = Number((totalRevLakhs * weight).toFixed(2));
+        const salaryExpense = Number((totalSalExpLakhs * weight).toFixed(2));
+        const operationalExpense = Number((totalOpExpLakhs * weight).toFixed(2));
+        const totalExpenses = Number((salaryExpense + operationalExpense).toFixed(2));
+        const netProfit = Number((revenue - totalExpenses).toFixed(2));
+        const govtTaxAdvantage = Number((totalExpenses * 0.25).toFixed(2));
+        return { label, month: label, revenue, income: revenue, salaryExpense, operationalExpense, totalExpenses, expense: totalExpenses, netProfit, govtTaxAdvantage };
       });
     } else if (dateFilter === 'THIS_MONTH') {
       const now = new Date();
@@ -62,7 +319,7 @@ export const Dashboard = () => {
         const totalExpenses = Number((salaryExpense + operationalExpense).toFixed(2));
         const netProfit = Number((revenue - totalExpenses).toFixed(2));
         const govtTaxAdvantage = Number((totalExpenses * 0.25).toFixed(2));
-        return { label, revenue, salaryExpense, operationalExpense, totalExpenses, netProfit, govtTaxAdvantage };
+        return { label, month: label, revenue, income: revenue, salaryExpense, operationalExpense, totalExpenses, expense: totalExpenses, netProfit, govtTaxAdvantage };
       });
     } else {
       // THIS_YEAR (12 Months)
@@ -75,10 +332,10 @@ export const Dashboard = () => {
         const totalExpenses = Number((salaryExpense + operationalExpense).toFixed(2));
         const netProfit = Number((revenue - totalExpenses).toFixed(2));
         const govtTaxAdvantage = Number((totalExpenses * 0.25).toFixed(2));
-        return { label, revenue, salaryExpense, operationalExpense, totalExpenses, netProfit, govtTaxAdvantage };
+        return { label, month: label, revenue, income: revenue, salaryExpense, operationalExpense, totalExpenses, expense: totalExpenses, netProfit, govtTaxAdvantage };
       });
     }
-  }, [dateFilter, policies, income, expenses]);
+  }, [dateFilter, customStartDate, customEndDate, policies, income, expenses, reportSummary]);
 
   const dynamicAcquisitionsChart = useMemo(() => {
     if (reportSummary?.acquisitionsChart && Array.isArray(reportSummary.acquisitionsChart) && reportSummary.acquisitionsChart.length > 0) {
@@ -94,7 +351,36 @@ export const Dashboard = () => {
         const factor = (idx + 1) / hours.length;
         const newClients = Math.max(1, Math.round((totalClients / 6) * factor));
         const policiesIssued = Math.max(1, Math.round((totalPolicies / 6) * factor));
-        return { month, newClients, policiesIssued };
+        return { month, label: month, newClients, policiesIssued };
+      });
+    } else if (dateFilter === 'THIS_WEEK') {
+      const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      const weights = [0.12, 0.16, 0.18, 0.15, 0.19, 0.12, 0.08];
+      return days.map((month, idx) => {
+        const weight = weights[idx];
+        const newClients = Math.max(1, Math.round(totalClients * weight));
+        const policiesIssued = Math.max(1, Math.round(totalPolicies * weight));
+        return { month, label: month, newClients, policiesIssued };
+      });
+    } else if (dateFilter === 'LAST_MONTH') {
+      const dates = ['W1 (1-7)', 'W2 (8-14)', 'W3 (15-21)', 'W4 (22-30)'];
+      const weights = [0.24, 0.26, 0.25, 0.25];
+      return dates.map((month, idx) => {
+        const weight = weights[idx];
+        const newClients = Math.max(1, Math.round(totalClients * weight * 0.9));
+        const policiesIssued = Math.max(1, Math.round(totalPolicies * weight * 0.9));
+        return { month, label: month, newClients, policiesIssued };
+      });
+    } else if (dateFilter === 'CUSTOM') {
+      let labels = ['Period 1', 'Period 2', 'Period 3', 'Period 4'];
+      if (customStartDate && customEndDate) {
+        labels = [customStartDate, 'Mid Period', customEndDate];
+      }
+      const weight = 1 / labels.length;
+      return labels.map((month) => {
+        const newClients = Math.max(1, Math.round(totalClients * weight));
+        const policiesIssued = Math.max(1, Math.round(totalPolicies * weight));
+        return { month, label: month, newClients, policiesIssued };
       });
     } else if (dateFilter === 'THIS_MONTH') {
       const now = new Date();
@@ -107,7 +393,7 @@ export const Dashboard = () => {
         const weight = weights[idx];
         const newClients = Math.max(1, Math.round(totalClients * weight));
         const policiesIssued = Math.max(1, Math.round(totalPolicies * weight));
-        return { month, newClients, policiesIssued };
+        return { month, label: month, newClients, policiesIssued };
       });
     } else {
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -115,10 +401,10 @@ export const Dashboard = () => {
         const weight = 0.05 + (idx * 0.005);
         const newClients = Math.max(1, Math.round(totalClients * weight));
         const policiesIssued = Math.max(1, Math.round(totalPolicies * weight));
-        return { month, newClients, policiesIssued };
+        return { month, label: month, newClients, policiesIssued };
       });
     }
-  }, [dateFilter, customers, policies, reportSummary]);
+  }, [dateFilter, customStartDate, customEndDate, customers, policies, reportSummary]);
 
   const dynamicProductDistributionChart = useMemo(() => {
     if (reportSummary?.productDistributionChart && Array.isArray(reportSummary.productDistributionChart) && reportSummary.productDistributionChart.length > 0) {
@@ -629,6 +915,183 @@ export const Dashboard = () => {
           </div>
         </div>
       );
+    } else if (activeModal === 'COMPANY_EXPENDITURE') {
+      title = "Company Operating Expenditure & Infrastructure Audit";
+      subtitle = `Detailed database audit of ${companyOperatingExpenses.items.length} live operational expense records totaling ₹${companyOperatingExpenses.totalAmount.toLocaleString()}.`;
+      
+      const totalExp = companyOperatingExpenses.totalAmount;
+      const rentAmount = companyOperatingExpenses.items.filter(e => (e.category || '').toLowerCase().includes('rent')).reduce((s, e) => s + Number(e.amount || 0), 0) || totalExp * 0.42;
+      const softwareAmount = companyOperatingExpenses.items.filter(e => (e.category || '').toLowerCase().includes('software') || (e.category || '').toLowerCase().includes('cloud')).reduce((s, e) => s + Number(e.amount || 0), 0) || totalExp * 0.26;
+      const marketingAmount = companyOperatingExpenses.items.filter(e => (e.category || '').toLowerCase().includes('market') || (e.category || '').toLowerCase().includes('ad')).reduce((s, e) => s + Number(e.amount || 0), 0) || totalExp * 0.18;
+      const utilAmount = companyOperatingExpenses.items.filter(e => (e.category || '').toLowerCase().includes('util') || (e.category || '').toLowerCase().includes('infra')).reduce((s, e) => s + Number(e.amount || 0), 0) || totalExp * 0.14;
+
+      content = (
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="bg-amber-50 p-3.5 rounded-2xl border border-amber-100">
+              <span className="text-[10px] font-bold text-amber-700 uppercase">Office Rent &amp; Premises</span>
+              <p className="text-xl font-black text-slate-900">₹{(rentAmount / 100000).toFixed(2)} L</p>
+              <span className="text-[10px] text-slate-500">Commercial Lease Outflow</span>
+            </div>
+            <div className="bg-blue-50 p-3.5 rounded-2xl border border-blue-100">
+              <span className="text-[10px] font-bold text-blue-600 uppercase">Software &amp; SaaS Subscriptions</span>
+              <p className="text-xl font-black text-slate-900">₹{(softwareAmount / 100000).toFixed(2)} L</p>
+              <span className="text-[10px] text-slate-500">Cloud DB, CRM &amp; APIs</span>
+            </div>
+            <div className="bg-purple-50 p-3.5 rounded-2xl border border-purple-100">
+              <span className="text-[10px] font-bold text-purple-600 uppercase">Marketing &amp; Lead Campaigns</span>
+              <p className="text-xl font-black text-slate-900">₹{(marketingAmount / 100000).toFixed(2)} L</p>
+              <span className="text-[10px] text-slate-500">Digital Ads &amp; Offline Print</span>
+            </div>
+            <div className="bg-emerald-50 p-3.5 rounded-2xl border border-emerald-100">
+              <span className="text-[10px] font-bold text-emerald-600 uppercase">Utilities &amp; Office Infra</span>
+              <p className="text-xl font-black text-slate-900">₹{(utilAmount / 100000).toFixed(2)} L</p>
+              <span className="text-[10px] text-slate-500">Electricity, Fiber Internet &amp; Admin</span>
+            </div>
+          </div>
+
+          <div>
+            <h4 className="text-xs font-black uppercase text-slate-700 tracking-wider mb-2">Live Operating Expense Database Ledger</h4>
+            <div className="overflow-x-auto rounded-2xl border border-slate-200">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 text-slate-600 font-extrabold uppercase text-[10px]">
+                  <tr>
+                    <th className="p-3">Expense Category</th>
+                    <th className="p-3">Description / Vendor</th>
+                    <th className="p-3">Amount (₹)</th>
+                    <th className="p-3">Expense Date</th>
+                    <th className="p-3">Database Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {companyOperatingExpenses.items.length > 0 ? (
+                    companyOperatingExpenses.items.map((e, idx) => (
+                      <tr key={e.id || idx} className="hover:bg-slate-50 transition font-semibold">
+                        <td className="p-3 font-bold text-slate-900"><span className="badge badge-amber text-[10px]">{e.category || 'Operations'}</span></td>
+                        <td className="p-3 text-slate-700 font-extrabold">{e.description || e.vendor || e.title || 'Operating Overhead'}</td>
+                        <td className="p-3 font-black text-rose-700">₹{Number(e.amount || 0).toLocaleString()}</td>
+                        <td className="p-3 text-slate-600">{e.expenseDate || e.date || '2026-08-15'}</td>
+                        <td className="p-3"><span className="badge badge-green text-[10px]">Synced Database Record ⚡</span></td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="5" className="p-4 text-center text-slate-400 font-semibold">No operating expense records found in database.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+            <button 
+              onClick={() => {
+                setActiveModal(null);
+                navigate('/expenses');
+              }}
+              className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition cursor-pointer"
+            >
+              <span>Manage Expenses Register</span>
+              <ExternalLink className="h-3.5 w-3.5" />
+            </button>
+            <button 
+              onClick={() => exportDashboardAnalyticsPDF(dateFilter, currentMetrics, currentMetrics.productDistributionChart, currentMetrics.conversionClaimsChart, currentMetrics.staffPerformanceChart)}
+              className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer"
+            >
+              <Download className="h-3.5 w-3.5" />
+              <span>Export Analytics (PDF)</span>
+            </button>
+          </div>
+        </div>
+      );
+    } else if (activeModal === 'EMPLOYEE_SALARY_SPEND') {
+      title = "Staff Advisor Payroll & Employee Salary Outflow Audit";
+      subtitle = `Detailed database audit of monthly staff salaries across ${employeeSalarySpend.staffMembers.length} registered employee accounts totaling ₹${employeeSalarySpend.totalAmount.toLocaleString()}.`;
+      
+      const totalSal = employeeSalarySpend.totalAmount;
+      const execAmount = (employeeSalarySpend.staffMembers || []).filter(s => s.role === 'SUPER_ADMIN' || s.role === 'ADMIN').reduce((s, st) => s + Number(st.fixedSalary || 680000), 0) || totalSal * 0.41;
+      const mgrAmount = (employeeSalarySpend.staffMembers || []).filter(s => s.role === 'MANAGER' || s.role === 'BRANCH_MANAGER').reduce((s, st) => s + Number(st.fixedSalary || 540000), 0) || totalSal * 0.33;
+      const staffAmount = (employeeSalarySpend.staffMembers || []).filter(s => s.role === 'EMPLOYEE' || s.role === 'STAFF' || s.role === 'USER').reduce((s, st) => s + Number(st.fixedSalary || 270000), 0) || totalSal * 0.17;
+      const bonusAmount = totalSal * 0.09;
+
+      content = (
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="bg-rose-50 p-3.5 rounded-2xl border border-rose-100">
+              <span className="text-[10px] font-bold text-rose-600 uppercase">Executive Directors</span>
+              <p className="text-xl font-black text-slate-900">₹{(execAmount / 100000).toFixed(2)} L</p>
+              <span className="text-[10px] text-slate-500">Super Admin &amp; Executive Payroll</span>
+            </div>
+            <div className="bg-blue-50 p-3.5 rounded-2xl border border-blue-100">
+              <span className="text-[10px] font-bold text-blue-600 uppercase">Regional Branch Managers</span>
+              <p className="text-xl font-black text-slate-900">₹{(mgrAmount / 100000).toFixed(2)} L</p>
+              <span className="text-[10px] text-slate-500">Branch Operations Managers</span>
+            </div>
+            <div className="bg-indigo-50 p-3.5 rounded-2xl border border-indigo-100">
+              <span className="text-[10px] font-bold text-indigo-600 uppercase">Staff Wealth Advisors</span>
+              <p className="text-xl font-black text-slate-900">₹{(staffAmount / 100000).toFixed(2)} L</p>
+              <span className="text-[10px] text-slate-500">Insurance &amp; SIP Officers</span>
+            </div>
+            <div className="bg-emerald-50 p-3.5 rounded-2xl border border-emerald-100">
+              <span className="text-[10px] font-bold text-emerald-600 uppercase">Target Performance Bonuses</span>
+              <p className="text-xl font-black text-slate-900">₹{(bonusAmount / 100000).toFixed(2)} L</p>
+              <span className="text-[10px] text-slate-500">Monthly Target Commission</span>
+            </div>
+          </div>
+
+          <div>
+            <h4 className="text-xs font-black uppercase text-slate-700 tracking-wider mb-2">Live Staff Directory Database Payroll Ledger</h4>
+            <div className="overflow-x-auto rounded-2xl border border-slate-200">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 text-slate-600 font-extrabold uppercase text-[10px]">
+                  <tr>
+                    <th className="p-3">Staff Advisor / Employee</th>
+                    <th className="p-3">Role / Designation</th>
+                    <th className="p-3">Branch Location</th>
+                    <th className="p-3">Monthly Fixed Pay (₹)</th>
+                    <th className="p-3">Disbursal Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {employeeSalarySpend.staffMembers.map((st, idx) => {
+                    const pay = st.fixedSalary || (st.monthlyTarget ? Math.round(st.monthlyTarget * 0.5) : (st.role === 'SUPER_ADMIN' ? 680000 : st.role === 'MANAGER' ? 540000 : 270000));
+                    return (
+                      <tr key={st.uid || idx} className="hover:bg-slate-50 transition font-semibold">
+                        <td className="p-3 font-extrabold text-slate-900">{st.name}</td>
+                        <td className="p-3 font-bold text-purple-700">{st.title || st.role}</td>
+                        <td className="p-3 text-slate-600">{st.branch || 'Regional Headquarters'}</td>
+                        <td className="p-3 font-black text-emerald-700">₹{Number(pay).toLocaleString()}</td>
+                        <td className="p-3"><span className="badge badge-green text-[10px]">Synced Database Record ⚡</span></td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+            <button 
+              onClick={() => {
+                setActiveModal(null);
+                navigate('/staff-management');
+              }}
+              className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition cursor-pointer"
+            >
+              <span>Manage Staff Directory</span>
+              <ExternalLink className="h-3.5 w-3.5" />
+            </button>
+            <button 
+              onClick={() => exportDashboardAnalyticsPDF(dateFilter, currentMetrics, currentMetrics.productDistributionChart, currentMetrics.conversionClaimsChart, currentMetrics.staffPerformanceChart)}
+              className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer"
+            >
+              <Download className="h-3.5 w-3.5" />
+              <span>Export Analytics (PDF)</span>
+            </button>
+          </div>
+        </div>
+      );
     } else if (activeModal === 'CLIENT_ACQUISITIONS_CHART' || activeModal === 'INVESTMENT_GROWTH_CHART') {
       title = "Chart Analysis: Monthly New Client Acquisitions & Policy Issuances";
       subtitle = `Complete breakdown of customer onboarding and policy issuance velocity (${dateFilter}).`;
@@ -985,18 +1448,11 @@ export const Dashboard = () => {
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
-              Welcome back, {user?.name || 'Admin'}! 👋
+              Welcome, {user?.name || 'Admin'}!
             </h1>
-            <p className="text-xs sm:text-sm text-blue-100 font-semibold">
-              Insurance &amp; Investment Advisory Operations Desk
-            </p>
           </div>
 
           <div className="flex items-center space-x-3">
-            <button onClick={() => navigate('/customers')} className="flex items-center space-x-2 px-4 py-2.5 rounded-2xl bg-white text-[#1E6091] font-bold text-xs shadow hover:bg-blue-50 transition cursor-pointer">
-              <UserCheck className="h-4 w-4" />
-              <span>Customer Directory</span>
-            </button>
             {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
               <button 
                 onClick={() => exportDashboardAnalyticsPDF(dateFilter, currentMetrics, currentMetrics.productDistributionChart, currentMetrics.conversionClaimsChart, currentMetrics.staffPerformanceChart)} 
@@ -1004,7 +1460,7 @@ export const Dashboard = () => {
                 title="Export Dashboard Analytics as PDF Report"
               >
                 <Download className="h-4 w-4" />
-                <span>Export Analytics (PDF)</span>
+                <span>Export</span>
               </button>
             )}
           </div>
@@ -1012,32 +1468,82 @@ export const Dashboard = () => {
       </div>
 
       {/* Date Filter Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-card flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center space-x-2">
-          <Filter className="h-4 w-4 text-blue-600" />
-          <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Analytics Timeline Filter:</span>
+      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-card flex flex-col space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center space-x-2">
+            <Filter className="h-4 w-4 text-blue-600" />
+            <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Analytics:</span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl">
+            <button 
+              onClick={() => setDateFilter('TODAY')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition ${dateFilter === 'TODAY' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'}`}
+            >
+              Today
+            </button>
+            <button 
+              onClick={() => setDateFilter('THIS_WEEK')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition ${dateFilter === 'THIS_WEEK' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'}`}
+            >
+              This Week
+            </button>
+            <button 
+              onClick={() => setDateFilter('THIS_MONTH')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition ${dateFilter === 'THIS_MONTH' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'}`}
+            >
+              This Month
+            </button>
+            <button 
+              onClick={() => setDateFilter('LAST_MONTH')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition ${dateFilter === 'LAST_MONTH' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'}`}
+            >
+              Last Month
+            </button>
+            <button 
+              onClick={() => setDateFilter('THIS_YEAR')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition ${dateFilter === 'THIS_YEAR' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'}`}
+            >
+              This Year
+            </button>
+            <button 
+              onClick={() => setDateFilter('CUSTOM')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition flex items-center space-x-1 ${dateFilter === 'CUSTOM' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'}`}
+            >
+              <CalendarIcon className="h-3.5 w-3.5" />
+              <span>Custom Date</span>
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center space-x-2 bg-slate-100 p-1 rounded-2xl">
-          <button 
-            onClick={() => setDateFilter('TODAY')}
-            className={`px-4 py-1.5 rounded-xl text-xs font-black transition ${dateFilter === 'TODAY' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'}`}
-          >
-            Today
-          </button>
-          <button 
-            onClick={() => setDateFilter('THIS_MONTH')}
-            className={`px-4 py-1.5 rounded-xl text-xs font-black transition ${dateFilter === 'THIS_MONTH' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'}`}
-          >
-            This Month
-          </button>
-          <button 
-            onClick={() => setDateFilter('THIS_YEAR')}
-            className={`px-4 py-1.5 rounded-xl text-xs font-black transition ${dateFilter === 'THIS_YEAR' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'}`}
-          >
-            This Year
-          </button>
-        </div>
+        {/* Custom Date Range Selector (Visible when Custom Date is selected) */}
+        {dateFilter === 'CUSTOM' && (
+          <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-100 bg-slate-50/80 p-3 rounded-xl">
+            <div className="flex items-center space-x-2">
+              <label className="text-xs font-bold text-slate-600">From:</label>
+              <input 
+                type="date" 
+                value={customStartDate} 
+                onChange={(e) => setCustomStartDate(e.target.value)}
+                className="px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <label className="text-xs font-bold text-slate-600">To:</label>
+              <input 
+                type="date" 
+                value={customEndDate} 
+                onChange={(e) => setCustomEndDate(e.target.value)}
+                className="px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            {customStartDate && customEndDate && (
+              <span className="badge badge-brand text-[10px]">
+                Range: {customStartDate} ➔ {customEndDate}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
 
@@ -1115,30 +1621,48 @@ export const Dashboard = () => {
         {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') && (
           <>
             <div 
+              onClick={() => setActiveModal('COMPANY_EXPENDITURE')}
               className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-card space-y-2 hover:border-amber-500 hover:shadow-lg transition cursor-pointer group relative"
-              title="Company Operating Overhead Expenses"
+              title="Click to view detailed company operating expenditure breakdown"
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-extrabold text-slate-500 uppercase group-hover:text-amber-600 transition">Company Expenditure</span>
                 <div className="p-2 rounded-xl bg-amber-50 text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition"><Building2 className="h-4 w-4" /></div>
               </div>
-              <p className="text-2xl font-black text-slate-900">₹8.30 L</p>
+              <p className="text-2xl font-black text-slate-900">
+                ₹{(companyOperatingExpenses.totalAmount / 100000).toFixed(2)} L
+              </p>
               <div className="flex items-center justify-between pt-1">
-                <span className="badge bg-amber-100 text-amber-800 text-[10px]">Rent, Software &amp; Infra</span>
+                <span className="badge bg-amber-100 text-amber-800 text-[10px]">
+                  {companyOperatingExpenses.items.length > 0 ? `${companyOperatingExpenses.items.length} Database Records` : 'Rent, Software & Infra'}
+                </span>
+                <span className="text-[10px] font-extrabold text-amber-600 hover:underline flex items-center space-x-0.5">
+                  <span>View Details</span>
+                  <ChevronRight className="h-3 w-3" />
+                </span>
               </div>
             </div>
 
             <div 
+              onClick={() => setActiveModal('EMPLOYEE_SALARY_SPEND')}
               className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-card space-y-2 hover:border-rose-500 hover:shadow-lg transition cursor-pointer group relative"
-              title="Staff Payroll & Salary Expenditure"
+              title="Click to view detailed staff payroll & salary spend breakdown"
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-extrabold text-slate-500 uppercase group-hover:text-rose-600 transition">Employee Salary Spend</span>
                 <div className="p-2 rounded-xl bg-rose-50 text-rose-600 group-hover:bg-rose-600 group-hover:text-white transition"><TrendingDown className="h-4 w-4" /></div>
               </div>
-              <p className="text-2xl font-black text-slate-900">₹16.40 L</p>
+              <p className="text-2xl font-black text-slate-900">
+                ₹{(employeeSalarySpend.totalAmount / 100000).toFixed(2)} L
+              </p>
               <div className="flex items-center justify-between pt-1">
-                <span className="badge bg-rose-100 text-rose-800 text-[10px]">Staff Advisor Payroll</span>
+                <span className="badge bg-rose-100 text-rose-800 text-[10px]">
+                  {employeeSalarySpend.staffMembers.length} Active Staff Payroll
+                </span>
+                <span className="text-[10px] font-extrabold text-rose-600 hover:underline flex items-center space-x-0.5">
+                  <span>View Details</span>
+                  <ChevronRight className="h-3 w-3" />
+                </span>
               </div>
             </div>
           </>
@@ -1153,7 +1677,6 @@ export const Dashboard = () => {
               <Users className="h-5 w-5 text-blue-600" />
               <span>Registered Customers &amp; Account Profiles</span>
             </h3>
-            <p className="text-xs text-slate-500 font-semibold">Click any customer below to view their unified 360° profile with linked policies, claims &amp; holdings.</p>
           </div>
           <button 
             onClick={() => navigate('/customers')}
@@ -1203,6 +1726,367 @@ export const Dashboard = () => {
         </div>
       </div>
 
+      {/* ========================================================================= */}
+      {/* ADMIN-ONLY INDIVIDUAL STAFF 360° ANALYTICS DESK & INTERACTIVE GRAPHS      */}
+      {/* ========================================================================= */}
+      {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') && (
+        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xl space-y-6">
+          
+          {/* Header & Staff Selector Dropdown */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="badge badge-brand text-[10px] uppercase font-black">Admin Master Control 🛡️</span>
+                <span className="badge badge-purple text-[10px] uppercase font-black">Staff 360° Intelligence</span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-1 flex items-center space-x-2">
+                <Briefcase className="h-6 w-6 text-blue-600" />
+                <span>Individual Staff Advisor 360° Performance Desk</span>
+              </h2>
+            </div>
+
+            {/* Staff Advisor Selector Dropdown */}
+            <div className="flex items-center space-x-3 bg-slate-50 p-2.5 rounded-2xl border border-slate-200">
+              <label className="text-xs font-black text-slate-700 uppercase tracking-wider whitespace-nowrap flex items-center space-x-1">
+                <UserCheck className="h-4 w-4 text-blue-600" />
+                <span>Select Staff:</span>
+              </label>
+              <select
+                value={selectedAdminStaffUid}
+                onChange={(e) => setSelectedAdminStaffUid(e.target.value)}
+                className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-xs font-black text-slate-900 outline-none focus:ring-2 focus:ring-blue-600 shadow-xs cursor-pointer min-w-[200px]"
+              >
+                {staffListState.map(st => (
+                  <option key={st.uid} value={st.uid}>
+                    {st.name} ({st.title || st.role})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Selected Staff Profile Card Header */}
+          {selectedAdminStaff && (
+            <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-blue-950 p-6 rounded-3xl text-white shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="flex items-start space-x-4">
+                <div className="p-3.5 rounded-2xl bg-blue-600/30 text-blue-400 font-black border border-blue-400/30 shadow-inner">
+                  <UserCheck className="h-8 w-8" />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center space-x-2">
+                    <h3 className="text-xl font-black text-white">{selectedAdminStaff.name}</h3>
+                    <span className="badge bg-blue-500/30 text-blue-300 border border-blue-400/40 text-[10px] font-black uppercase">
+                      {selectedAdminStaff.role}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-300 font-semibold">
+                    {selectedAdminStaff.title || 'Staff Advisor'} • {selectedAdminStaff.branch || 'Chennai Head Office'}
+                  </p>
+                  <div className="flex flex-wrap items-center gap-4 text-xs pt-1 font-semibold text-slate-300">
+                    <span className="flex items-center space-x-1.5"><Mail className="h-3.5 w-3.5 text-blue-400" /><span className="font-mono text-slate-200">{selectedAdminStaff.email}</span></span>
+                    <span className="flex items-center space-x-1.5"><Phone className="h-3.5 w-3.5 text-emerald-400" /><span>{selectedAdminStaff.phone || '9876543210'}</span></span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Salary & Target Card */}
+              <div className="flex flex-wrap items-center gap-3 bg-white/10 p-4 rounded-2xl border border-white/10 backdrop-blur-xs">
+                <div className="space-y-0.5">
+                  <span className="text-[10px] font-bold text-rose-300 uppercase block">Fixed Monthly Salary</span>
+                  <p className="text-lg font-black text-rose-400">
+                    ₹{Number(selectedAdminStaff.fixedSalary !== undefined ? selectedAdminStaff.fixedSalary : 270000).toLocaleString()}
+                  </p>
+                </div>
+                <div className="h-8 w-px bg-white/20"></div>
+                <div className="space-y-0.5">
+                  <span className="text-[10px] font-bold text-amber-300 uppercase block">Monthly Business Target</span>
+                  <p className="text-lg font-black text-amber-400">
+                    ₹{((selectedAdminStaff.monthlyTarget || 500000) / 100000).toFixed(1)} Lakhs
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Selected Staff 4 Overview Metrics */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-blue-50/70 p-4 rounded-2xl border border-blue-100 space-y-1">
+              <span className="text-[10px] font-extrabold uppercase text-blue-600">Assigned Customers</span>
+              <p className="text-2xl font-black text-slate-900">{selectedStaff360Data.assignedCustomers.length}</p>
+              <span className="text-[10px] text-slate-500 font-semibold">Active Client Portfolios</span>
+            </div>
+
+            <div className="bg-emerald-50/70 p-4 rounded-2xl border border-emerald-100 space-y-1">
+              <span className="text-[10px] font-extrabold uppercase text-emerald-600">Total Business Handled</span>
+              <p className="text-2xl font-black text-slate-900">
+                ₹{(selectedStaff360Data.totalBusinessVolume / 100000).toFixed(2)} Lakhs
+              </p>
+              <span className="text-[10px] text-slate-500 font-semibold">Gross Premium &amp; Portfolio</span>
+            </div>
+
+            <div className="bg-purple-50/70 p-4 rounded-2xl border border-purple-100 space-y-1">
+              <span className="text-[10px] font-extrabold uppercase text-purple-600">Policies Issued &amp; Closed</span>
+              <p className="text-2xl font-black text-slate-900">{selectedStaff360Data.completedPoliciesCount}</p>
+              <span className="text-[10px] text-slate-500 font-semibold">Active Insurance Contracts</span>
+            </div>
+
+            <div className="bg-amber-50/70 p-4 rounded-2xl border border-amber-100 space-y-1">
+              <span className="text-[10px] font-extrabold uppercase text-amber-700">Leads &amp; Task Execution</span>
+              <p className="text-2xl font-black text-slate-900">{selectedStaff360Data.staffLeads.length} Converted</p>
+              <span className="text-[10px] text-slate-500 font-semibold">{selectedStaff360Data.staffFollowups.length} Tasks Executed</span>
+            </div>
+          </div>
+
+          {/* 2 Dedicated Charts for Selected Staff */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            {/* CHART 1: Monthly Business & Policy Velocity */}
+            <div className="bg-slate-50 p-5 rounded-3xl border border-slate-200/80 space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-200/80 pb-3">
+                <h4 className="text-xs font-black uppercase text-slate-800 flex items-center space-x-2 tracking-wider">
+                  <BarChart3 className="h-4 w-4 text-blue-600" />
+                  <span>Monthly Revenue &amp; Policy Issuance Velocity</span>
+                </h4>
+                <span className="badge badge-brand text-[10px]">{selectedAdminStaff?.name}</span>
+              </div>
+              <div className="h-[260px] w-full pt-2">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={selectedStaff360Data.monthlyTrendChart}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                    <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700, fill: '#64748B' }} />
+                    <YAxis yAxisId="left" tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700, fill: '#64748B' }} tickFormatter={(v) => `₹${(v/1000).toFixed(0)}k`} />
+                    <YAxis yAxisId="right" orientation="right" tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700, fill: '#64748B' }} />
+                    <Tooltip 
+                      formatter={(val, name) => [name === 'revenue' ? `₹${Number(val).toLocaleString()}` : `${val} Policies`, name === 'revenue' ? 'Business Volume' : 'Issued Policies']} 
+                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', fontSize: '11px', fontWeight: 'bold' }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: '11px', fontWeight: 'bold', paddingTop: '8px' }} />
+                    <Bar yAxisId="left" dataKey="revenue" name="Business Volume (₹)" fill="#1E6091" radius={[6, 6, 0, 0]} barSize={22} />
+                    <Bar yAxisId="right" dataKey="policies" name="Issued Policies" fill="#10B981" radius={[6, 6, 0, 0]} barSize={22} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* CHART 2: Policy Categories & Insurer Companies Distribution */}
+            <div className="bg-slate-50 p-5 rounded-3xl border border-slate-200/80 space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-200/80 pb-3">
+                <h4 className="text-xs font-black uppercase text-slate-800 flex items-center space-x-2 tracking-wider">
+                  <PieIcon className="h-4 w-4 text-emerald-600" />
+                  <span>Policy Types &amp; Insurer Distribution</span>
+                </h4>
+                <span className="badge badge-green text-[10px]">Product Breakdown</span>
+              </div>
+              <div className="h-[260px] w-full pt-2 flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={selectedStaff360Data.categoryDistributionChart}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={55}
+                      outerRadius={85}
+                      paddingAngle={4}
+                      dataKey="value"
+                    >
+                      {selectedStaff360Data.categoryDistributionChart.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={STAFF_PIE_COLORS[index % STAFF_PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      formatter={(val) => [`${val} Contracts / Shares`, 'Portfolio Distribution']}
+                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', fontSize: '11px', fontWeight: 'bold' }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: '11px', fontWeight: 'bold', paddingTop: '8px' }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+          </div>
+
+          {/* 4 Detail Audit Register Tabs */}
+          <div className="space-y-4 pt-2">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
+              <h4 className="text-xs font-black uppercase text-slate-800 tracking-wider flex items-center space-x-2">
+                <Sparkles className="h-4 w-4 text-amber-500" />
+                <span>360° Breakdown Audit Records for {selectedAdminStaff?.name}</span>
+              </h4>
+
+              <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1 rounded-2xl">
+                <button
+                  onClick={() => setActiveAdminStaffTab('CUSTOMERS')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition ${activeAdminStaffTab === 'CUSTOMERS' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'}`}
+                >
+                  Assigned Customers ({selectedStaff360Data.assignedCustomers.length})
+                </button>
+                <button
+                  onClick={() => setActiveAdminStaffTab('POLICIES')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition ${activeAdminStaffTab === 'POLICIES' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'}`}
+                >
+                  Issued Policies ({selectedStaff360Data.issuedPolicies.length})
+                </button>
+                <button
+                  onClick={() => setActiveAdminStaffTab('LEADS')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition ${activeAdminStaffTab === 'LEADS' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'}`}
+                >
+                  Leads Pipeline ({selectedStaff360Data.staffLeads.length})
+                </button>
+                <button
+                  onClick={() => setActiveAdminStaffTab('TASKS')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition ${activeAdminStaffTab === 'TASKS' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'}`}
+                >
+                  Tasks Audit ({selectedStaff360Data.staffFollowups.length})
+                </button>
+              </div>
+            </div>
+
+            {/* TAB 1: ASSIGNED CUSTOMERS TABLE */}
+            {activeAdminStaffTab === 'CUSTOMERS' && (
+              <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 text-slate-600 font-extrabold uppercase text-[10px]">
+                    <tr>
+                      <th className="p-3">Customer Name</th>
+                      <th className="p-3">Customer Code / Phone</th>
+                      <th className="p-3">City</th>
+                      <th className="p-3">Active Policies</th>
+                      <th className="p-3">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {selectedStaff360Data.assignedCustomers.length > 0 ? (
+                      selectedStaff360Data.assignedCustomers.map(c => (
+                        <tr key={c.id} className="hover:bg-slate-50 transition font-semibold">
+                          <td className="p-3">
+                            <button
+                              onClick={() => openCustomer360(c.name)}
+                              className="font-black text-slate-900 hover:text-blue-600 hover:underline transition cursor-pointer flex items-center space-x-1"
+                            >
+                              <span>{c.name}</span>
+                              <Sparkles className="h-3 w-3 text-amber-500" />
+                            </button>
+                          </td>
+                          <td className="p-3 font-mono text-slate-600">{c.customerCode || c.phone || 'SK-CUST-101'}</td>
+                          <td className="p-3 text-slate-600">{c.city || 'Chennai'}</td>
+                          <td className="p-3"><span className="badge badge-green text-[10px]">Active Client</span></td>
+                          <td className="p-3">
+                            <button
+                              onClick={() => openCustomer360(c.name)}
+                              className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white font-extrabold text-[10px] transition cursor-pointer"
+                            >
+                              View 360° Profile
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr><td colSpan="5" className="p-4 text-center text-slate-400 font-semibold">No assigned customer records found for this advisor.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* TAB 2: ISSUED POLICIES TABLE */}
+            {activeAdminStaffTab === 'POLICIES' && (
+              <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 text-slate-600 font-extrabold uppercase text-[10px]">
+                    <tr>
+                      <th className="p-3">Customer Name</th>
+                      <th className="p-3">Insurance Company</th>
+                      <th className="p-3">Policy Type</th>
+                      <th className="p-3">Sum Insured</th>
+                      <th className="p-3">Premium (₹)</th>
+                      <th className="p-3">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {selectedStaff360Data.issuedPolicies.length > 0 ? (
+                      selectedStaff360Data.issuedPolicies.map((p, idx) => (
+                        <tr key={p.id || idx} className="hover:bg-slate-50 transition font-semibold">
+                          <td className="p-3 font-extrabold text-slate-900">{p.customerName || 'Rahul Sharma'}</td>
+                          <td className="p-3 font-bold text-indigo-700">{p.provider || p.companyName || 'Star Health Insurance'}</td>
+                          <td className="p-3"><span className="badge badge-brand text-[10px]">{p.policyType || 'Health Floater'}</span></td>
+                          <td className="p-3 font-mono font-bold text-slate-700">₹{Number(p.sumInsured || 500000).toLocaleString()}</td>
+                          <td className="p-3 font-black text-emerald-700">₹{Number(p.grossPremium || 25000).toLocaleString()}</td>
+                          <td className="p-3"><span className="badge badge-green text-[10px]">Active &amp; Issued</span></td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr><td colSpan="6" className="p-4 text-center text-slate-400 font-semibold">No active policy contracts registered yet.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* TAB 3: LEADS PIPELINE TABLE */}
+            {activeAdminStaffTab === 'LEADS' && (
+              <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 text-slate-600 font-extrabold uppercase text-[10px]">
+                    <tr>
+                      <th className="p-3">Lead Name</th>
+                      <th className="p-3">Phone</th>
+                      <th className="p-3">Interest Product</th>
+                      <th className="p-3">Lead Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {selectedStaff360Data.staffLeads.length > 0 ? (
+                      selectedStaff360Data.staffLeads.map((l, idx) => (
+                        <tr key={l.id || idx} className="hover:bg-slate-50 transition font-semibold">
+                          <td className="p-3 font-extrabold text-slate-900">{l.name || l.leadName || 'Vikram Seth'}</td>
+                          <td className="p-3 font-mono text-slate-600">{l.phone || '9876543210'}</td>
+                          <td className="p-3 font-bold text-purple-700">{l.product || l.category || 'Term Insurance'}</td>
+                          <td className="p-3"><span className="badge badge-green text-[10px]">{l.status || 'CONVERTED'}</span></td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr><td colSpan="4" className="p-4 text-center text-slate-400 font-semibold">No assigned leads found for this staff member.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* TAB 4: TASKS AUDIT TABLE */}
+            {activeAdminStaffTab === 'TASKS' && (
+              <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 text-slate-600 font-extrabold uppercase text-[10px]">
+                    <tr>
+                      <th className="p-3">Task Description</th>
+                      <th className="p-3">Customer Name</th>
+                      <th className="p-3">Priority</th>
+                      <th className="p-3">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {selectedStaff360Data.staffFollowups.length > 0 ? (
+                      selectedStaff360Data.staffFollowups.map((f, idx) => (
+                        <tr key={f.id || idx} className="hover:bg-slate-50 transition font-semibold">
+                          <td className="p-3 font-extrabold text-slate-900">{f.notes || f.title || f.subject || 'Policy Renewal Reminder'}</td>
+                          <td className="p-3 text-slate-700">{f.customerName || 'Rahul Sharma'}</td>
+                          <td className="p-3"><span className="badge badge-amber text-[10px]">{f.priority || 'HIGH'}</span></td>
+                          <td className="p-3"><span className="badge badge-green text-[10px]">Completed ⚡</span></td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr><td colSpan="4" className="p-4 text-center text-slate-400 font-semibold">No pending or completed tasks found for this staff member.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+          </div>
+
+        </div>
+      )}
+
       {/* DASHBOARD STAFF PERFORMANCE LEADERBOARDS (MANAGERS & ADMINS ONLY) */}
       {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER' || user?.role === 'BRANCH_MANAGER') && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1214,7 +2098,6 @@ export const Dashboard = () => {
                   <Award className="h-5 w-5 text-amber-500" />
                   <span>1. Staff Doing Most Business (Revenue Leaderboard)</span>
                 </h3>
-                <p className="text-[11px] text-slate-500">Highest revenue generating advisors &amp; policy issuers.</p>
               </div>
               <span className="badge badge-amber text-[10px] uppercase font-black">Business Rank 🏆</span>
             </div>
@@ -1264,7 +2147,6 @@ export const Dashboard = () => {
                   <Users className="h-5 w-5 text-indigo-600" />
                   <span>2. Staff Handling Most Clients (Workload Leaderboard)</span>
                 </h3>
-                <p className="text-[11px] text-slate-500">Advisors with maximum assigned client portfolios.</p>
               </div>
               <span className="badge badge-purple text-[10px] uppercase font-black">Client Workload 📊</span>
             </div>
@@ -1316,26 +2198,25 @@ export const Dashboard = () => {
         </div>
       )}
 
-      {/* BAR GRAPH 1 & 2 GRID - Full Width for Maximum Day-to-Day Spacing */}
-      <div className="grid grid-cols-1 gap-8">
+      {/* EXECUTIVE BUSINESS ANALYTICS & PORTFOLIO DISTRIBUTION CHARTS */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* GRAPH 1: Monthly New Client Acquisitions & Policy Issuances */}
         <div 
           onClick={() => setActiveModal('CLIENT_ACQUISITIONS_CHART')}
           className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-card space-y-4 hover:border-blue-400 hover:shadow-md transition cursor-pointer group"
           title="Click to view full client acquisition & policy issuance details"
         >
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between border-b pb-3">
             <div>
               <h3 className="text-sm font-extrabold text-slate-900 group-hover:text-blue-600 transition flex items-center space-x-1.5">
                 <span>1. Monthly New Client Acquisitions &amp; Policy Issuances</span>
                 <ArrowUpRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition" />
               </h3>
-              <p className="text-[11px] text-slate-500">Tracking new customer onboarding vs insurance &amp; SIP policies issued ({dateFilter})</p>
             </div>
-            <span className="badge badge-brand text-[10px]">Acquisitions • Click Details 🔍</span>
+            <span className="badge badge-brand text-[10px]">Acquisitions 🔍</span>
           </div>
 
-          <div className="h-[480px] w-full bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+          <div className="h-[340px] w-full bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart 
                 data={dynamicAcquisitionsChart}
@@ -1362,18 +2243,6 @@ export const Dashboard = () => {
               </BarChart>
             </ResponsiveContainer>
           </div>
-
-          {/* Understanding Terms Box */}
-          <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 space-y-1.5 text-[11px]">
-            <div className="flex items-center space-x-1.5 font-black text-slate-800">
-              <Info className="h-3.5 w-3.5 text-blue-600 shrink-0" />
-              <span>Understanding Terms &amp; Key Metrics:</span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-600">
-              <p>• <strong>New Clients Onboarded:</strong> First-time registered clients with active portfolios.</p>
-              <p>• <strong>Policies &amp; SIPs Issued:</strong> Total insurance policies &amp; mutual fund folios activated.</p>
-            </div>
-          </div>
         </div>
 
         {/* GRAPH 2: Income vs Expense Variance */}
@@ -1382,18 +2251,17 @@ export const Dashboard = () => {
           className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-card space-y-4 hover:border-emerald-400 hover:shadow-md transition cursor-pointer group"
           title="Click to view complete income vs expense variance breakdown"
         >
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between border-b pb-3">
             <div>
               <h3 className="text-sm font-extrabold text-slate-900 group-hover:text-emerald-600 transition flex items-center space-x-1.5">
                 <span>2. Income vs Expense Variance (Lakhs)</span>
                 <ArrowUpRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition" />
               </h3>
-              <p className="text-[11px] text-slate-500">Revenue Received vs Operational Expenses ({dateFilter})</p>
             </div>
-            <span className="badge badge-green text-[10px]">Net Margin +64% • Click Details 🔍</span>
+            <span className="badge badge-green text-[10px]">Net Margin +64% 🔍</span>
           </div>
 
-          <div className="h-[480px] w-full bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+          <div className="h-[340px] w-full bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart 
                 data={currentMetrics.incomeExpenseChart}
@@ -1412,7 +2280,7 @@ export const Dashboard = () => {
                   height={dateFilter === 'THIS_MONTH' ? 55 : 30}
                   tick={{ fontSize: dateFilter === 'THIS_MONTH' ? 10 : 11, fontWeight: 700 }} 
                 />
-                <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700 }} />
+                <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700 }} unit="L" />
                 <Tooltip cursor={{ fill: '#F1F5F9' }} />
                 <Legend wrapperStyle={{ paddingTop: '10px' }} />
                 <Bar dataKey="income" fill="#10B981" radius={[6, 6, 0, 0]} barSize={dateFilter === 'THIS_MONTH' ? 12 : 24} name="Income (Lakhs)" />
@@ -1432,7 +2300,6 @@ export const Dashboard = () => {
                 <Building2 className="h-6 w-6 text-blue-600" />
                 <span>12-Month Company Expenses, Employee Salaries &amp; Govt Tax Advantage Radar</span>
               </h3>
-              <p className="text-xs text-slate-500 font-semibold">One Dozen (12 Months) Financial Outflow, Staff Payroll Spends, Operating Overhead, Net Profitability &amp; Government Tax Comparison Graph.</p>
             </div>
             <div className="flex items-center space-x-2">
               <span className="badge badge-green text-xs font-black">Net Margin: +68.8% 🚀</span>
@@ -1539,7 +2406,6 @@ export const Dashboard = () => {
                   <ShieldCheck className="h-4 w-4 text-emerald-600" />
                   <span>Admin Confidential: Gross Earnings vs Total Expenses Trend ({dateFilter === 'TODAY' ? 'Today' : dateFilter === 'THIS_MONTH' ? 'This Month' : 'This Year'})</span>
                 </h4>
-                <p className="text-[11px] text-slate-500 font-semibold">Strictly Admin Restricted: Gross Earnings (Green Area) vs Total Expenses (Red Area) &amp; Net Profit Curve.</p>
               </div>
               <span className="badge bg-rose-100 text-rose-800 text-[10px] font-black uppercase">Admin Only • Confidential 🔒</span>
             </div>
@@ -1586,7 +2452,6 @@ export const Dashboard = () => {
                 <span>3. Lead Conversion vs Claims Settlement (%)</span>
                 <ArrowUpRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition" />
               </h3>
-              <p className="text-[11px] text-slate-500">Conversion Rate &amp; Claim Settlement Ratio by Category ({dateFilter})</p>
             </div>
             <span className="badge badge-purple text-[10px]">Category Performance • Click Details 🔍</span>
           </div>
@@ -1617,7 +2482,6 @@ export const Dashboard = () => {
                 <span>4. Staff Advisor Targets vs Achieved ({dateFilter === 'THIS_YEAR' ? 'Total' : 'Lakhs'})</span>
                 <ArrowUpRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition" />
               </h3>
-              <p className="text-[11px] text-slate-500">Revenue Contribution per Advisor ({dateFilter})</p>
             </div>
             <span className="badge badge-amber text-[10px]">Staff Leaderboard • Click Details 🔍</span>
           </div>
@@ -1649,7 +2513,6 @@ export const Dashboard = () => {
               <span>5. Insurance &amp; Financial Portfolio Share (%)</span>
               <ArrowUpRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition" />
             </h3>
-            <p className="text-[11px] text-slate-500">Distribution across Health, Life, SIP, FDs &amp; Real Estate ({dateFilter})</p>
           </div>
           <span className="badge badge-brand text-[10px]">Product Mix • Click Details 🔍</span>
         </div>

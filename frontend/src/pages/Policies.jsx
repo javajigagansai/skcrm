@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCustomer360 } from '../context/Customer360Context';
 import { useData } from '../context/DataContext';
-import { downloadPolicyCertificate } from '../utils/exportUtils';
-import { FileText, Plus, Search, CheckCircle2, Edit3, Trash2, X, Shield, ShieldCheck, Download, Building2, Sparkles, UserCheck } from 'lucide-react';
+import { downloadPolicyCertificate, exportFollowupsPDF, exportPoliciesExcel } from '../utils/exportUtils';
+import { FileText, Plus, Search, CheckCircle2, Edit3, Trash2, X, Shield, ShieldCheck, Download, Building2, Sparkles, UserCheck, Filter, RotateCcw, FileSpreadsheet } from 'lucide-react';
 
 export const Policies = () => {
   const { user } = useAuth();
@@ -37,9 +37,24 @@ export const Policies = () => {
   const [showManageCompaniesModal, setShowManageCompaniesModal] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterCategory, setFilterCategory] = useState('ALL');
+  const [filterCompany, setFilterCompany] = useState('ALL');
+  const [filterStatus, setFilterStatus] = useState('ALL');
+  const [filterStaff, setFilterStaff] = useState('ALL');
+  const [filterPremiumRange, setFilterPremiumRange] = useState('ALL');
+
   const [showIssueModal, setShowIssueModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingPolicy, setEditingPolicy] = useState(null);
+
+  const clearAllFilters = () => {
+    setSearchTerm('');
+    setFilterCategory('ALL');
+    setFilterCompany('ALL');
+    setFilterStatus('ALL');
+    setFilterStaff('ALL');
+    setFilterPremiumRange('ALL');
+  };
 
   // New Policy Form State
   const [newPolicy, setNewPolicy] = useState({
@@ -156,12 +171,71 @@ export const Policies = () => {
     }
   };
 
-  const filteredPolicies = policies.filter(pol =>
-    pol.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    pol.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    pol.insuranceCompany.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    pol.type.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredPolicies = useMemo(() => {
+    return (policies || []).filter(pol => {
+      const term = searchTerm.toLowerCase().trim();
+      const matchesSearch = !term || 
+        (pol.id || '').toLowerCase().includes(term) ||
+        (pol.customerName || '').toLowerCase().includes(term) ||
+        (pol.insuranceCompany || '').toLowerCase().includes(term) ||
+        (pol.type || pol.category || '').toLowerCase().includes(term) ||
+        (pol.assignedStaffName || pol.assignedStaff || '').toLowerCase().includes(term);
+
+      if (!matchesSearch) return false;
+
+      if (filterCategory !== 'ALL') {
+        const typeLower = (pol.type || pol.category || '').toLowerCase();
+        if (filterCategory === 'HEALTH' && !typeLower.includes('health') && !typeLower.includes('medic')) return false;
+        if (filterCategory === 'LIFE' && !typeLower.includes('life') && !typeLower.includes('ulip') && !typeLower.includes('term')) return false;
+        if (filterCategory === 'MOTOR' && !typeLower.includes('motor') && !typeLower.includes('car') && !typeLower.includes('vehicle')) return false;
+        if (filterCategory === 'GENERAL' && !typeLower.includes('general') && !typeLower.includes('travel') && !typeLower.includes('fire')) return false;
+      }
+
+      if (filterCompany !== 'ALL') {
+        const companyName = (pol.insuranceCompany || '').toLowerCase();
+        if (!companyName.includes(filterCompany.toLowerCase())) return false;
+      }
+
+      if (filterStatus !== 'ALL') {
+        const polStatus = (pol.status || 'ACTIVE').toUpperCase();
+        if (filterStatus === 'ACTIVE' && polStatus !== 'ACTIVE') return false;
+        if (filterStatus === 'PENDING_RENEWAL' && polStatus !== 'DUE' && polStatus !== 'PENDING') return false;
+        if (filterStatus === 'EXPIRED' && polStatus !== 'EXPIRED' && polStatus !== 'LAPSED') return false;
+      }
+
+      if (filterStaff !== 'ALL') {
+        const staffName = (pol.assignedStaffName || pol.assignedStaff || '').toLowerCase();
+        if (!staffName.includes(filterStaff.toLowerCase())) return false;
+      }
+
+      if (filterPremiumRange !== 'ALL') {
+        const prem = Number(pol.grossPremium || 0);
+        if (filterPremiumRange === 'BELOW_10K' && prem >= 10000) return false;
+        if (filterPremiumRange === '10K_50K' && (prem < 10000 || prem > 50000)) return false;
+        if (filterPremiumRange === '50K_1L' && (prem < 50000 || prem > 100000)) return false;
+        if (filterPremiumRange === 'ABOVE_1L' && prem <= 100000) return false;
+      }
+
+      return true;
+    });
+  }, [policies, searchTerm, filterCategory, filterCompany, filterStatus, filterStaff, filterPremiumRange]);
+
+  const activeFiltersCount = (searchTerm ? 1 : 0) +
+    (filterCategory !== 'ALL' ? 1 : 0) +
+    (filterCompany !== 'ALL' ? 1 : 0) +
+    (filterStatus !== 'ALL' ? 1 : 0) +
+    (filterStaff !== 'ALL' ? 1 : 0) +
+    (filterPremiumRange !== 'ALL' ? 1 : 0);
+
+  // Extract unique staff members for dropdown
+  const uniqueStaffAdvisors = useMemo(() => {
+    const set = new Set();
+    (policies || []).forEach(p => {
+      const name = p.assignedStaffName || p.assignedStaff;
+      if (name) set.add(name);
+    });
+    return Array.from(set);
+  }, [policies]);
 
   return (
     <div className="space-y-6">
@@ -172,7 +246,29 @@ export const Policies = () => {
           <p className="text-xs text-slate-500 font-semibold">Active Life, Health, Motor &amp; General Insurance contracts, company providers &amp; policy editing.</p>
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          {isAdmin && (
+            <>
+              <button 
+                onClick={() => exportFollowupsPDF(filteredPolicies)}
+                className="flex items-center space-x-1.5 px-3.5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer"
+                title="Download PDF Report"
+              >
+                <Download className="h-4 w-4" />
+                <span>Export PDF</span>
+              </button>
+
+              <button 
+                onClick={() => exportPoliciesExcel(filteredPolicies)}
+                className="flex items-center space-x-1.5 px-3.5 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer"
+                title="Download Excel (.xlsx) Spreadsheet"
+              >
+                <FileSpreadsheet className="h-4 w-4" />
+                <span>Export Excel (.xlsx)</span>
+              </button>
+            </>
+          )}
+
           <button 
             onClick={() => setShowManageCompaniesModal(true)}
             className="flex items-center space-x-2 px-4 py-2.5 rounded-2xl bg-purple-50 hover:bg-purple-100 text-purple-700 font-extrabold text-xs shadow-xs border border-purple-200 transition cursor-pointer"
@@ -191,17 +287,120 @@ export const Policies = () => {
         </div>
       </div>
 
-      {/* Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-card">
-        <div className="relative max-w-md">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <input 
-            type="text"
-            placeholder="Search by Policy No, Client Name, Insurer or Plan Type..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-blue-600 outline-none"
-          />
+      {/* CUSTOMER 360 STYLE ADVANCED MULTI-FILTER CONTROL BAR */}
+      <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-card space-y-4">
+        <div className="flex items-center justify-between border-b pb-3">
+          <div className="flex items-center space-x-2">
+            <Filter className="h-4 w-4 text-blue-600" />
+            <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+              Customer 360° Policy Filters
+            </h3>
+            {activeFiltersCount > 0 && (
+              <span className="badge badge-brand text-[10px] font-black px-2 py-0.5">
+                {activeFiltersCount} Active {activeFiltersCount === 1 ? 'Filter' : 'Filters'}
+              </span>
+            )}
+          </div>
+
+          {activeFiltersCount > 0 && (
+            <button
+              onClick={clearAllFilters}
+              className="flex items-center space-x-1 text-xs font-bold text-rose-600 hover:text-rose-700 hover:underline transition cursor-pointer"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              <span>Reset All Filters</span>
+            </button>
+          )}
+        </div>
+
+        {/* Filter Controls Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          
+          {/* Search Bar */}
+          <div className="sm:col-span-2 lg:col-span-2 relative">
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">Search Keywords</label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+              <input 
+                type="text"
+                placeholder="Policy No, Client, Insurer, Plan..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold focus:ring-2 focus:ring-blue-600 outline-none"
+              />
+            </div>
+          </div>
+
+          {/* Category Filter */}
+          <div>
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">Policy Category</label>
+            <select
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50/50 cursor-pointer"
+            >
+              <option value="ALL">All Categories</option>
+              <option value="HEALTH">Health &amp; Medical</option>
+              <option value="LIFE">Life &amp; ULIP</option>
+              <option value="MOTOR">Motor &amp; Vehicle</option>
+              <option value="GENERAL">General &amp; Property</option>
+            </select>
+          </div>
+
+          {/* Insurance Company Filter */}
+          <div>
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">Insurer Provider</label>
+            <select
+              value={filterCompany}
+              onChange={(e) => setFilterCompany(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50/50 cursor-pointer"
+            >
+              <option value="ALL">All Insurers</option>
+              {insuranceCompanies.map(c => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Status Filter */}
+          <div>
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">Policy Status</label>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50/50 cursor-pointer"
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="ACTIVE">Active Policies</option>
+              <option value="PENDING_RENEWAL">Pending Renewal</option>
+              <option value="EXPIRED">Expired / Lapsed</option>
+            </select>
+          </div>
+
+          {/* Premium Range Filter */}
+          <div>
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">Premium Range</label>
+            <select
+              value={filterPremiumRange}
+              onChange={(e) => setFilterPremiumRange(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50/50 cursor-pointer"
+            >
+              <option value="ALL">All Premiums</option>
+              <option value="BELOW_10K">Below ₹10,000</option>
+              <option value="10K_50K">₹10,000 - ₹50,000</option>
+              <option value="50K_1L">₹50,000 - ₹1,00,000</option>
+              <option value="ABOVE_1L">Above ₹1,00,000</option>
+            </select>
+          </div>
+
+        </div>
+
+        {/* Active Filter Summary Bar */}
+        <div className="flex items-center justify-between text-xs text-slate-500 font-bold border-t pt-3">
+          <span>Showing <strong className="text-slate-900">{filteredPolicies.length}</strong> of <strong className="text-slate-900">{policies.length}</strong> total registered policies</span>
+          {filteredPolicies.length === 0 && (
+            <span className="text-rose-600 font-extrabold">No matching policies found for selected filter criteria.</span>
+          )}
         </div>
       </div>
 

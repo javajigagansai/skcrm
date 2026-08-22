@@ -491,10 +491,6 @@ export const DataProvider = ({ children }) => {
       if (!snap.empty) {
         const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         setCustomers(items);
-      } else {
-        initialCustomersSeed.forEach(async (c) => {
-          try { await setDoc(doc(db, 'customers', c.id), c, { merge: true }); } catch (e) {}
-        });
       }
     }, err => console.warn("Firestore customers snapshot error:", err));
 
@@ -503,10 +499,6 @@ export const DataProvider = ({ children }) => {
       if (!snap.empty) {
         const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         setPolicies(items);
-      } else {
-        initialPoliciesSeed.forEach(async (p) => {
-          try { await setDoc(doc(db, 'policies', p.id), p, { merge: true }); } catch (e) {}
-        });
       }
     }, err => console.warn("Firestore policies snapshot error:", err));
 
@@ -515,10 +507,6 @@ export const DataProvider = ({ children }) => {
       if (!snap.empty) {
         const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         setInvestments(items);
-      } else {
-        initialInvestmentsSeed.forEach(async (i) => {
-          try { await setDoc(doc(db, 'investments', i.id), i, { merge: true }); } catch (e) {}
-        });
       }
     }, err => console.warn("Firestore investments snapshot error:", err));
 
@@ -527,10 +515,6 @@ export const DataProvider = ({ children }) => {
       if (!snap.empty) {
         const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         setClaims(items);
-      } else {
-        initialClaimsSeed.forEach(async (clm) => {
-          try { await setDoc(doc(db, 'claims', clm.id), clm, { merge: true }); } catch (e) {}
-        });
       }
     }, err => console.warn("Firestore claims snapshot error:", err));
 
@@ -539,10 +523,6 @@ export const DataProvider = ({ children }) => {
       if (!snap.empty) {
         const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         setLeads(items);
-      } else {
-        initialLeadsSeed.forEach(async (l) => {
-          try { await setDoc(doc(db, 'leads', l.id), l, { merge: true }); } catch (e) {}
-        });
       }
     }, err => console.warn("Firestore leads snapshot error:", err));
 
@@ -551,10 +531,6 @@ export const DataProvider = ({ children }) => {
       if (!snap.empty) {
         const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         setFollowups(items);
-      } else {
-        initialFollowupsSeed.forEach(async (f) => {
-          try { await setDoc(doc(db, 'followups', f.id), f, { merge: true }); } catch (e) {}
-        });
       }
     }, err => console.warn("Firestore followups snapshot error:", err));
 
@@ -563,10 +539,6 @@ export const DataProvider = ({ children }) => {
       if (!snap.empty) {
         const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         setTasks(items);
-      } else {
-        initialTasksSeed.forEach(async (t) => {
-          try { await setDoc(doc(db, 'tasks', t.id), t, { merge: true }); } catch (e) {}
-        });
       }
     }, err => console.warn("Firestore tasks snapshot error:", err));
 
