@@ -1945,12 +1945,7 @@ export const Dashboard = () => {
                 <h3 className="text-base font-black text-slate-900 tracking-tight flex items-center space-x-2">
                   <span>Policy Category Overview</span>
                 </h3>
-                <span className="badge badge-brand text-[10px] font-black uppercase">Admin Exclusive 🔒</span>
-                <span className="badge badge-purple text-[10px] font-black uppercase">All Companies 🏢</span>
               </div>
-              <p className="text-xs text-slate-500 font-semibold mt-1">
-                Visual distribution and volume of policy contracts across categories across all partner insurance companies.
-              </p>
             </div>
 
             {/* Company Selector Filter */}
