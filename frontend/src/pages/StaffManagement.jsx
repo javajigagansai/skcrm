@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { db } from '../config/firebaseClient';
 import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
+import { 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell 
+} from 'recharts';
 import { 
   Users, UserCheck, UserPlus, Award, TrendingUp, Search, Filter, Plus, Edit, Key, 
   Trash2, X, Eye, EyeOff, ShieldCheck, CheckCircle2, ChevronRight, Phone, 
@@ -311,6 +314,32 @@ export const StaffManagement = () => {
     };
   };
 
+  const staffPerformanceChartData = useMemo(() => {
+    const listToUse = (filteredStaff && filteredStaff.length > 0 ? filteredStaff : staffList).filter(s => s.status === 'ACTIVE');
+    return listToUse.map(st => {
+      const metrics = getStaffLiveMetrics(st);
+      const targetVal = Number(st.monthlyTarget) || 400000;
+      const targetInLakhs = parseFloat((targetVal / 100000).toFixed(2));
+      const achievedInLakhs = parseFloat((metrics.achievedRevenue / 100000).toFixed(2));
+      const completionPct = Math.min(100, Math.round((metrics.achievedRevenue / targetVal) * 100));
+
+      return {
+        name: st.name.split(' ')[0],
+        fullName: st.name,
+        role: st.title || st.role || 'Staff Advisor',
+        branch: st.branch || 'Head Office',
+        target: targetInLakhs,
+        achieved: achievedInLakhs,
+        targetRaw: targetVal,
+        achievedRaw: metrics.achievedRevenue,
+        policiesCount: metrics.policiesCount,
+        clientsCount: metrics.clientsCount,
+        commissionEarned: metrics.commissionEarned,
+        completionPct
+      };
+    });
+  }, [staffList, filteredStaff, policies, customers]);
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -364,6 +393,85 @@ export const StaffManagement = () => {
             }, 0) / staffList.length).toFixed(1) : 0}%
           </p>
           <span className="badge badge-purple text-[10px]">Target Achievement Rate</span>
+        </div>
+      </div>
+
+      {/* Staff Performance Overview Bar Chart */}
+      <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-card space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-3 gap-2">
+          <div>
+            <h3 className="text-sm font-black text-slate-900 flex items-center space-x-2">
+              <Award className="h-5 w-5 text-amber-500" />
+              <span>Staff Performance: Monthly Target vs Achieved Revenue</span>
+            </h3>
+            <p className="text-[11px] text-slate-500 font-semibold">Comparative business performance and quota achievement across all staff advisors.</p>
+          </div>
+          <div className="flex items-center space-x-2">
+            <span className="badge badge-brand text-[10px]">Staff Performance 📊</span>
+          </div>
+        </div>
+
+        <div className="h-[320px] w-full bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart 
+              data={staffPerformanceChartData}
+              margin={{ top: 15, right: 20, left: -10, bottom: 10 }}
+              barGap={8}
+            >
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+              <XAxis 
+                dataKey="name" 
+                tickLine={false} 
+                axisLine={false} 
+                tick={{ fontSize: 11, fontWeight: 800, fill: '#334155' }} 
+              />
+              <YAxis 
+                tickLine={false} 
+                axisLine={false} 
+                tick={{ fontSize: 11, fontWeight: 700, fill: '#64748B' }} 
+                unit="L" 
+              />
+              <Tooltip 
+                content={({ active, payload }) => {
+                  if (active && payload && payload.length) {
+                    const data = payload[0].payload;
+                    return (
+                      <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xl space-y-1.5 text-xs font-semibold">
+                        <p className="font-black text-slate-900 text-sm">{data.fullName}</p>
+                        <p className="text-[11px] text-slate-500">{data.role} • {data.branch}</p>
+                        <div className="border-t border-slate-100 pt-1.5 space-y-1">
+                          <p className="flex justify-between items-center space-x-4">
+                            <span className="text-slate-500">Monthly Target:</span>
+                            <span className="font-black text-slate-700">₹{(data.targetRaw).toLocaleString()}</span>
+                          </p>
+                          <p className="flex justify-between items-center space-x-4">
+                            <span className="text-emerald-600">Achieved Revenue:</span>
+                            <span className="font-black text-emerald-700">₹{(data.achievedRaw).toLocaleString()}</span>
+                          </p>
+                          <p className="flex justify-between items-center space-x-4">
+                            <span className="text-purple-600">Policies Issued:</span>
+                            <span className="font-black text-purple-700">{data.policiesCount} Contracts</span>
+                          </p>
+                          <p className="flex justify-between items-center space-x-4">
+                            <span className="text-blue-600">Assigned Clients:</span>
+                            <span className="font-black text-blue-700">{data.clientsCount} Clients</span>
+                          </p>
+                          <p className="flex justify-between items-center space-x-4 pt-1 border-t border-slate-100">
+                            <span className="text-amber-600">Target Progress:</span>
+                            <span className="font-black text-amber-700">{data.completionPct}%</span>
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
+              <Legend wrapperStyle={{ paddingTop: '10px' }} />
+              <Bar dataKey="target" name="Monthly Target (₹ Lakhs)" fill="#94A3B8" radius={[6, 6, 0, 0]} barSize={26} />
+              <Bar dataKey="achieved" name="Achieved Revenue (₹ Lakhs)" fill="#10B981" radius={[6, 6, 0, 0]} barSize={26} />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
 
@@ -633,6 +741,42 @@ export const StaffManagement = () => {
                       <span className="text-[10px] uppercase text-slate-300 block font-extrabold">Commission Earned</span>
                       <span className="text-lg font-black text-amber-300">₹{getStaffLiveMetrics(selectedStaff360).commissionEarned.toLocaleString()}</span>
                     </div>
+                  </div>
+                </div>
+
+                {/* Visual Performance Bar Chart in 360 Overview Modal */}
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-extrabold uppercase text-slate-800 text-[11px] flex items-center space-x-1.5">
+                      <TrendingUp className="h-4 w-4 text-emerald-600" />
+                      <span>Target vs Achieved Performance Breakdown</span>
+                    </h4>
+                    <span className="badge badge-brand text-[10px]">
+                      {Math.min(100, Math.round((getStaffLiveMetrics(selectedStaff360).achievedRevenue / (selectedStaff360.monthlyTarget || 400000)) * 100))}% Completed
+                    </span>
+                  </div>
+
+                  <div className="h-40 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart 
+                        data={[
+                          { 
+                            metric: 'Revenue (₹ Lakhs)', 
+                            Target: parseFloat(((selectedStaff360.monthlyTarget || 400000) / 100000).toFixed(2)), 
+                            Achieved: parseFloat((getStaffLiveMetrics(selectedStaff360).achievedRevenue / 100000).toFixed(2)) 
+                          }
+                        ]}
+                        margin={{ top: 10, right: 30, left: 10, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                        <XAxis dataKey="metric" tick={{ fontSize: 11, fontWeight: 700 }} />
+                        <YAxis unit="L" tick={{ fontSize: 11, fontWeight: 700 }} />
+                        <Tooltip />
+                        <Legend wrapperStyle={{ paddingTop: '5px' }} />
+                        <Bar dataKey="Target" name="Target (₹ Lakhs)" fill="#94A3B8" radius={[6, 6, 0, 0]} barSize={36} />
+                        <Bar dataKey="Achieved" name="Achieved (₹ Lakhs)" fill="#10B981" radius={[6, 6, 0, 0]} barSize={36} />
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
                 </div>
               </div>
