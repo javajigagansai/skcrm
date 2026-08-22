@@ -1644,62 +1644,6 @@ export const Dashboard = () => {
         )}
       </div>
 
-      {/* DASHBOARD LIVE CUSTOMER DIRECTORY */}
-      <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-card space-y-4">
-        <div className="flex items-center justify-between border-b pb-3">
-          <div>
-            <h3 className="text-base font-black text-slate-900 flex items-center space-x-2">
-              <Users className="h-5 w-5 text-blue-600" />
-              <span>Registered Customers &amp; Account Profiles</span>
-            </h3>
-          </div>
-          <button 
-            onClick={() => navigate('/customers')}
-            className="px-3.5 py-2 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white font-extrabold text-xs transition cursor-pointer flex items-center space-x-1"
-          >
-            <span>View All</span>
-            <ChevronRight className="h-3.5 w-3.5" />
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {displayedCustomers.map(c => (
-            <div key={c.id} className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200 hover:border-blue-300 hover:bg-white hover:shadow-md transition space-y-2 group">
-              <div className="flex items-center justify-between">
-                <button
-                  onClick={() => openCustomer360(c.name)}
-                  className="font-black text-slate-900 group-hover:text-blue-600 hover:underline transition cursor-pointer text-left flex items-center space-x-1.5"
-                >
-                  <span>{c.name}</span>
-                  <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-                </button>
-                <span className="badge bg-blue-100 text-blue-800 text-[10px] font-black">{c.customerCode || c.id}</span>
-              </div>
-
-              <div className="text-xs text-slate-600 space-y-1">
-                <p>📞 Phone: <strong>{c.phone || c.mobileNumber || '9876543210'}</strong></p>
-                <p>📍 City: <strong>{c.city || 'Chennai'}</strong></p>
-                <p>👤 Advisor: <strong className="text-purple-700">{c.assignedAdvisorName || 'Priya Sharma'}</strong></p>
-              </div>
-
-              <div className="pt-2 border-t border-slate-200 flex items-center justify-between">
-                <span className="badge badge-green text-[9px] font-bold">Active KYC</span>
-                <button
-                  onClick={() => openCustomer360(c.name)}
-                  className="px-3 py-1 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-[10px] transition cursor-pointer shadow-xs"
-                >
-                  Open 360° Profile
-                </button>
-              </div>
-            </div>
-          ))}
-          {displayedCustomers.length === 0 && (
-            <div className="col-span-full p-6 text-center text-xs text-slate-400 font-semibold">
-              No customers registered yet. Click "Customer Directory" to create your first customer.
-            </div>
-          )}
-        </div>
-      </div>
 
 
       {/* DASHBOARD STAFF PERFORMANCE LEADERBOARDS (MANAGERS & ADMINS ONLY) */}
