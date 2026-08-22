@@ -1655,7 +1655,7 @@ export const Dashboard = () => {
               <div>
                 <h3 className="text-sm font-black text-slate-900 flex items-center space-x-2">
                   <Award className="h-5 w-5 text-amber-500" />
-                  <span>1. Staff Doing Most Business (Revenue Leaderboard)</span>
+                  <span>Staff Doing Most Business (Revenue Leaderboard)</span>
                 </h3>
               </div>
               <span className="badge badge-amber text-[10px] uppercase font-black">Business Rank 🏆</span>
@@ -1768,11 +1768,11 @@ export const Dashboard = () => {
           <div className="flex items-center justify-between border-b pb-3">
             <div>
               <h3 className="text-sm font-extrabold text-slate-900 group-hover:text-blue-600 transition flex items-center space-x-1.5">
-                <span>1. Monthly New Client Acquisitions &amp; Policy Issuances</span>
+                <span>Monthly New Client Acquisitions &amp; Policy Issuances</span>
                 <ArrowUpRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition" />
               </h3>
             </div>
-            <span className="badge badge-brand text-[10px]">Acquisitions 🔍</span>
+            <span className="badge badge-brand text-[10px]">Acquisitions</span>
           </div>
 
           <div className="h-[340px] w-full bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
@@ -1813,11 +1813,11 @@ export const Dashboard = () => {
           <div className="flex items-center justify-between border-b pb-3">
             <div>
               <h3 className="text-sm font-extrabold text-slate-900 group-hover:text-emerald-600 transition flex items-center space-x-1.5">
-                <span>2. Income vs Expense Variance (Lakhs)</span>
+                <span>Income vs Expense Variance (Lakhs)</span>
                 <ArrowUpRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition" />
               </h3>
             </div>
-            <span className="badge badge-green text-[10px]">Net Margin +64% 🔍</span>
+            <span className="badge badge-green text-[10px]">Net Margin +64%</span>
           </div>
 
           <div className="h-[340px] w-full bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
@@ -1862,11 +1862,11 @@ export const Dashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-sm font-extrabold text-slate-900 group-hover:text-purple-600 transition flex items-center space-x-1.5">
-                <span>3. Lead Conversion vs Claims Settlement (%)</span>
+                <span>Lead Conversion vs Claims Settlement (%)</span>
                 <ArrowUpRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition" />
               </h3>
             </div>
-            <span className="badge badge-purple text-[10px]">Category Performance • Click Details 🔍</span>
+            <span className="badge badge-purple text-[10px]">Category Performance</span>
           </div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -1892,11 +1892,11 @@ export const Dashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-sm font-extrabold text-slate-900 group-hover:text-amber-600 transition flex items-center space-x-1.5">
-                <span>4. Staff Advisor Targets vs Achieved ({dateFilter === 'THIS_YEAR' ? 'Total' : 'Lakhs'})</span>
+                <span>Staff Advisor Targets vs Achieved ({dateFilter === 'THIS_YEAR' ? 'Total' : 'Lakhs'})</span>
                 <ArrowUpRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition" />
               </h3>
             </div>
-            <span className="badge badge-amber text-[10px]">Staff Leaderboard • Click Details 🔍</span>
+            <span className="badge badge-amber text-[10px]">Staff Leaderboard</span>
           </div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -1923,11 +1923,11 @@ export const Dashboard = () => {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-sm font-extrabold text-slate-900 group-hover:text-blue-600 transition flex items-center space-x-1.5">
-              <span>5. Insurance &amp; Financial Portfolio Share (%)</span>
+              <span>Insurance &amp; Financial Portfolio Share (%)</span>
               <ArrowUpRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition" />
             </h3>
           </div>
-          <span className="badge badge-brand text-[10px]">Product Mix • Click Details 🔍</span>
+          <span className="badge badge-brand text-[10px]">Product Mix</span>
         </div>
 
         <div className="h-64 flex items-center justify-center">
