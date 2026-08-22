@@ -26,6 +26,7 @@ export const Dashboard = () => {
   const [activeModal, setActiveModal] = useState(null);
   const [reportSummary, setReportSummary] = useState(null);
   const [selectedCategoryCompanyFilter, setSelectedCategoryCompanyFilter] = useState('ALL');
+  const [policyOverviewViewMode, setPolicyOverviewViewMode] = useState('DUAL'); // 'DUAL', 'CATEGORY', 'COMPANY'
 
   const isAdminOnly = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN';
   const isStaffAdvisor = user?.role === 'EMPLOYEE' || user?.role === 'USER' || user?.role === 'STAFF';
@@ -186,11 +187,11 @@ export const Dashboard = () => {
     defaultCompanies.forEach(comp => {
       if (!companyCategoryMatrix[comp]) {
         companyCategoryMatrix[comp] = {
-          'Health Insurance': comp === 'Star Health Insurance' ? 18 : comp === 'HDFC ERGO General' ? 14 : 10,
-          'Life Insurance': comp === 'Tata AIA Life' ? 16 : 6,
+          'Health Insurance': comp === 'Star Health Insurance' ? 18 : comp === 'HDFC ERGO General' ? 14 : comp === 'Niva Bupa Health' ? 12 : 6,
+          'Life Insurance': comp === 'Tata AIA Life' ? 16 : comp === 'SBI General Insurance' ? 8 : 4,
           'Motor Insurance': comp === 'HDFC ERGO General' ? 9 : comp === 'ICICI Lombard' ? 8 : 2,
           'Mutual Funds / SIP': comp === 'SBI General Insurance' ? 7 : 8,
-          'Commercial & Fire': 4
+          'Commercial & Fire': comp === 'ICICI Lombard' ? 4 : 4
         };
       }
     });
@@ -203,18 +204,27 @@ export const Dashboard = () => {
     const totalPoliciesCount = chartData.reduce((sum, item) => sum + item.policyCount, 0);
     const topCategory = chartData.length > 0 ? chartData[0] : null;
 
-    const companyTotals = {};
-    Object.keys(companyCategoryMatrix).forEach(comp => {
-      companyTotals[comp] = Object.values(companyCategoryMatrix[comp]).reduce((a, b) => a + b, 0);
-    });
-    const topCompanyEntry = Object.entries(companyTotals).sort((a, b) => b[1] - a[1])[0] || ['Star Health Insurance', 42];
+    // Company Chart Data for direct Company Comparison
+    const companyChartData = Object.entries(companyCategoryMatrix).map(([comp, catMap]) => {
+      const totalCount = Object.values(catMap).reduce((a, b) => a + b, 0);
+      const shortName = comp.replace(' Insurance', '').replace(' General', '');
+      return {
+        company: comp,
+        shortName,
+        policyCount: totalCount,
+        categoryBreakdown: catMap
+      };
+    }).sort((a, b) => b.policyCount - a.policyCount);
+
+    const topCompanyEntry = companyChartData.length > 0 ? companyChartData[0] : { company: 'Star Health Insurance', policyCount: 42 };
 
     return {
       chartData,
+      companyChartData,
       companies: Array.from(companiesSet),
       totalPolicies: totalPoliciesCount,
       topCategory,
-      topCompany: { name: topCompanyEntry[0], count: topCompanyEntry[1] },
+      topCompany: { name: topCompanyEntry.company, count: topCompanyEntry.policyCount },
       companyBreakdown: companyCategoryMatrix
     };
   }, [policies, selectedCategoryCompanyFilter, isAdminOnly]);
@@ -1935,8 +1945,8 @@ export const Dashboard = () => {
       {/* ADMIN-ONLY: POLICY CATEGORY OVERVIEW VISUALIZATION */}
       {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') && (
         <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-card space-y-5">
-          {/* Header with Title, Badges, and Multi-Company Filter */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-4 gap-4">
+          {/* Header with Title, View Mode Switcher, and Multi-Company Filter */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between border-b pb-4 gap-4">
             <div>
               <div className="flex items-center space-x-2.5">
                 <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
@@ -1948,24 +1958,48 @@ export const Dashboard = () => {
               </div>
             </div>
 
-            {/* Company Selector Filter */}
-            <div className="flex items-center space-x-2.5 self-start sm:self-auto">
-              <Building2 className="h-4 w-4 text-slate-400" />
-              <select
-                value={selectedCategoryCompanyFilter}
-                onChange={(e) => setSelectedCategoryCompanyFilter(e.target.value)}
-                className="px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-black bg-white text-slate-800 outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer shadow-xs"
-                title="Filter policy category breakdown by specific insurance provider"
-              >
-                <option value="ALL">All Companies ({policyCategoryOverview.companies.length} Providers)</option>
-                {policyCategoryOverview.companies.map((comp, idx) => (
-                  <option key={idx} value={comp}>{comp}</option>
-                ))}
-              </select>
+            <div className="flex flex-wrap items-center gap-2.5 self-start md:self-auto">
+              {/* View Mode Toggle: Dual / By Category / By Company */}
+              <div className="flex items-center bg-slate-100 p-1 rounded-xl text-xs font-bold">
+                <button
+                  onClick={() => setPolicyOverviewViewMode('DUAL')}
+                  className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${policyOverviewViewMode === 'DUAL' ? 'bg-white text-blue-600 shadow-xs font-black' : 'text-slate-600 hover:text-slate-900'}`}
+                >
+                  Dual Comparison
+                </button>
+                <button
+                  onClick={() => setPolicyOverviewViewMode('CATEGORY')}
+                  className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${policyOverviewViewMode === 'CATEGORY' ? 'bg-white text-blue-600 shadow-xs font-black' : 'text-slate-600 hover:text-slate-900'}`}
+                >
+                  By Category
+                </button>
+                <button
+                  onClick={() => setPolicyOverviewViewMode('COMPANY')}
+                  className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${policyOverviewViewMode === 'COMPANY' ? 'bg-white text-purple-600 shadow-xs font-black' : 'text-slate-600 hover:text-slate-900'}`}
+                >
+                  By Company
+                </button>
+              </div>
+
+              {/* Company Selector Filter */}
+              <div className="flex items-center space-x-1.5">
+                <Building2 className="h-4 w-4 text-slate-400 shrink-0" />
+                <select
+                  value={selectedCategoryCompanyFilter}
+                  onChange={(e) => setSelectedCategoryCompanyFilter(e.target.value)}
+                  className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold bg-white text-slate-800 outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer shadow-xs"
+                  title="Filter policy category breakdown by specific insurance provider"
+                >
+                  <option value="ALL">All Companies ({policyCategoryOverview.companies.length})</option>
+                  {policyCategoryOverview.companies.map((comp, idx) => (
+                    <option key={idx} value={comp}>{comp}</option>
+                  ))}
+                </select>
+              </div>
 
               <button
                 onClick={() => setActiveModal('POLICY_CATEGORY_OVERVIEW_MODAL')}
-                className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs transition cursor-pointer flex items-center space-x-1"
+                className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs transition cursor-pointer flex items-center space-x-1"
                 title="View complete category and company matrix table"
               >
                 <BarChart3 className="h-3.5 w-3.5 text-blue-600" />
@@ -1998,86 +2032,197 @@ export const Dashboard = () => {
             </div>
           </div>
 
-          {/* Bar Chart Visualization */}
-          <div className="h-[340px] w-full bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart 
-                data={policyCategoryOverview.chartData}
-                margin={{ top: 15, right: 20, left: -10, bottom: 20 }}
-                barGap={8}
-              >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                <XAxis 
-                  dataKey="category" 
-                  tickLine={false} 
-                  axisLine={false} 
-                  interval={0}
-                  tick={{ fontSize: 11, fontWeight: 800, fill: '#334155' }} 
-                />
-                <YAxis 
-                  tickLine={false} 
-                  axisLine={false} 
-                  tick={{ fontSize: 11, fontWeight: 700, fill: '#64748B' }} 
-                />
-                <Tooltip 
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      const data = payload[0].payload;
-                      const companyKeys = Object.entries(data.companies || {});
-                      const sharePct = policyCategoryOverview.totalPolicies 
-                        ? Math.round((data.policyCount / policyCategoryOverview.totalPolicies) * 100) 
-                        : 0;
+          {/* Visualizations Grid: Category Breakdown and Company Comparison */}
+          <div className={`grid gap-6 ${policyOverviewViewMode === 'DUAL' ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
+            
+            {/* VISUALIZATION 1: Category Distribution Bar Chart */}
+            {(policyOverviewViewMode === 'DUAL' || policyOverviewViewMode === 'CATEGORY') && (
+              <div className="bg-slate-50/60 p-4 rounded-2xl border border-slate-100 space-y-2">
+                <div className="flex items-center justify-between border-b pb-2">
+                  <h4 className="text-xs font-black text-slate-800 flex items-center space-x-1.5">
+                    <ShieldCheck className="h-4 w-4 text-blue-600" />
+                    <span>Policies by Category</span>
+                  </h4>
+                  <span className="badge badge-brand text-[10px]">Category Distribution</span>
+                </div>
 
-                      return (
-                        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xl space-y-2 text-xs font-semibold max-w-xs">
-                          <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
-                            <p className="font-black text-slate-900 text-sm">{data.category}</p>
-                            <span className="badge badge-brand text-[10px]">{sharePct}% Share</span>
-                          </div>
-                          <div className="space-y-1">
-                            <p className="flex justify-between items-center text-slate-600">
-                              <span>Total Policies:</span>
-                              <span className="font-black text-blue-700">{data.policyCount} Policies</span>
-                            </p>
-                            <p className="flex justify-between items-center text-slate-600">
-                              <span>Gross Premium Value:</span>
-                              <span className="font-black text-emerald-700">₹{(data.totalPremium || 0).toLocaleString()}</span>
-                            </p>
-                          </div>
-                          {companyKeys.length > 0 && (
-                            <div className="pt-2 border-t border-slate-100">
-                              <p className="text-[10px] font-extrabold uppercase text-slate-400 mb-1">Company Breakdown:</p>
-                              <div className="space-y-0.5">
-                                {companyKeys.slice(0, 4).map(([comp, count], i) => (
-                                  <p key={i} className="flex justify-between items-center text-[11px]">
-                                    <span className="text-slate-600 truncate max-w-[150px]">{comp}:</span>
-                                    <span className="font-bold text-slate-900">{count}</span>
+                <div className="h-[310px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart 
+                      data={policyCategoryOverview.chartData}
+                      margin={{ top: 15, right: 15, left: -15, bottom: 25 }}
+                      barGap={8}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                      <XAxis 
+                        dataKey="category" 
+                        tickLine={false} 
+                        axisLine={false} 
+                        interval={0}
+                        angle={-20}
+                        textAnchor="end"
+                        height={45}
+                        tick={{ fontSize: 10, fontWeight: 800, fill: '#334155' }} 
+                      />
+                      <YAxis 
+                        tickLine={false} 
+                        axisLine={false} 
+                        tick={{ fontSize: 11, fontWeight: 700, fill: '#64748B' }} 
+                      />
+                      <Tooltip 
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            const companyKeys = Object.entries(data.companies || {});
+                            const sharePct = policyCategoryOverview.totalPolicies 
+                              ? Math.round((data.policyCount / policyCategoryOverview.totalPolicies) * 100) 
+                              : 0;
+
+                            return (
+                              <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xl space-y-1.5 text-xs font-semibold max-w-xs">
+                                <div className="flex items-center justify-between border-b border-slate-100 pb-1">
+                                  <p className="font-black text-slate-900 text-sm">{data.category}</p>
+                                  <span className="badge badge-brand text-[10px]">{sharePct}% Share</span>
+                                </div>
+                                <div className="space-y-0.5">
+                                  <p className="flex justify-between items-center text-slate-600">
+                                    <span>Total Policies:</span>
+                                    <span className="font-black text-blue-700">{data.policyCount} Policies</span>
                                   </p>
-                                ))}
+                                  <p className="flex justify-between items-center text-slate-600">
+                                    <span>Gross Premium:</span>
+                                    <span className="font-black text-emerald-700">₹{(data.totalPremium || 0).toLocaleString()}</span>
+                                  </p>
+                                </div>
+                                {companyKeys.length > 0 && (
+                                  <div className="pt-1.5 border-t border-slate-100">
+                                    <p className="text-[10px] font-extrabold uppercase text-slate-400 mb-0.5">Company Breakdown:</p>
+                                    <div className="space-y-0.5">
+                                      {companyKeys.slice(0, 4).map(([comp, count], i) => (
+                                        <p key={i} className="flex justify-between items-center text-[11px]">
+                                          <span className="text-slate-600 truncate max-w-[150px]">{comp}:</span>
+                                          <span className="font-bold text-slate-900">{count}</span>
+                                        </p>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-                <Legend wrapperStyle={{ paddingTop: '10px' }} />
-                <Bar 
-                  dataKey="policyCount" 
-                  name="Policy Count (Contracts)" 
-                  fill="#3B82F6" 
-                  radius={[6, 6, 0, 0]} 
-                  barSize={32}
-                >
-                  {policyCategoryOverview.chartData.map((entry, index) => {
-                    const colors = ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EC4899', '#06B6D4', '#6366F1'];
-                    return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
-                  })}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Legend wrapperStyle={{ paddingTop: '5px' }} />
+                      <Bar 
+                        dataKey="policyCount" 
+                        name="Policies in Category" 
+                        fill="#3B82F6" 
+                        radius={[6, 6, 0, 0]} 
+                        barSize={28}
+                      >
+                        {policyCategoryOverview.chartData.map((entry, index) => {
+                          const colors = ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EC4899', '#06B6D4', '#6366F1'];
+                          return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
+                        })}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+
+            {/* VISUALIZATION 2: Insurance Company Comparison Bar Chart */}
+            {(policyOverviewViewMode === 'DUAL' || policyOverviewViewMode === 'COMPANY') && (
+              <div className="bg-slate-50/60 p-4 rounded-2xl border border-slate-100 space-y-2">
+                <div className="flex items-center justify-between border-b pb-2">
+                  <h4 className="text-xs font-black text-slate-800 flex items-center space-x-1.5">
+                    <Building2 className="h-4 w-4 text-purple-600" />
+                    <span>Company Comparison &amp; Share</span>
+                  </h4>
+                  <span className="badge badge-purple text-[10px]">Company Distribution</span>
+                </div>
+
+                <div className="h-[310px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart 
+                      data={policyCategoryOverview.companyChartData}
+                      margin={{ top: 15, right: 15, left: -15, bottom: 25 }}
+                      barGap={8}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                      <XAxis 
+                        dataKey="shortName" 
+                        tickLine={false} 
+                        axisLine={false} 
+                        interval={0}
+                        angle={-20}
+                        textAnchor="end"
+                        height={45}
+                        tick={{ fontSize: 10, fontWeight: 800, fill: '#334155' }} 
+                      />
+                      <YAxis 
+                        tickLine={false} 
+                        axisLine={false} 
+                        tick={{ fontSize: 11, fontWeight: 700, fill: '#64748B' }} 
+                      />
+                      <Tooltip 
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            const catEntries = Object.entries(data.categoryBreakdown || {});
+                            const sharePct = policyCategoryOverview.totalPolicies 
+                              ? Math.round((data.policyCount / policyCategoryOverview.totalPolicies) * 100) 
+                              : 0;
+
+                            return (
+                              <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xl space-y-1.5 text-xs font-semibold max-w-xs">
+                                <div className="flex items-center justify-between border-b border-slate-100 pb-1">
+                                  <p className="font-black text-slate-900 text-sm">{data.company}</p>
+                                  <span className="badge badge-purple text-[10px]">{sharePct}% Share</span>
+                                </div>
+                                <p className="flex justify-between items-center text-slate-600">
+                                  <span>Total Policies:</span>
+                                  <span className="font-black text-purple-700">{data.policyCount} Policies</span>
+                                </p>
+                                {catEntries.length > 0 && (
+                                  <div className="pt-1.5 border-t border-slate-100">
+                                    <p className="text-[10px] font-extrabold uppercase text-slate-400 mb-0.5">Category Breakdown:</p>
+                                    <div className="space-y-0.5">
+                                      {catEntries.map(([cat, count], i) => (
+                                        <p key={i} className="flex justify-between items-center text-[11px]">
+                                          <span className="text-slate-600">{cat}:</span>
+                                          <span className="font-bold text-slate-900">{count}</span>
+                                        </p>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Legend wrapperStyle={{ paddingTop: '5px' }} />
+                      <Bar 
+                        dataKey="policyCount" 
+                        name="Policies Underwritten" 
+                        fill="#8B5CF6" 
+                        radius={[6, 6, 0, 0]} 
+                        barSize={28}
+                      >
+                        {policyCategoryOverview.companyChartData.map((entry, index) => {
+                          const colors = ['#8B5CF6', '#3B82F6', '#10B981', '#F59E0B', '#EC4899', '#06B6D4', '#6366F1'];
+                          return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
+                        })}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+
           </div>
         </div>
       )}
