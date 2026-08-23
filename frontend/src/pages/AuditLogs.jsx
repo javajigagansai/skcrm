@@ -122,7 +122,6 @@ export const AuditLogs = () => {
             <ShieldCheck className="h-7 w-7 text-blue-600" />
             <span>Security &amp; Activity Audit Desk</span>
           </h1>
-          <p className="text-xs text-slate-500 font-semibold">Real-time security audit log tracking user logins, client CRUD, claim filings, staff assignments &amp; role permissions.</p>
         </div>
 
         <div className="flex items-center space-x-3">
