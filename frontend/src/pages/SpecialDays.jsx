@@ -238,8 +238,6 @@ export const SpecialDays = () => {
             <span>Staff &amp; Colleague Celebrations</span>
           </button>
         </div>
-
-        <span className="text-xs font-extrabold text-slate-500">Greetings Desk: {user?.name || 'Anitha Selvam'}</span>
       </div>
 
       {/* Admin Reporting Banner */}
