@@ -6,7 +6,7 @@ import { exportFollowupsPDF, exportRenewalsExcel } from '../utils/exportUtils';
 import { 
   Search, Send, CheckCircle2, Clock, ShieldAlert, UserCheck, Sparkles, 
   ShieldCheck, AlertTriangle, ArrowUpRight, Phone, CheckCircle, RefreshCw, Calendar,
-  Filter, RotateCcw, Download, FileSpreadsheet
+  Filter, RotateCcw, Download, FileSpreadsheet, MessageCircle, AlertCircle, ExternalLink
 } from 'lucide-react';
 
 export const Renewals = () => {
@@ -37,22 +37,26 @@ export const Renewals = () => {
     setFilterEndDate('');
   };
 
-  const renewalsList = (policies || []).map(p => {
-    const rawStatus = renewalsStatusMap[p.id] || (new Date(p.expiryDate) < new Date() ? 'EXPIRED' : 'DUE_SOON');
-    return {
-      id: `RNW-${p.id}`,
-      policyNo: p.id,
-      customerName: p.customerName || 'Valued Client',
-      phone: p.phone || '9876543210',
-      type: p.type || 'LIFE',
-      insuranceCompany: p.insuranceCompany || 'Tata AIA Life',
-      premium: Number(p.grossPremium) || 25000,
-      dueDate: p.expiryDate || '2026-09-01',
-      assignedStaff: p.assignedStaff || 'Priya Sharma (Senior Advisor)',
-      status: rawStatus,
-      reminderSent: !!remindersMap[p.id]
-    };
-  });
+  const renewalsList = useMemo(() => {
+    return (policies || []).map(p => {
+      const isPast = p.expiryDate ? new Date(p.expiryDate) < new Date() : false;
+      const rawStatus = renewalsStatusMap[p.id] || (isPast ? 'EXPIRED' : 'DUE_SOON');
+      return {
+        id: `RNW-${p.id}`,
+        policyNo: p.id,
+        customerName: p.customerName || 'Valued Client',
+        phone: p.phone || '9876543210',
+        type: p.type || 'LIFE',
+        insuranceCompany: p.insuranceCompany || 'Tata AIA Life',
+        policyName: p.salesPitch || p.planName || p.policyName || '',
+        premium: Number(p.grossPremium) || 25000,
+        dueDate: p.expiryDate || '2026-09-01',
+        assignedStaff: p.assignedStaff || 'Priya Sharma (Senior Advisor)',
+        status: rawStatus,
+        reminderSent: !!remindersMap[p.id]
+      };
+    });
+  }, [policies, renewalsStatusMap, remindersMap]);
 
   const handleSendWhatsAppNotice = (r) => {
     const rawPhone = (r.phone || '9876543210').replace(/\D/g, '');
@@ -152,6 +156,29 @@ export const Renewals = () => {
   const totalRenewedCount = renewalsList.filter(r => r.status === 'RENEWED').length;
   const totalRenewalSum = renewalsList.reduce((s, r) => s + r.premium, 0);
 
+  const getDueBadge = (dueDateStr, status) => {
+    if (status === 'RENEWED') {
+      return { text: 'Renewed', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
+    }
+    if (!dueDateStr) return null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const due = new Date(dueDateStr);
+    due.setHours(0, 0, 0, 0);
+    const diffDays = Math.round((due - today) / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+      return { text: `Overdue ${Math.abs(diffDays)}d`, color: 'bg-rose-50 text-rose-700 border-rose-200 font-extrabold' };
+    }
+    if (diffDays === 0) {
+      return { text: 'Due Today', color: 'bg-amber-100 text-amber-900 border-amber-300 font-black' };
+    }
+    if (diffDays <= 7) {
+      return { text: `In ${diffDays} days`, color: 'bg-amber-50 text-amber-700 border-amber-200 font-bold' };
+    }
+    return { text: `In ${diffDays} days`, color: 'bg-slate-100 text-slate-600 border-slate-200' };
+  };
+
   return (
     <div className="space-y-6">
       {/* Notification Toast */}
@@ -168,10 +195,13 @@ export const Renewals = () => {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center space-x-2">
-            <RefreshCw className="h-6 w-6 text-blue-600 animate-spin-slow" />
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center space-x-2.5">
+            <RefreshCw className="h-6 w-6 text-blue-600" />
             <span>Policy Renewals &amp; Retention Desk</span>
           </h1>
+          <p className="text-xs text-slate-500 font-semibold mt-0.5">
+            Track policy expiry dates, follow up with clients, and dispatch renewal reminders via WhatsApp.
+          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
@@ -191,72 +221,106 @@ export const Renewals = () => {
                 title="Download Excel (.xlsx) Spreadsheet"
               >
                 <FileSpreadsheet className="h-4 w-4" />
-                <span>Export Excel (.xlsx)</span>
+                <span>Export Excel</span>
               </button>
             </>
           )}
         </div>
       </div>
 
-      {/* Top Metric KPI Cards */}
+      {/* Modern KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-blue-600 to-blue-800 text-white p-5 rounded-3xl shadow-lg space-y-2 relative overflow-hidden">
+        
+        {/* Total Policies Card */}
+        <div 
+          onClick={() => setFilterStatus('ALL')}
+          className={`bg-white p-5 rounded-2xl border transition cursor-pointer shadow-xs hover:shadow-md ${
+            filterStatus === 'ALL' ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-slate-200'
+          }`}
+        >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-black uppercase text-blue-200 tracking-wider">Total Policy Desk</span>
-            <ShieldCheck className="h-5 w-5 text-blue-200" />
+            <span className="text-[11px] font-black uppercase text-slate-500 tracking-wider">Total Active Policies</span>
+            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+              <ShieldCheck className="h-4 w-4" />
+            </div>
           </div>
-          <p className="text-2xl font-black">{renewalsList.length} Policies</p>
-          <p className="text-xs font-semibold text-blue-100">Total Premium: ₹{(totalRenewalSum / 100000).toFixed(2)} Lakhs</p>
+          <p className="text-2xl font-black text-slate-900 mt-2">{renewalsList.length}</p>
+          <p className="text-xs font-bold text-slate-500 mt-1">₹{(totalRenewalSum / 100000).toFixed(2)} Lakhs Total Premium</p>
         </div>
 
-        <div className="bg-gradient-to-br from-amber-500 to-amber-700 text-white p-5 rounded-3xl shadow-lg space-y-2 relative overflow-hidden">
+        {/* Due Soon Card */}
+        <div 
+          onClick={() => setFilterStatus('DUE_SOON')}
+          className={`bg-white p-5 rounded-2xl border transition cursor-pointer shadow-xs hover:shadow-md ${
+            filterStatus === 'DUE_SOON' ? 'border-amber-500 ring-2 ring-amber-500/20' : 'border-slate-200'
+          }`}
+        >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-black uppercase text-amber-100 tracking-wider">Due Soon (Next 30 Days)</span>
-            <Clock className="h-5 w-5 text-amber-100" />
+            <span className="text-[11px] font-black uppercase text-amber-700 tracking-wider">Due for Renewal</span>
+            <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+              <Clock className="h-4 w-4" />
+            </div>
           </div>
-          <p className="text-2xl font-black">{totalDueCount} Policies</p>
-          <p className="text-xs font-semibold text-amber-100">Action: Dispatch Reminders</p>
+          <p className="text-2xl font-black text-amber-600 mt-2">{totalDueCount}</p>
+          <p className="text-xs font-bold text-amber-700/80 mt-1">Pending Follow-up &amp; Notice</p>
         </div>
 
-        <div className="bg-gradient-to-br from-rose-600 to-rose-800 text-white p-5 rounded-3xl shadow-lg space-y-2 relative overflow-hidden">
+        {/* Expired Card */}
+        <div 
+          onClick={() => setFilterStatus('EXPIRED')}
+          className={`bg-white p-5 rounded-2xl border transition cursor-pointer shadow-xs hover:shadow-md ${
+            filterStatus === 'EXPIRED' ? 'border-rose-500 ring-2 ring-rose-500/20' : 'border-slate-200'
+          }`}
+        >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-black uppercase text-rose-200 tracking-wider">Expired</span>
-            <AlertTriangle className="h-5 w-5 text-rose-200" />
+            <span className="text-[11px] font-black uppercase text-rose-700 tracking-wider">Expired / Overdue</span>
+            <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+              <AlertTriangle className="h-4 w-4" />
+            </div>
           </div>
-          <p className="text-2xl font-black">{totalExpiredCount} Policies</p>
-          <p className="text-xs font-semibold text-rose-100">Requires Immediate Follow-up</p>
+          <p className="text-2xl font-black text-rose-600 mt-2">{totalExpiredCount}</p>
+          <p className="text-xs font-bold text-rose-700/80 mt-1">Immediate Action Required</p>
         </div>
 
-        <div className="bg-gradient-to-br from-emerald-600 to-emerald-800 text-white p-5 rounded-3xl shadow-lg space-y-2 relative overflow-hidden">
+        {/* Renewed Success Card */}
+        <div 
+          onClick={() => setFilterStatus('RENEWED')}
+          className={`bg-white p-5 rounded-2xl border transition cursor-pointer shadow-xs hover:shadow-md ${
+            filterStatus === 'RENEWED' ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-200'
+          }`}
+        >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-black uppercase text-emerald-200 tracking-wider">Renewed Success</span>
-            <CheckCircle className="h-5 w-5 text-emerald-200" />
+            <span className="text-[11px] font-black uppercase text-emerald-700 tracking-wider">Successfully Renewed</span>
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <CheckCircle className="h-4 w-4" />
+            </div>
           </div>
-          <p className="text-2xl font-black">{totalRenewedCount} Completed</p>
-          <p className="text-xs font-semibold text-emerald-100">Coverage Kept Active ✅</p>
+          <p className="text-2xl font-black text-emerald-600 mt-2">{totalRenewedCount}</p>
+          <p className="text-xs font-bold text-emerald-700/80 mt-1">Coverage Maintained Active</p>
         </div>
+
       </div>
 
-      {/* CUSTOMER 360 STYLE ADVANCED MULTI-FILTER CONTROL BAR */}
+      {/* Advanced Filter Control Bar */}
       <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-card space-y-4">
         <div className="flex items-center justify-between border-b pb-3">
           <div className="flex items-center space-x-2">
             <Filter className="h-4 w-4 text-blue-600" />
             <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
-              Customer 360° Renewal Filters
+              Search &amp; Filter Renewals
             </h3>
             {activeFiltersCount > 0 && (
               <span className="badge badge-brand text-[10px] font-black px-2 py-0.5">
-                {activeFiltersCount} Active {activeFiltersCount === 1 ? 'Filter' : 'Filters'}
+                {activeFiltersCount} Active
               </span>
             )}
           </div>
           {activeFiltersCount > 0 && (
             <button
               onClick={clearAllFilters}
-              className="flex items-center space-x-1 text-xs font-bold text-rose-600 hover:text-rose-700 hover:underline transition cursor-pointer"
+              className="text-xs text-rose-600 hover:text-rose-700 font-extrabold flex items-center space-x-1 transition cursor-pointer"
             >
-              <RotateCcw className="h-3.5 w-3.5" />
+              <RotateCcw className="h-3 w-3" />
               <span>Reset All Filters</span>
             </button>
           )}
@@ -275,7 +339,7 @@ export const Renewals = () => {
                 placeholder="Client Name, Phone, Policy No, Insurer..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold focus:ring-2 focus:ring-blue-600 outline-none"
+                className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold focus:ring-2 focus:ring-blue-600 outline-none bg-white"
               />
             </div>
           </div>
@@ -289,13 +353,13 @@ export const Renewals = () => {
               className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50/50 cursor-pointer"
             >
               <option value="ALL">All Statuses</option>
-              <option value="DUE_SOON">⏳ Due Soon</option>
-              <option value="EXPIRED">🚨 Expired</option>
-              <option value="RENEWED">✅ Renewed</option>
+              <option value="DUE_SOON">Due Soon</option>
+              <option value="EXPIRED">Expired / Overdue</option>
+              <option value="RENEWED">Renewed</option>
             </select>
           </div>
 
-          {/* Policy Type */}
+          {/* Policy Category */}
           <div>
             <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">Policy Category</label>
             <select
@@ -305,57 +369,48 @@ export const Renewals = () => {
             >
               <option value="ALL">All Categories</option>
               <option value="LIFE">Life Insurance</option>
-              <option value="HEALTH">Health / Medical</option>
-              <option value="MOTOR">Motor / Vehicle</option>
+              <option value="HEALTH">Health Insurance</option>
+              <option value="MOTOR">Motor Insurance</option>
               <option value="OTHER">Other Policies</option>
             </select>
           </div>
 
-          {/* Premium Range */}
+          {/* Insurance Company */}
           <div>
-            <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">Renewal Premium</label>
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider block mb-1">Insurance Provider</label>
             <select
-              value={filterPremiumRange}
-              onChange={(e) => setFilterPremiumRange(e.target.value)}
+              value={filterInsurer}
+              onChange={(e) => setFilterInsurer(e.target.value)}
               className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50/50 cursor-pointer"
             >
-              <option value="ALL">All Premium Ranges</option>
-              <option value="BELOW_10K">Below ₹10,000</option>
-              <option value="10K_50K">₹10,000 – ₹50,000</option>
-              <option value="ABOVE_50K">Above ₹50,000</option>
+              <option value="ALL">All Providers</option>
+              {uniqueInsurers.map((ins, i) => (
+                <option key={i} value={ins}>{ins}</option>
+              ))}
             </select>
           </div>
 
         </div>
 
         {/* Date Range Custom Filter */}
-        <div className="flex flex-wrap items-center gap-2.5 pt-3 border-t border-slate-100 bg-slate-50/70 p-3 rounded-2xl">
+        <div className="flex flex-wrap items-center gap-2.5 pt-3 border-t border-slate-100 bg-slate-50/60 p-3 rounded-2xl">
           <div className="flex items-center space-x-1.5 text-slate-600 font-bold text-xs shrink-0">
-            <Calendar className="h-4 w-4 text-slate-500" />
-            <span>Date:</span>
+            <Calendar className="h-3.5 w-3.5 text-slate-500" />
+            <span>Expiry Date Range:</span>
           </div>
           <input 
             type="date" 
             value={filterStartDate} 
             onChange={(e) => setFilterStartDate(e.target.value)}
-            className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-300 bg-white text-slate-800 shadow-xs focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[135px]"
-            placeholder="dd-mm-yyyy"
+            className="px-2.5 py-1.5 text-xs font-semibold rounded-xl border border-slate-300 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <span className="text-slate-400 font-bold">-</span>
+          <span className="text-slate-400 font-bold">to</span>
           <input 
             type="date" 
             value={filterEndDate} 
             onChange={(e) => setFilterEndDate(e.target.value)}
-            className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-300 bg-white text-slate-800 shadow-xs focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[135px]"
-            placeholder="dd-mm-yyyy"
+            className="px-2.5 py-1.5 text-xs font-semibold rounded-xl border border-slate-300 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <button
-            type="button"
-            onClick={() => {}}
-            className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition cursor-pointer flex items-center justify-center"
-          >
-            Filter
-          </button>
           {(filterStartDate || filterEndDate) && (
             <button
               type="button"
@@ -372,9 +427,9 @@ export const Renewals = () => {
 
         {/* Summary Bar */}
         <div className="flex items-center justify-between text-xs text-slate-500 font-bold border-t pt-3">
-          <span>Showing <strong className="text-slate-900">{filtered.length}</strong> of <strong className="text-slate-900">{renewalsList.length}</strong> total renewal policies</span>
+          <span>Showing <strong className="text-slate-900">{filtered.length}</strong> of <strong className="text-slate-900">{renewalsList.length}</strong> total renewal records</span>
           {filtered.length === 0 && (
-            <span className="text-rose-600 font-extrabold">No matching renewal policies found.</span>
+            <span className="text-rose-600 font-extrabold">No matching policy renewals found.</span>
           )}
         </div>
       </div>
@@ -384,116 +439,143 @@ export const Renewals = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-900 text-white text-[11px] font-black uppercase tracking-wider border-b border-slate-800">
-                <th className="p-4 border-r border-slate-800">Policy &amp; Client</th>
-                <th className="p-4 border-r border-slate-800">Insurance Provider</th>
-                <th className="p-4 border-r border-slate-800">Renewal Premium</th>
-                <th className="p-4 border-r border-slate-800">Due Date</th>
-                <th className="p-4 border-r border-slate-800">Follow-up Staff Advisor</th>
-                <th className="p-4 border-r border-slate-800">Renewal Status</th>
-                <th className="p-4 text-center">Dispatch Actions</th>
+              <tr className="bg-slate-50 border-b border-slate-200/80 text-[11px] font-black uppercase tracking-wider text-slate-500">
+                <th className="p-4">Customer &amp; Policy</th>
+                <th className="p-4">Insurance Provider &amp; Plan</th>
+                <th className="p-4">Renewal Premium</th>
+                <th className="p-4">Expiry Due Date</th>
+                <th className="p-4">Assigned Advisor</th>
+                <th className="p-4 text-center">Status</th>
+                <th className="p-4 text-center">Renewal Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 text-xs font-semibold text-slate-800">
+            <tbody className="divide-y divide-slate-100 text-xs font-semibold text-slate-700">
               {filtered.length > 0 ? (
                 filtered.map(r => {
                   const isExpired = r.status === 'EXPIRED';
                   const isRenewed = r.status === 'RENEWED';
+                  const dueBadge = getDueBadge(r.dueDate, r.status);
+
                   return (
                     <tr 
                       key={r.id} 
-                      className={`transition ${isExpired ? 'bg-rose-50/50 hover:bg-rose-100/50' : isRenewed ? 'bg-emerald-50/40 hover:bg-emerald-100/40' : 'hover:bg-blue-50/50'}`}
+                      className={`hover:bg-slate-50/80 transition ${
+                        isExpired ? 'bg-rose-50/20' : isRenewed ? 'bg-emerald-50/20' : ''
+                      }`}
                     >
-                      <td className="p-4 border-r border-slate-200/80">
-                        <button
-                          onClick={() => openCustomer360(r.customerName)}
-                          className="font-black text-slate-900 hover:text-blue-600 hover:underline transition cursor-pointer text-left flex items-center space-x-1 text-sm"
-                          title="Click to view Customer 360° Profile"
-                        >
-                          <span>{r.customerName}</span>
-                          <Sparkles className="h-3.5 w-3.5 text-blue-500 opacity-80" />
-                        </button>
-                        <p className="text-[11px] text-slate-500 font-mono font-bold mt-0.5">{r.policyNo}</p>
-                        <p className="text-[10px] text-slate-400 font-mono">{r.phone}</p>
+                      {/* Customer & Policy */}
+                      <td className="p-4">
+                        <div className="flex items-start space-x-2.5">
+                          <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 font-black text-xs flex items-center justify-center shrink-0 mt-0.5">
+                            {r.customerName?.charAt(0)}
+                          </div>
+                          <div>
+                            <button
+                              onClick={() => openCustomer360(r.customerName, 'RENEWALS')}
+                              className="font-black text-slate-900 hover:text-blue-600 hover:underline transition cursor-pointer text-left flex items-center space-x-1"
+                              title="Click to view Customer 360° Profile (Renewals Tab)"
+                            >
+                              <span>{r.customerName}</span>
+                              <Sparkles className="h-3 w-3 text-blue-500 opacity-80" />
+                            </button>
+                            <p className="text-[11px] text-slate-400 font-mono font-semibold">{r.policyNo}</p>
+                            <div className="flex items-center space-x-1 text-[11px] text-slate-500 mt-0.5">
+                              <Phone className="h-3 w-3 text-slate-400" />
+                              <a href={`tel:${r.phone}`} className="hover:text-blue-600 font-medium">{r.phone}</a>
+                            </div>
+                          </div>
+                        </div>
                       </td>
 
-                      <td className="p-4 border-r border-slate-200/80">
-                        <p className="font-extrabold text-blue-950 flex items-center space-x-1">
-                          <ShieldCheck className="h-4 w-4 text-blue-600 shrink-0" />
+                      {/* Insurer & Plan */}
+                      <td className="p-4">
+                        <p className="font-extrabold text-slate-900 flex items-center space-x-1.5">
+                          <ShieldCheck className="h-3.5 w-3.5 text-blue-600 shrink-0" />
                           <span>{r.insuranceCompany}</span>
                         </p>
                         <div className="flex flex-wrap items-center gap-1 mt-1">
-                          <span className={`badge text-[10px] font-black ${r.type === 'HEALTH' ? 'bg-orange-100 text-orange-800' : 'bg-blue-100 text-blue-800'}`}>
-                            {r.type} Policy
+                          <span className={`badge text-[9px] font-black ${
+                            r.type === 'HEALTH' ? 'bg-orange-100 text-orange-800' :
+                            r.type === 'MOTOR' ? 'bg-purple-100 text-purple-800' :
+                            'bg-blue-100 text-blue-800'
+                          }`}>
+                            {r.type}
                           </span>
+                          {r.policyName && (
+                            <span className="text-[10px] text-slate-500 font-medium truncate max-w-[150px]" title={r.policyName}>
+                              • {r.policyName}
+                            </span>
+                          )}
                         </div>
-                        {(r.policyName || r.planName) && (
-                          <p className="text-[10px] font-extrabold text-slate-700 mt-1 truncate max-w-[200px]" title={r.policyName || r.planName}>
-                            Plan: {r.policyName || r.planName}
-                          </p>
+                      </td>
+
+                      {/* Premium */}
+                      <td className="p-4 font-mono font-black text-slate-900 text-sm">
+                        ₹{Number(r.premium).toLocaleString()}
+                      </td>
+
+                      {/* Due Date & Countdown */}
+                      <td className="p-4">
+                        <p className="font-bold text-slate-900">{r.dueDate}</p>
+                        {dueBadge && (
+                          <span className={`inline-block mt-1 px-2 py-0.5 rounded-md border text-[10px] font-extrabold ${dueBadge.color}`}>
+                            {dueBadge.text}
+                          </span>
                         )}
                       </td>
 
-                      <td className="p-4 font-mono font-black text-emerald-700 text-sm border-r border-slate-200/80">
-                        ₹{r.premium.toLocaleString()}
-                      </td>
-
-                      <td className="p-4 border-r border-slate-200/80">
-                        <span className={`font-black flex items-center space-x-1 ${isExpired ? 'text-rose-600' : 'text-amber-700'}`}>
-                          <Calendar className="h-3.5 w-3.5 shrink-0" />
-                          <span>{r.dueDate}</span>
-                        </span>
-                      </td>
-
-                      <td className="p-4 border-r border-slate-200/80">
-                        <span className="badge bg-purple-100 text-purple-900 border border-purple-300 text-[10px] font-black px-2.5 py-1 rounded-xl inline-flex items-center space-x-1 shadow-2xs">
-                          <UserCheck className="h-3 w-3 text-purple-700 shrink-0" />
+                      {/* Assigned Advisor */}
+                      <td className="p-4">
+                        <span className="badge bg-slate-100 text-slate-700 text-[11px] font-bold px-2.5 py-1 rounded-lg inline-flex items-center space-x-1">
+                          <UserCheck className="h-3 w-3 text-slate-500 shrink-0" />
                           <span>{r.assignedStaff}</span>
                         </span>
                       </td>
 
-                      <td className="p-4 border-r border-slate-200/80">
+                      {/* Status */}
+                      <td className="p-4 text-center">
                         {isRenewed ? (
-                          <span className="badge bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-black px-2.5 py-1 rounded-xl">
-                            ✅ RENEWED
+                          <span className="badge bg-emerald-50 text-emerald-800 border border-emerald-300 text-[10px] font-black px-2.5 py-1 rounded-xl">
+                            RENEWED
                           </span>
                         ) : isExpired ? (
-                          <span className="badge bg-rose-100 text-rose-800 border border-rose-300 text-[10px] font-black px-2.5 py-1 rounded-xl animate-pulse">
-                            🚨 EXPIRED (URGENT)
+                          <span className="badge bg-rose-50 text-rose-800 border border-rose-300 text-[10px] font-black px-2.5 py-1 rounded-xl">
+                            EXPIRED
                           </span>
                         ) : (
-                          <span className="badge bg-amber-100 text-amber-800 border border-amber-300 text-[10px] font-black px-2.5 py-1 rounded-xl">
-                            ⏳ DUE SOON
+                          <span className="badge bg-amber-50 text-amber-800 border border-amber-300 text-[10px] font-black px-2.5 py-1 rounded-xl">
+                            DUE SOON
                           </span>
                         )}
                       </td>
 
+                      {/* Actions */}
                       <td className="p-4 text-center">
                         <div className="flex items-center justify-center space-x-2">
-                          {!isRenewed && (
+                          {!isRenewed ? (
                             <>
                               <button 
                                 onClick={() => handleSendWhatsAppNotice(r)}
-                                className="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs cursor-pointer inline-flex items-center space-x-1.5 shadow-md hover:shadow-lg transition transform active:scale-95"
-                                title="Open WhatsApp with personalized customer greeting and policy renewal details"
+                                className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs cursor-pointer inline-flex items-center space-x-1 shadow-xs transition"
+                                title="Open WhatsApp with personalized customer greeting and renewal details"
                               >
-                                <Send className="h-3.5 w-3.5" />
-                                <span>{r.reminderSent ? 'Resend WhatsApp' : 'Send WhatsApp'}</span>
+                                <MessageCircle className="h-3.5 w-3.5" />
+                                <span>{r.reminderSent ? 'Resend Notice' : 'Send WhatsApp'}</span>
                               </button>
 
                               <button 
                                 onClick={() => handleMarkRenewed(r.policyNo, r.customerName)}
-                                className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs cursor-pointer inline-flex items-center space-x-1 shadow-md hover:shadow-lg transition transform active:scale-95"
+                                className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs cursor-pointer inline-flex items-center space-x-1 shadow-xs transition"
+                                title="Mark policy as renewed"
                               >
                                 <CheckCircle2 className="h-3.5 w-3.5" />
                                 <span>Mark Renewed</span>
                               </button>
                             </>
-                          )}
-                          {isRenewed && (
+                          ) : (
                             <span className="text-xs text-emerald-600 font-extrabold flex items-center space-x-1">
                               <CheckCircle className="h-4 w-4 text-emerald-600" />
-                              <span>Completed</span>
+                              <span>Renewed</span>
                             </span>
                           )}
                         </div>
@@ -503,8 +585,8 @@ export const Renewals = () => {
                 })
               ) : (
                 <tr>
-                  <td colSpan="7" className="p-8 text-center text-xs text-slate-400">
-                    No policy renewals match your current search &amp; status filter criteria.
+                  <td colSpan="7" className="p-8 text-center text-xs text-slate-400 font-medium">
+                    No policy renewals match your current search &amp; filter criteria.
                   </td>
                 </tr>
               )}
