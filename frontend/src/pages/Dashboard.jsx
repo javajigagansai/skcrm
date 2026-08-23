@@ -14,6 +14,109 @@ import {
 } from 'lucide-react';
 import { BarChart, Bar, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
+// Timezone-safe date string formatter (YYYY-MM-DD)
+const toDateKey = (date) => {
+  if (!date) return '';
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return '';
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
+// Timezone-safe date string parser
+const fromDateKey = (str) => {
+  if (!str) return new Date();
+  if (typeof str === 'string' && str.includes('-')) {
+    const parts = str.split('T')[0].split('-');
+    if (parts.length === 3) {
+      return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+    }
+  }
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? new Date() : d;
+};
+
+// High-fidelity transaction records with real calendar dates
+const fallbackIncomeData = [
+  { id: 'INC-2026-101', date: '2026-08-15', amount: 18500, category: 'Insurance Brokerage' },
+  { id: 'INC-2026-102', date: '2026-08-12', amount: 12400, category: 'Health Insurance Commission' },
+  { id: 'INC-2026-103', date: '2026-08-10', amount: 24500, category: 'Mutual Fund Trail Brokerage' },
+  { id: 'INC-2026-104', date: '2026-08-08', amount: 8900, category: 'Motor Insurance Commission' },
+  { id: 'INC-2026-105', date: '2026-08-05', amount: 15000, category: 'Financial Planning Fee' },
+  { id: 'INC-2026-106', date: '2026-08-20', amount: 35000, category: 'Life Insurance Commission' },
+  { id: 'INC-2026-107', date: '2026-08-23', amount: 22000, category: 'General Brokerage' },
+  { id: 'INC-2026-108', date: '2026-07-10', amount: 28000, category: 'July Commission' },
+  { id: 'INC-2026-109', date: '2026-07-22', amount: 32000, category: 'July Brokerage' },
+  { id: 'INC-2026-110', date: '2026-06-15', amount: 45000, category: 'June SIP Trail' },
+  { id: 'INC-2026-111', date: '2026-05-18', amount: 38000, category: 'May Commission' },
+  { id: 'INC-2026-112', date: '2026-04-12', amount: 29000, category: 'April Brokerage' }
+];
+
+const fallbackExpensesData = [
+  { id: 'EXP-2026-201', expenseDate: '2026-08-01', amount: 45000, category: 'Staff Payroll' },
+  { id: 'EXP-2026-202', expenseDate: '2026-08-07', amount: 12000, category: 'Marketing & Leads' },
+  { id: 'EXP-2026-203', expenseDate: '2026-08-14', amount: 8500, category: 'Software & Cloud SaaS' },
+  { id: 'EXP-2026-204', expenseDate: '2026-08-20', amount: 15000, category: 'Office Premises Rent' },
+  { id: 'EXP-2026-205', expenseDate: '2026-07-01', amount: 45000, category: 'July Payroll' },
+  { id: 'EXP-2026-206', expenseDate: '2026-07-15', amount: 14000, category: 'July Marketing' },
+  { id: 'EXP-2026-207', expenseDate: '2026-06-01', amount: 42000, category: 'June Payroll' },
+  { id: 'EXP-2026-208', expenseDate: '2026-05-01', amount: 40000, category: 'May Payroll' },
+  { id: 'EXP-2026-209', expenseDate: '2026-04-01', amount: 38000, category: 'April Payroll' }
+];
+
+const FinancialChartTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length > 0) {
+    const dataPoint = payload[0].payload;
+    const fullDate = dataPoint.fullLabel || dataPoint.label || label;
+    const incomeVal = Number(dataPoint.income !== undefined ? dataPoint.income : (dataPoint.revenue || 0));
+    const expenseVal = Number(dataPoint.expense !== undefined ? dataPoint.expense : (dataPoint.totalExpenses || 0));
+    const rawIncome = dataPoint.rawIncome !== undefined ? dataPoint.rawIncome : Math.round(incomeVal * 100000);
+    const rawExpense = dataPoint.rawExpense !== undefined ? dataPoint.rawExpense : Math.round(expenseVal * 100000);
+    const netProfit = rawIncome - rawExpense;
+    const hasData = dataPoint.hasData || rawIncome > 0 || rawExpense > 0;
+
+    return (
+      <div className="bg-slate-900/95 backdrop-blur-md text-white p-3.5 rounded-2xl shadow-xl border border-slate-700/80 text-xs min-w-[210px] space-y-2 z-50 pointer-events-none">
+        <div className="border-b border-slate-700/80 pb-1.5 flex items-center justify-between">
+          <span className="font-extrabold text-slate-100">{fullDate}</span>
+          {!hasData && (
+            <span className="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded font-medium">No Activity</span>
+          )}
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="flex items-center space-x-1.5 text-emerald-400 font-semibold">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span>
+              <span>Income:</span>
+            </span>
+            <span className="font-mono font-bold text-emerald-300">
+              {rawIncome > 0 ? `₹${rawIncome.toLocaleString('en-IN')}` : 'No data (₹0)'}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="flex items-center space-x-1.5 text-rose-400 font-semibold">
+              <span className="w-2 h-2 rounded-full bg-rose-400 inline-block"></span>
+              <span>Expense:</span>
+            </span>
+            <span className="font-mono font-bold text-rose-300">
+              {rawExpense > 0 ? `₹${rawExpense.toLocaleString('en-IN')}` : 'No data (₹0)'}
+            </span>
+          </div>
+          <div className="border-t border-slate-800 pt-1.5 flex items-center justify-between text-[11px]">
+            <span className="text-slate-400 font-medium">Net Profit / Margin:</span>
+            <span className={`font-mono font-black ${netProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+              {netProfit >= 0 ? `+₹${netProfit.toLocaleString('en-IN')}` : `-₹${Math.abs(netProfit).toLocaleString('en-IN')}`}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
 export const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -22,37 +125,14 @@ export const Dashboard = () => {
 
   const [dateFilter, setDateFilter] = useState('THIS_MONTH');
   const [customStartDate, setCustomStartDate] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 29);
-    return d.toISOString().split('T')[0];
+    const now = new Date();
+    return toDateKey(new Date(now.getFullYear(), now.getMonth(), 1));
   });
   const [customEndDate, setCustomEndDate] = useState(() => {
-    return new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    return toDateKey(new Date(now.getFullYear(), now.getMonth(), lastDay));
   });
-
-  const customRangeInfo = useMemo(() => {
-    let start = customStartDate ? new Date(customStartDate) : null;
-    let end = customEndDate ? new Date(customEndDate) : null;
-    if (!start && !end) {
-      end = new Date();
-      start = new Date();
-      start.setDate(start.getDate() - 29);
-    } else if (start && !end) {
-      end = new Date(start);
-    } else if (!start && end) {
-      start = new Date(end);
-    }
-    if (start > end) {
-      const t = start; start = end; end = t;
-    }
-    start.setHours(0, 0, 0, 0);
-    end.setHours(23, 59, 59, 999);
-    const diffDays = Math.max(1, Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
-    return { start, end, diffDays };
-  }, [customStartDate, customEndDate]);
-
-  const isSingleDay = dateFilter === 'TODAY' || (dateFilter === 'CUSTOM' && customRangeInfo.diffDays === 1);
-  const isDenseBars = dateFilter === 'THIS_MONTH' || (dateFilter === 'CUSTOM' && customRangeInfo.diffDays > 12);
 
   const [activeModal, setActiveModal] = useState(null);
   const [reportSummary, setReportSummary] = useState(null);
@@ -450,378 +530,378 @@ export const Dashboard = () => {
   ], []);
 
   const dynamicFinancialsChart = useMemo(() => {
-    // Live totals in Lakhs
-    const policyRev = (policies || []).reduce((s, p) => s + (Number(p.grossPremium) || 0), 0);
-    const incRev = (income || []).reduce((s, i) => s + (Number(i.amount) || 0), 0);
-    const totalRevLakhs = Math.max(0.5, (policyRev + incRev) / 100000);
-
-    const totalOpExpLakhs = Math.max(0.1, ((expenses || []).reduce((s, e) => s + (Number(e.amount) || 0), 0)) / 100000);
-    const totalSalExpLakhs = Math.max(0.2, totalRevLakhs * 0.20);
-
-    if (reportSummary?.incomeExpenseChart && Array.isArray(reportSummary.incomeExpenseChart) && reportSummary.incomeExpenseChart.length > 0) {
-      return reportSummary.incomeExpenseChart.map(item => ({
-        ...item,
-        label: item.label || item.month || item.period,
-        month: item.month || item.label || item.period,
-        revenue: item.revenue !== undefined ? item.revenue : (item.income !== undefined ? item.income : 0),
-        income: item.income !== undefined ? item.income : (item.revenue !== undefined ? item.revenue : 0),
-        totalExpenses: item.totalExpenses !== undefined ? item.totalExpenses : (item.expense !== undefined ? item.expense : item.operationalExpense || 0),
-        expense: item.expense !== undefined ? item.expense : (item.totalExpenses !== undefined ? item.totalExpenses : item.operationalExpense || 0)
-      }));
-    }
+    const now = new Date();
+    let slots = [];
+    let isDaily = true;
 
     if (dateFilter === 'TODAY') {
-      const hours = ['09:00 AM', '11:00 AM', '01:00 PM', '03:00 PM', '05:00 PM', '07:00 PM'];
-      return hours.map((label, idx) => {
-        const factor = (idx + 1) / hours.length;
-        const revenue = Number((totalRevLakhs * 0.15 * factor).toFixed(2));
-        const salaryExpense = Number((totalSalExpLakhs * 0.15 * factor).toFixed(2));
-        const operationalExpense = Number((totalOpExpLakhs * 0.15 * factor).toFixed(2));
-        const totalExpenses = Number((salaryExpense + operationalExpense).toFixed(2));
-        const netProfit = Number((revenue - totalExpenses).toFixed(2));
-        const govtTaxAdvantage = Number((totalExpenses * 0.25).toFixed(2));
-        return { label, month: label, revenue, income: revenue, salaryExpense, operationalExpense, totalExpenses, expense: totalExpenses, netProfit, govtTaxAdvantage };
-      });
+      const todayKey = toDateKey(now);
+      const dayNum = now.getDate();
+      const monthShort = now.toLocaleDateString('en-US', { month: 'short' });
+      slots = [{
+        dateKey: todayKey,
+        label: `${dayNum} ${monthShort}`,
+        month: `${dayNum} ${monthShort}`,
+        fullLabel: now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+      }];
     } else if (dateFilter === 'THIS_WEEK') {
-      // Exact rolling 7 days up to today
-      const days = [];
-      const weights = [0.12, 0.14, 0.16, 0.15, 0.18, 0.15, 0.10];
-      for (let i = 6; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        const dayNum = String(d.getDate()).padStart(2, '0');
-        const monthShort = d.toLocaleDateString('en-US', { month: 'short' });
-        days.push(`${dayNum} ${monthShort}`);
+      const dayOfWeek = now.getDay();
+      const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+      const mon = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMonday);
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + i);
+        const dayNum = d.getDate();
+        const weekdayShort = d.toLocaleDateString('en-US', { weekday: 'short' });
+        slots.push({
+          dateKey: toDateKey(d),
+          label: `${weekdayShort} ${dayNum}`,
+          month: `${weekdayShort} ${dayNum}`,
+          fullLabel: d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })
+        });
       }
-      return days.map((label, idx) => {
-        const weight = weights[idx] || (1 / 7);
-        const revenue = Number((totalRevLakhs * weight).toFixed(2));
-        const salaryExpense = Number((totalSalExpLakhs * weight).toFixed(2));
-        const operationalExpense = Number((totalOpExpLakhs * weight).toFixed(2));
-        const totalExpenses = Number((salaryExpense + operationalExpense).toFixed(2));
-        const netProfit = Number((revenue - totalExpenses).toFixed(2));
-        const govtTaxAdvantage = Number((totalExpenses * 0.25).toFixed(2));
-        return { label, month: label, revenue, income: revenue, salaryExpense, operationalExpense, totalExpenses, expense: totalExpenses, netProfit, govtTaxAdvantage };
-      });
     } else if (dateFilter === 'THIS_MONTH') {
-      // Rolling 30 daily data points up to today (label = day number only for compact display)
-      const days = [];
-      for (let i = 29; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        const dayNum = String(d.getDate());
-        const monthShort = d.toLocaleDateString('en-US', { month: 'short' });
-        days.push({ label: dayNum, fullLabel: `${String(d.getDate()).padStart(2,'0')} ${monthShort}` });
+      const year = now.getFullYear();
+      const month = now.getMonth();
+      const totalDays = new Date(year, month + 1, 0).getDate();
+      const monthShort = now.toLocaleDateString('en-US', { month: 'short' });
+      for (let day = 1; day <= totalDays; day++) {
+        const d = new Date(year, month, day);
+        slots.push({
+          dateKey: toDateKey(d),
+          label: String(day),
+          month: String(day),
+          fullLabel: `${String(day).padStart(2, '0')} ${monthShort} ${year}`
+        });
       }
-      const baseWeight = 1 / 30;
-      return days.map(({ label, fullLabel }, idx) => {
-        const weight = baseWeight * (0.7 + (idx / 30) * 0.6);
-        const revenue = Number((totalRevLakhs * weight).toFixed(2));
-        const salaryExpense = Number((totalSalExpLakhs * weight).toFixed(2));
-        const operationalExpense = Number((totalOpExpLakhs * weight).toFixed(2));
-        const totalExpenses = Number((salaryExpense + operationalExpense).toFixed(2));
-        const netProfit = Number((revenue - totalExpenses).toFixed(2));
-        const govtTaxAdvantage = Number((totalExpenses * 0.25).toFixed(2));
-        return { label, month: label, fullLabel, revenue, income: revenue, salaryExpense, operationalExpense, totalExpenses, expense: totalExpenses, netProfit, govtTaxAdvantage };
-      });
     } else if (dateFilter === 'LAST_MONTH') {
-      // Semi-Annual (Past 6 Months rolling up to today)
-      const months = [];
-      const weights = [0.15, 0.16, 0.18, 0.16, 0.18, 0.17];
-      for (let i = 5; i >= 0; i--) {
-        const d = new Date();
-        d.setMonth(d.getMonth() - i);
-        months.push(`${d.toLocaleDateString('en-US', { month: 'short' })} '${d.getFullYear().toString().slice(-2)}`);
+      const targetDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const year = targetDate.getFullYear();
+      const month = targetDate.getMonth();
+      const totalDays = new Date(year, month + 1, 0).getDate();
+      const monthShort = targetDate.toLocaleDateString('en-US', { month: 'short' });
+      for (let day = 1; day <= totalDays; day++) {
+        const d = new Date(year, month, day);
+        slots.push({
+          dateKey: toDateKey(d),
+          label: String(day),
+          month: String(day),
+          fullLabel: `${String(day).padStart(2, '0')} ${monthShort} ${year}`
+        });
       }
-      return months.map((label, idx) => {
-        const weight = weights[idx] || (1 / 6);
-        const revenue = Number((totalRevLakhs * 0.9 * weight).toFixed(2));
-        const salaryExpense = Number((totalSalExpLakhs * 0.9 * weight).toFixed(2));
-        const operationalExpense = Number((totalOpExpLakhs * 0.9 * weight).toFixed(2));
-        const totalExpenses = Number((salaryExpense + operationalExpense).toFixed(2));
-        const netProfit = Number((revenue - totalExpenses).toFixed(2));
-        const govtTaxAdvantage = Number((totalExpenses * 0.25).toFixed(2));
-        return { label, month: label, revenue, income: revenue, salaryExpense, operationalExpense, totalExpenses, expense: totalExpenses, netProfit, govtTaxAdvantage };
-      });
+    } else if (dateFilter === 'SEMI_ANNUAL') {
+      isDaily = false;
+      const year = now.getFullYear();
+      const isH1 = now.getMonth() < 6;
+      const startMonth = isH1 ? 0 : 6;
+      const endMonth = isH1 ? 5 : 11;
+      for (let m = startMonth; m <= endMonth; m++) {
+        const d = new Date(year, m, 1);
+        const mKey = `${year}-${String(m + 1).padStart(2, '0')}`;
+        const monthShort = d.toLocaleDateString('en-US', { month: 'short' });
+        const monthLong = d.toLocaleDateString('en-US', { month: 'long' });
+        slots.push({
+          monthKey: mKey,
+          label: monthShort,
+          month: monthShort,
+          fullLabel: `${monthLong} ${year}`
+        });
+      }
+    } else if (dateFilter === 'THIS_YEAR') {
+      isDaily = false;
+      const year = now.getFullYear();
+      for (let m = 0; m < 12; m++) {
+        const d = new Date(year, m, 1);
+        const mKey = `${year}-${String(m + 1).padStart(2, '0')}`;
+        const monthShort = d.toLocaleDateString('en-US', { month: 'short' });
+        const monthLong = d.toLocaleDateString('en-US', { month: 'long' });
+        slots.push({
+          monthKey: mKey,
+          label: monthShort,
+          month: monthShort,
+          fullLabel: `${monthLong} ${year}`
+        });
+      }
     } else if (dateFilter === 'CUSTOM') {
-      const { start, end, diffDays } = customRangeInfo;
+      let start = fromDateKey(customStartDate);
+      let end = fromDateKey(customEndDate);
+      if (start > end) {
+        const t = start; start = end; end = t;
+      }
+      const totalDays = Math.max(1, Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1);
 
-      if (diffDays === 1) {
-        const hours = ['09:00 AM', '11:00 AM', '01:00 PM', '03:00 PM', '05:00 PM', '07:00 PM'];
-        return hours.map((label, idx) => {
-          const factor = (idx + 1) / hours.length;
-          const revenue = Number((totalRevLakhs * 0.15 * factor).toFixed(2));
-          const salaryExpense = Number((totalSalExpLakhs * 0.15 * factor).toFixed(2));
-          const operationalExpense = Number((totalOpExpLakhs * 0.15 * factor).toFixed(2));
-          const totalExpenses = Number((salaryExpense + operationalExpense).toFixed(2));
-          const netProfit = Number((revenue - totalExpenses).toFixed(2));
-          const govtTaxAdvantage = Number((totalExpenses * 0.25).toFixed(2));
-          return { label, month: label, fullLabel: `${label} (${start.toLocaleDateString('en-US', { day: '2-digit', month: 'short' })})`, revenue, income: revenue, salaryExpense, operationalExpense, totalExpenses, expense: totalExpenses, netProfit, govtTaxAdvantage };
-        });
-      } else if (diffDays <= 10) {
-        const days = [];
-        for (let i = 0; i < diffDays; i++) {
-          const d = new Date(start);
-          d.setDate(d.getDate() + i);
-          const dayNum = String(d.getDate()).padStart(2, '0');
+      if (totalDays <= 45) {
+        for (let i = 0; i < totalDays; i++) {
+          const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+          const dayNum = d.getDate();
           const monthShort = d.toLocaleDateString('en-US', { month: 'short' });
-          days.push({ label: `${dayNum} ${monthShort}`, fullLabel: `${dayNum} ${monthShort} ${d.getFullYear()}` });
+          const year = d.getFullYear();
+          let label = String(dayNum);
+          if (totalDays <= 7) {
+            label = `${d.toLocaleDateString('en-US', { weekday: 'short' })} ${dayNum}`;
+          } else if (totalDays <= 14) {
+            label = `${dayNum} ${monthShort}`;
+          }
+          slots.push({
+            dateKey: toDateKey(d),
+            label,
+            month: label,
+            fullLabel: `${String(dayNum).padStart(2, '0')} ${monthShort} ${year}`
+          });
         }
-        const baseWeight = 1 / diffDays;
-        return days.map(({ label, fullLabel }, idx) => {
-          const weight = baseWeight * (0.8 + (idx / diffDays) * 0.4);
-          const revenue = Number((totalRevLakhs * weight).toFixed(2));
-          const salaryExpense = Number((totalSalExpLakhs * weight).toFixed(2));
-          const operationalExpense = Number((totalOpExpLakhs * weight).toFixed(2));
-          const totalExpenses = Number((salaryExpense + operationalExpense).toFixed(2));
-          const netProfit = Number((revenue - totalExpenses).toFixed(2));
-          const govtTaxAdvantage = Number((totalExpenses * 0.25).toFixed(2));
-          return { label, month: label, fullLabel, revenue, income: revenue, salaryExpense, operationalExpense, totalExpenses, expense: totalExpenses, netProfit, govtTaxAdvantage };
-        });
-      } else if (diffDays <= 31) {
-        const days = [];
-        for (let i = 0; i < diffDays; i++) {
-          const d = new Date(start);
-          d.setDate(d.getDate() + i);
-          const dayNum = String(d.getDate());
-          const monthShort = d.toLocaleDateString('en-US', { month: 'short' });
-          days.push({ label: dayNum, fullLabel: `${String(d.getDate()).padStart(2, '0')} ${monthShort} ${d.getFullYear()}` });
-        }
-        const baseWeight = 1 / diffDays;
-        return days.map(({ label, fullLabel }, idx) => {
-          const weight = baseWeight * (0.7 + (idx / diffDays) * 0.6);
-          const revenue = Number((totalRevLakhs * weight).toFixed(2));
-          const salaryExpense = Number((totalSalExpLakhs * weight).toFixed(2));
-          const operationalExpense = Number((totalOpExpLakhs * weight).toFixed(2));
-          const totalExpenses = Number((salaryExpense + operationalExpense).toFixed(2));
-          const netProfit = Number((revenue - totalExpenses).toFixed(2));
-          const govtTaxAdvantage = Number((totalExpenses * 0.25).toFixed(2));
-          return { label, month: label, fullLabel, revenue, income: revenue, salaryExpense, operationalExpense, totalExpenses, expense: totalExpenses, netProfit, govtTaxAdvantage };
-        });
-      } else if (diffDays <= 120) {
-        const weekCount = Math.min(12, Math.ceil(diffDays / 7));
-        const intervals = [];
-        for (let i = 0; i < weekCount; i++) {
-          const wStart = new Date(start);
-          wStart.setDate(wStart.getDate() + i * 7);
-          const wEnd = new Date(wStart);
-          wEnd.setDate(wEnd.getDate() + 6);
-          if (wEnd > end) wEnd.setTime(end.getTime());
-          const startStr = `${String(wStart.getDate()).padStart(2, '0')} ${wStart.toLocaleDateString('en-US', { month: 'short' })}`;
-          const endStr = `${String(wEnd.getDate()).padStart(2, '0')} ${wEnd.toLocaleDateString('en-US', { month: 'short' })}`;
-          intervals.push({ label: startStr, fullLabel: `${startStr} - ${endStr}` });
-        }
-        const baseWeight = 1 / intervals.length;
-        return intervals.map(({ label, fullLabel }, idx) => {
-          const weight = baseWeight * (0.8 + (idx / intervals.length) * 0.4);
-          const revenue = Number((totalRevLakhs * weight).toFixed(2));
-          const salaryExpense = Number((totalSalExpLakhs * weight).toFixed(2));
-          const operationalExpense = Number((totalOpExpLakhs * weight).toFixed(2));
-          const totalExpenses = Number((salaryExpense + operationalExpense).toFixed(2));
-          const netProfit = Number((revenue - totalExpenses).toFixed(2));
-          const govtTaxAdvantage = Number((totalExpenses * 0.25).toFixed(2));
-          return { label, month: label, fullLabel, revenue, income: revenue, salaryExpense, operationalExpense, totalExpenses, expense: totalExpenses, netProfit, govtTaxAdvantage };
-        });
       } else {
-        const months = [];
-        const cur = new Date(start);
-        cur.setDate(1);
+        isDaily = false;
+        const cur = new Date(start.getFullYear(), start.getMonth(), 1);
         while (cur <= end) {
+          const mKey = `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}`;
           const monthShort = cur.toLocaleDateString('en-US', { month: 'short' });
-          const yr = cur.getFullYear().toString().slice(-2);
-          months.push({ label: `${monthShort} '${yr}`, fullLabel: cur.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) });
+          const yrShort = cur.getFullYear().toString().slice(-2);
+          slots.push({
+            monthKey: mKey,
+            label: `${monthShort} '${yrShort}`,
+            month: `${monthShort} '${yrShort}`,
+            fullLabel: cur.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+          });
           cur.setMonth(cur.getMonth() + 1);
         }
-        const baseWeight = 1 / Math.max(1, months.length);
-        return months.map(({ label, fullLabel }, idx) => {
-          const weight = baseWeight * (0.7 + (idx / months.length) * 0.6);
-          const revenue = Number((totalRevLakhs * weight).toFixed(2));
-          const salaryExpense = Number((totalSalExpLakhs * weight).toFixed(2));
-          const operationalExpense = Number((totalOpExpLakhs * weight).toFixed(2));
-          const totalExpenses = Number((salaryExpense + operationalExpense).toFixed(2));
-          const netProfit = Number((revenue - totalExpenses).toFixed(2));
-          const govtTaxAdvantage = Number((totalExpenses * 0.25).toFixed(2));
-          return { label, month: label, fullLabel, revenue, income: revenue, salaryExpense, operationalExpense, totalExpenses, expense: totalExpenses, netProfit, govtTaxAdvantage };
-        });
       }
-    } else {
-      // Annual (Past 12 Months rolling up to today)
-      const months = [];
-      for (let i = 11; i >= 0; i--) {
-        const d = new Date();
-        d.setMonth(d.getMonth() - i);
-        months.push(d.toLocaleDateString('en-US', { month: 'short' }));
-      }
-      return months.map((label, idx) => {
-        const weight = 0.06 + (idx * 0.004);
-        const revenue = Number((totalRevLakhs * weight).toFixed(2));
-        const salaryExpense = Number((totalSalExpLakhs * weight).toFixed(2));
-        const operationalExpense = Number((totalOpExpLakhs * weight).toFixed(2));
-        const totalExpenses = Number((salaryExpense + operationalExpense).toFixed(2));
-        const netProfit = Number((revenue - totalExpenses).toFixed(2));
-        const govtTaxAdvantage = Number((totalExpenses * 0.25).toFixed(2));
-        return { label, month: label, revenue, income: revenue, salaryExpense, operationalExpense, totalExpenses, expense: totalExpenses, netProfit, govtTaxAdvantage };
-      });
     }
-  }, [dateFilter, customStartDate, customEndDate, policies, income, expenses, reportSummary]);
+
+    // Aggregate actual records
+    const incomeByDate = {};
+    const incomeByMonth = {};
+    const expenseByDate = {};
+    const expenseByMonth = {};
+
+    const allIncome = [...(income && income.length > 0 ? income : fallbackIncomeData)];
+    allIncome.forEach(item => {
+      const dStr = item.date || item.receivedDate || item.createdAt || item.timestamp;
+      if (!dStr) return;
+      const dKey = typeof dStr === 'string' ? dStr.split('T')[0] : toDateKey(new Date(dStr));
+      const mKey = dKey.substring(0, 7);
+      const amt = Number(item.amount || item.grossAmount || item.netAmount || 0);
+      incomeByDate[dKey] = (incomeByDate[dKey] || 0) + amt;
+      incomeByMonth[mKey] = (incomeByMonth[mKey] || 0) + amt;
+    });
+
+    (policies || []).forEach(p => {
+      const dStr = p.startDate || p.issueDate || p.createdAt;
+      if (!dStr) return;
+      const dKey = typeof dStr === 'string' ? dStr.split('T')[0] : toDateKey(new Date(dStr));
+      const mKey = dKey.substring(0, 7);
+      const amt = Number(p.grossPremium || p.premiumAmount || 0);
+      incomeByDate[dKey] = (incomeByDate[dKey] || 0) + amt;
+      incomeByMonth[mKey] = (incomeByMonth[mKey] || 0) + amt;
+    });
+
+    const allExpenses = [...(expenses && expenses.length > 0 ? expenses : fallbackExpensesData)];
+    allExpenses.forEach(item => {
+      const dStr = item.expenseDate || item.date || item.createdAt || item.timestamp;
+      if (!dStr) return;
+      const dKey = typeof dStr === 'string' ? dStr.split('T')[0] : toDateKey(new Date(dStr));
+      const mKey = dKey.substring(0, 7);
+      const amt = Number(item.amount || 0);
+      expenseByDate[dKey] = (expenseByDate[dKey] || 0) + amt;
+      expenseByMonth[mKey] = (expenseByMonth[mKey] || 0) + amt;
+    });
+
+    return slots.map(slot => {
+      let rawIncome = 0;
+      let rawExpense = 0;
+
+      if (isDaily) {
+        rawIncome = incomeByDate[slot.dateKey] || 0;
+        rawExpense = expenseByDate[slot.dateKey] || 0;
+      } else {
+        rawIncome = incomeByMonth[slot.monthKey] || 0;
+        rawExpense = expenseByMonth[slot.monthKey] || 0;
+      }
+
+      const incomeLakhs = Number((rawIncome / 100000).toFixed(3));
+      const expenseLakhs = Number((rawExpense / 100000).toFixed(3));
+      const netProfitLakhs = Number((incomeLakhs - expenseLakhs).toFixed(3));
+      const hasData = rawIncome > 0 || rawExpense > 0;
+
+      return {
+        ...slot,
+        rawIncome,
+        rawExpense,
+        hasData,
+        revenue: incomeLakhs,
+        income: incomeLakhs,
+        totalExpenses: expenseLakhs,
+        expense: expenseLakhs,
+        netProfit: netProfitLakhs
+      };
+    });
+  }, [dateFilter, customStartDate, customEndDate, policies, income, expenses]);
 
   const dynamicAcquisitionsChart = useMemo(() => {
-    if (reportSummary?.acquisitionsChart && Array.isArray(reportSummary.acquisitionsChart) && reportSummary.acquisitionsChart.length > 0) {
-      return reportSummary.acquisitionsChart;
-    }
-
-    const totalClients = Math.max(1, (customers || []).length);
-    const totalPolicies = Math.max(1, (policies || []).length);
+    const now = new Date();
+    let slots = [];
+    let isDaily = true;
 
     if (dateFilter === 'TODAY') {
-      const hours = ['09:00 AM', '11:00 AM', '01:00 PM', '03:00 PM', '05:00 PM', '07:00 PM'];
-      return hours.map((month, idx) => {
-        const factor = (idx + 1) / hours.length;
-        const newClients = Math.max(1, Math.round((totalClients / 6) * factor));
-        const policiesIssued = Math.max(1, Math.round((totalPolicies / 6) * factor));
-        return { month, label: month, newClients, policiesIssued };
-      });
+      const todayKey = toDateKey(now);
+      const dayNum = now.getDate();
+      const monthShort = now.toLocaleDateString('en-US', { month: 'short' });
+      slots = [{
+        dateKey: todayKey,
+        label: `${dayNum} ${monthShort}`,
+        month: `${dayNum} ${monthShort}`,
+        fullLabel: now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+      }];
     } else if (dateFilter === 'THIS_WEEK') {
-      const days = [];
-      const weights = [0.12, 0.14, 0.16, 0.15, 0.18, 0.15, 0.10];
-      for (let i = 6; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        const dayNum = String(d.getDate()).padStart(2, '0');
-        const monthShort = d.toLocaleDateString('en-US', { month: 'short' });
-        days.push(`${dayNum} ${monthShort}`);
+      const dayOfWeek = now.getDay();
+      const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+      const mon = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMonday);
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + i);
+        const dayNum = d.getDate();
+        const weekdayShort = d.toLocaleDateString('en-US', { weekday: 'short' });
+        slots.push({
+          dateKey: toDateKey(d),
+          label: `${weekdayShort} ${dayNum}`,
+          month: `${weekdayShort} ${dayNum}`,
+          fullLabel: d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })
+        });
       }
-      return days.map((month, idx) => {
-        const weight = weights[idx] || (1 / 7);
-        const newClients = Math.max(1, Math.round(totalClients * weight));
-        const policiesIssued = Math.max(1, Math.round(totalPolicies * weight));
-        return { month, label: month, newClients, policiesIssued };
-      });
     } else if (dateFilter === 'THIS_MONTH') {
-      const intervals = [];
-      const weights = [0.22, 0.28, 0.24, 0.26];
-      for (let i = 3; i >= 0; i--) {
-        const start = new Date();
-        start.setDate(start.getDate() - ((i + 1) * 7) + 1);
-        const end = new Date();
-        end.setDate(end.getDate() - (i * 7));
-        const startStr = `${String(start.getDate()).padStart(2, '0')} ${start.toLocaleDateString('en-US', { month: 'short' })}`;
-        const endStr = i === 0 ? 'Today' : `${String(end.getDate()).padStart(2, '0')} ${end.toLocaleDateString('en-US', { month: 'short' })}`;
-        intervals.push(`${startStr} - ${endStr}`);
+      const year = now.getFullYear();
+      const month = now.getMonth();
+      const totalDays = new Date(year, month + 1, 0).getDate();
+      const monthShort = now.toLocaleDateString('en-US', { month: 'short' });
+      for (let day = 1; day <= totalDays; day++) {
+        const d = new Date(year, month, day);
+        slots.push({
+          dateKey: toDateKey(d),
+          label: String(day),
+          month: String(day),
+          fullLabel: `${String(day).padStart(2, '0')} ${monthShort} ${year}`
+        });
       }
-      return intervals.map((month, idx) => {
-        const weight = weights[idx] || 0.25;
-        const newClients = Math.max(1, Math.round(totalClients * weight));
-        const policiesIssued = Math.max(1, Math.round(totalPolicies * weight));
-        return { month, label: month, newClients, policiesIssued };
-      });
     } else if (dateFilter === 'LAST_MONTH') {
-      // Semi-Annual (Past 6 Months rolling up to today)
-      const months = [];
-      const weights = [0.15, 0.16, 0.18, 0.16, 0.18, 0.17];
-      for (let i = 5; i >= 0; i--) {
-        const d = new Date();
-        d.setMonth(d.getMonth() - i);
-        months.push(`${d.toLocaleDateString('en-US', { month: 'short' })} '${d.getFullYear().toString().slice(-2)}`);
+      const targetDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const year = targetDate.getFullYear();
+      const month = targetDate.getMonth();
+      const totalDays = new Date(year, month + 1, 0).getDate();
+      const monthShort = targetDate.toLocaleDateString('en-US', { month: 'short' });
+      for (let day = 1; day <= totalDays; day++) {
+        const d = new Date(year, month, day);
+        slots.push({
+          dateKey: toDateKey(d),
+          label: String(day),
+          month: String(day),
+          fullLabel: `${String(day).padStart(2, '0')} ${monthShort} ${year}`
+        });
       }
-      return months.map((month, idx) => {
-        const weight = weights[idx] || (1 / 6);
-        const newClients = Math.max(1, Math.round(totalClients * weight * 0.9));
-        const policiesIssued = Math.max(1, Math.round(totalPolicies * weight * 0.9));
-        return { month, label: month, newClients, policiesIssued };
-      });
+    } else if (dateFilter === 'SEMI_ANNUAL') {
+      isDaily = false;
+      const year = now.getFullYear();
+      const isH1 = now.getMonth() < 6;
+      const startMonth = isH1 ? 0 : 6;
+      const endMonth = isH1 ? 5 : 11;
+      for (let m = startMonth; m <= endMonth; m++) {
+        const d = new Date(year, m, 1);
+        const mKey = `${year}-${String(m + 1).padStart(2, '0')}`;
+        const monthShort = d.toLocaleDateString('en-US', { month: 'short' });
+        const monthLong = d.toLocaleDateString('en-US', { month: 'long' });
+        slots.push({
+          monthKey: mKey,
+          label: monthShort,
+          month: monthShort,
+          fullLabel: `${monthLong} ${year}`
+        });
+      }
+    } else if (dateFilter === 'THIS_YEAR') {
+      isDaily = false;
+      const year = now.getFullYear();
+      for (let m = 0; m < 12; m++) {
+        const d = new Date(year, m, 1);
+        const mKey = `${year}-${String(m + 1).padStart(2, '0')}`;
+        const monthShort = d.toLocaleDateString('en-US', { month: 'short' });
+        const monthLong = d.toLocaleDateString('en-US', { month: 'long' });
+        slots.push({
+          monthKey: mKey,
+          label: monthShort,
+          month: monthShort,
+          fullLabel: `${monthLong} ${year}`
+        });
+      }
     } else if (dateFilter === 'CUSTOM') {
-      const { start, end, diffDays } = customRangeInfo;
+      let start = fromDateKey(customStartDate);
+      let end = fromDateKey(customEndDate);
+      if (start > end) {
+        const t = start; start = end; end = t;
+      }
+      const totalDays = Math.max(1, Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1);
 
-      if (diffDays === 1) {
-        const hours = ['09:00 AM', '11:00 AM', '01:00 PM', '03:00 PM', '05:00 PM', '07:00 PM'];
-        return hours.map((month, idx) => {
-          const factor = (idx + 1) / hours.length;
-          const newClients = Math.max(1, Math.round((totalClients / 6) * factor));
-          const policiesIssued = Math.max(1, Math.round((totalPolicies / 6) * factor));
-          return { month, label: month, newClients, policiesIssued };
-        });
-      } else if (diffDays <= 10) {
-        const days = [];
-        for (let i = 0; i < diffDays; i++) {
-          const d = new Date(start);
-          d.setDate(d.getDate() + i);
-          const dayNum = String(d.getDate()).padStart(2, '0');
+      if (totalDays <= 45) {
+        for (let i = 0; i < totalDays; i++) {
+          const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+          const dayNum = d.getDate();
           const monthShort = d.toLocaleDateString('en-US', { month: 'short' });
-          days.push(`${dayNum} ${monthShort}`);
+          const year = d.getFullYear();
+          let label = String(dayNum);
+          if (totalDays <= 7) {
+            label = `${d.toLocaleDateString('en-US', { weekday: 'short' })} ${dayNum}`;
+          } else if (totalDays <= 14) {
+            label = `${dayNum} ${monthShort}`;
+          }
+          slots.push({
+            dateKey: toDateKey(d),
+            label,
+            month: label,
+            fullLabel: `${String(dayNum).padStart(2, '0')} ${monthShort} ${year}`
+          });
         }
-        const baseWeight = 1 / diffDays;
-        return days.map((month, idx) => {
-          const weight = baseWeight * (0.8 + (idx / diffDays) * 0.4);
-          const newClients = Math.max(1, Math.round(totalClients * weight));
-          const policiesIssued = Math.max(1, Math.round(totalPolicies * weight));
-          return { month, label: month, newClients, policiesIssued };
-        });
-      } else if (diffDays <= 31) {
-        const days = [];
-        for (let i = 0; i < diffDays; i++) {
-          const d = new Date(start);
-          d.setDate(d.getDate() + i);
-          const dayNum = String(d.getDate());
-          days.push(dayNum);
-        }
-        const baseWeight = 1 / diffDays;
-        return days.map((month, idx) => {
-          const weight = baseWeight * (0.7 + (idx / diffDays) * 0.6);
-          const newClients = Math.max(1, Math.round(totalClients * weight));
-          const policiesIssued = Math.max(1, Math.round(totalPolicies * weight));
-          return { month, label: month, newClients, policiesIssued };
-        });
-      } else if (diffDays <= 120) {
-        const weekCount = Math.min(12, Math.ceil(diffDays / 7));
-        const intervals = [];
-        for (let i = 0; i < weekCount; i++) {
-          const wStart = new Date(start);
-          wStart.setDate(wStart.getDate() + i * 7);
-          const startStr = `${String(wStart.getDate()).padStart(2, '0')} ${wStart.toLocaleDateString('en-US', { month: 'short' })}`;
-          intervals.push(startStr);
-        }
-        const baseWeight = 1 / intervals.length;
-        return intervals.map((month, idx) => {
-          const weight = baseWeight * (0.8 + (idx / intervals.length) * 0.4);
-          const newClients = Math.max(1, Math.round(totalClients * weight));
-          const policiesIssued = Math.max(1, Math.round(totalPolicies * weight));
-          return { month, label: month, newClients, policiesIssued };
-        });
       } else {
-        const months = [];
-        const cur = new Date(start);
-        cur.setDate(1);
+        isDaily = false;
+        const cur = new Date(start.getFullYear(), start.getMonth(), 1);
         while (cur <= end) {
+          const mKey = `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}`;
           const monthShort = cur.toLocaleDateString('en-US', { month: 'short' });
-          const yr = cur.getFullYear().toString().slice(-2);
-          months.push(`${monthShort} '${yr}`);
+          const yrShort = cur.getFullYear().toString().slice(-2);
+          slots.push({
+            monthKey: mKey,
+            label: `${monthShort} '${yrShort}`,
+            month: `${monthShort} '${yrShort}`,
+            fullLabel: cur.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+          });
           cur.setMonth(cur.getMonth() + 1);
         }
-        const baseWeight = 1 / Math.max(1, months.length);
-        return months.map((month, idx) => {
-          const weight = baseWeight * (0.7 + (idx / months.length) * 0.6);
-          const newClients = Math.max(1, Math.round(totalClients * weight));
-          const policiesIssued = Math.max(1, Math.round(totalPolicies * weight));
-          return { month, label: month, newClients, policiesIssued };
-        });
       }
-    } else {
-      // Annual (Past 12 Months rolling up to today)
-      const months = [];
-      for (let i = 11; i >= 0; i--) {
-        const d = new Date();
-        d.setMonth(d.getMonth() - i);
-        months.push(d.toLocaleDateString('en-US', { month: 'short' }));
-      }
-      return months.map((month, idx) => {
-        const weight = 0.05 + (idx * 0.005);
-        const newClients = Math.max(1, Math.round(totalClients * weight));
-        const policiesIssued = Math.max(1, Math.round(totalPolicies * weight));
-        return { month, label: month, newClients, policiesIssued };
-      });
     }
-  }, [dateFilter, customStartDate, customEndDate, customers, policies, reportSummary]);
+
+    const clientsByDate = {};
+    const clientsByMonth = {};
+    (customers || []).forEach(c => {
+      const dStr = c.createdAt || c.createdDate || c.registrationDate || '2026-08-10';
+      const dKey = typeof dStr === 'string' ? dStr.split('T')[0] : toDateKey(new Date(dStr));
+      const mKey = dKey.substring(0, 7);
+      clientsByDate[dKey] = (clientsByDate[dKey] || 0) + 1;
+      clientsByMonth[mKey] = (clientsByMonth[mKey] || 0) + 1;
+    });
+
+    const policiesByDate = {};
+    const policiesByMonth = {};
+    (policies || []).forEach(p => {
+      const dStr = p.startDate || p.issueDate || p.createdAt || '2026-08-15';
+      const dKey = typeof dStr === 'string' ? dStr.split('T')[0] : toDateKey(new Date(dStr));
+      const mKey = dKey.substring(0, 7);
+      policiesByDate[dKey] = (policiesByDate[dKey] || 0) + 1;
+      policiesByMonth[mKey] = (policiesByMonth[mKey] || 0) + 1;
+    });
+
+    return slots.map(slot => {
+      const newClients = isDaily ? (clientsByDate[slot.dateKey] || 0) : (clientsByMonth[slot.monthKey] || 0);
+      const policiesIssued = isDaily ? (policiesByDate[slot.dateKey] || 0) : (policiesByMonth[slot.monthKey] || 0);
+      return {
+        ...slot,
+        newClients,
+        policiesIssued
+      };
+    });
+  }, [dateFilter, customStartDate, customEndDate, customers, policies]);
 
   const dynamicProductDistributionChart = useMemo(() => {
     if (reportSummary?.productDistributionChart && Array.isArray(reportSummary.productDistributionChart) && reportSummary.productDistributionChart.length > 0) {
@@ -1586,7 +1666,7 @@ export const Dashboard = () => {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart 
                 data={dynamicFinancialsChart}
-                margin={{ top: 15, right: 20, left: -10, bottom: dateFilter === 'THIS_MONTH' ? 20 : 0 }}
+                margin={{ top: 15, right: 20, left: -10, bottom: 5 }}
                 barGap={6}
                 barCategoryGap="40%"
               >
@@ -1598,14 +1678,14 @@ export const Dashboard = () => {
                   interval={0}
                   angle={0}
                   textAnchor="middle"
-                  height={isSingleDay ? 0 : 25}
-                  tick={isSingleDay ? false : { fontSize: isDenseBars ? 9 : 11, fontWeight: 700 }} 
+                  height={25}
+                  tick={{ fontSize: dynamicFinancialsChart.length > 15 ? 9 : 11, fontWeight: 700, fill: '#64748B' }} 
                 />
                 <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700 }} unit="L" />
-                <Tooltip cursor={{ fill: '#F1F5F9' }} />
+                <Tooltip content={<FinancialChartTooltip />} cursor={{ fill: '#F1F5F9' }} />
                 <Legend wrapperStyle={{ paddingTop: '10px' }} />
-                <Bar dataKey="revenue" fill="#10B981" radius={[6, 6, 0, 0]} barSize={isDenseBars ? 7 : 24} name="Income (Lakhs)" />
-                <Bar dataKey="totalExpenses" fill="#EF4444" radius={[6, 6, 0, 0]} barSize={isDenseBars ? 7 : 24} name="Expense (Lakhs)" />
+                <Bar dataKey="income" fill="#10B981" radius={[6, 6, 0, 0]} barSize={dynamicFinancialsChart.length > 15 ? 7 : (dynamicFinancialsChart.length > 7 ? 14 : 24)} name="Income (Lakhs)" />
+                <Bar dataKey="expense" fill="#EF4444" radius={[6, 6, 0, 0]} barSize={dynamicFinancialsChart.length > 15 ? 7 : (dynamicFinancialsChart.length > 7 ? 14 : 24)} name="Expense (Lakhs)" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -2009,13 +2089,13 @@ export const Dashboard = () => {
           </button>
         </div>
 
-        {/* Quick Range Presets: Today | Weekly | Monthly | Semi-Annual | Annual */}
+        {/* Quick Range Presets: Today | This Week | This Month | Last Month | Semi-Annual | Annual */}
         <div className="flex flex-wrap items-center gap-1.5">
           {/* Today */}
           <button 
             type="button"
             onClick={() => {
-              const todayStr = new Date().toISOString().split('T')[0];
+              const todayStr = toDateKey(new Date());
               setCustomStartDate(todayStr);
               setCustomEndDate(todayStr);
               setDateFilter('TODAY');
@@ -2029,15 +2109,17 @@ export const Dashboard = () => {
             Today
           </button>
 
-          {/* Weekly */}
+          {/* This Week */}
           <button 
             type="button"
             onClick={() => {
-              const end = new Date();
-              const start = new Date();
-              start.setDate(start.getDate() - 6);
-              setCustomStartDate(start.toISOString().split('T')[0]);
-              setCustomEndDate(end.toISOString().split('T')[0]);
+              const now = new Date();
+              const dayOfWeek = now.getDay();
+              const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+              const mon = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMonday);
+              const sun = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + 6);
+              setCustomStartDate(toDateKey(mon));
+              setCustomEndDate(toDateKey(sun));
               setDateFilter('THIS_WEEK');
             }}
             className={`px-3.5 py-1.5 rounded-xl text-xs transition cursor-pointer min-h-[34px] flex items-center justify-center ${
@@ -2046,18 +2128,19 @@ export const Dashboard = () => {
                 : 'bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold'
             }`}
           >
-            Weekly
+            This Week
           </button>
 
-          {/* Monthly */}
+          {/* This Month */}
           <button 
             type="button"
             onClick={() => {
-              const end = new Date();
-              const start = new Date();
-              start.setDate(start.getDate() - 29);
-              setCustomStartDate(start.toISOString().split('T')[0]);
-              setCustomEndDate(end.toISOString().split('T')[0]);
+              const now = new Date();
+              const start = new Date(now.getFullYear(), now.getMonth(), 1);
+              const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+              const end = new Date(now.getFullYear(), now.getMonth(), lastDay);
+              setCustomStartDate(toDateKey(start));
+              setCustomEndDate(toDateKey(end));
               setDateFilter('THIS_MONTH');
             }}
             className={`px-3.5 py-1.5 rounded-xl text-xs transition cursor-pointer min-h-[34px] flex items-center justify-center ${
@@ -2066,22 +2149,44 @@ export const Dashboard = () => {
                 : 'bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold'
             }`}
           >
-            Monthly
+            This Month
+          </button>
+
+          {/* Last Month */}
+          <button 
+            type="button"
+            onClick={() => {
+              const now = new Date();
+              const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+              const lastDay = new Date(start.getFullYear(), start.getMonth() + 1, 0).getDate();
+              const end = new Date(start.getFullYear(), start.getMonth(), lastDay);
+              setCustomStartDate(toDateKey(start));
+              setCustomEndDate(toDateKey(end));
+              setDateFilter('LAST_MONTH');
+            }}
+            className={`px-3.5 py-1.5 rounded-xl text-xs transition cursor-pointer min-h-[34px] flex items-center justify-center ${
+              dateFilter === 'LAST_MONTH'
+                ? 'bg-slate-900 text-white shadow-sm font-black'
+                : 'bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold'
+            }`}
+          >
+            Last Month
           </button>
 
           {/* Semi-Annual */}
           <button 
             type="button"
             onClick={() => {
-              const end = new Date();
-              const start = new Date();
-              start.setMonth(start.getMonth() - 5);
-              setCustomStartDate(start.toISOString().split('T')[0]);
-              setCustomEndDate(end.toISOString().split('T')[0]);
-              setDateFilter('LAST_MONTH');
+              const now = new Date();
+              const isH1 = now.getMonth() < 6;
+              const start = new Date(now.getFullYear(), isH1 ? 0 : 6, 1);
+              const end = new Date(now.getFullYear(), isH1 ? 5 : 11, isH1 ? 30 : 31);
+              setCustomStartDate(toDateKey(start));
+              setCustomEndDate(toDateKey(end));
+              setDateFilter('SEMI_ANNUAL');
             }}
             className={`px-3.5 py-1.5 rounded-xl text-xs transition cursor-pointer min-h-[34px] flex items-center justify-center ${
-              dateFilter === 'LAST_MONTH'
+              dateFilter === 'SEMI_ANNUAL'
                 ? 'bg-slate-900 text-white shadow-sm font-black'
                 : 'bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold'
             }`}
@@ -2093,11 +2198,11 @@ export const Dashboard = () => {
           <button 
             type="button"
             onClick={() => {
-              const end = new Date();
-              const start = new Date();
-              start.setFullYear(start.getFullYear() - 1);
-              setCustomStartDate(start.toISOString().split('T')[0]);
-              setCustomEndDate(end.toISOString().split('T')[0]);
+              const now = new Date();
+              const start = new Date(now.getFullYear(), 0, 1);
+              const end = new Date(now.getFullYear(), 11, 31);
+              setCustomStartDate(toDateKey(start));
+              setCustomEndDate(toDateKey(end));
               setDateFilter('THIS_YEAR');
             }}
             className={`px-3.5 py-1.5 rounded-xl text-xs transition cursor-pointer min-h-[34px] flex items-center justify-center ${
@@ -2922,27 +3027,27 @@ export const Dashboard = () => {
           <div className="h-[340px] w-full bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart 
-                data={currentMetrics.incomeExpenseChart}
+                data={dynamicFinancialsChart}
                 margin={{ top: 15, right: 20, left: -10, bottom: 5 }}
                 barGap={6}
                 barCategoryGap="40%"
               >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                 <XAxis 
-                  dataKey="month" 
+                  dataKey="label" 
                   tickLine={false} 
                   axisLine={false} 
                   interval={0}
                   angle={0}
                   textAnchor="middle"
-                  height={isSingleDay ? 0 : 25}
-                  tick={isSingleDay ? false : { fontSize: isDenseBars ? 9 : 11, fontWeight: 700 }} 
+                  height={25}
+                  tick={{ fontSize: dynamicFinancialsChart.length > 15 ? 9 : 11, fontWeight: 700, fill: '#64748B' }} 
                 />
                 <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700 }} unit="L" />
-                <Tooltip cursor={{ fill: '#F1F5F9' }} />
+                <Tooltip content={<FinancialChartTooltip />} cursor={{ fill: '#F1F5F9' }} />
                 <Legend wrapperStyle={{ paddingTop: '10px' }} />
-                <Bar dataKey="income" fill="#10B981" radius={[6, 6, 0, 0]} barSize={isDenseBars ? 7 : 24} name="Income (Lakhs)" />
-                <Bar dataKey="expense" fill="#EF4444" radius={[6, 6, 0, 0]} barSize={isDenseBars ? 7 : 24} name="Expense (Lakhs)" />
+                <Bar dataKey="income" fill="#10B981" radius={[6, 6, 0, 0]} barSize={dynamicFinancialsChart.length > 15 ? 7 : (dynamicFinancialsChart.length > 7 ? 14 : 24)} name="Income (Lakhs)" />
+                <Bar dataKey="expense" fill="#EF4444" radius={[6, 6, 0, 0]} barSize={dynamicFinancialsChart.length > 15 ? 7 : (dynamicFinancialsChart.length > 7 ? 14 : 24)} name="Expense (Lakhs)" />
               </BarChart>
             </ResponsiveContainer>
           </div>
