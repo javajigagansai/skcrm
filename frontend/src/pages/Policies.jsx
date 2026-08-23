@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCustomer360 } from '../context/Customer360Context';
 import { useData } from '../context/DataContext';
@@ -7,7 +7,7 @@ import {
   FileText, Plus, Search, CheckCircle2, Edit3, Trash2, X, 
   Shield, ShieldCheck, Download, Building2, Sparkles, UserCheck, 
   Filter, RotateCcw, FileSpreadsheet, Calendar, Layers, Check,
-  BookOpen, FolderPlus, ListPlus
+  BookOpen, FolderPlus, ListPlus, ChevronDown, User
 } from 'lucide-react';
 import { 
   INSURANCE_COMPANIES, 
@@ -22,7 +22,7 @@ import {
 export const Policies = () => {
   const { user } = useAuth();
   const { openCustomer360 } = useCustomer360();
-  const { policies, addPolicy, setPolicies } = useData();
+  const { policies, addPolicy, setPolicies, customers } = useData();
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN' || user?.role === 'MANAGER';
 
   // Catalog Version State for reactive CRM-wide updates
@@ -77,6 +77,12 @@ export const Policies = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingPolicy, setEditingPolicy] = useState(null);
 
+  // Typeahead / Autocomplete Dropdown States for Issue Policy Modal
+  const [showCustSuggest, setShowCustSuggest] = useState(false);
+  const [showCompSuggest, setShowCompSuggest] = useState(false);
+  const [showCatSuggest, setShowCatSuggest] = useState(false);
+  const [showPlanSuggest, setShowPlanSuggest] = useState(false);
+
   // Sync across CRM on custom catalog events
   useEffect(() => {
     const handleCatalogUpdate = () => {
@@ -100,12 +106,10 @@ export const Policies = () => {
   // New Policy Form State
   const [newPolicy, setNewPolicy] = useState({
     customerName: '',
+    phone: '',
     insuranceCompany: 'Star Health Insurance',
-    customCompany: '',
     type: 'Health Insurance',
-    customType: '',
     policyName: 'Star Comprehensive Insurance Policy',
-    customPolicyName: '',
     sumInsured: 1000000,
     grossPremium: 25000,
     startDate: new Date().toISOString().split('T')[0],
@@ -113,19 +117,44 @@ export const Policies = () => {
     assignedStaff: 'Priya Sharma (Senior Advisor)'
   });
 
-  // Calculate available predefined plans dynamically when company or category changes
+  // Dynamic Predefined Plans calculation based on selected company & category
   const newPolicyAvailablePlans = useMemo(() => {
-    const comp = newPolicy.insuranceCompany === 'CUSTOM' ? newPolicy.customCompany : newPolicy.insuranceCompany;
-    const cat = newPolicy.type === 'CUSTOM' ? newPolicy.customType : newPolicy.type;
-    return getPredefinedPolicies(comp, cat);
-  }, [newPolicy.insuranceCompany, newPolicy.customCompany, newPolicy.type, newPolicy.customType, catalogVersion]);
+    return getPredefinedPolicies(newPolicy.insuranceCompany, newPolicy.type);
+  }, [newPolicy.insuranceCompany, newPolicy.type, catalogVersion]);
 
   const editingPolicyAvailablePlans = useMemo(() => {
     if (!editingPolicy) return [];
-    const comp = editingPolicy.insuranceCompany === 'CUSTOM' ? editingPolicy.customCompany : editingPolicy.insuranceCompany;
-    const cat = editingPolicy.type === 'CUSTOM' ? editingPolicy.customType : editingPolicy.type;
-    return getPredefinedPolicies(comp, cat);
-  }, [editingPolicy?.insuranceCompany, editingPolicy?.customCompany, editingPolicy?.type, editingPolicy?.customType, catalogVersion]);
+    return getPredefinedPolicies(editingPolicy.insuranceCompany, editingPolicy.type);
+  }, [editingPolicy?.insuranceCompany, editingPolicy?.type, catalogVersion]);
+
+  // Autocomplete matching lists
+  const filteredCustomers = useMemo(() => {
+    if (!newPolicy.customerName.trim()) return (customers || []).slice(0, 8);
+    const q = newPolicy.customerName.toLowerCase().trim();
+    return (customers || []).filter(c => 
+      (c.name && c.name.toLowerCase().includes(q)) || 
+      (c.phone && c.phone.includes(q)) ||
+      (c.customerCode && c.customerCode.toLowerCase().includes(q))
+    ).slice(0, 10);
+  }, [customers, newPolicy.customerName]);
+
+  const filteredCompanies = useMemo(() => {
+    if (!newPolicy.insuranceCompany.trim()) return insuranceCompanies;
+    const q = newPolicy.insuranceCompany.toLowerCase().trim();
+    return insuranceCompanies.filter(comp => comp.toLowerCase().includes(q));
+  }, [insuranceCompanies, newPolicy.insuranceCompany]);
+
+  const filteredCategories = useMemo(() => {
+    if (!newPolicy.type.trim()) return POLICY_CATEGORIES;
+    const q = newPolicy.type.toLowerCase().trim();
+    return POLICY_CATEGORIES.filter(cat => cat.toLowerCase().includes(q));
+  }, [newPolicy.type]);
+
+  const filteredPlans = useMemo(() => {
+    if (!newPolicy.policyName.trim()) return newPolicyAvailablePlans;
+    const q = newPolicy.policyName.toLowerCase().trim();
+    return newPolicyAvailablePlans.filter(p => p.toLowerCase().includes(q));
+  }, [newPolicyAvailablePlans, newPolicy.policyName]);
 
   // Plans listed inside the Admin Catalog Management Modal
   const currentManagePlansList = useMemo(() => {
@@ -178,26 +207,23 @@ export const Policies = () => {
 
   const handleIssuePolicy = async (e) => {
     e.preventDefault();
-    if (!newPolicy.customerName || !newPolicy.grossPremium) {
+    if (!newPolicy.customerName.trim() || !newPolicy.grossPremium) {
       alert('Please fill in Customer Name and Gross Premium');
       return;
     }
-
-    const company = newPolicy.insuranceCompany === 'CUSTOM' ? newPolicy.customCompany : newPolicy.insuranceCompany;
-    const category = newPolicy.type === 'CUSTOM' ? newPolicy.customType : newPolicy.type;
-    const planName = newPolicy.policyName === 'CUSTOM' 
-      ? newPolicy.customPolicyName 
-      : (newPolicy.policyName || newPolicy.customPolicyName || category);
 
     const matchedStaff = staffList.find(s => s.name === newPolicy.assignedStaff || s.uid === newPolicy.assignedStaffId);
     const assignedStaffId = matchedStaff?.uid || newPolicy.assignedStaffId || user?.uid || 'UID-STF-1003';
     const assignedStaffName = matchedStaff?.name || newPolicy.assignedStaff || user?.name || 'Priya Sharma';
 
+    const planName = newPolicy.policyName.trim() || newPolicy.type;
+
     const created = await addPolicy({
-      customerName: newPolicy.customerName,
-      insuranceCompany: company,
-      type: category,
-      category: category,
+      customerName: newPolicy.customerName.trim(),
+      phone: newPolicy.phone || '',
+      insuranceCompany: newPolicy.insuranceCompany.trim(),
+      type: newPolicy.type.trim(),
+      category: newPolicy.type.trim(),
       policyName: planName,
       planName: planName,
       sumInsured: parseFloat(newPolicy.sumInsured || 0),
@@ -211,43 +237,42 @@ export const Policies = () => {
       branchId: matchedStaff?.branch || 'BR-KNM-001'
     });
 
-    if (newPolicy.insuranceCompany === 'CUSTOM' && newPolicy.customCompany && !insuranceCompanies.includes(newPolicy.customCompany)) {
-      saveCompaniesToStorage([...insuranceCompanies, newPolicy.customCompany]);
+    if (newPolicy.insuranceCompany && !insuranceCompanies.some(c => c.toLowerCase().trim() === newPolicy.insuranceCompany.toLowerCase().trim())) {
+      saveCompaniesToStorage([...insuranceCompanies, newPolicy.insuranceCompany.trim()]);
     }
 
     setShowIssueModal(false);
+    setShowCustSuggest(false);
+    setShowCompSuggest(false);
+    setShowCatSuggest(false);
+    setShowPlanSuggest(false);
+
     setNewPolicy({
       customerName: '',
+      phone: '',
       insuranceCompany: 'Star Health Insurance',
-      customCompany: '',
       type: 'Health Insurance',
-      customType: '',
       policyName: 'Star Comprehensive Insurance Policy',
-      customPolicyName: '',
       sumInsured: 1000000,
       grossPremium: 25000,
       startDate: new Date().toISOString().split('T')[0],
       expiryDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
       assignedStaff: user?.name || 'Priya Sharma (Senior Advisor)'
     });
-    alert(`Policy ${created?.id || 'POL-NEW'} issued successfully for ${newPolicy.customerName} with plan "${planName}"!`);
+    alert(`Policy ${created?.id || 'POL-NEW'} issued successfully for ${created.customerName} with plan "${planName}"! Directly linked to Customer 360.`);
   };
 
   const handleSaveEditPolicy = (e) => {
     e.preventDefault();
     if (!editingPolicy) return;
 
-    const company = editingPolicy.insuranceCompany === 'CUSTOM' ? editingPolicy.customCompany : editingPolicy.insuranceCompany;
-    const category = editingPolicy.type === 'CUSTOM' ? editingPolicy.customType : editingPolicy.type;
-    const planName = editingPolicy.policyName === 'CUSTOM'
-      ? editingPolicy.customPolicyName
-      : (editingPolicy.policyName || editingPolicy.customPolicyName || category);
+    const planName = editingPolicy.policyName?.trim() || editingPolicy.type;
 
     const updatedObj = {
       ...editingPolicy,
-      insuranceCompany: company,
-      type: category,
-      category: category,
+      insuranceCompany: editingPolicy.insuranceCompany.trim(),
+      type: editingPolicy.type.trim(),
+      category: editingPolicy.type.trim(),
       policyName: planName,
       planName: planName,
       sumInsured: parseFloat(editingPolicy.sumInsured || 0),
@@ -634,8 +659,6 @@ export const Policies = () => {
                       onClick={() => {
                         setEditingPolicy({
                           ...pol,
-                          customCompany: '',
-                          customType: '',
                           customPolicyName: ''
                         });
                         setShowEditModal(true);
@@ -877,7 +900,7 @@ export const Policies = () => {
         </div>
       )}
 
-      {/* ================= ISSUE NEW POLICY MODAL ================= */}
+      {/* ================= ISSUE NEW POLICY MODAL (WITH LIVE SEARCHABLE TYPEAHEAD) ================= */}
       {showIssueModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-100 my-8">
@@ -889,133 +912,275 @@ export const Policies = () => {
               <button onClick={() => setShowIssueModal(false)} className="text-slate-400 hover:text-slate-600"><X className="h-5 w-5" /></button>
             </div>
 
-            <form onSubmit={handleIssuePolicy} className="space-y-3.5">
-              <div>
-                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Customer Full Name *</label>
-                <input 
-                  type="text" 
-                  required 
-                  placeholder="Enter Customer Full Name" 
-                  value={newPolicy.customerName} 
-                  onChange={(e) => setNewPolicy({...newPolicy, customerName: e.target.value})} 
-                  className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600 font-semibold" 
-                />
-              </div>
-
-              {/* Insurance Provider Selector + Custom Option */}
-              <div>
-                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Insurance Company Provider *</label>
-                <select 
-                  value={newPolicy.insuranceCompany} 
-                  onChange={(e) => {
-                    const newComp = e.target.value;
-                    const plans = getPredefinedPolicies(newComp, newPolicy.type);
-                    setNewPolicy({
-                      ...newPolicy, 
-                      insuranceCompany: newComp,
-                      policyName: plans[0] || ''
-                    });
-                  }} 
-                  className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white"
-                >
-                  {insuranceCompanies.map((comp, idx) => (
-                    <option key={idx} value={comp}>{comp}</option>
-                  ))}
-                  <option value="CUSTOM">+ Write / Enter Custom Company Name...</option>
-                </select>
-
-                {newPolicy.insuranceCompany === 'CUSTOM' && (
+            <form onSubmit={handleIssuePolicy} className="space-y-3.5" autoComplete="off">
+              {/* FIELD 1: CUSTOMER FULL NAME (WITH LIVE AUTOCOMPLETE SEARCH) */}
+              <div className="relative">
+                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1 flex items-center justify-between">
+                  <span>Customer Full Name *</span>
+                  {newPolicy.customerName && (
+                    <span className="text-[10px] text-blue-600 font-bold">Type keyword to search existing customer</span>
+                  )}
+                </label>
+                <div className="relative">
                   <input 
-                    type="text"
-                    required
-                    placeholder="Enter custom insurance company name..."
-                    value={newPolicy.customCompany}
-                    onChange={(e) => setNewPolicy({...newPolicy, customCompany: e.target.value})}
-                    className="w-full mt-2 px-3 py-2 rounded-xl border border-purple-300 text-xs font-bold outline-none focus:ring-2 focus:ring-purple-600"
+                    type="text" 
+                    required 
+                    placeholder="Type name (e.g. Jawaji / Rahul Sharma)..." 
+                    value={newPolicy.customerName} 
+                    onFocus={() => setShowCustSuggest(true)}
+                    onChange={(e) => {
+                      setNewPolicy({...newPolicy, customerName: e.target.value});
+                      setShowCustSuggest(true);
+                    }} 
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:ring-2 focus:ring-blue-600 font-bold bg-white" 
                   />
+                  <User className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                </div>
+
+                {/* Floating Customer Suggestions Dropdown */}
+                {showCustSuggest && filteredCustomers.length > 0 && (
+                  <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white rounded-2xl border border-slate-200 shadow-xl max-h-48 overflow-y-auto divide-y divide-slate-100 animate-fadeIn">
+                    <div className="p-2 bg-slate-50 text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between">
+                      <span>Matching Customers ({filteredCustomers.length})</span>
+                      <button 
+                        type="button"
+                        onClick={() => setShowCustSuggest(false)} 
+                        className="text-slate-400 hover:text-slate-700 cursor-pointer"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    {filteredCustomers.map((cust, idx) => (
+                      <div 
+                        key={cust.id || idx}
+                        onClick={() => {
+                          setNewPolicy({
+                            ...newPolicy,
+                            customerName: cust.name,
+                            phone: cust.phone || cust.mobileNumber || newPolicy.phone,
+                            assignedStaff: cust.assignedAdvisorName || cust.assignedStaff || newPolicy.assignedStaff
+                          });
+                          setShowCustSuggest(false);
+                        }}
+                        className="p-2.5 hover:bg-blue-50 cursor-pointer transition flex items-center justify-between text-xs"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 font-black text-[10px] flex items-center justify-center">
+                            {cust.name?.charAt(0)}
+                          </div>
+                          <div>
+                            <p className="font-extrabold text-slate-900">{cust.name}</p>
+                            <p className="text-[10px] text-slate-400 font-mono">{cust.customerCode || cust.id} • {cust.phone || 'No Phone'}</p>
+                          </div>
+                        </div>
+                        {cust.assignedAdvisorName && (
+                          <span className="badge bg-purple-50 text-purple-700 text-[9px] font-extrabold">{cust.assignedAdvisorName}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
 
-              {/* Insurance Category Selector + Custom Option */}
-              <div>
-                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Policy Category / Plan Type *</label>
-                <select 
-                  value={newPolicy.type} 
-                  onChange={(e) => {
-                    const newCat = e.target.value;
-                    const plans = getPredefinedPolicies(newPolicy.insuranceCompany, newCat);
-                    setNewPolicy({
-                      ...newPolicy, 
-                      type: newCat,
-                      policyName: plans[0] || ''
-                    });
-                  }} 
-                  className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white"
-                >
-                  <option value="Health Insurance">Health Insurance 🏥</option>
-                  <option value="Term Life Insurance">Term Life Insurance 🛡️</option>
-                  <option value="Savings & Investment (ULIP / Guaranteed)">Savings &amp; Investment (ULIP / Guaranteed) 📈</option>
-                  <option value="Motor Insurance (Car / Two Wheeler)">Motor Insurance (Car / Two Wheeler) 🚗</option>
-                  <option value="Commercial & Fire Insurance">Commercial &amp; Fire Insurance 🏢</option>
-                  <option value="Travel Insurance">Travel Insurance ✈️</option>
-                  <option value="Personal Accident Insurance">Personal Accident Insurance ⚡</option>
-                  <option value="Critical Illness Cover">Critical Illness Cover 🩺</option>
-                  <option value="Pension & Retirement Annuity">Pension &amp; Retirement Annuity 🏖️</option>
-                  <option value="CUSTOM">+ Write / Enter Custom Plan Type...</option>
-                </select>
-
-                {newPolicy.type === 'CUSTOM' && (
+              {/* FIELD 2: INSURANCE COMPANY PROVIDER (WITH LIVE AUTOCOMPLETE SEARCH) */}
+              <div className="relative">
+                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1 flex items-center justify-between">
+                  <span>Insurance Company Provider *</span>
+                  <span className="text-[10px] text-purple-600 font-bold">Type to filter (e.g. Tata / Star / HDFC)</span>
+                </label>
+                <div className="relative">
                   <input 
-                    type="text"
-                    required
-                    placeholder="Enter custom policy type (e.g. Cyber Security Insurance)..."
-                    value={newPolicy.customType}
-                    onChange={(e) => setNewPolicy({...newPolicy, customType: e.target.value})}
-                    className="w-full mt-2 px-3 py-2 rounded-xl border border-purple-300 text-xs font-bold outline-none focus:ring-2 focus:ring-purple-600"
+                    type="text" 
+                    required 
+                    placeholder="Type or select company (e.g. Tata AIA / Star Health)..." 
+                    value={newPolicy.insuranceCompany} 
+                    onFocus={() => setShowCompSuggest(true)}
+                    onChange={(e) => {
+                      const typed = e.target.value;
+                      const plans = getPredefinedPolicies(typed, newPolicy.type);
+                      setNewPolicy({
+                        ...newPolicy,
+                        insuranceCompany: typed,
+                        policyName: plans[0] || newPolicy.policyName
+                      });
+                      setShowCompSuggest(true);
+                    }} 
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white" 
                   />
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                </div>
+
+                {/* Floating Companies Suggestions Dropdown */}
+                {showCompSuggest && filteredCompanies.length > 0 && (
+                  <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white rounded-2xl border border-slate-200 shadow-xl max-h-48 overflow-y-auto divide-y divide-slate-100 animate-fadeIn">
+                    <div className="p-2 bg-slate-50 text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between">
+                      <span>Matching Companies ({filteredCompanies.length})</span>
+                      <button 
+                        type="button"
+                        onClick={() => setShowCompSuggest(false)} 
+                        className="text-slate-400 hover:text-slate-700 cursor-pointer"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    {filteredCompanies.map((comp, idx) => (
+                      <div 
+                        key={idx}
+                        onClick={() => {
+                          const plans = getPredefinedPolicies(comp, newPolicy.type);
+                          setNewPolicy({
+                            ...newPolicy,
+                            insuranceCompany: comp,
+                            policyName: plans[0] || newPolicy.policyName
+                          });
+                          setShowCompSuggest(false);
+                        }}
+                        className="p-2.5 hover:bg-purple-50 cursor-pointer transition flex items-center justify-between text-xs font-bold text-slate-800"
+                      >
+                        <span className="flex items-center space-x-2">
+                          <Building2 className="h-3.5 w-3.5 text-purple-600" />
+                          <span>{comp}</span>
+                        </span>
+                        {newPolicy.insuranceCompany === comp && (
+                          <Check className="h-3.5 w-3.5 text-purple-600" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
 
-              {/* NEW SECTION: POLICY / PLAN NAME SELECTION (PREDEFINED ONLINE CATALOG) */}
-              <div className="bg-blue-50/70 p-3.5 rounded-2xl border border-blue-200/80 space-y-2">
+              {/* FIELD 3: POLICY CATEGORY (WITH LIVE AUTOCOMPLETE SEARCH) */}
+              <div className="relative">
+                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1 flex items-center justify-between">
+                  <span>Policy Category / Plan Type *</span>
+                  <span className="text-[10px] text-blue-600 font-bold">Type to filter (e.g. Health / Life / Motor)</span>
+                </label>
+                <div className="relative">
+                  <input 
+                    type="text" 
+                    required 
+                    placeholder="Type or select category (e.g. Health Insurance / Term Life)..." 
+                    value={newPolicy.type} 
+                    onFocus={() => setShowCatSuggest(true)}
+                    onChange={(e) => {
+                      const typed = e.target.value;
+                      const plans = getPredefinedPolicies(newPolicy.insuranceCompany, typed);
+                      setNewPolicy({
+                        ...newPolicy,
+                        type: typed,
+                        policyName: plans[0] || newPolicy.policyName
+                      });
+                      setShowCatSuggest(true);
+                    }} 
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white" 
+                  />
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                </div>
+
+                {/* Floating Categories Suggestions Dropdown */}
+                {showCatSuggest && filteredCategories.length > 0 && (
+                  <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white rounded-2xl border border-slate-200 shadow-xl max-h-48 overflow-y-auto divide-y divide-slate-100 animate-fadeIn">
+                    <div className="p-2 bg-slate-50 text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between">
+                      <span>Matching Categories ({filteredCategories.length})</span>
+                      <button 
+                        type="button"
+                        onClick={() => setShowCatSuggest(false)} 
+                        className="text-slate-400 hover:text-slate-700 cursor-pointer"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    {filteredCategories.map((cat, idx) => (
+                      <div 
+                        key={idx}
+                        onClick={() => {
+                          const plans = getPredefinedPolicies(newPolicy.insuranceCompany, cat);
+                          setNewPolicy({
+                            ...newPolicy,
+                            type: cat,
+                            policyName: plans[0] || newPolicy.policyName
+                          });
+                          setShowCatSuggest(false);
+                        }}
+                        className="p-2.5 hover:bg-blue-50 cursor-pointer transition flex items-center justify-between text-xs font-bold text-slate-800"
+                      >
+                        <span>{cat}</span>
+                        {newPolicy.type === cat && (
+                          <Check className="h-3.5 w-3.5 text-blue-600" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* FIELD 4: OFFICIAL POLICY / PLAN NAME (WITH LIVE SEARCHABLE PREDEFINED CATALOG) */}
+              <div className="relative bg-blue-50/70 p-3.5 rounded-2xl border border-blue-200/80 space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="block text-[11px] font-black uppercase text-blue-950 flex items-center space-x-1.5">
                     <Sparkles className="h-3.5 w-3.5 text-blue-600" />
-                    <span>Official Policy / Plan Name (Online Predefined Catalog) *</span>
+                    <span>Official Policy / Plan Name *</span>
                   </label>
                   <span className="badge bg-blue-100 text-blue-800 text-[10px] font-black px-2 py-0.5 rounded-md">
                     {newPolicyAvailablePlans.length} Predefined Plans
                   </span>
                 </div>
 
-                <select 
-                  value={newPolicyAvailablePlans.includes(newPolicy.policyName) ? newPolicy.policyName : (newPolicy.policyName ? 'CUSTOM' : '')} 
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val === 'CUSTOM') {
-                      setNewPolicy({...newPolicy, policyName: 'CUSTOM', customPolicyName: newPolicy.policyName !== 'CUSTOM' ? newPolicy.policyName : ''});
-                    } else {
-                      setNewPolicy({...newPolicy, policyName: val, customPolicyName: ''});
-                    }
-                  }} 
-                  className="w-full px-3 py-2 rounded-xl border border-blue-300 text-xs font-extrabold outline-none focus:ring-2 focus:ring-blue-600 bg-white"
-                >
-                  <option value="">-- Select Predefined Policy Name ({newPolicyAvailablePlans.length} Available) --</option>
-                  {newPolicyAvailablePlans.map((pName, idx) => (
-                    <option key={idx} value={pName}>{pName}</option>
-                  ))}
-                  <option value="CUSTOM">+ Write / Enter Custom Policy Plan Name...</option>
-                </select>
-
-                {(newPolicy.policyName === 'CUSTOM' || !newPolicyAvailablePlans.includes(newPolicy.policyName)) && (
+                <div className="relative">
                   <input 
-                    type="text"
-                    required
-                    placeholder="Type custom policy plan name (e.g. Star Comprehensive Platinum Cover)..."
-                    value={newPolicy.customPolicyName || newPolicy.policyName}
-                    onChange={(e) => setNewPolicy({...newPolicy, customPolicyName: e.target.value, policyName: e.target.value})}
-                    className="w-full px-3 py-2 rounded-xl border border-blue-400 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white"
+                    type="text" 
+                    required 
+                    placeholder="Type or select plan name (e.g. Star Comprehensive / Optima Restore)..." 
+                    value={newPolicy.policyName} 
+                    onFocus={() => setShowPlanSuggest(true)}
+                    onChange={(e) => {
+                      setNewPolicy({...newPolicy, policyName: e.target.value});
+                      setShowPlanSuggest(true);
+                    }} 
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-blue-300 text-xs font-extrabold outline-none focus:ring-2 focus:ring-blue-600 bg-white" 
                   />
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-400 pointer-events-none" />
+                </div>
+
+                {/* Floating Plans Suggestions Dropdown */}
+                {showPlanSuggest && (
+                  <div className="absolute left-3.5 right-3.5 top-full mt-1 z-30 bg-white rounded-2xl border border-blue-200 shadow-2xl max-h-52 overflow-y-auto divide-y divide-slate-100 animate-fadeIn">
+                    <div className="p-2 bg-blue-50 text-[10px] font-black uppercase text-blue-900 tracking-wider flex items-center justify-between">
+                      <span>Predefined Plans for {newPolicy.insuranceCompany} ({filteredPlans.length})</span>
+                      <button 
+                        type="button"
+                        onClick={() => setShowPlanSuggest(false)} 
+                        className="text-slate-400 hover:text-slate-700 cursor-pointer"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    {filteredPlans.length > 0 ? (
+                      filteredPlans.map((pName, idx) => (
+                        <div 
+                          key={idx}
+                          onClick={() => {
+                            setNewPolicy({...newPolicy, policyName: pName});
+                            setShowPlanSuggest(false);
+                          }}
+                          className="p-2.5 hover:bg-blue-50 cursor-pointer transition flex items-center justify-between text-xs font-bold text-slate-800"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                            <span>{pName}</span>
+                          </div>
+                          {newPolicy.policyName === pName && (
+                            <Check className="h-3.5 w-3.5 text-blue-600" />
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-3 text-xs text-slate-400 font-semibold text-center">
+                        No exact predefined match. Keep typing to use custom plan name!
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
 
@@ -1111,46 +1276,29 @@ export const Policies = () => {
                 />
               </div>
 
-              {/* Insurance Provider Selector + Custom Option */}
+              {/* Insurance Provider Selector */}
               <div>
                 <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Insurance Company Provider</label>
                 <select 
-                  value={insuranceCompanies.includes(editingPolicy.insuranceCompany) ? editingPolicy.insuranceCompany : 'CUSTOM'} 
+                  value={insuranceCompanies.includes(editingPolicy.insuranceCompany) ? editingPolicy.insuranceCompany : insuranceCompanies[0]} 
                   onChange={(e) => {
                     const val = e.target.value;
-                    if (val === 'CUSTOM') {
-                      setEditingPolicy({...editingPolicy, insuranceCompany: 'CUSTOM', customCompany: editingPolicy.insuranceCompany});
-                    } else {
-                      const plans = getPredefinedPolicies(val, editingPolicy.type);
-                      setEditingPolicy({
-                        ...editingPolicy, 
-                        insuranceCompany: val, 
-                        customCompany: '',
-                        policyName: plans[0] || editingPolicy.policyName
-                      });
-                    }
+                    const plans = getPredefinedPolicies(val, editingPolicy.type);
+                    setEditingPolicy({
+                      ...editingPolicy, 
+                      insuranceCompany: val, 
+                      policyName: plans[0] || editingPolicy.policyName
+                    });
                   }} 
                   className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-amber-500 bg-white"
                 >
                   {insuranceCompanies.map((comp, idx) => (
                     <option key={idx} value={comp}>{comp}</option>
                   ))}
-                  <option value="CUSTOM">+ Write / Enter Custom Company Name...</option>
                 </select>
-
-                {(editingPolicy.insuranceCompany === 'CUSTOM' || !insuranceCompanies.includes(editingPolicy.insuranceCompany)) && (
-                  <input 
-                    type="text"
-                    required
-                    placeholder="Enter custom insurance company name..."
-                    value={editingPolicy.customCompany || editingPolicy.insuranceCompany}
-                    onChange={(e) => setEditingPolicy({...editingPolicy, customCompany: e.target.value, insuranceCompany: e.target.value})}
-                    className="w-full mt-2 px-3 py-2 rounded-xl border border-amber-300 text-xs font-bold outline-none focus:ring-2 focus:ring-amber-500"
-                  />
-                )}
               </div>
 
-              {/* Insurance Category Selector + Custom Option */}
+              {/* Insurance Category Selector */}
               <div>
                 <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Policy Category / Plan Type</label>
                 <select 
@@ -1166,16 +1314,9 @@ export const Policies = () => {
                   }} 
                   className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-amber-500 bg-white"
                 >
-                  <option value="Health Insurance">Health Insurance 🏥</option>
-                  <option value="Term Life Insurance">Term Life Insurance 🛡️</option>
-                  <option value="Savings & Investment (ULIP / Guaranteed)">Savings &amp; Investment (ULIP / Guaranteed) 📈</option>
-                  <option value="Motor Insurance (Car / Two Wheeler)">Motor Insurance (Car / Two Wheeler) 🚗</option>
-                  <option value="Commercial & Fire Insurance">Commercial &amp; Fire Insurance 🏢</option>
-                  <option value="Travel Insurance">Travel Insurance ✈️</option>
-                  <option value="Personal Accident Insurance">Personal Accident Insurance ⚡</option>
-                  <option value="Critical Illness Cover">Critical Illness Cover 🩺</option>
-                  <option value="Pension & Retirement Annuity">Pension &amp; Retirement Annuity 🏖️</option>
-                  <option value="CUSTOM">+ Write / Enter Custom Plan Type...</option>
+                  {POLICY_CATEGORIES.map((cat, idx) => (
+                    <option key={idx} value={cat}>{cat}</option>
+                  ))}
                 </select>
               </div>
 
@@ -1184,41 +1325,35 @@ export const Policies = () => {
                 <div className="flex items-center justify-between">
                   <label className="block text-[11px] font-black uppercase text-amber-950 flex items-center space-x-1.5">
                     <Sparkles className="h-3.5 w-3.5 text-amber-600" />
-                    <span>Official Policy / Plan Name (Online Predefined Catalog)</span>
+                    <span>Official Policy / Plan Name</span>
                   </label>
                   <span className="badge bg-amber-100 text-amber-900 text-[10px] font-black px-2 py-0.5 rounded-md">
                     {editingPolicyAvailablePlans.length} Predefined Plans
                   </span>
                 </div>
 
-                <select 
-                  value={editingPolicyAvailablePlans.includes(editingPolicy.policyName) ? editingPolicy.policyName : (editingPolicy.policyName ? 'CUSTOM' : '')} 
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val === 'CUSTOM') {
-                      setEditingPolicy({...editingPolicy, policyName: 'CUSTOM', customPolicyName: editingPolicy.policyName !== 'CUSTOM' ? editingPolicy.policyName : ''});
-                    } else {
-                      setEditingPolicy({...editingPolicy, policyName: val, customPolicyName: ''});
-                    }
-                  }} 
-                  className="w-full px-3 py-2 rounded-xl border border-amber-300 text-xs font-extrabold outline-none focus:ring-2 focus:ring-amber-500 bg-white"
-                >
-                  <option value="">-- Select Predefined Policy Name ({editingPolicyAvailablePlans.length} Available) --</option>
-                  {editingPolicyAvailablePlans.map((pName, idx) => (
-                    <option key={idx} value={pName}>{pName}</option>
-                  ))}
-                  <option value="CUSTOM">+ Write / Enter Custom Policy Plan Name...</option>
-                </select>
+                <input 
+                  type="text" 
+                  required 
+                  placeholder="Type policy plan name..." 
+                  value={editingPolicy.policyName || ''} 
+                  onChange={(e) => setEditingPolicy({...editingPolicy, policyName: e.target.value})} 
+                  className="w-full px-3 py-2 rounded-xl border border-amber-400 text-xs font-bold outline-none focus:ring-2 focus:ring-amber-500 bg-white" 
+                />
 
-                {(editingPolicy.policyName === 'CUSTOM' || !editingPolicyAvailablePlans.includes(editingPolicy.policyName)) && (
-                  <input 
-                    type="text"
-                    required
-                    placeholder="Type custom policy plan name..."
-                    value={editingPolicy.customPolicyName || editingPolicy.policyName || ''}
-                    onChange={(e) => setEditingPolicy({...editingPolicy, customPolicyName: e.target.value, policyName: e.target.value})}
-                    className="w-full px-3 py-2 rounded-xl border border-amber-400 text-xs font-bold outline-none focus:ring-2 focus:ring-amber-500 bg-white"
-                  />
+                {editingPolicyAvailablePlans.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {editingPolicyAvailablePlans.slice(0, 5).map((pName, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setEditingPolicy({...editingPolicy, policyName: pName})}
+                        className="px-2 py-1 bg-white border border-amber-300 hover:bg-amber-100 rounded-lg text-[10px] font-extrabold text-amber-900 transition cursor-pointer"
+                      >
+                        {pName}
+                      </button>
+                    ))}
+                  </div>
                 )}
               </div>
 

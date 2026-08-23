@@ -568,9 +568,9 @@ export const Customer360Provider = ({ children }) => {
                       <thead>
                         <tr className="bg-slate-900 text-white text-[10px] font-black uppercase tracking-wider">
                           <th className="p-3 border-r border-slate-800">Policy No</th>
-                          <th className="p-3 border-r border-slate-800">Insurer</th>
-                          <th className="p-3 border-r border-slate-800">Category</th>
-                          <th className="p-3 border-r border-slate-800">Sum Assured / Details</th>
+                          <th className="p-3 border-r border-slate-800">Insurer &amp; Category</th>
+                          <th className="p-3 border-r border-slate-800">Policy / Plan Name</th>
+                          <th className="p-3 border-r border-slate-800">Sum Assured</th>
                           <th className="p-3 border-r border-slate-800">Annual Premium</th>
                           <th className="p-3 border-r border-slate-800">Assigned Officer</th>
                           <th className="p-3 text-center">Status</th>
@@ -581,16 +581,22 @@ export const Customer360Provider = ({ children }) => {
                           activePoliciesList.map((pol, idx) => (
                             <tr key={pol.id || idx} className="hover:bg-slate-50 transition">
                               <td className="p-3 font-mono font-bold text-blue-900 border-r border-slate-100">{pol.id}</td>
-                              <td className="p-3 font-extrabold text-slate-900 border-r border-slate-100">{pol.insuranceCompany}</td>
                               <td className="p-3 border-r border-slate-100">
-                                <span className="badge bg-emerald-100 text-emerald-800 text-[10px] font-extrabold">{pol.type || 'Insurance'}</span>
+                                <p className="font-extrabold text-slate-900">{pol.insuranceCompany}</p>
+                                <span className="badge bg-emerald-100 text-emerald-800 text-[9px] font-extrabold mt-0.5">{pol.type || pol.category || 'Insurance'}</span>
                               </td>
-                              <td className="p-3 font-bold text-slate-900 border-r border-slate-100">{pol.sumInsured ? `₹ ${Number(pol.sumInsured).toLocaleString()}` : pol.salesPitch || 'Registered Plan'}</td>
-                              <td className="p-3 font-black text-emerald-700 border-r border-slate-100">{pol.grossPremium ? `₹ ${Number(pol.grossPremium).toLocaleString()} / yr` : '₹ 0.00'}</td>
+                              <td className="p-3 border-r border-slate-100">
+                                <div className="flex items-center space-x-1.5 font-extrabold text-slate-900 text-xs">
+                                  <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                                  <span>{pol.policyName || pol.planName || pol.salesPitch || pol.type || 'Standard Policy Plan'}</span>
+                                </div>
+                              </td>
+                              <td className="p-3 font-bold text-slate-900 border-r border-slate-100">{pol.sumInsured ? `₹ ${Number(pol.sumInsured).toLocaleString()}` : (pol.sumAssured ? `₹ ${Number(pol.sumAssured).toLocaleString()}` : '₹ 5,00,000')}</td>
+                              <td className="p-3 font-black text-emerald-700 border-r border-slate-100">{pol.grossPremium ? `₹ ${Number(pol.grossPremium).toLocaleString()} / yr` : (pol.premium ? `₹ ${Number(pol.premium).toLocaleString()} / yr` : '₹ 0.00')}</td>
                               <td className="p-3 border-r border-slate-100">
                                 <span className="badge bg-purple-100 text-purple-800 text-[10px] font-extrabold flex items-center space-x-1 w-fit">
                                   <UserCheck className="h-3 w-3" />
-                                  <span>{pol.assignedStaff || selectedCustomer.assignedAdvisorName || 'Priya Sharma'}</span>
+                                  <span>{pol.assignedStaff || pol.assignedStaffName || selectedCustomer.assignedAdvisorName || 'Priya Sharma'}</span>
                                 </span>
                               </td>
                               <td className="p-3 text-center">

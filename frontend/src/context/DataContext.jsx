@@ -826,6 +826,48 @@ export const DataProvider = ({ children }) => {
     setPolicies(prev => [newPol, ...prev]);
     try { await setDoc(doc(db, 'policies', id), newPol, { merge: true }); } catch (e) {}
 
+    // Directly update and link customer profile so Customer 360 immediately reflects all policies
+    setCustomers(prev => {
+      const existingIdx = prev.findIndex(c => 
+        (c.name && c.name.toLowerCase().trim() === (newPol.customerName || '').toLowerCase().trim()) ||
+        (newPol.customerId && (c.id === newPol.customerId || c.customerCode === newPol.customerId))
+      );
+      if (existingIdx >= 0) {
+        const updatedCust = {
+          ...prev[existingIdx],
+          insuranceCompany: newPol.insuranceCompany || prev[existingIdx].insuranceCompany,
+          insuranceType: newPol.type || prev[existingIdx].insuranceType,
+          policyName: newPol.policyName || newPol.planName || prev[existingIdx].policyName,
+          policyAmount: Number(newPol.grossPremium || prev[existingIdx].policyAmount || 0),
+          activePoliciesCount: (prev[existingIdx].activePoliciesCount || 1) + 1,
+          totalPortfolioValue: (Number(prev[existingIdx].totalPortfolioValue || 0) + Number(newPol.sumInsured || 0))
+        };
+        const next = [...prev];
+        next[existingIdx] = updatedCust;
+        return next;
+      } else {
+        const newCust = {
+          id: `SK-CUST-${Math.floor(100 + Math.random() * 900)}`,
+          customerCode: `SK-CUST-${Math.floor(100 + Math.random() * 900)}`,
+          name: newPol.customerName,
+          phone: newPol.phone || '9876543210',
+          email: `${newPol.customerName.toLowerCase().replace(/\s+/g, '')}@example.com`,
+          insuranceCompany: newPol.insuranceCompany,
+          insuranceType: newPol.type,
+          policyName: newPol.policyName || newPol.planName,
+          policyAmount: Number(newPol.grossPremium || 0),
+          assignedStaffId,
+          assignedStaffName,
+          assignedAdvisorName: assignedStaffName,
+          status: 'Active',
+          activePoliciesCount: 1,
+          familyMembers: [],
+          activePortfolios: []
+        };
+        return [newCust, ...prev];
+      }
+    });
+
     addAuditLog({
       userName: user?.name || 'Staff Advisor',
       userRole: user?.role || 'STAFF',
