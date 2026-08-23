@@ -2069,7 +2069,7 @@ export const Dashboard = () => {
                         ? 'Visual distribution of active insurance policies across all categories' 
                         : `Provider underwriter breakdown for ${selectedOverviewCategoryFilter}`)
                     : (selectedCategoryCompanyFilter === 'ALL'
-                        ? 'Underwritten volume and market share across partner insurance companies'
+                        ? 'Partner insurance companies and category distribution'
                         : `Category portfolio mix underwritten by ${selectedCategoryCompanyFilter}`)
                   }
                 </p>
@@ -2423,14 +2423,14 @@ export const Dashboard = () => {
                   <div>
                     <h4 className="text-sm font-black text-slate-800">
                       {selectedCategoryCompanyFilter === 'ALL'
-                        ? 'Insurance Companies Market Share & Underwritten Volume'
+                        ? 'Insurance Companies Overview'
                         : `${selectedCategoryCompanyFilter} – Category Portfolio Breakdown`}
                     </h4>
-                    <p className="text-[11px] text-slate-500 font-semibold">
-                      {selectedCategoryCompanyFilter === 'ALL'
-                        ? 'Underwritten volume across all partner insurance companies'
-                        : `Active policy distribution across insurance categories for ${selectedCategoryCompanyFilter}`}
-                    </p>
+                    {selectedCategoryCompanyFilter !== 'ALL' && (
+                      <p className="text-[11px] text-slate-500 font-semibold">
+                        Active policy distribution across insurance categories for {selectedCategoryCompanyFilter}
+                      </p>
+                    )}
                   </div>
                 </div>
 
