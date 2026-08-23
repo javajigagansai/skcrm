@@ -252,7 +252,6 @@ export const Users = () => {
             <Award className="h-7 w-7 text-blue-600" />
             <span>User Management &amp; Role Permissions Portal</span>
           </h1>
-          <p className="text-xs text-slate-500 font-semibold">Admin Master Control Desk to manage staff accounts, credentials, role assignments &amp; real-time system privileges.</p>
         </div>
 
         {isAdminOrHigher && (
