@@ -41,6 +41,7 @@ export const Renewals = () => {
     return (policies || []).map(p => {
       const isPast = p.expiryDate ? new Date(p.expiryDate) < new Date() : false;
       const rawStatus = renewalsStatusMap[p.id] || (isPast ? 'EXPIRED' : 'DUE_SOON');
+      const resolvedPolicyName = p.policyName || p.planName || p.salesPitch || p.officialPlanName || (p.type ? `${p.type} Insurance Plan` : 'Comprehensive Protection Plan');
       return {
         id: `RNW-${p.id}`,
         policyNo: p.id,
@@ -48,7 +49,7 @@ export const Renewals = () => {
         phone: p.phone || '9876543210',
         type: p.type || 'LIFE',
         insuranceCompany: p.insuranceCompany || 'Tata AIA Life',
-        policyName: p.salesPitch || p.planName || p.policyName || '',
+        policyName: resolvedPolicyName,
         premium: Number(p.grossPremium) || 25000,
         dueDate: p.expiryDate || '2026-09-01',
         assignedStaff: p.assignedStaff || 'Priya Sharma (Senior Advisor)',
@@ -67,6 +68,7 @@ export const Renewals = () => {
       `We hope you are doing well! This is a friendly reminder regarding your upcoming policy renewal.\n\n` +
       `📌 *Policy Renewal Details:*\n` +
       `• *Policy Number:* ${r.policyNo}\n` +
+      `• *Policy Name / Plan:* ${r.policyName}\n` +
       `• *Insurance Provider:* ${r.insuranceCompany}\n` +
       `• *Policy Category:* ${r.type}\n` +
       `• *Renewal Premium:* ₹${Number(r.premium).toLocaleString()}\n` +
@@ -104,6 +106,7 @@ export const Renewals = () => {
       const matchesSearch = !term ||
         (r.customerName || '').toLowerCase().includes(term) ||
         (r.policyNo || '').toLowerCase().includes(term) ||
+        (r.policyName || '').toLowerCase().includes(term) ||
         (r.phone || '').includes(term) ||
         (r.insuranceCompany || '').toLowerCase().includes(term) ||
         (r.type || '').toLowerCase().includes(term);
@@ -490,6 +493,9 @@ export const Renewals = () => {
                           <ShieldCheck className="h-3.5 w-3.5 text-blue-600 shrink-0" />
                           <span>{r.insuranceCompany}</span>
                         </p>
+                        <p className="text-xs font-bold text-blue-900 mt-0.5" title={r.policyName}>
+                          {r.policyName}
+                        </p>
                         <div className="flex flex-wrap items-center gap-1 mt-1">
                           <span className={`badge text-[9px] font-black ${
                             r.type === 'HEALTH' ? 'bg-orange-100 text-orange-800' :
@@ -498,11 +504,6 @@ export const Renewals = () => {
                           }`}>
                             {r.type}
                           </span>
-                          {r.policyName && (
-                            <span className="text-[10px] text-slate-500 font-medium truncate max-w-[150px]" title={r.policyName}>
-                              • {r.policyName}
-                            </span>
-                          )}
                         </div>
                       </td>
 
