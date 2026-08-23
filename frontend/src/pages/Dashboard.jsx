@@ -473,17 +473,17 @@ export const Dashboard = () => {
         return { label, month: label, revenue, income: revenue, salaryExpense, operationalExpense, totalExpenses, expense: totalExpenses, netProfit, govtTaxAdvantage };
       });
     } else if (dateFilter === 'THIS_MONTH') {
-      // Rolling 30 daily data points up to today
+      // Rolling 30 daily data points up to today (label = day number only for compact display)
       const days = [];
       for (let i = 29; i >= 0; i--) {
         const d = new Date();
         d.setDate(d.getDate() - i);
-        const dayNum = String(d.getDate()).padStart(2, '0');
+        const dayNum = String(d.getDate());
         const monthShort = d.toLocaleDateString('en-US', { month: 'short' });
-        days.push(`${dayNum} ${monthShort}`);
+        days.push({ label: dayNum, fullLabel: `${String(d.getDate()).padStart(2,'0')} ${monthShort}` });
       }
       const baseWeight = 1 / 30;
-      return days.map((label, idx) => {
+      return days.map(({ label, fullLabel }, idx) => {
         const weight = baseWeight * (0.7 + (idx / 30) * 0.6);
         const revenue = Number((totalRevLakhs * weight).toFixed(2));
         const salaryExpense = Number((totalSalExpLakhs * weight).toFixed(2));
@@ -491,7 +491,7 @@ export const Dashboard = () => {
         const totalExpenses = Number((salaryExpense + operationalExpense).toFixed(2));
         const netProfit = Number((revenue - totalExpenses).toFixed(2));
         const govtTaxAdvantage = Number((totalExpenses * 0.25).toFixed(2));
-        return { label, month: label, revenue, income: revenue, salaryExpense, operationalExpense, totalExpenses, expense: totalExpenses, netProfit, govtTaxAdvantage };
+        return { label, month: label, fullLabel, revenue, income: revenue, salaryExpense, operationalExpense, totalExpenses, expense: totalExpenses, netProfit, govtTaxAdvantage };
       });
     } else if (dateFilter === 'LAST_MONTH') {
       // Semi-Annual (Past 6 Months rolling up to today)
@@ -1414,9 +1414,9 @@ export const Dashboard = () => {
                   tickLine={false} 
                   axisLine={false} 
                   interval={0}
-                  angle={dateFilter === 'THIS_MONTH' ? -45 : 0}
-                  textAnchor={dateFilter === 'THIS_MONTH' ? 'end' : 'middle'}
-                  height={dateFilter === 'TODAY' ? 0 : dateFilter === 'THIS_MONTH' ? 55 : 30}
+                  angle={0}
+                  textAnchor="middle"
+                  height={dateFilter === 'TODAY' ? 0 : 25}
                   tick={dateFilter === 'TODAY' ? false : { fontSize: dateFilter === 'THIS_MONTH' ? 9 : 11, fontWeight: 700 }} 
                 />
                 <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700 }} unit="L" />
@@ -2708,9 +2708,9 @@ export const Dashboard = () => {
                   tickLine={false} 
                   axisLine={false} 
                   interval={0}
-                  angle={dateFilter === 'THIS_MONTH' ? -45 : 0}
-                  textAnchor={dateFilter === 'THIS_MONTH' ? 'end' : 'middle'}
-                  height={dateFilter === 'TODAY' ? 0 : dateFilter === 'THIS_MONTH' ? 55 : 30}
+                  angle={0}
+                  textAnchor="middle"
+                  height={dateFilter === 'TODAY' ? 0 : 25}
                   tick={dateFilter === 'TODAY' ? false : { fontSize: dateFilter === 'THIS_MONTH' ? 9 : 11, fontWeight: 700 }} 
                 />
                 <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700 }} unit="L" />
