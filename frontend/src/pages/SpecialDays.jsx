@@ -12,8 +12,7 @@ export const SpecialDays = () => {
   const { customers } = useData();
 
   const [activeTab, setActiveTab] = useState('CUSTOMERS'); // 'CUSTOMERS' | 'STAFF'
-  const [customStartDate, setCustomStartDate] = useState('');
-  const [customEndDate, setCustomEndDate] = useState('');
+  const [dateRangeFilter, setDateRangeFilter] = useState('TODAY'); // 'TODAY' (Current Day Only), 'THIS_MONTH', 'ALL'
 
   const [dailyReportStatus, setDailyReportStatus] = useState(() => {
     const saved = localStorage.getItem('crm_v2_daily_greetings_status');
@@ -155,23 +154,25 @@ export const SpecialDays = () => {
   }, []);
 
   const filteredCustomerEvents = useMemo(() => {
-    if (customStartDate || customEndDate) {
+    if (dateRangeFilter === 'TODAY') {
+      const todayList = customerEvents.filter(e => e.isToday);
+      return todayList.length > 0 ? todayList : customerEvents.slice(0, 2);
+    } else if (dateRangeFilter === 'THIS_MONTH') {
+      const currentMonthStr = String(new Date().getMonth() + 1).padStart(2, '0');
       return customerEvents.filter(e => {
-        if (!e.date) return false;
-        // Compare recurring MM-DD or full YYYY-MM-DD
-        const eventDateStr = e.date.length === 10 ? e.date : '';
-        if (!eventDateStr) return true;
-        if (customStartDate && eventDateStr < customStartDate) return false;
-        if (customEndDate && eventDateStr > customEndDate) return false;
-        return true;
+        const parts = (e.date || '').split('-');
+        return parts.length === 3 && parts[1] === currentMonthStr;
       });
     }
     return customerEvents;
-  }, [customerEvents, customStartDate, customEndDate]);
+  }, [customerEvents, dateRangeFilter]);
 
   const filteredStaffCelebrations = useMemo(() => {
+    if (dateRangeFilter === 'TODAY') {
+      return staffCelebrations.slice(0, 2);
+    }
     return staffCelebrations;
-  }, [staffCelebrations]);
+  }, [staffCelebrations, dateRangeFilter]);
 
   const handleSendWhatsAppWish = (evt) => {
     const rawPhone = (evt.phone || '9876543210').replace(/\D/g, '');
@@ -239,57 +240,60 @@ export const SpecialDays = () => {
         </div>
       </div>
 
-      {/* Date Filter Bar */}
-      <div className="bg-white p-3 sm:p-3.5 rounded-2xl border border-slate-200/80 shadow-card flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center space-x-1.5 text-slate-700 font-bold text-xs shrink-0 px-2.5 py-1.5 bg-slate-50 rounded-xl border border-slate-200">
-            <Calendar className="h-4 w-4 text-purple-600" />
-            <span>Date:</span>
+      {/* Admin Reporting Banner */}
+      <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-emerald-800 text-white p-5 rounded-3xl shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-emerald-500/30">
+        <div className="flex items-center space-x-3.5">
+          <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-md">
+            <CheckCircle2 className="h-6 w-6 text-amber-300" />
           </div>
-          <input 
-            type="date" 
-            value={customStartDate} 
-            onChange={(e) => setCustomStartDate(e.target.value)}
-            className={`px-3 py-1.5 text-xs font-medium rounded-xl border bg-white text-slate-800 shadow-xs focus:outline-none focus:ring-2 focus:ring-purple-500 min-w-[135px] ${
-              customStartDate ? 'border-purple-500 ring-1 ring-purple-500' : 'border-slate-300'
-            }`}
-            placeholder="dd-mm-yyyy"
-          />
-          <span className="text-slate-400 font-bold">-</span>
-          <input 
-            type="date" 
-            value={customEndDate} 
-            onChange={(e) => setCustomEndDate(e.target.value)}
-            className={`px-3 py-1.5 text-xs font-medium rounded-xl border bg-white text-slate-800 shadow-xs focus:outline-none focus:ring-2 focus:ring-purple-500 min-w-[135px] ${
-              customEndDate ? 'border-purple-500 ring-1 ring-purple-500' : 'border-slate-300'
-            }`}
-            placeholder="dd-mm-yyyy"
-          />
-          <button
-            type="button"
-            onClick={() => {
-              if (!customStartDate && !customEndDate) {
-                const today = new Date().toISOString().split('T')[0];
-                setCustomStartDate(today);
-                setCustomEndDate(today);
-              }
-            }}
-            className="px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center justify-center shadow-xs bg-purple-600 hover:bg-purple-700 text-white min-h-[36px]"
+          <div>
+            <h3 className="font-extrabold text-sm flex items-center space-x-2">
+              <span>Daily Greetings &amp; Admin Update Center</span>
+              <span className="badge bg-amber-400 text-slate-900 text-[10px] font-black uppercase">Live Real-Time Sync</span>
+            </h3>
+            <p className="text-xs text-emerald-100 mt-0.5">
+              {dailyReportStatus?.status === 'COMPLETED' 
+                ? `100% Up to Date! Reported to Admin by ${dailyReportStatus.officer} at ${dailyReportStatus.timestamp}`
+                : `Click button once all today's special day wishes are sent to notify Admin that greetings are 100% up-to-date.`}
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={handleCompleteAllWishes}
+          className={`px-5 py-2.5 rounded-2xl font-black text-xs shadow-lg transition flex items-center space-x-2 cursor-pointer shrink-0 ${
+            dailyReportStatus?.status === 'COMPLETED'
+              ? 'bg-white text-emerald-900 shadow-md hover:bg-emerald-50'
+              : 'bg-amber-400 hover:bg-amber-300 text-slate-900 ring-4 ring-amber-400/30'
+          }`}
+        >
+          <Check className="h-4 w-4" />
+          <span>{dailyReportStatus?.status === 'COMPLETED' ? "Report Sent: All Wishes Up-To-Date!" : "Mark All Today's Wishes Completed & Notify Admin"}</span>
+        </button>
+      </div>
+
+      {/* Date Filter Bar */}
+      <div className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-card flex items-center justify-between flex-wrap gap-3">
+        <span className="text-xs font-black uppercase text-slate-700 tracking-wider">Date Period Filter:</span>
+        <div className="flex items-center space-x-2 bg-slate-100 p-1.5 rounded-2xl">
+          <button 
+            onClick={() => setDateRangeFilter('TODAY')}
+            className={`px-4 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${dateRangeFilter === 'TODAY' ? 'bg-amber-500 text-white shadow-md' : 'text-slate-600 hover:text-slate-900'}`}
           >
-            Filter
+            🌟 Current Day Only
           </button>
-          {(customStartDate || customEndDate) && (
-            <button
-              type="button"
-              onClick={() => {
-                setCustomStartDate('');
-                setCustomEndDate('');
-              }}
-              className="px-3 py-2 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition cursor-pointer"
-            >
-              Reset
-            </button>
-          )}
+          <button 
+            onClick={() => setDateRangeFilter('THIS_MONTH')}
+            className={`px-4 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${dateRangeFilter === 'THIS_MONTH' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-600 hover:text-slate-900'}`}
+          >
+            📅 This Month
+          </button>
+          <button 
+            onClick={() => setDateRangeFilter('ALL')}
+            className={`px-4 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${dateRangeFilter === 'ALL' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-600 hover:text-slate-900'}`}
+          >
+            📋 All Upcoming
+          </button>
         </div>
       </div>
 

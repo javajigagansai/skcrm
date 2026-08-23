@@ -1721,7 +1721,7 @@ export const Dashboard = () => {
       <div className="bg-white p-3 sm:p-3.5 rounded-2xl border border-slate-200/80 shadow-card flex flex-wrap items-center justify-between gap-3">
         {/* Direct Standard Date Range Filter */}
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center space-x-1.5 text-slate-700 font-bold text-xs shrink-0 px-2.5 py-1.5 bg-slate-50 rounded-xl border border-slate-200">
+          <div className="flex items-center space-x-1.5 text-slate-700 font-bold text-xs shrink-0 px-2 py-1 bg-slate-50 rounded-lg border border-slate-200">
             <CalendarIcon className="h-4 w-4 text-blue-600" />
             <span>Date:</span>
           </div>
@@ -1732,8 +1732,8 @@ export const Dashboard = () => {
               setCustomStartDate(e.target.value);
               setDateFilter('CUSTOM');
             }}
-            className={`px-3 py-1.5 text-xs font-medium rounded-xl border bg-white text-slate-800 shadow-xs focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[135px] ${
-              customStartDate ? 'border-blue-500 ring-1 ring-blue-500' : 'border-slate-300'
+            className={`px-2.5 py-1.5 text-xs font-medium rounded-xl border bg-white text-slate-800 shadow-xs focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[130px] ${
+              dateFilter === 'CUSTOM' && customStartDate ? 'border-blue-500 ring-1 ring-blue-500' : 'border-slate-300'
             }`}
             placeholder="dd-mm-yyyy"
           />
@@ -1745,8 +1745,8 @@ export const Dashboard = () => {
               setCustomEndDate(e.target.value);
               setDateFilter('CUSTOM');
             }}
-            className={`px-3 py-1.5 text-xs font-medium rounded-xl border bg-white text-slate-800 shadow-xs focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[135px] ${
-              customEndDate ? 'border-blue-500 ring-1 ring-blue-500' : 'border-slate-300'
+            className={`px-2.5 py-1.5 text-xs font-medium rounded-xl border bg-white text-slate-800 shadow-xs focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[130px] ${
+              dateFilter === 'CUSTOM' && customEndDate ? 'border-blue-500 ring-1 ring-blue-500' : 'border-slate-300'
             }`}
             placeholder="dd-mm-yyyy"
           />
@@ -1760,23 +1760,82 @@ export const Dashboard = () => {
               }
               setDateFilter('CUSTOM');
             }}
-            className="px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center justify-center shadow-xs bg-blue-600 hover:bg-blue-700 text-white min-h-[36px]"
+            className={`px-4 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center justify-center shadow-xs min-h-[34px] ${
+              dateFilter === 'CUSTOM'
+                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm font-black'
+                : 'bg-blue-600 hover:bg-blue-700 text-white'
+            }`}
           >
             Filter
           </button>
-          {(customStartDate || customEndDate) && (
-            <button
-              type="button"
-              onClick={() => {
-                setCustomStartDate('');
-                setCustomEndDate('');
-                setDateFilter('ALL');
-              }}
-              className="px-3 py-2 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition cursor-pointer"
-            >
-              Reset
-            </button>
-          )}
+        </div>
+
+        {/* Quick Range Presets: Today | Weekly | Monthly | Semi-Annual | Annual */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          {/* Today */}
+          <button 
+            type="button"
+            onClick={() => setDateFilter('TODAY')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs transition cursor-pointer min-h-[34px] flex items-center justify-center ${
+              dateFilter === 'TODAY'
+                ? 'bg-slate-900 text-white shadow-sm font-black'
+                : 'bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold'
+            }`}
+          >
+            Today
+          </button>
+
+          {/* Weekly */}
+          <button 
+            type="button"
+            onClick={() => setDateFilter('THIS_WEEK')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs transition cursor-pointer min-h-[34px] flex items-center justify-center ${
+              dateFilter === 'THIS_WEEK'
+                ? 'bg-slate-900 text-white shadow-sm font-black'
+                : 'bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold'
+            }`}
+          >
+            Weekly
+          </button>
+
+          {/* Monthly */}
+          <button 
+            type="button"
+            onClick={() => setDateFilter('THIS_MONTH')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs transition cursor-pointer min-h-[34px] flex items-center justify-center ${
+              dateFilter === 'THIS_MONTH'
+                ? 'bg-slate-900 text-white shadow-sm font-black'
+                : 'bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold'
+            }`}
+          >
+            Monthly
+          </button>
+
+          {/* Semi-Annual */}
+          <button 
+            type="button"
+            onClick={() => setDateFilter('LAST_MONTH')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs transition cursor-pointer min-h-[34px] flex items-center justify-center ${
+              dateFilter === 'LAST_MONTH'
+                ? 'bg-slate-900 text-white shadow-sm font-black'
+                : 'bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold'
+            }`}
+          >
+            Semi-Annual
+          </button>
+
+          {/* Annual */}
+          <button 
+            type="button"
+            onClick={() => setDateFilter('THIS_YEAR')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs transition cursor-pointer min-h-[34px] flex items-center justify-center ${
+              dateFilter === 'THIS_YEAR'
+                ? 'bg-slate-900 text-white shadow-sm font-black'
+                : 'bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold'
+            }`}
+          >
+            Annual
+          </button>
         </div>
       </div>
 
@@ -1784,8 +1843,8 @@ export const Dashboard = () => {
 
 
 
-      {/* KPI Overview Cards - Interactive Clickable Grid (4 Key Cards) */}
-      <div className={`grid grid-cols-1 sm:grid-cols-2 ${(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-4`}>
+      {/* KPI Overview Cards - Interactive Clickable Grid (5 Key Cards) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <div 
           onClick={() => {
             if (isStaffAdvisor) {
@@ -1794,23 +1853,19 @@ export const Dashboard = () => {
               setActiveModal('TOTAL_CUSTOMERS');
             }
           }}
-          className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-card flex flex-col justify-between min-h-[145px] hover:border-blue-500 hover:shadow-lg transition cursor-pointer group relative"
+          className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-card space-y-2 hover:border-blue-500 hover:shadow-lg transition cursor-pointer group relative"
           title={isStaffAdvisor ? 'Click to view your assigned client portfolios' : 'Click to view detailed customer breakdown & analysis'}
         >
-          <div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-extrabold text-slate-500 uppercase group-hover:text-blue-600 transition">
-                {isStaffAdvisor ? 'My Assigned Clients' : 'Total Customers'}
-              </span>
-              <div className="p-2 rounded-xl bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition">
-                <Users className="h-4 w-4" />
-              </div>
-            </div>
-            <p className="text-2xl font-black text-slate-900 mt-2">
-              {isStaffAdvisor ? myAssignedCustomers.length : currentMetrics.customers}
-            </p>
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-extrabold text-slate-500 uppercase group-hover:text-blue-600 transition">
+              {isStaffAdvisor ? 'My Assigned Clients' : 'Total Customers'}
+            </span>
+            <div className="p-2 rounded-xl bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition"><Users className="h-4 w-4" /></div>
           </div>
-          <div className="flex items-center justify-between pt-3 border-t border-slate-100 mt-2">
+          <p className="text-2xl font-black text-slate-900">
+            {isStaffAdvisor ? myAssignedCustomers.length : currentMetrics.customers}
+          </p>
+          <div className="flex items-center justify-between pt-1">
             <span className="badge badge-green text-[10px]">
               {isStaffAdvisor ? 'Assigned Portfolios' : 'Active Registered'}
             </span>
@@ -1823,19 +1878,15 @@ export const Dashboard = () => {
 
         <div 
           onClick={() => setActiveModal('ACTIVE_POLICIES')}
-          className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-card flex flex-col justify-between min-h-[145px] hover:border-purple-500 hover:shadow-lg transition cursor-pointer group relative"
+          className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-card space-y-2 hover:border-purple-500 hover:shadow-lg transition cursor-pointer group relative"
           title="Click to view active policies & portfolio distribution"
         >
-          <div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-extrabold text-slate-500 uppercase group-hover:text-purple-600 transition">Active Policies</span>
-              <div className="p-2 rounded-xl bg-purple-50 text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition">
-                <FileText className="h-4 w-4" />
-              </div>
-            </div>
-            <p className="text-2xl font-black text-slate-900 mt-2">{currentMetrics.activePolicies.toLocaleString()}</p>
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-extrabold text-slate-500 uppercase group-hover:text-purple-600 transition">Active Policies</span>
+            <div className="p-2 rounded-xl bg-purple-50 text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition"><FileText className="h-4 w-4" /></div>
           </div>
-          <div className="flex items-center justify-between pt-3 border-t border-slate-100 mt-2">
+          <p className="text-2xl font-black text-slate-900">{currentMetrics.activePolicies.toLocaleString()}</p>
+          <div className="flex items-center justify-between pt-1">
             <span className="badge badge-purple text-[10px]">{currentMetrics.activePolicies} Active Folios</span>
             <span className="text-[10px] font-extrabold text-purple-600 hover:underline flex items-center space-x-0.5">
               <span>View Details</span>
@@ -1846,24 +1897,16 @@ export const Dashboard = () => {
 
         <div 
           onClick={() => setActiveModal('INVESTMENTS_VOLUME')}
-          className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-card flex flex-col justify-between min-h-[145px] hover:border-emerald-500 hover:shadow-lg transition cursor-pointer group relative"
+          className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-card space-y-2 hover:border-emerald-500 hover:shadow-lg transition cursor-pointer group relative"
           title="Click to view investments volume analysis"
         >
-          <div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-extrabold text-slate-500 uppercase group-hover:text-emerald-600 transition">Investments Volume</span>
-              <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition">
-                <IndianRupee className="h-4 w-4" />
-              </div>
-            </div>
-            <p className="text-2xl font-black text-slate-900 mt-2">{currentMetrics.investmentVolume}</p>
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-extrabold text-slate-500 uppercase group-hover:text-emerald-600 transition">Investments Volume</span>
+            <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition"><IndianRupee className="h-4 w-4" /></div>
           </div>
-          <div className="flex items-center justify-between pt-3 border-t border-slate-100 mt-2">
+          <p className="text-2xl font-black text-slate-900">{currentMetrics.investmentVolume}</p>
+          <div className="flex items-center justify-between pt-1">
             <span className="badge badge-green text-[10px]">Active Portfolios</span>
-            <span className="text-[10px] font-extrabold text-emerald-600 hover:underline flex items-center space-x-0.5">
-              <span>View Details</span>
-              <ChevronRight className="h-3 w-3" />
-            </span>
           </div>
         </div>
 
@@ -1871,30 +1914,26 @@ export const Dashboard = () => {
         {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') && (
           <div 
             onClick={() => setActiveModal('COMPANY_EXPENDITURE')}
-            className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-card flex flex-col justify-between min-h-[145px] hover:border-amber-500 hover:shadow-lg transition cursor-pointer group relative"
-            title="Click to view detailed company operating expenditure breakdown"
-          >
-            <div>
+              className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-card space-y-2 hover:border-amber-500 hover:shadow-lg transition cursor-pointer group relative"
+              title="Click to view detailed company operating expenditure breakdown"
+            >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-extrabold text-slate-500 uppercase group-hover:text-amber-600 transition">Company Expenditure</span>
-                <div className="p-2 rounded-xl bg-amber-50 text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition">
-                  <Building2 className="h-4 w-4" />
-                </div>
+                <div className="p-2 rounded-xl bg-amber-50 text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition"><Building2 className="h-4 w-4" /></div>
               </div>
-              <p className="text-2xl font-black text-slate-900 mt-2">
+              <p className="text-2xl font-black text-slate-900">
                 ₹{(companyOperatingExpenses.totalAmount / 100000).toFixed(2)} L
               </p>
+              <div className="flex items-center justify-between pt-1">
+                <span className="badge bg-amber-100 text-amber-800 text-[10px]">
+                  Rent, Software &amp; Infra
+                </span>
+                <span className="text-[10px] font-extrabold text-amber-600 hover:underline flex items-center space-x-0.5">
+                  <span>View Details</span>
+                  <ChevronRight className="h-3 w-3" />
+                </span>
+              </div>
             </div>
-            <div className="flex items-center justify-between pt-3 border-t border-slate-100 mt-2">
-              <span className="badge bg-amber-100 text-amber-800 text-[10px]">
-                Rent, Software &amp; Infra
-              </span>
-              <span className="text-[10px] font-extrabold text-amber-600 hover:underline flex items-center space-x-0.5">
-                <span>View Details</span>
-                <ChevronRight className="h-3 w-3" />
-              </span>
-            </div>
-          </div>
         )}
       </div>
 
