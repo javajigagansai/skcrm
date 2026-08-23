@@ -1999,7 +1999,7 @@ export const Dashboard = () => {
               <div>
                 <h3 className="text-sm font-black text-slate-900 flex items-center space-x-2">
                   <Award className="h-5 w-5 text-amber-500" />
-                  <span>Employee Performance – Business Value</span>
+                  <span>Employee Performance</span>
                 </h3>
               </div>
               <span className="badge badge-amber text-[10px] uppercase font-black">Business Value</span>
@@ -2048,7 +2048,7 @@ export const Dashboard = () => {
               <div>
                 <h3 className="text-sm font-black text-slate-900 flex items-center space-x-2">
                   <Users className="h-5 w-5 text-indigo-600" />
-                  <span>Employee Performance – Total Leads</span>
+                  <span>Employee Performance</span>
                 </h3>
               </div>
               <span className="badge badge-purple text-[10px] uppercase font-black">Total Leads</span>
