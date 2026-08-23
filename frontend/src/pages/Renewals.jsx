@@ -197,7 +197,7 @@ export const Renewals = () => {
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center space-x-2.5">
             <RefreshCw className="h-6 w-6 text-blue-600" />
-            <span>Policy Renewals &amp; Retention Desk</span>
+            <span>Policy Renewals</span>
           </h1>
         </div>
 
