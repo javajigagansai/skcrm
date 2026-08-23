@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCustomer360 } from '../context/Customer360Context';
 import { useData } from '../context/DataContext';
 import { exportFollowupsPDF, exportClaimsExcel } from '../utils/exportUtils';
-import { Plus, Search, ShieldCheck, CheckCircle2, Clock, AlertCircle, X, UserCheck, Sparkles, Filter, RotateCcw, FileSpreadsheet, Download } from 'lucide-react';
+import { Plus, Search, ShieldCheck, CheckCircle2, Clock, AlertCircle, X, UserCheck, Sparkles, Filter, RotateCcw, FileSpreadsheet, Download, Edit3, Trash2 } from 'lucide-react';
 
 export const Claims = () => {
   const { user } = useAuth();
