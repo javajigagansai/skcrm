@@ -84,6 +84,35 @@ export const Policies = () => {
   const [showPlanSuggest, setShowPlanSuggest] = useState(false);
   const [showStaffSuggest, setShowStaffSuggest] = useState(false);
 
+  // Refs for closing suggestion dropdowns on click outside
+  const custWrapperRef = useRef(null);
+  const compWrapperRef = useRef(null);
+  const catWrapperRef = useRef(null);
+  const planWrapperRef = useRef(null);
+  const staffWrapperRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (custWrapperRef.current && !custWrapperRef.current.contains(event.target)) {
+        setShowCustSuggest(false);
+      }
+      if (compWrapperRef.current && !compWrapperRef.current.contains(event.target)) {
+        setShowCompSuggest(false);
+      }
+      if (catWrapperRef.current && !catWrapperRef.current.contains(event.target)) {
+        setShowCatSuggest(false);
+      }
+      if (planWrapperRef.current && !planWrapperRef.current.contains(event.target)) {
+        setShowPlanSuggest(false);
+      }
+      if (staffWrapperRef.current && !staffWrapperRef.current.contains(event.target)) {
+        setShowStaffSuggest(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   // Sync across CRM on custom catalog events
   useEffect(() => {
     const handleCatalogUpdate = () => {
@@ -129,14 +158,17 @@ export const Policies = () => {
     return getPredefinedPolicies(editingPolicy.insuranceCompany, editingPolicy.type);
   }, [editingPolicy?.insuranceCompany, editingPolicy?.type, catalogVersion]);
 
-  // Autocomplete matching lists
+  // Autocomplete matching lists: STRICTLY returns results ONLY when user enters meaningful text (FOCUS != SEARCH)
   const filteredCustomers = useMemo(() => {
-    if (!newPolicy.customerName.trim()) return (customers || []).slice(0, 8);
+    if (!newPolicy.customerName || !newPolicy.customerName.trim()) {
+      return [];
+    }
     const q = newPolicy.customerName.toLowerCase().trim();
     return (customers || []).filter(c => 
       (c.name && c.name.toLowerCase().includes(q)) || 
       (c.phone && c.phone.includes(q)) ||
-      (c.customerCode && c.customerCode.toLowerCase().includes(q))
+      (c.customerCode && c.customerCode.toLowerCase().includes(q)) ||
+      (c.id && c.id.toLowerCase().includes(q))
     ).slice(0, 10);
   }, [customers, newPolicy.customerName]);
 
@@ -974,8 +1006,8 @@ export const Policies = () => {
             </div>
 
             <form onSubmit={handleIssuePolicy} className="space-y-3.5" autoComplete="off">
-              {/* FIELD 1: CUSTOMER FULL NAME */}
-              <div className="relative">
+              {/* FIELD 1: CUSTOMER FULL NAME (STRICT FOCUS != SEARCH; TYPING = SEARCH) */}
+              <div ref={custWrapperRef} className="relative">
                 <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">
                   Customer Full Name *
                 </label>
@@ -985,20 +1017,29 @@ export const Policies = () => {
                     required 
                     placeholder="Enter Customer Full Name" 
                     value={newPolicy.customerName} 
-                    onFocus={() => setShowCustSuggest(true)}
+                    onFocus={() => {
+                      if (newPolicy.customerName && newPolicy.customerName.trim().length > 0) {
+                        setShowCustSuggest(true);
+                      }
+                    }}
                     onChange={(e) => {
-                      setNewPolicy({...newPolicy, customerName: e.target.value});
-                      setShowCustSuggest(true);
+                      const val = e.target.value;
+                      setNewPolicy({...newPolicy, customerName: val});
+                      if (val.trim().length > 0) {
+                        setShowCustSuggest(true);
+                      } else {
+                        setShowCustSuggest(false);
+                      }
                     }} 
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:ring-2 focus:ring-blue-600 font-bold bg-white" 
                   />
                   <User className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
                 </div>
 
-                {/* Floating Customer Suggestions Dropdown */}
-                {showCustSuggest && filteredCustomers.length > 0 && (
+                {/* Floating Customer Suggestions Dropdown - ONLY appears when user has entered meaningful text */}
+                {showCustSuggest && newPolicy.customerName && newPolicy.customerName.trim().length > 0 && filteredCustomers.length > 0 && (
                   <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white rounded-2xl border border-slate-200 shadow-xl max-h-48 overflow-y-auto divide-y divide-slate-100 animate-fadeIn">
-                    <div className="p-2 bg-slate-50 text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between">
+                    <div className="p-2 bg-slate-50 text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between sticky top-0 z-10 border-b">
                       <span>Matching Customers ({filteredCustomers.length})</span>
                       <button 
                         type="button"
@@ -1027,7 +1068,7 @@ export const Policies = () => {
                             {cust.name?.charAt(0)}
                           </div>
                           <div>
-                            <p className="font-extrabold text-slate-900">{cust.name}</p>
+                            <p className="font-extrabold text-slate-900">{renderHighlight(cust.name, newPolicy.customerName)}</p>
                             <p className="text-[10px] text-slate-400 font-mono">{cust.customerCode || cust.id} • {cust.phone || 'No Phone'}</p>
                           </div>
                         </div>
@@ -1041,7 +1082,7 @@ export const Policies = () => {
               </div>
 
               {/* FIELD 2: INSURANCE COMPANY PROVIDER (WITH LIVE PREFIX "STARTS WITH" & "CONTAINS" AUTOCOMPLETE) */}
-              <div className="relative">
+              <div ref={compWrapperRef} className="relative">
                 <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">
                   Insurance Company Provider *
                 </label>
@@ -1051,7 +1092,11 @@ export const Policies = () => {
                     required 
                     placeholder="Select or Type Insurance Company" 
                     value={newPolicy.insuranceCompany} 
-                    onFocus={() => setShowCompSuggest(true)}
+                    onFocus={() => {
+                      if (newPolicy.insuranceCompany && newPolicy.insuranceCompany.trim().length > 0) {
+                        setShowCompSuggest(true);
+                      }
+                    }}
                     onChange={(e) => {
                       const typed = e.target.value;
                       const plans = getPredefinedPolicies(typed, newPolicy.type);
@@ -1060,7 +1105,11 @@ export const Policies = () => {
                         insuranceCompany: typed,
                         policyName: plans[0] || newPolicy.policyName
                       });
-                      setShowCompSuggest(true);
+                      if (typed.trim().length > 0) {
+                        setShowCompSuggest(true);
+                      } else {
+                        setShowCompSuggest(false);
+                      }
                     }} 
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white" 
                   />
@@ -1068,7 +1117,7 @@ export const Policies = () => {
                 </div>
 
                 {/* Floating Companies Suggestions Dropdown */}
-                {showCompSuggest && companySearchResults.total > 0 && (
+                {showCompSuggest && newPolicy.insuranceCompany && newPolicy.insuranceCompany.trim().length > 0 && companySearchResults.total > 0 && (
                   <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white rounded-2xl border border-slate-200 shadow-xl max-h-56 overflow-y-auto divide-y divide-slate-100 animate-fadeIn">
                     <div className="p-2 bg-slate-50 text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between sticky top-0 z-10 border-b">
                       <span>Matching Companies ({companySearchResults.total})</span>
@@ -1101,21 +1150,19 @@ export const Policies = () => {
                               });
                               setShowCompSuggest(false);
                             }}
-                            className="p-2.5 hover:bg-purple-50 cursor-pointer transition flex items-center justify-between text-xs font-bold text-slate-800"
+                            className="p-2.5 hover:bg-blue-50 cursor-pointer transition flex items-center justify-between text-xs font-bold text-slate-800"
                           >
-                            <span className="flex items-center space-x-2">
-                              <Building2 className="h-3.5 w-3.5 text-purple-600 shrink-0" />
-                              <span>{renderHighlight(comp, newPolicy.insuranceCompany)}</span>
-                            </span>
-                            {newPolicy.insuranceCompany === comp && (
-                              <Check className="h-3.5 w-3.5 text-purple-600 shrink-0" />
-                            )}
+                            <div className="flex items-center space-x-2.5">
+                              <Building2 className="h-4 w-4 text-blue-600 shrink-0" />
+                              <span className="font-extrabold text-slate-900">{renderHighlight(comp, newPolicy.insuranceCompany)}</span>
+                            </div>
+                            <span className="badge bg-purple-50 text-purple-700 text-[9px] font-black">Starts With</span>
                           </div>
                         ))}
                       </div>
                     )}
 
-                    {/* Group 2: Other Matches Containing Keyword */}
+                    {/* Group 2: Other Matches Containing Query */}
                     {companySearchResults.contains.length > 0 && (
                       <div>
                         <div className="px-2.5 py-1 bg-slate-100 text-[9px] font-black uppercase text-slate-600 tracking-wider">
@@ -1133,15 +1180,13 @@ export const Policies = () => {
                               });
                               setShowCompSuggest(false);
                             }}
-                            className="p-2.5 hover:bg-slate-50 cursor-pointer transition flex items-center justify-between text-xs font-bold text-slate-800"
+                            className="p-2.5 hover:bg-slate-50 cursor-pointer transition flex items-center justify-between text-xs font-bold text-slate-700"
                           >
-                            <span className="flex items-center space-x-2">
-                              <Building2 className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                              <span>{renderHighlight(comp, newPolicy.insuranceCompany)}</span>
-                            </span>
-                            {newPolicy.insuranceCompany === comp && (
-                              <Check className="h-3.5 w-3.5 text-purple-600 shrink-0" />
-                            )}
+                            <div className="flex items-center space-x-2.5">
+                              <Building2 className="h-4 w-4 text-slate-400 shrink-0" />
+                              <span className="font-semibold text-slate-800">{renderHighlight(comp, newPolicy.insuranceCompany)}</span>
+                            </div>
+                            <span className="badge bg-slate-100 text-slate-600 text-[9px] font-semibold">Contains</span>
                           </div>
                         ))}
                       </div>
@@ -1150,8 +1195,8 @@ export const Policies = () => {
                 )}
               </div>
 
-              {/* FIELD 3: POLICY CATEGORY */}
-              <div className="relative">
+              {/* FIELD 3: POLICY CATEGORY / PLAN TYPE */}
+              <div ref={catWrapperRef} className="relative">
                 <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">
                   Policy Category / Plan Type *
                 </label>
@@ -1161,7 +1206,11 @@ export const Policies = () => {
                     required 
                     placeholder="Select or Type Policy Category" 
                     value={newPolicy.type} 
-                    onFocus={() => setShowCatSuggest(true)}
+                    onFocus={() => {
+                      if (newPolicy.type && newPolicy.type.trim().length > 0) {
+                        setShowCatSuggest(true);
+                      }
+                    }}
                     onChange={(e) => {
                       const typed = e.target.value;
                       const plans = getPredefinedPolicies(newPolicy.insuranceCompany, typed);
@@ -1170,7 +1219,11 @@ export const Policies = () => {
                         type: typed,
                         policyName: plans[0] || newPolicy.policyName
                       });
-                      setShowCatSuggest(true);
+                      if (typed.trim().length > 0) {
+                        setShowCatSuggest(true);
+                      } else {
+                        setShowCatSuggest(false);
+                      }
                     }} 
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white" 
                   />
@@ -1178,9 +1231,9 @@ export const Policies = () => {
                 </div>
 
                 {/* Floating Categories Suggestions Dropdown */}
-                {showCatSuggest && filteredCategories.length > 0 && (
+                {showCatSuggest && newPolicy.type && newPolicy.type.trim().length > 0 && filteredCategories.length > 0 && (
                   <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white rounded-2xl border border-slate-200 shadow-xl max-h-48 overflow-y-auto divide-y divide-slate-100 animate-fadeIn">
-                    <div className="p-2 bg-slate-50 text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between">
+                    <div className="p-2 bg-slate-50 text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between sticky top-0 z-10 border-b">
                       <span>Categories ({filteredCategories.length})</span>
                       <button 
                         type="button"
@@ -1204,7 +1257,7 @@ export const Policies = () => {
                         }}
                         className="p-2.5 hover:bg-blue-50 cursor-pointer transition flex items-center justify-between text-xs font-bold text-slate-800"
                       >
-                        <span>{cat}</span>
+                        <span>{renderHighlight(cat, newPolicy.type)}</span>
                         {newPolicy.type === cat && (
                           <Check className="h-3.5 w-3.5 text-blue-600" />
                         )}
@@ -1215,7 +1268,7 @@ export const Policies = () => {
               </div>
 
               {/* FIELD 4: OFFICIAL POLICY / PLAN NAME */}
-              <div className="relative">
+              <div ref={planWrapperRef} className="relative">
                 <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">
                   Official Policy / Plan Name *
                 </label>
@@ -1225,21 +1278,30 @@ export const Policies = () => {
                     required 
                     placeholder="Select or Type Policy Plan Name" 
                     value={newPolicy.policyName} 
-                    onFocus={() => setShowPlanSuggest(true)}
+                    onFocus={() => {
+                      if (newPolicy.policyName && newPolicy.policyName.trim().length > 0) {
+                        setShowPlanSuggest(true);
+                      }
+                    }}
                     onChange={(e) => {
-                      setNewPolicy({...newPolicy, policyName: e.target.value});
-                      setShowPlanSuggest(true);
+                      const val = e.target.value;
+                      setNewPolicy({...newPolicy, policyName: val});
+                      if (val.trim().length > 0) {
+                        setShowPlanSuggest(true);
+                      } else {
+                        setShowPlanSuggest(false);
+                      }
                     }} 
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white" 
                   />
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
                 </div>
 
-                {/* Floating Plans Suggestions Dropdown */}
-                {showPlanSuggest && (
+                {/* Floating Plans Suggestions Dropdown - ONLY appears when user types and matching plans exist */}
+                {showPlanSuggest && newPolicy.policyName && newPolicy.policyName.trim().length > 0 && filteredPlans.length > 0 && (
                   <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white rounded-2xl border border-slate-200 shadow-xl max-h-52 overflow-y-auto divide-y divide-slate-100 animate-fadeIn">
-                    <div className="p-2 bg-slate-50 text-[10px] font-black uppercase text-slate-500 tracking-wider flex items-center justify-between">
-                      <span>Predefined Plans for {newPolicy.insuranceCompany} ({filteredPlans.length})</span>
+                    <div className="p-2 bg-slate-50 text-[10px] font-black uppercase text-slate-500 tracking-wider flex items-center justify-between sticky top-0 z-10 border-b">
+                      <span>Matching Plans ({filteredPlans.length})</span>
                       <button 
                         type="button"
                         onClick={() => setShowPlanSuggest(false)} 
@@ -1248,30 +1310,24 @@ export const Policies = () => {
                         ✕
                       </button>
                     </div>
-                    {filteredPlans.length > 0 ? (
-                      filteredPlans.map((pName, idx) => (
-                        <div 
-                          key={idx}
-                          onClick={() => {
-                            setNewPolicy({...newPolicy, policyName: pName});
-                            setShowPlanSuggest(false);
-                          }}
-                          className="p-2.5 hover:bg-blue-50 cursor-pointer transition flex items-center justify-between text-xs font-bold text-slate-800"
-                        >
-                          <div className="flex items-center space-x-2">
-                            <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                            <span>{pName}</span>
-                          </div>
-                          {newPolicy.policyName === pName && (
-                            <Check className="h-3.5 w-3.5 text-blue-600" />
-                          )}
+                    {filteredPlans.map((pName, idx) => (
+                      <div 
+                        key={idx}
+                        onClick={() => {
+                          setNewPolicy({...newPolicy, policyName: pName});
+                          setShowPlanSuggest(false);
+                        }}
+                        className="p-2.5 hover:bg-blue-50 cursor-pointer transition flex items-center justify-between text-xs font-bold text-slate-800"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                          <span>{renderHighlight(pName, newPolicy.policyName)}</span>
                         </div>
-                      ))
-                    ) : (
-                      <div className="p-3 text-xs text-slate-400 font-semibold text-center">
-                        No predefined matches. You can keep your custom typed plan name.
+                        {newPolicy.policyName === pName && (
+                          <Check className="h-3.5 w-3.5 text-blue-600" />
+                        )}
                       </div>
-                    )}
+                    ))}
                   </div>
                 )}
               </div>
@@ -1323,7 +1379,7 @@ export const Policies = () => {
               </div>
 
               {/* FIELD 5: ASSIGNED STAFF / OFFICER (WITH LIVE PREFIX "STARTS WITH" & "CONTAINS" AUTOCOMPLETE) */}
-              <div className="relative">
+              <div ref={staffWrapperRef} className="relative">
                 <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">
                   Assigned Staff / Officer *
                 </label>
@@ -1333,18 +1389,27 @@ export const Policies = () => {
                     required 
                     placeholder="Select or Type Assigned Staff / Officer" 
                     value={newPolicy.assignedStaff} 
-                    onFocus={() => setShowStaffSuggest(true)}
+                    onFocus={() => {
+                      if (newPolicy.assignedStaff && newPolicy.assignedStaff.trim().length > 0) {
+                        setShowStaffSuggest(true);
+                      }
+                    }}
                     onChange={(e) => {
-                      setNewPolicy({...newPolicy, assignedStaff: e.target.value});
-                      setShowStaffSuggest(true);
+                      const val = e.target.value;
+                      setNewPolicy({...newPolicy, assignedStaff: val});
+                      if (val.trim().length > 0) {
+                        setShowStaffSuggest(true);
+                      } else {
+                        setShowStaffSuggest(false);
+                      }
                     }} 
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold outline-none focus:ring-2 focus:ring-purple-600 bg-white" 
                   />
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
                 </div>
 
-                {/* Floating Staff Suggestions Dropdown */}
-                {showStaffSuggest && staffSearchResults.total > 0 && (
+                {/* Floating Staff Suggestions Dropdown - ONLY appears when user types meaningful search text */}
+                {showStaffSuggest && newPolicy.assignedStaff && newPolicy.assignedStaff.trim().length > 0 && staffSearchResults.total > 0 && (
                   <div className="absolute left-0 right-0 bottom-full mb-1 z-30 bg-white rounded-2xl border border-slate-200 shadow-2xl max-h-56 overflow-y-auto divide-y divide-slate-100 animate-fadeIn">
                     <div className="p-2 bg-slate-50 text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between sticky top-0 z-10 border-b">
                       <span>Assigned Staff Officers ({staffSearchResults.total})</span>
