@@ -591,9 +591,16 @@ export const Customers = () => {
                           <ShieldCheck className="h-3.5 w-3.5 text-blue-600 shrink-0" />
                           <span>{c.insuranceCompany || 'Tata AIA Life'}</span>
                         </p>
-                        <span className={`badge text-[10px] font-black mt-1 ${isHealth ? 'bg-orange-100 text-orange-800' : 'bg-emerald-100 text-emerald-800'}`}>
-                          {c.insuranceType || 'LIFE'} Policy
-                        </span>
+                        <div className="flex flex-wrap items-center gap-1 mt-1">
+                          <span className={`badge text-[10px] font-black ${isHealth ? 'bg-orange-100 text-orange-800' : 'bg-emerald-100 text-emerald-800'}`}>
+                            {c.insuranceType || 'LIFE'} Policy
+                          </span>
+                        </div>
+                        {(c.policyName || c.planName || c.salesPitch) && (
+                          <p className="text-[10px] font-extrabold text-slate-700 mt-1 truncate max-w-[190px]" title={c.policyName || c.planName || c.salesPitch}>
+                            Plan: {c.policyName || c.planName || c.salesPitch}
+                          </p>
+                        )}
                       </td>
                       <td className="p-3.5 font-bold text-slate-800 border-r border-slate-200/80">{c.salesPitch || 'Retirement Plan'}</td>
                       <td className="p-3.5 border-r border-slate-200/80">

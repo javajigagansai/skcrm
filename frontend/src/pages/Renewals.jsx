@@ -422,9 +422,16 @@ export const Renewals = () => {
                           <ShieldCheck className="h-4 w-4 text-blue-600 shrink-0" />
                           <span>{r.insuranceCompany}</span>
                         </p>
-                        <span className={`badge text-[10px] font-black mt-1 ${r.type === 'HEALTH' ? 'bg-orange-100 text-orange-800' : 'bg-blue-100 text-blue-800'}`}>
-                          {r.type} Policy
-                        </span>
+                        <div className="flex flex-wrap items-center gap-1 mt-1">
+                          <span className={`badge text-[10px] font-black ${r.type === 'HEALTH' ? 'bg-orange-100 text-orange-800' : 'bg-blue-100 text-blue-800'}`}>
+                            {r.type} Policy
+                          </span>
+                        </div>
+                        {(r.policyName || r.planName) && (
+                          <p className="text-[10px] font-extrabold text-slate-700 mt-1 truncate max-w-[200px]" title={r.policyName || r.planName}>
+                            Plan: {r.policyName || r.planName}
+                          </p>
+                        )}
                       </td>
 
                       <td className="p-4 font-mono font-black text-emerald-700 text-sm border-r border-slate-200/80">
