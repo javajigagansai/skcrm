@@ -31,11 +31,11 @@ export const Claims = () => {
     policyNo: '',
     customerName: '',
     insuranceCompany: '',
-    claimType: 'Health Hospitalization',
+    claimType: '',
     claimAmount: '',
     settlementAmount: '',
     hospitalOrGarage: '',
-    assignedStaff: 'Priya Sharma (Senior Advisor)',
+    assignedStaff: '',
     status: 'SUBMITTED'
   });
 
@@ -55,7 +55,7 @@ export const Claims = () => {
       assignedStaff: newClaim.assignedStaff || user?.name || 'Priya Sharma'
     });
     setShowAddModal(false);
-    setNewClaim({ policyNo: '', customerName: '', insuranceCompany: '', claimType: 'Health Hospitalization', claimAmount: '', settlementAmount: '', hospitalOrGarage: '', assignedStaff: user?.name || 'Priya Sharma', status: 'SUBMITTED' });
+    setNewClaim({ policyNo: '', customerName: '', insuranceCompany: '', claimType: '', claimAmount: '', settlementAmount: '', hospitalOrGarage: '', assignedStaff: '', status: 'SUBMITTED' });
     alert(`Claim ${created.id} submitted successfully! Directly synced to Customer 360.`);
   };
 
@@ -398,7 +398,6 @@ export const Claims = () => {
                 <input 
                   type="text" 
                   required 
-                  placeholder="Enter Customer Name" 
                   value={newClaim.customerName} 
                   onChange={(e) => setNewClaim({...newClaim, customerName: e.target.value})} 
                   className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white" 
@@ -411,7 +410,6 @@ export const Claims = () => {
                   <input 
                     type="text" 
                     required 
-                    placeholder="e.g. POL-1001"
                     value={newClaim.policyNo} 
                     onChange={(e) => setNewClaim({...newClaim, policyNo: e.target.value})} 
                     className="w-full px-3 py-2 rounded-xl border text-xs font-mono font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white" 
@@ -422,7 +420,6 @@ export const Claims = () => {
                   <input 
                     type="text" 
                     required 
-                    placeholder="e.g. Star Health Insurance"
                     value={newClaim.insuranceCompany} 
                     onChange={(e) => setNewClaim({...newClaim, insuranceCompany: e.target.value})} 
                     className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white" 
@@ -436,7 +433,6 @@ export const Claims = () => {
                   <input 
                     type="number" 
                     required 
-                    placeholder="Enter claim ₹ amount"
                     value={newClaim.claimAmount} 
                     onChange={(e) => setNewClaim({...newClaim, claimAmount: e.target.value})} 
                     className="w-full px-3 py-2 rounded-xl border text-xs font-mono font-bold text-blue-900 outline-none focus:ring-2 focus:ring-blue-600" 
@@ -446,7 +442,6 @@ export const Claims = () => {
                   <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Hospital / Garage / Provider</label>
                   <input 
                     type="text" 
-                    placeholder="e.g. Apollo Hospital Chennai"
                     value={newClaim.hospitalOrGarage} 
                     onChange={(e) => setNewClaim({...newClaim, hospitalOrGarage: e.target.value})} 
                     className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600" 
@@ -461,6 +456,7 @@ export const Claims = () => {
                   onChange={(e) => setNewClaim({...newClaim, assignedStaff: e.target.value})} 
                   className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white"
                 >
+                  <option value="">Select Assigned Staff / Officer</option>
                   <option value="Priya Sharma (Senior Advisor)">Priya Sharma (Senior Advisor)</option>
                   <option value="Karthik Subramanian (Claims Head)">Karthik Subramanian (Claims Head)</option>
                   <option value="Anitha S. (Claim Specialist)">Anitha S. (Claim Specialist)</option>
@@ -513,7 +509,6 @@ export const Claims = () => {
                   <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Settled Amount (₹)</label>
                   <input 
                     type="number" 
-                    placeholder="Enter settled ₹ amount"
                     value={editingClaim.settlementAmount || ''} 
                     onChange={(e) => setEditingClaim({...editingClaim, settlementAmount: e.target.value})} 
                     className="w-full px-3 py-2 rounded-xl border text-xs font-mono font-bold text-emerald-700 outline-none focus:ring-2 focus:ring-emerald-500" 
@@ -569,10 +564,11 @@ export const Claims = () => {
               <div>
                 <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Assigned Claims Staff</label>
                 <select 
-                  value={editingClaim.assignedStaff || 'Priya Sharma'} 
+                  value={editingClaim.assignedStaff || ''} 
                   onChange={(e) => setEditingClaim({...editingClaim, assignedStaff: e.target.value})} 
                   className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white"
                 >
+                  <option value="">Select Assigned Claims Staff</option>
                   <option value="Priya Sharma">Priya Sharma</option>
                   <option value="Karthik Subramanian (Claims Head)">Karthik Subramanian (Claims Head)</option>
                   <option value="Anitha S. (Claim Specialist)">Anitha S. (Claim Specialist)</option>

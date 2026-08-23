@@ -1546,7 +1546,6 @@ export const Customer360Provider = ({ children }) => {
                   <input 
                     type="text" 
                     required 
-                    placeholder="e.g. Star Health Insurance"
                     value={newClaimData.insuranceCompany}
                     onChange={(e) => setNewClaimData({...newClaimData, insuranceCompany: e.target.value})}
                     className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-amber-500 bg-white"
@@ -1557,7 +1556,6 @@ export const Customer360Provider = ({ children }) => {
                   <input 
                     type="text" 
                     required 
-                    placeholder="e.g. Hospitalization / Damage"
                     value={newClaimData.claimType}
                     onChange={(e) => setNewClaimData({...newClaimData, claimType: e.target.value})}
                     className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-amber-500 bg-white"
@@ -1571,7 +1569,6 @@ export const Customer360Provider = ({ children }) => {
                   <input 
                     type="number" 
                     required 
-                    placeholder="e.g. 50000"
                     value={newClaimData.claimAmount}
                     onChange={(e) => setNewClaimData({...newClaimData, claimAmount: e.target.value})}
                     className="w-full px-3 py-2 rounded-xl border text-xs font-mono font-bold text-blue-900 outline-none focus:ring-2 focus:ring-amber-500"
@@ -1581,7 +1578,6 @@ export const Customer360Provider = ({ children }) => {
                   <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Hospital / Garage / Workshop</label>
                   <input 
                     type="text" 
-                    placeholder="e.g. Apollo Hospital Chennai"
                     value={newClaimData.hospitalOrGarage}
                     onChange={(e) => setNewClaimData({...newClaimData, hospitalOrGarage: e.target.value})}
                     className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-amber-500"
@@ -1622,6 +1618,7 @@ export const Customer360Provider = ({ children }) => {
                   onChange={(e) => setNewClaimData({...newClaimData, assignedStaff: e.target.value})}
                   className="w-full px-3 py-2 rounded-xl border text-xs font-bold bg-white outline-none focus:ring-2 focus:ring-purple-600"
                 >
+                  <option value="">Select Assigned Assistance Officer</option>
                   <option value="Priya Sharma (Senior Advisor)">Priya Sharma (Senior Advisor)</option>
                   <option value="Anitha S. (Insurance Specialist)">Anitha S. (Insurance Specialist)</option>
                   <option value="Karthik Subramanian (Manager)">Karthik Subramanian (Manager)</option>
@@ -1676,7 +1673,6 @@ export const Customer360Provider = ({ children }) => {
                   <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Settled / Payout Amount (₹)</label>
                   <input 
                     type="number" 
-                    placeholder="Enter settled ₹ amount"
                     value={editClaimData.settlementAmount || ''}
                     onChange={(e) => setEditClaimData({...editClaimData, settlementAmount: e.target.value})}
                     className="w-full px-3 py-2 rounded-xl border text-xs font-mono font-bold text-emerald-700 outline-none focus:ring-2 focus:ring-emerald-500"
@@ -1730,10 +1726,11 @@ export const Customer360Provider = ({ children }) => {
               <div>
                 <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Assigned Followup Staff</label>
                 <select 
-                  value={editClaimData.assignedStaff || 'Priya Sharma'}
+                  value={editClaimData.assignedStaff || ''}
                   onChange={(e) => setEditClaimData({...editClaimData, assignedStaff: e.target.value})}
                   className="w-full px-3 py-2 rounded-xl border text-xs font-bold bg-white outline-none focus:ring-2 focus:ring-purple-600"
                 >
+                  <option value="">Select Assigned Followup Staff</option>
                   <option value="Priya Sharma">Priya Sharma</option>
                   <option value="Anitha S.">Anitha S.</option>
                   <option value="Karthik Subramanian">Karthik Subramanian</option>
