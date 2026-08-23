@@ -1,14 +1,14 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCustomer360 } from '../context/Customer360Context';
 import { useData } from '../context/DataContext';
 import { exportFollowupsPDF, exportClaimsExcel } from '../utils/exportUtils';
-import { Plus, Search, ShieldCheck, CheckCircle2, Clock, AlertCircle, X, UserCheck, Sparkles, Filter, RotateCcw, FileSpreadsheet, Download, Edit3, Trash2 } from 'lucide-react';
+import { Plus, Search, ShieldCheck, CheckCircle2, Clock, AlertCircle, X, UserCheck, Sparkles, Filter, RotateCcw, FileSpreadsheet, Download, Edit3, Trash2, User, Layers, Check } from 'lucide-react';
 
 export const Claims = () => {
   const { user } = useAuth();
   const { openCustomer360 } = useCustomer360();
-  const { claims, addClaim, updateClaim, updateClaimStatus, deleteClaim, customers, policies } = useData();
+  const { claims, addClaim, updateClaim, updateClaimStatus, deleteClaim, customers, policies, getCustomerAggregatedDetails } = useData();
   const isAdmin = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN';
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -19,6 +19,21 @@ export const Claims = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingClaim, setEditingClaim] = useState(null);
+
+  // Customer Autocomplete & Policy Linkage State (Strict Typing-Only & Click-Outside Dismissal)
+  const custWrapperRef = useRef(null);
+  const [showCustSuggest, setShowCustSuggest] = useState(false);
+  const [availableCustomerPolicies, setAvailableCustomerPolicies] = useState([]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (custWrapperRef.current && !custWrapperRef.current.contains(event.target)) {
+        setShowCustSuggest(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const clearAllFilters = () => {
     setSearchTerm('');
@@ -39,6 +54,115 @@ export const Claims = () => {
     status: 'SUBMITTED'
   });
 
+  const handleOpenAddModal = () => {
+    setNewClaim({
+      policyNo: '',
+      customerName: '',
+      insuranceCompany: '',
+      claimType: '',
+      claimAmount: '',
+      settlementAmount: '',
+      hospitalOrGarage: '',
+      assignedStaff: '',
+      status: 'SUBMITTED'
+    });
+    setAvailableCustomerPolicies([]);
+    setShowCustSuggest(false);
+    setShowAddModal(true);
+  };
+
+  const filteredCustomers = useMemo(() => {
+    const term = (newClaim.customerName || '').trim().toLowerCase();
+    if (!term) return [];
+    return (customers || []).filter(c => {
+      const nameMatch = (c.name || '').toLowerCase().includes(term);
+      const phoneMatch = (c.phone || c.mobileNumber || '').includes(term);
+      const codeMatch = (c.customerCode || c.id || '').toLowerCase().includes(term);
+      return nameMatch || phoneMatch || codeMatch;
+    }).slice(0, 8);
+  }, [customers, newClaim.customerName]);
+
+  const handleSelectCustomer = (cust) => {
+    const custId = cust.id || cust.customerCode;
+    const custName = cust.name;
+    const custCode = cust.customerCode || cust.id;
+
+    let custPolicies = [];
+    if (typeof getCustomerAggregatedDetails === 'function') {
+      const agg = getCustomerAggregatedDetails(cust);
+      if (agg && Array.isArray(agg.policiesList) && agg.policiesList.length > 0) {
+        custPolicies = agg.policiesList;
+      }
+    }
+
+    if (custPolicies.length === 0) {
+      custPolicies = (policies || []).filter(p => {
+        const matchesId = p.customerId && (p.customerId === custId || p.customerId === custCode);
+        const matchesName = p.customerName && custName && p.customerName.toLowerCase().trim() === custName.toLowerCase().trim();
+        return matchesId || matchesName;
+      });
+    }
+
+    if (custPolicies.length === 0 && (cust.insuranceCompany || cust.policyNo)) {
+      custPolicies = [{
+        id: cust.policyNo || 'POL-REG-01',
+        policyNo: cust.policyNo || 'POL-REG-01',
+        insuranceCompany: cust.insuranceCompany || '',
+        policyName: cust.salesPitch || cust.insuranceType || 'Active Policy',
+        assignedStaff: cust.assignedAdvisorName || cust.assignedStaff || ''
+      }];
+    }
+
+    setAvailableCustomerPolicies(custPolicies);
+
+    if (custPolicies.length === 1) {
+      const p = custPolicies[0];
+      setNewClaim(prev => ({
+        ...prev,
+        customerId: custId,
+        customerCode: custCode,
+        customerName: cust.name,
+        policyNo: p.id || p.policyNo || '',
+        insuranceCompany: p.insuranceCompany || '',
+        claimType: p.type || p.category ? `${p.type || p.category} Claim` : prev.claimType,
+        assignedStaff: p.assignedStaff || cust.assignedAdvisorName || cust.assignedStaff || prev.assignedStaff
+      }));
+    } else {
+      setNewClaim(prev => ({
+        ...prev,
+        customerId: custId,
+        customerCode: custCode,
+        customerName: cust.name,
+        policyNo: '',
+        insuranceCompany: '',
+        assignedStaff: cust.assignedAdvisorName || cust.assignedStaff || prev.assignedStaff
+      }));
+    }
+
+    setShowCustSuggest(false);
+  };
+
+  const handleSelectPolicy = (selectedPolicyId) => {
+    if (!selectedPolicyId) {
+      setNewClaim(prev => ({
+        ...prev,
+        policyNo: '',
+        insuranceCompany: ''
+      }));
+      return;
+    }
+    const p = availableCustomerPolicies.find(pol => (pol.id || pol.policyNo) === selectedPolicyId);
+    if (p) {
+      setNewClaim(prev => ({
+        ...prev,
+        policyNo: p.id || p.policyNo || selectedPolicyId,
+        insuranceCompany: p.insuranceCompany || prev.insuranceCompany,
+        claimType: p.type || p.category ? `${p.type || p.category} Claim` : prev.claimType,
+        assignedStaff: p.assignedStaff || prev.assignedStaff
+      }));
+    }
+  };
+
   const handleFileClaim = async (e) => {
     e.preventDefault();
     if (!newClaim.customerName || !newClaim.policyNo) {
@@ -48,14 +172,15 @@ export const Claims = () => {
     const matchedCust = (customers || []).find(c => c.name?.toLowerCase().trim() === newClaim.customerName.toLowerCase().trim());
     const created = await addClaim({
       ...newClaim,
-      customerId: matchedCust?.id || matchedCust?.customerCode || '',
-      customerCode: matchedCust?.customerCode || matchedCust?.id || '',
+      customerId: matchedCust?.id || matchedCust?.customerCode || newClaim.customerId || '',
+      customerCode: matchedCust?.customerCode || matchedCust?.id || newClaim.customerCode || '',
       claimAmount: parseFloat(newClaim.claimAmount || 0),
       settlementAmount: parseFloat(newClaim.settlementAmount || 0),
       assignedStaff: newClaim.assignedStaff || user?.name || 'Priya Sharma'
     });
     setShowAddModal(false);
     setNewClaim({ policyNo: '', customerName: '', insuranceCompany: '', claimType: '', claimAmount: '', settlementAmount: '', hospitalOrGarage: '', assignedStaff: '', status: 'SUBMITTED' });
+    setAvailableCustomerPolicies([]);
     alert(`Claim ${created.id} submitted successfully! Directly synced to Customer 360.`);
   };
 
@@ -170,7 +295,7 @@ export const Claims = () => {
           )}
 
           <button 
-            onClick={() => setShowAddModal(true)}
+            onClick={handleOpenAddModal}
             className="flex items-center space-x-2 px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer self-start sm:self-auto"
           >
             <Plus className="h-4 w-4" />
@@ -212,24 +337,26 @@ export const Claims = () => {
             </h3>
             {activeFiltersCount > 0 && (
               <span className="badge badge-brand text-[10px] font-black px-2 py-0.5">
-                {activeFiltersCount} Active {activeFiltersCount === 1 ? 'Filter' : 'Filters'}
+                {activeFiltersCount} Active
               </span>
             )}
           </div>
 
-          {activeFiltersCount > 0 && (
-            <button
-              onClick={clearAllFilters}
-              className="flex items-center space-x-1 text-xs font-bold text-rose-600 hover:text-rose-700 hover:underline transition cursor-pointer"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-              <span>Reset All Filters</span>
-            </button>
-          )}
+          <div className="flex items-center space-x-2">
+            {activeFiltersCount > 0 && (
+              <button
+                onClick={clearAllFilters}
+                className="text-xs text-rose-600 hover:text-rose-700 font-extrabold flex items-center space-x-1 transition cursor-pointer"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                <span>Reset All Filters</span>
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Filter Controls Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+        {/* Filter Input Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           
           {/* Search Bar */}
           <div className="sm:col-span-2 relative">
@@ -380,7 +507,7 @@ export const Claims = () => {
         </div>
       </div>
 
-      {/* FILE NEW CLAIM MODAL */}
+      {/* FILE NEW CLAIM MODAL (LINKED TO CUSTOMER 360 & POLICIES) */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-100 my-8 animate-fadeIn">
@@ -393,16 +520,93 @@ export const Claims = () => {
             </div>
 
             <form onSubmit={handleFileClaim} className="space-y-3" autoComplete="off">
-              <div>
+              {/* CUSTOMER NAME WITH STRICT TYPING AUTOCOMPLETE */}
+              <div ref={custWrapperRef} className="relative">
                 <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Customer Full Name *</label>
-                <input 
-                  type="text" 
-                  required 
-                  value={newClaim.customerName} 
-                  onChange={(e) => setNewClaim({...newClaim, customerName: e.target.value})} 
-                  className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white" 
-                />
+                <div className="relative">
+                  <input 
+                    type="text" 
+                    required 
+                    value={newClaim.customerName} 
+                    onFocus={() => {
+                      if (newClaim.customerName && newClaim.customerName.trim().length > 0) {
+                        setShowCustSuggest(true);
+                      }
+                    }}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setNewClaim({...newClaim, customerName: val});
+                      if (val.trim().length > 0) {
+                        setShowCustSuggest(true);
+                      } else {
+                        setShowCustSuggest(false);
+                        setAvailableCustomerPolicies([]);
+                      }
+                    }} 
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white" 
+                  />
+                  <User className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                </div>
+
+                {/* Suggestions Dropdown - ONLY appears when user has typed meaningful text */}
+                {showCustSuggest && newClaim.customerName && newClaim.customerName.trim().length > 0 && filteredCustomers.length > 0 && (
+                  <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white rounded-2xl border border-slate-200 shadow-xl max-h-48 overflow-y-auto divide-y divide-slate-100 animate-fadeIn">
+                    <div className="p-2 bg-slate-50 text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between sticky top-0 z-10 border-b">
+                      <span>Matching Customers ({filteredCustomers.length})</span>
+                      <button 
+                        type="button"
+                        onClick={() => setShowCustSuggest(false)} 
+                        className="text-slate-400 hover:text-slate-700 cursor-pointer"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    {filteredCustomers.map((cust, idx) => (
+                      <div 
+                        key={cust.id || idx}
+                        onClick={() => handleSelectCustomer(cust)}
+                        className="p-2.5 hover:bg-blue-50 cursor-pointer transition flex items-center justify-between text-xs"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 font-black text-[10px] flex items-center justify-center">
+                            {cust.name?.charAt(0)}
+                          </div>
+                          <div>
+                            <p className="font-extrabold text-slate-900">{cust.name}</p>
+                            <p className="text-[10px] text-slate-400">{cust.customerCode || cust.id} • {cust.phone || 'No Phone'}</p>
+                          </div>
+                        </div>
+                        <span className="text-[10px] font-black text-blue-600">Select &amp; Link</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
+
+              {/* CUSTOMER POLICIES DROPDOWN IF CUSTOMER HAS MULTIPLE OR REGISTERED POLICIES */}
+              {availableCustomerPolicies.length > 0 && (
+                <div className="p-3 bg-blue-50/60 rounded-2xl border border-blue-200/80 space-y-1.5 animate-fadeIn">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-black uppercase text-blue-950 flex items-center space-x-1.5">
+                      <Layers className="h-3.5 w-3.5 text-blue-600" />
+                      <span>Select Policy ({availableCustomerPolicies.length} Active Policies Found) *</span>
+                    </label>
+                    <span className="badge bg-blue-200 text-blue-900 text-[10px] font-black">Customer 360 Linked</span>
+                  </div>
+                  <select 
+                    value={newClaim.policyNo}
+                    onChange={(e) => handleSelectPolicy(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-blue-200 text-xs font-bold bg-white text-slate-900 outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer"
+                  >
+                    <option value="">-- Choose Policy to File Claim Under --</option>
+                    {availableCustomerPolicies.map((pol, pIdx) => (
+                      <option key={pol.id || pol.policyNo || pIdx} value={pol.id || pol.policyNo}>
+                        {pol.id || pol.policyNo} — {pol.insuranceCompany} ({pol.policyName || pol.planName || pol.type || 'Policy'})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
