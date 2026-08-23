@@ -210,32 +210,6 @@ export const SpecialDays = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-purple-700 via-blue-800 to-indigo-900 text-white p-6 sm:p-8 shadow-xl">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-bold text-amber-300 border border-white/20">
-              <Sparkles className="h-4 w-4" />
-              <span>Greetings Officer Workspace</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Birthdays &amp; Anniversaries Portal</h1>
-            <p className="text-xs sm:text-sm text-blue-100 max-w-2xl">
-              Real-time workspace for <strong>Greetings Officers</strong> &amp; <strong>Super Admin</strong>. Express gratitude to clients, family profiles, and staff colleagues on their special days!
-            </p>
-          </div>
-
-          <div className="flex items-center space-x-3">
-            <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/20 text-center min-w-[110px]">
-              <span className="text-2xl font-black text-amber-300 block">{customerEvents.length}</span>
-              <span className="text-[10px] uppercase font-bold text-blue-100">Customer Events</span>
-            </div>
-            <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/20 text-center min-w-[110px]">
-              <span className="text-2xl font-black text-emerald-300 block">{staffCelebrations.length}</span>
-              <span className="text-[10px] uppercase font-bold text-blue-100">Staff Colleagues</span>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Navigation Tab Selector */}
       <div className="bg-white p-2 rounded-2xl border border-slate-200/80 shadow-card flex items-center justify-between flex-wrap gap-2">
