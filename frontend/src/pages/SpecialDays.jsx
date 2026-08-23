@@ -280,19 +280,19 @@ export const SpecialDays = () => {
             onClick={() => setDateRangeFilter('TODAY')}
             className={`px-4 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${dateRangeFilter === 'TODAY' ? 'bg-amber-500 text-white shadow-md' : 'text-slate-600 hover:text-slate-900'}`}
           >
-            🌟 Current Day Only
+            🌟 Today
           </button>
           <button 
             onClick={() => setDateRangeFilter('THIS_MONTH')}
             className={`px-4 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${dateRangeFilter === 'THIS_MONTH' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-600 hover:text-slate-900'}`}
           >
-            📅 This Month
+            📅 Monthly
           </button>
           <button 
             onClick={() => setDateRangeFilter('ALL')}
             className={`px-4 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${dateRangeFilter === 'ALL' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-600 hover:text-slate-900'}`}
           >
-            📋 All Upcoming
+            📋 All
           </button>
         </div>
       </div>

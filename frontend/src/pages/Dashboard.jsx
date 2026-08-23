@@ -1843,8 +1843,8 @@ export const Dashboard = () => {
 
 
 
-      {/* KPI Overview Cards - Interactive Clickable Grid (5 Key Cards) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      {/* KPI Overview Cards - Interactive Clickable Grid (4 Key Cards) */}
+      <div className={`grid grid-cols-1 sm:grid-cols-2 ${(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-4`}>
         <div 
           onClick={() => {
             if (isStaffAdvisor) {
