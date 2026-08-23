@@ -1818,7 +1818,7 @@ export const Dashboard = () => {
               </p>
               <div className="flex items-center justify-between pt-1">
                 <span className="badge bg-amber-100 text-amber-800 text-[10px]">
-                  {companyOperatingExpenses.items.length > 0 ? `${companyOperatingExpenses.items.length} Database Records` : 'Rent, Software & Infra'}
+                  Rent, Software &amp; Infra
                 </span>
                 <span className="text-[10px] font-extrabold text-amber-600 hover:underline flex items-center space-x-0.5">
                   <span>View Details</span>
