@@ -473,20 +473,18 @@ export const Dashboard = () => {
         return { label, month: label, revenue, income: revenue, salaryExpense, operationalExpense, totalExpenses, expense: totalExpenses, netProfit, govtTaxAdvantage };
       });
     } else if (dateFilter === 'THIS_MONTH') {
-      // Rolling 4 weekly slices spanning 1 month back up to today
-      const intervals = [];
-      const weights = [0.22, 0.28, 0.24, 0.26];
-      for (let i = 3; i >= 0; i--) {
-        const start = new Date();
-        start.setDate(start.getDate() - ((i + 1) * 7) + 1);
-        const end = new Date();
-        end.setDate(end.getDate() - (i * 7));
-        const startStr = `${String(start.getDate()).padStart(2, '0')} ${start.toLocaleDateString('en-US', { month: 'short' })}`;
-        const endStr = i === 0 ? 'Today' : `${String(end.getDate()).padStart(2, '0')} ${end.toLocaleDateString('en-US', { month: 'short' })}`;
-        intervals.push(`${startStr} - ${endStr}`);
+      // Rolling 30 daily data points up to today
+      const days = [];
+      for (let i = 29; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dayNum = String(d.getDate()).padStart(2, '0');
+        const monthShort = d.toLocaleDateString('en-US', { month: 'short' });
+        days.push(`${dayNum} ${monthShort}`);
       }
-      return intervals.map((label, idx) => {
-        const weight = weights[idx] || 0.25;
+      const baseWeight = 1 / 30;
+      return days.map((label, idx) => {
+        const weight = baseWeight * (0.7 + (idx / 30) * 0.6);
         const revenue = Number((totalRevLakhs * weight).toFixed(2));
         const salaryExpense = Number((totalSalExpLakhs * weight).toFixed(2));
         const operationalExpense = Number((totalOpExpLakhs * weight).toFixed(2));
@@ -1415,17 +1413,17 @@ export const Dashboard = () => {
                   dataKey="label" 
                   tickLine={false} 
                   axisLine={false} 
-                  interval={0}
+                  interval={dateFilter === 'THIS_MONTH' ? 4 : 0}
                   angle={0}
                   textAnchor="middle"
                   height={dateFilter === 'TODAY' ? 0 : 30}
-                  tick={dateFilter === 'TODAY' ? false : { fontSize: 11, fontWeight: 700 }} 
+                  tick={dateFilter === 'TODAY' ? false : { fontSize: dateFilter === 'THIS_MONTH' ? 10 : 11, fontWeight: 700 }} 
                 />
                 <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700 }} unit="L" />
                 <Tooltip cursor={{ fill: '#F1F5F9' }} />
                 <Legend wrapperStyle={{ paddingTop: '10px' }} />
-                <Bar dataKey="revenue" fill="#10B981" radius={[6, 6, 0, 0]} barSize={dateFilter === 'THIS_MONTH' ? 12 : 24} name="Income (Lakhs)" />
-                <Bar dataKey="totalExpenses" fill="#EF4444" radius={[6, 6, 0, 0]} barSize={dateFilter === 'THIS_MONTH' ? 12 : 24} name="Expense (Lakhs)" />
+                <Bar dataKey="revenue" fill="#10B981" radius={[6, 6, 0, 0]} barSize={dateFilter === 'THIS_MONTH' ? 7 : 24} name="Income (Lakhs)" />
+                <Bar dataKey="totalExpenses" fill="#EF4444" radius={[6, 6, 0, 0]} barSize={dateFilter === 'THIS_MONTH' ? 7 : 24} name="Expense (Lakhs)" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -2709,17 +2707,17 @@ export const Dashboard = () => {
                   dataKey="month" 
                   tickLine={false} 
                   axisLine={false} 
-                  interval={0}
+                  interval={dateFilter === 'THIS_MONTH' ? 4 : 0}
                   angle={0}
                   textAnchor="middle"
                   height={dateFilter === 'TODAY' ? 0 : 30}
-                  tick={dateFilter === 'TODAY' ? false : { fontSize: 11, fontWeight: 700 }} 
+                  tick={dateFilter === 'TODAY' ? false : { fontSize: dateFilter === 'THIS_MONTH' ? 10 : 11, fontWeight: 700 }} 
                 />
                 <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700 }} unit="L" />
                 <Tooltip cursor={{ fill: '#F1F5F9' }} />
                 <Legend wrapperStyle={{ paddingTop: '10px' }} />
-                <Bar dataKey="income" fill="#10B981" radius={[6, 6, 0, 0]} barSize={dateFilter === 'THIS_MONTH' ? 12 : 24} name="Income (Lakhs)" />
-                <Bar dataKey="expense" fill="#EF4444" radius={[6, 6, 0, 0]} barSize={dateFilter === 'THIS_MONTH' ? 12 : 24} name="Expense (Lakhs)" />
+                <Bar dataKey="income" fill="#10B981" radius={[6, 6, 0, 0]} barSize={dateFilter === 'THIS_MONTH' ? 7 : 24} name="Income (Lakhs)" />
+                <Bar dataKey="expense" fill="#EF4444" radius={[6, 6, 0, 0]} barSize={dateFilter === 'THIS_MONTH' ? 7 : 24} name="Expense (Lakhs)" />
               </BarChart>
             </ResponsiveContainer>
           </div>
