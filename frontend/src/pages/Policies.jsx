@@ -82,6 +82,7 @@ export const Policies = () => {
   const [showCompSuggest, setShowCompSuggest] = useState(false);
   const [showCatSuggest, setShowCatSuggest] = useState(false);
   const [showPlanSuggest, setShowPlanSuggest] = useState(false);
+  const [showStaffSuggest, setShowStaffSuggest] = useState(false);
 
   // Sync across CRM on custom catalog events
   useEffect(() => {
@@ -153,6 +154,38 @@ export const Policies = () => {
       total: startsWith.length + contains.length
     };
   }, [insuranceCompanies, newPolicy.insuranceCompany]);
+
+  const allStaffOptions = useMemo(() => {
+    const defaultOptions = [
+      { name: 'Priya Sharma', role: 'Senior Advisor' },
+      { name: 'Anitha S.', role: 'Insurance Specialist' },
+      { name: 'Karthik Subramanian', role: 'Manager' },
+      { name: 'Rajesh V.', role: 'Relationship Manager' },
+      { name: 'Rahul Dravid', role: 'Staff Advisor' },
+      { name: 'Kavita Menon', role: 'Advisor' }
+    ];
+    const map = new Map();
+    defaultOptions.forEach(s => map.set(s.name, s));
+    (staffList || []).forEach(s => {
+      if (s.name) map.set(s.name, { name: s.name, role: s.role || 'Advisor', uid: s.uid });
+    });
+    return Array.from(map.values());
+  }, [staffList]);
+
+  const staffSearchResults = useMemo(() => {
+    const rawList = allStaffOptions;
+    if (!newPolicy.assignedStaff || !newPolicy.assignedStaff.trim()) {
+      return { startsWith: rawList, contains: [], total: rawList.length };
+    }
+    const q = newPolicy.assignedStaff.toLowerCase().trim();
+    const startsWith = rawList.filter(s => s.name.toLowerCase().trim().startsWith(q) || (s.role && s.role.toLowerCase().startsWith(q)));
+    const contains = rawList.filter(s => !s.name.toLowerCase().trim().startsWith(q) && !s.role?.toLowerCase().startsWith(q) && (s.name.toLowerCase().includes(q) || (s.role && s.role.toLowerCase().includes(q))));
+    return {
+      startsWith,
+      contains,
+      total: startsWith.length + contains.length
+    };
+  }, [allStaffOptions, newPolicy.assignedStaff]);
 
   const filteredCategories = useMemo(() => {
     if (!newPolicy.type.trim()) return POLICY_CATEGORIES;
@@ -1287,18 +1320,114 @@ export const Policies = () => {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Assigned Staff / Officer</label>
-                <select 
-                  value={newPolicy.assignedStaff} 
-                  onChange={(e) => setNewPolicy({...newPolicy, assignedStaff: e.target.value})} 
-                  className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-purple-600 bg-white"
-                >
-                  <option value="Priya Sharma (Senior Advisor)">Priya Sharma (Senior Advisor)</option>
-                  <option value="Anitha S. (Insurance Specialist)">Anitha S. (Insurance Specialist)</option>
-                  <option value="Karthik Subramanian (Manager)">Karthik Subramanian (Manager)</option>
-                  <option value="Rajesh V. (Relationship Manager)">Rajesh V. (Relationship Manager)</option>
-                </select>
+              {/* FIELD 5: ASSIGNED STAFF / OFFICER (WITH LIVE PREFIX "STARTS WITH" & "CONTAINS" AUTOCOMPLETE) */}
+              <div className="relative">
+                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">
+                  Assigned Staff / Officer *
+                </label>
+                <div className="relative">
+                  <input 
+                    type="text" 
+                    required 
+                    placeholder="Select or Type Assigned Staff / Officer" 
+                    value={newPolicy.assignedStaff} 
+                    onFocus={() => setShowStaffSuggest(true)}
+                    onChange={(e) => {
+                      setNewPolicy({...newPolicy, assignedStaff: e.target.value});
+                      setShowStaffSuggest(true);
+                    }} 
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold outline-none focus:ring-2 focus:ring-purple-600 bg-white" 
+                  />
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                </div>
+
+                {/* Floating Staff Suggestions Dropdown */}
+                {showStaffSuggest && staffSearchResults.total > 0 && (
+                  <div className="absolute left-0 right-0 bottom-full mb-1 z-30 bg-white rounded-2xl border border-slate-200 shadow-2xl max-h-56 overflow-y-auto divide-y divide-slate-100 animate-fadeIn">
+                    <div className="p-2 bg-slate-50 text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between sticky top-0 z-10 border-b">
+                      <span>Assigned Staff Officers ({staffSearchResults.total})</span>
+                      <button 
+                        type="button"
+                        onClick={() => setShowStaffSuggest(false)} 
+                        className="text-slate-400 hover:text-slate-700 cursor-pointer"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    {/* Group 1: Starts With Matches */}
+                    {staffSearchResults.startsWith.length > 0 && (
+                      <div>
+                        {newPolicy.assignedStaff.trim() && (
+                          <div className="px-2.5 py-1 bg-purple-50/70 text-[9px] font-black uppercase text-purple-900 tracking-wider">
+                            Starts with "{newPolicy.assignedStaff}" ({staffSearchResults.startsWith.length})
+                          </div>
+                        )}
+                        {staffSearchResults.startsWith.map((stf, idx) => (
+                          <div 
+                            key={`stf-start-${idx}`}
+                            onClick={() => {
+                              const displayName = `${stf.name} (${stf.role || 'Advisor'})`;
+                              setNewPolicy({
+                                ...newPolicy,
+                                assignedStaff: displayName,
+                                assignedStaffId: stf.uid || newPolicy.assignedStaffId
+                              });
+                              setShowStaffSuggest(false);
+                            }}
+                            className="p-2.5 hover:bg-purple-50 cursor-pointer transition flex items-center justify-between text-xs"
+                          >
+                            <div className="flex items-center space-x-2.5">
+                              <div className="w-6 h-6 rounded-full bg-purple-100 text-purple-700 font-black text-[10px] flex items-center justify-center">
+                                {stf.name?.charAt(0)}
+                              </div>
+                              <div>
+                                <p className="font-extrabold text-slate-900">{renderHighlight(stf.name, newPolicy.assignedStaff)}</p>
+                                <p className="text-[10px] text-slate-400 font-semibold">{stf.role || 'Advisor'}</p>
+                              </div>
+                            </div>
+                            <span className="badge bg-purple-50 text-purple-700 text-[9px] font-black">{stf.role || 'Advisor'}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Group 2: Contains Matches */}
+                    {staffSearchResults.contains.length > 0 && (
+                      <div>
+                        <div className="px-2.5 py-1 bg-slate-100 text-[9px] font-black uppercase text-slate-600 tracking-wider">
+                          Other Matches Containing "{newPolicy.assignedStaff}" ({staffSearchResults.contains.length})
+                        </div>
+                        {staffSearchResults.contains.map((stf, idx) => (
+                          <div 
+                            key={`stf-cont-${idx}`}
+                            onClick={() => {
+                              const displayName = `${stf.name} (${stf.role || 'Advisor'})`;
+                              setNewPolicy({
+                                ...newPolicy,
+                                assignedStaff: displayName,
+                                assignedStaffId: stf.uid || newPolicy.assignedStaffId
+                              });
+                              setShowStaffSuggest(false);
+                            }}
+                            className="p-2.5 hover:bg-slate-50 cursor-pointer transition flex items-center justify-between text-xs"
+                          >
+                            <div className="flex items-center space-x-2.5">
+                              <div className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 font-black text-[10px] flex items-center justify-center">
+                                {stf.name?.charAt(0)}
+                              </div>
+                              <div>
+                                <p className="font-extrabold text-slate-900">{renderHighlight(stf.name, newPolicy.assignedStaff)}</p>
+                                <p className="text-[10px] text-slate-400 font-semibold">{stf.role || 'Advisor'}</p>
+                              </div>
+                            </div>
+                            <span className="badge bg-slate-100 text-slate-600 text-[9px] font-black">{stf.role || 'Advisor'}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <button type="submit" className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer">
