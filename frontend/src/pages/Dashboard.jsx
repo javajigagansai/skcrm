@@ -1718,28 +1718,65 @@ export const Dashboard = () => {
       </div>
 
       {/* Date Filter Bar */}
-      <div className="bg-white p-3 sm:p-3.5 rounded-2xl border border-slate-200/80 shadow-card flex flex-col space-y-3">
-        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
-          {/* 1. Custom Date (Prominent Highlighted Pill on the Left) */}
-          <button 
-            type="button"
-            onClick={() => setDateFilter('CUSTOM')}
-            className={`inline-flex items-center justify-center space-x-2 px-4 py-2 rounded-xl text-xs transition cursor-pointer min-h-[40px] ${
-              dateFilter === 'CUSTOM'
-                ? 'bg-blue-700 text-white shadow-md font-black ring-2 ring-blue-400/50'
-                : 'bg-blue-600 hover:bg-blue-700 text-white shadow-xs font-bold'
+      <div className="bg-white p-3 sm:p-3.5 rounded-2xl border border-slate-200/80 shadow-card flex flex-wrap items-center justify-between gap-3">
+        {/* Direct Standard Date Range Filter */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center space-x-1.5 text-slate-700 font-bold text-xs shrink-0 px-2 py-1 bg-slate-50 rounded-lg border border-slate-200">
+            <CalendarIcon className="h-4 w-4 text-blue-600" />
+            <span>Date:</span>
+          </div>
+          <input 
+            type="date" 
+            value={customStartDate} 
+            onChange={(e) => {
+              setCustomStartDate(e.target.value);
+              setDateFilter('CUSTOM');
+            }}
+            className={`px-2.5 py-1.5 text-xs font-medium rounded-xl border bg-white text-slate-800 shadow-xs focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[130px] ${
+              dateFilter === 'CUSTOM' && customStartDate ? 'border-blue-500 ring-1 ring-blue-500' : 'border-slate-300'
             }`}
-            title="Custom Date Range Picker"
+            placeholder="dd-mm-yyyy"
+          />
+          <span className="text-slate-400 font-bold">-</span>
+          <input 
+            type="date" 
+            value={customEndDate} 
+            onChange={(e) => {
+              setCustomEndDate(e.target.value);
+              setDateFilter('CUSTOM');
+            }}
+            className={`px-2.5 py-1.5 text-xs font-medium rounded-xl border bg-white text-slate-800 shadow-xs focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[130px] ${
+              dateFilter === 'CUSTOM' && customEndDate ? 'border-blue-500 ring-1 ring-blue-500' : 'border-slate-300'
+            }`}
+            placeholder="dd-mm-yyyy"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              if (!customStartDate && !customEndDate) {
+                const today = new Date().toISOString().split('T')[0];
+                setCustomStartDate(today);
+                setCustomEndDate(today);
+              }
+              setDateFilter('CUSTOM');
+            }}
+            className={`px-4 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center justify-center shadow-xs min-h-[34px] ${
+              dateFilter === 'CUSTOM'
+                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm font-black'
+                : 'bg-blue-600 hover:bg-blue-700 text-white'
+            }`}
           >
-            <CalendarIcon className="h-4 w-4 shrink-0" />
-            <span>Custom Date</span>
+            Filter
           </button>
+        </div>
 
-          {/* 2. Today */}
+        {/* Quick Range Presets: Today | Weekly | Monthly | Semi-Annual | Annual */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          {/* Today */}
           <button 
             type="button"
             onClick={() => setDateFilter('TODAY')}
-            className={`px-4 py-2 rounded-xl text-xs transition cursor-pointer min-h-[40px] flex items-center justify-center ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs transition cursor-pointer min-h-[34px] flex items-center justify-center ${
               dateFilter === 'TODAY'
                 ? 'bg-slate-900 text-white shadow-sm font-black'
                 : 'bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold'
@@ -1748,11 +1785,11 @@ export const Dashboard = () => {
             Today
           </button>
 
-          {/* 3. Weekly */}
+          {/* Weekly */}
           <button 
             type="button"
             onClick={() => setDateFilter('THIS_WEEK')}
-            className={`px-4 py-2 rounded-xl text-xs transition cursor-pointer min-h-[40px] flex items-center justify-center ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs transition cursor-pointer min-h-[34px] flex items-center justify-center ${
               dateFilter === 'THIS_WEEK'
                 ? 'bg-slate-900 text-white shadow-sm font-black'
                 : 'bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold'
@@ -1761,11 +1798,11 @@ export const Dashboard = () => {
             Weekly
           </button>
 
-          {/* 4. Monthly */}
+          {/* Monthly */}
           <button 
             type="button"
             onClick={() => setDateFilter('THIS_MONTH')}
-            className={`px-4 py-2 rounded-xl text-xs transition cursor-pointer min-h-[40px] flex items-center justify-center ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs transition cursor-pointer min-h-[34px] flex items-center justify-center ${
               dateFilter === 'THIS_MONTH'
                 ? 'bg-slate-900 text-white shadow-sm font-black'
                 : 'bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold'
@@ -1774,11 +1811,11 @@ export const Dashboard = () => {
             Monthly
           </button>
 
-          {/* 5. Semi-Annual */}
+          {/* Semi-Annual */}
           <button 
             type="button"
             onClick={() => setDateFilter('LAST_MONTH')}
-            className={`px-4 py-2 rounded-xl text-xs transition cursor-pointer min-h-[40px] flex items-center justify-center ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs transition cursor-pointer min-h-[34px] flex items-center justify-center ${
               dateFilter === 'LAST_MONTH'
                 ? 'bg-slate-900 text-white shadow-sm font-black'
                 : 'bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold'
@@ -1787,11 +1824,11 @@ export const Dashboard = () => {
             Semi-Annual
           </button>
 
-          {/* 6. Annual */}
+          {/* Annual */}
           <button 
             type="button"
             onClick={() => setDateFilter('THIS_YEAR')}
-            className={`px-4 py-2 rounded-xl text-xs transition cursor-pointer min-h-[40px] flex items-center justify-center ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs transition cursor-pointer min-h-[34px] flex items-center justify-center ${
               dateFilter === 'THIS_YEAR'
                 ? 'bg-slate-900 text-white shadow-sm font-black'
                 : 'bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold'
@@ -1800,49 +1837,6 @@ export const Dashboard = () => {
             Annual
           </button>
         </div>
-
-        {/* Custom Date Range Selector (Visible when Custom Date is selected) */}
-        {dateFilter === 'CUSTOM' && (
-          <div className="flex flex-wrap items-center gap-2.5 pt-3 border-t border-slate-100 bg-slate-50/80 p-3 rounded-xl">
-            <div className="flex items-center space-x-1.5 text-slate-600 font-bold text-xs shrink-0">
-              <CalendarIcon className="h-4 w-4 text-slate-500" />
-              <span>Date:</span>
-            </div>
-            <input 
-              type="date" 
-              value={customStartDate} 
-              onChange={(e) => setCustomStartDate(e.target.value)}
-              className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-300 bg-white text-slate-800 shadow-xs focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[135px]"
-              placeholder="dd-mm-yyyy"
-            />
-            <span className="text-slate-400 font-bold">-</span>
-            <input 
-              type="date" 
-              value={customEndDate} 
-              onChange={(e) => setCustomEndDate(e.target.value)}
-              className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-300 bg-white text-slate-800 shadow-xs focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[135px]"
-              placeholder="dd-mm-yyyy"
-            />
-            <button
-              type="button"
-              onClick={() => {
-                if (!customStartDate && !customEndDate) {
-                  const today = new Date().toISOString().split('T')[0];
-                  setCustomStartDate(today);
-                  setCustomEndDate(today);
-                }
-              }}
-              className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition cursor-pointer flex items-center justify-center"
-            >
-              Filter
-            </button>
-            {customStartDate && customEndDate && (
-              <span className="badge badge-brand text-[10px] ml-1">
-                Active Range: {customStartDate} ➔ {customEndDate}
-              </span>
-            )}
-          </div>
-        )}
       </div>
 
 
