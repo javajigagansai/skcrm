@@ -122,9 +122,6 @@ export const Profile = () => {
           <span>My Profile &amp; Account Settings</span>
           <Sparkles className="h-5 w-5 text-amber-500" />
         </h1>
-        <p className="text-xs text-slate-500 font-semibold mt-0.5">
-          Manage your personal picture, contact credentials, birthday, anniversary, and team communication details.
-        </p>
       </div>
 
       {savedSuccess && (
