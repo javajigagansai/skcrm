@@ -172,7 +172,6 @@ export const Renewals = () => {
             <RefreshCw className="h-6 w-6 text-blue-600 animate-spin-slow" />
             <span>Policy Renewals &amp; Retention Desk</span>
           </h1>
-          <p className="text-xs text-slate-500 font-semibold">Track upcoming insurance policy renewals, dispatch automated WhatsApp reminders, and protect client coverage.</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
