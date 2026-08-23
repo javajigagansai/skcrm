@@ -74,12 +74,12 @@ export const Customer360Provider = ({ children }) => {
   const [newClaimData, setNewClaimData] = useState({
     policyNo: '',
     insuranceCompany: '',
-    claimType: 'Health Hospitalization',
+    claimType: '',
     claimAmount: '',
     settlementAmount: '',
     hospitalOrGarage: '',
     claimDate: new Date().toISOString().split('T')[0],
-    assignedStaff: 'Priya Sharma (Senior Advisor)',
+    assignedStaff: '',
     status: 'SUBMITTED'
   });
   const [editClaimData, setEditClaimData] = useState(null);
@@ -226,13 +226,13 @@ export const Customer360Provider = ({ children }) => {
     const firstPolicy = activePoliciesList[0];
     setNewClaimData({
       policyNo: firstPolicy?.id || firstPolicy?.policyNo || '',
-      insuranceCompany: firstPolicy?.insuranceCompany || 'Star Health Insurance',
-      claimType: firstPolicy?.type ? `${firstPolicy.type} Claim` : 'Health Hospitalization',
+      insuranceCompany: firstPolicy?.insuranceCompany || '',
+      claimType: firstPolicy?.type ? `${firstPolicy.type} Claim` : '',
       claimAmount: '',
       settlementAmount: '',
       hospitalOrGarage: '',
       claimDate: new Date().toISOString().split('T')[0],
-      assignedStaff: selectedCustomer?.assignedAdvisorName || selectedCustomer?.assignedStaff || user?.name || 'Priya Sharma',
+      assignedStaff: selectedCustomer?.assignedAdvisorName || selectedCustomer?.assignedStaff || user?.name || '',
       status: 'SUBMITTED'
     });
     setShowAddClaimModal(true);
@@ -1326,7 +1326,6 @@ export const Customer360Provider = ({ children }) => {
                     <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Insurance Company / AMC Name</label>
                     <input 
                       type="text"
-                      placeholder="e.g. Star Health / HDFC Ergo / ICICI"
                       value={editCustomerData.insuranceCompany || ''}
                       onChange={(e) => setEditCustomerData({...editCustomerData, insuranceCompany: e.target.value})}
                       className="w-full px-3 py-2 rounded-xl border text-xs font-extrabold text-blue-900 outline-none focus:ring-2 focus:ring-blue-600 bg-white"
@@ -1336,7 +1335,6 @@ export const Customer360Provider = ({ children }) => {
                     <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Custom Specified Plan Name</label>
                     <input 
                       type="text"
-                      placeholder="Type specified plan name..."
                       value={editCustomerData.salesPitch || ''}
                       onChange={(e) => setEditCustomerData({...editCustomerData, salesPitch: e.target.value})}
                       className="w-full px-3 py-2 rounded-xl border text-xs font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-600 bg-white"
@@ -1346,7 +1344,6 @@ export const Customer360Provider = ({ children }) => {
                     <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Policy Premium Amount (₹)</label>
                     <input 
                       type="number"
-                      placeholder="e.g. 25000"
                       value={editCustomerData.policyAmount || ''}
                       onChange={(e) => setEditCustomerData({...editCustomerData, policyAmount: e.target.value})}
                       className="w-full px-3 py-2 rounded-xl border text-xs font-extrabold text-emerald-800 outline-none focus:ring-2 focus:ring-blue-600 bg-white"
@@ -1375,13 +1372,112 @@ export const Customer360Provider = ({ children }) => {
                     <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Advisor Call Notes</label>
                     <input 
                       type="text"
-                      placeholder="e.g. Call back tomorrow morning"
                       value={editCustomerData.advisorNotes || ''}
                       onChange={(e) => setEditCustomerData({...editCustomerData, advisorNotes: e.target.value})}
                       className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600 bg-white"
                     />
                   </div>
                 </div>
+              </div>
+
+              {/* SECTION 6: CLAIMS HISTORY & CLAIMS DESK MANAGEMENT (DIRECT BIDIRECTIONAL SYNC) */}
+              <div className="bg-amber-50/70 p-4 rounded-2xl border border-amber-200/80 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <ShieldAlert className="h-4 w-4 text-amber-600" />
+                    <h4 className="text-xs font-black uppercase text-amber-950 tracking-wider">
+                      6. Claims History &amp; Claims Desk Sync
+                    </h4>
+                    <span className="badge bg-amber-200 text-amber-900 text-[10px] font-black">
+                      {activeClaimsList.length} Recorded
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleOpenAddClaim}
+                    className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs shadow-xs transition cursor-pointer flex items-center space-x-1"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    <span>+ Add New Claim</span>
+                  </button>
+                </div>
+
+                {activeClaimsList.length > 0 ? (
+                  <div className="space-y-2">
+                    {activeClaimsList.map((clm, cIdx) => (
+                      <div 
+                        key={clm.id || cIdx} 
+                        className="bg-white p-3 rounded-xl border border-amber-200/60 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5"
+                      >
+                        <div className="space-y-0.5">
+                          <div className="flex items-center space-x-2">
+                            <span className="font-mono font-black text-blue-900 text-xs">{clm.id}</span>
+                            <span className="text-[10px] text-slate-500 font-bold">• {clm.insuranceCompany || 'Insurer'} ({clm.policyNo || 'No Policy'})</span>
+                            <span className={`badge text-[9px] font-extrabold ${
+                              clm.status === 'SETTLED' ? 'bg-emerald-100 text-emerald-800' :
+                              clm.status === 'APPROVED' ? 'bg-blue-100 text-blue-800' :
+                              clm.status === 'REJECTED' ? 'bg-rose-100 text-rose-800' :
+                              'bg-amber-100 text-amber-800'
+                            }`}>
+                              {clm.status || 'SUBMITTED'}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-700 font-semibold">
+                            Claim: <strong className="text-slate-900 font-black">₹{Number(clm.claimAmount || clm.amount || 0).toLocaleString()}</strong>
+                            {Number(clm.settlementAmount || 0) > 0 && (
+                              <span className="ml-2 text-emerald-700 font-bold">| Settled: ₹{Number(clm.settlementAmount).toLocaleString()}</span>
+                            )}
+                            {clm.hospitalOrGarage && <span className="ml-2 text-slate-500">| {clm.hospitalOrGarage}</span>}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center space-x-2 shrink-0">
+                          <select
+                            value={clm.status || 'SUBMITTED'}
+                            onChange={(e) => handleQuickStatusChange(clm.id, e.target.value)}
+                            className="text-[10px] font-extrabold px-2 py-1 rounded-lg border border-slate-200 bg-slate-50 cursor-pointer outline-none"
+                          >
+                            <option value="SUBMITTED">SUBMITTED</option>
+                            <option value="IN_REVIEW">IN_REVIEW</option>
+                            <option value="APPROVED">APPROVED</option>
+                            <option value="SETTLED">SETTLED</option>
+                            <option value="REJECTED">REJECTED</option>
+                          </select>
+
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditClaim(clm)}
+                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition cursor-pointer"
+                            title="Edit Claim"
+                          >
+                            <Edit3 className="h-4 w-4" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteClaim360(clm.id)}
+                            className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                            title="Delete Claim"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-xl bg-white/80 border border-dashed border-amber-200 text-center text-xs text-amber-800 font-semibold">
+                    No claims history recorded for this customer yet.
+                    <button 
+                      type="button" 
+                      onClick={handleOpenAddClaim}
+                      className="ml-2 text-blue-600 hover:underline font-bold"
+                    >
+                      + Add claim record
+                    </button>
+                  </div>
+                )}
               </div>
 
               <button 
