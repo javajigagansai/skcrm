@@ -1784,8 +1784,8 @@ export const Dashboard = () => {
 
 
 
-      {/* KPI Overview Cards - Interactive Clickable Grid (5 Key Cards) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      {/* KPI Overview Cards - Interactive Clickable Grid (4 Key Cards) */}
+      <div className={`grid grid-cols-1 sm:grid-cols-2 ${(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-4`}>
         <div 
           onClick={() => {
             if (isStaffAdvisor) {
@@ -1794,19 +1794,23 @@ export const Dashboard = () => {
               setActiveModal('TOTAL_CUSTOMERS');
             }
           }}
-          className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-card space-y-2 hover:border-blue-500 hover:shadow-lg transition cursor-pointer group relative"
+          className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-card flex flex-col justify-between min-h-[145px] hover:border-blue-500 hover:shadow-lg transition cursor-pointer group relative"
           title={isStaffAdvisor ? 'Click to view your assigned client portfolios' : 'Click to view detailed customer breakdown & analysis'}
         >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-extrabold text-slate-500 uppercase group-hover:text-blue-600 transition">
-              {isStaffAdvisor ? 'My Assigned Clients' : 'Total Customers'}
-            </span>
-            <div className="p-2 rounded-xl bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition"><Users className="h-4 w-4" /></div>
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-extrabold text-slate-500 uppercase group-hover:text-blue-600 transition">
+                {isStaffAdvisor ? 'My Assigned Clients' : 'Total Customers'}
+              </span>
+              <div className="p-2 rounded-xl bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition">
+                <Users className="h-4 w-4" />
+              </div>
+            </div>
+            <p className="text-2xl font-black text-slate-900 mt-2">
+              {isStaffAdvisor ? myAssignedCustomers.length : currentMetrics.customers}
+            </p>
           </div>
-          <p className="text-2xl font-black text-slate-900">
-            {isStaffAdvisor ? myAssignedCustomers.length : currentMetrics.customers}
-          </p>
-          <div className="flex items-center justify-between pt-1">
+          <div className="flex items-center justify-between pt-3 border-t border-slate-100 mt-2">
             <span className="badge badge-green text-[10px]">
               {isStaffAdvisor ? 'Assigned Portfolios' : 'Active Registered'}
             </span>
@@ -1819,15 +1823,19 @@ export const Dashboard = () => {
 
         <div 
           onClick={() => setActiveModal('ACTIVE_POLICIES')}
-          className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-card space-y-2 hover:border-purple-500 hover:shadow-lg transition cursor-pointer group relative"
+          className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-card flex flex-col justify-between min-h-[145px] hover:border-purple-500 hover:shadow-lg transition cursor-pointer group relative"
           title="Click to view active policies & portfolio distribution"
         >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-extrabold text-slate-500 uppercase group-hover:text-purple-600 transition">Active Policies</span>
-            <div className="p-2 rounded-xl bg-purple-50 text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition"><FileText className="h-4 w-4" /></div>
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-extrabold text-slate-500 uppercase group-hover:text-purple-600 transition">Active Policies</span>
+              <div className="p-2 rounded-xl bg-purple-50 text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition">
+                <FileText className="h-4 w-4" />
+              </div>
+            </div>
+            <p className="text-2xl font-black text-slate-900 mt-2">{currentMetrics.activePolicies.toLocaleString()}</p>
           </div>
-          <p className="text-2xl font-black text-slate-900">{currentMetrics.activePolicies.toLocaleString()}</p>
-          <div className="flex items-center justify-between pt-1">
+          <div className="flex items-center justify-between pt-3 border-t border-slate-100 mt-2">
             <span className="badge badge-purple text-[10px]">{currentMetrics.activePolicies} Active Folios</span>
             <span className="text-[10px] font-extrabold text-purple-600 hover:underline flex items-center space-x-0.5">
               <span>View Details</span>
@@ -1838,16 +1846,24 @@ export const Dashboard = () => {
 
         <div 
           onClick={() => setActiveModal('INVESTMENTS_VOLUME')}
-          className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-card space-y-2 hover:border-emerald-500 hover:shadow-lg transition cursor-pointer group relative"
+          className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-card flex flex-col justify-between min-h-[145px] hover:border-emerald-500 hover:shadow-lg transition cursor-pointer group relative"
           title="Click to view investments volume analysis"
         >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-extrabold text-slate-500 uppercase group-hover:text-emerald-600 transition">Investments Volume</span>
-            <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition"><IndianRupee className="h-4 w-4" /></div>
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-extrabold text-slate-500 uppercase group-hover:text-emerald-600 transition">Investments Volume</span>
+              <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition">
+                <IndianRupee className="h-4 w-4" />
+              </div>
+            </div>
+            <p className="text-2xl font-black text-slate-900 mt-2">{currentMetrics.investmentVolume}</p>
           </div>
-          <p className="text-2xl font-black text-slate-900">{currentMetrics.investmentVolume}</p>
-          <div className="flex items-center justify-between pt-1">
+          <div className="flex items-center justify-between pt-3 border-t border-slate-100 mt-2">
             <span className="badge badge-green text-[10px]">Active Portfolios</span>
+            <span className="text-[10px] font-extrabold text-emerald-600 hover:underline flex items-center space-x-0.5">
+              <span>View Details</span>
+              <ChevronRight className="h-3 w-3" />
+            </span>
           </div>
         </div>
 
@@ -1855,26 +1871,30 @@ export const Dashboard = () => {
         {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') && (
           <div 
             onClick={() => setActiveModal('COMPANY_EXPENDITURE')}
-              className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-card space-y-2 hover:border-amber-500 hover:shadow-lg transition cursor-pointer group relative"
-              title="Click to view detailed company operating expenditure breakdown"
-            >
+            className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-card flex flex-col justify-between min-h-[145px] hover:border-amber-500 hover:shadow-lg transition cursor-pointer group relative"
+            title="Click to view detailed company operating expenditure breakdown"
+          >
+            <div>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-extrabold text-slate-500 uppercase group-hover:text-amber-600 transition">Company Expenditure</span>
-                <div className="p-2 rounded-xl bg-amber-50 text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition"><Building2 className="h-4 w-4" /></div>
+                <div className="p-2 rounded-xl bg-amber-50 text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition">
+                  <Building2 className="h-4 w-4" />
+                </div>
               </div>
-              <p className="text-2xl font-black text-slate-900">
+              <p className="text-2xl font-black text-slate-900 mt-2">
                 ₹{(companyOperatingExpenses.totalAmount / 100000).toFixed(2)} L
               </p>
-              <div className="flex items-center justify-between pt-1">
-                <span className="badge bg-amber-100 text-amber-800 text-[10px]">
-                  Rent, Software &amp; Infra
-                </span>
-                <span className="text-[10px] font-extrabold text-amber-600 hover:underline flex items-center space-x-0.5">
-                  <span>View Details</span>
-                  <ChevronRight className="h-3 w-3" />
-                </span>
-              </div>
             </div>
+            <div className="flex items-center justify-between pt-3 border-t border-slate-100 mt-2">
+              <span className="badge bg-amber-100 text-amber-800 text-[10px]">
+                Rent, Software &amp; Infra
+              </span>
+              <span className="text-[10px] font-extrabold text-amber-600 hover:underline flex items-center space-x-0.5">
+                <span>View Details</span>
+                <ChevronRight className="h-3 w-3" />
+              </span>
+            </div>
+          </div>
         )}
       </div>
 
