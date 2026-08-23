@@ -251,6 +251,61 @@ export const Followups = () => {
     alert(`Follow-up step ${editingStage.stepId} updated & notification sent to ${editingStage.assignedTo}!`);
   };
 
+  const handleDeleteClientFollowup = (clientId, clientName) => {
+    if (window.confirm(`Are you sure you want to completely delete the follow-up record for "${clientName}"? This will remove all associated stages and history.`)) {
+      setClientData(prev => prev.filter(c => c.clientId !== clientId));
+      setSpreadsheetData(prev => prev.filter(s => s.clientName !== clientName));
+      if (selectedClientHistoryModal?.clientId === clientId) {
+        setSelectedClientHistoryModal(null);
+      }
+      alert(`Follow-up record for "${clientName}" has been deleted successfully!`);
+    }
+  };
+
+  const handleDeleteStage = (clientId, stepId) => {
+    const client = clientData.find(c => c.clientId === clientId);
+    if (!client) return;
+
+    if (client.history.length <= 1) {
+      if (window.confirm(`This is the only stage for "${client.clientName}". Deleting it will remove the customer follow-up record completely. Proceed?`)) {
+        handleDeleteClientFollowup(clientId, client.clientName);
+      }
+      return;
+    }
+
+    if (window.confirm(`Are you sure you want to delete follow-up step ${stepId}?`)) {
+      const updated = clientData.map(c => {
+        if (c.clientId === clientId) {
+          const updatedHistory = c.history.filter(h => h.stepId !== stepId);
+          const lastIdx = updatedHistory.length - 1;
+          const finalHistory = updatedHistory.map((h, i) => ({
+            ...h,
+            isCurrentActive: i === lastIdx
+          }));
+          const lastStep = finalHistory[lastIdx];
+          return {
+            ...c,
+            currentStage: lastStep.stageName,
+            currentAssignedTo: lastStep.assignedTo,
+            currentCreatedBy: lastStep.createdBy,
+            overallStatus: lastStep.status,
+            history: finalHistory
+          };
+        }
+        return c;
+      });
+      setClientData(updated);
+      alert(`Step ${stepId} deleted successfully!`);
+    }
+  };
+
+  const handleDeleteSpreadsheetFollowup = (id, clientName) => {
+    if (window.confirm(`Are you sure you want to delete this follow-up entry for "${clientName}"?`)) {
+      setSpreadsheetData(prev => prev.filter(s => s.id !== id));
+      alert(`Follow-up entry for "${clientName}" has been deleted!`);
+    }
+  };
+
   const isStaffAdvisor = user?.role === 'EMPLOYEE' || user?.role === 'USER' || user?.role === 'STAFF';
 
   const isFollowupAssignedToStaff = (item) => {
@@ -478,6 +533,7 @@ export const Followups = () => {
 
                   <div className="flex items-center space-x-2">
                     <button 
+                      type="button"
                       onClick={() => { setTargetClientForNewStage(client); setShowAddStageModal(true); }}
                       className="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs shadow transition cursor-pointer flex items-center space-x-1.5"
                     >
@@ -485,11 +541,21 @@ export const Followups = () => {
                       <span>+ Add Follow-up Stage</span>
                     </button>
                     <button 
+                      type="button"
                       onClick={() => setSelectedClientHistoryModal(client)}
                       className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition cursor-pointer flex items-center space-x-1"
                     >
                       <Layers className="h-3.5 w-3.5 text-blue-600" />
                       <span>Full Lifecycle ({client.history.length} Steps)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteClientFollowup(client.clientId, client.clientName)}
+                      className="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs border border-rose-200 transition cursor-pointer flex items-center space-x-1.5"
+                      title="Delete Customer Follow-up Completely"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      <span>Delete</span>
                     </button>
                   </div>
                 </div>
@@ -563,13 +629,25 @@ export const Followups = () => {
 
                           <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[10px]">
                             <span className="font-extrabold text-slate-800">👤 {step.assignedTo}</span>
-                            <button 
-                              onClick={() => { setEditingStage({ ...step }); setEditingClientId(client.clientId); setShowEditStageModal(true); }}
-                              className="text-blue-600 hover:underline font-extrabold flex items-center space-x-0.5"
-                            >
-                              <Edit3 className="h-3 w-3" />
-                              <span>Edit Step</span>
-                            </button>
+                            <div className="flex items-center space-x-2">
+                              <button 
+                                type="button"
+                                onClick={() => { setEditingStage({ ...step }); setEditingClientId(client.clientId); setShowEditStageModal(true); }}
+                                className="text-blue-600 hover:underline font-extrabold flex items-center space-x-0.5 cursor-pointer"
+                              >
+                                <Edit3 className="h-3 w-3" />
+                                <span>Edit</span>
+                              </button>
+                              <button 
+                                type="button"
+                                onClick={() => handleDeleteStage(client.clientId, step.stepId)}
+                                className="text-rose-600 hover:underline font-extrabold flex items-center space-x-0.5 cursor-pointer"
+                                title="Delete Step"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                                <span>Delete</span>
+                              </button>
+                            </div>
                           </div>
                         </div>
                       );
@@ -595,7 +673,8 @@ export const Followups = () => {
                   <th className="p-3.5 border-r border-slate-800">Insurance Company</th>
                   <th className="p-3.5 border-r border-slate-800">Sales Pitch</th>
                   <th className="p-3.5 border-r border-slate-800">Client Status</th>
-                  <th className="p-3.5">Advisor Notes</th>
+                  <th className="p-3.5 border-r border-slate-800">Advisor Notes</th>
+                  <th className="p-3.5 text-center">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 text-xs font-semibold text-slate-800">
@@ -642,7 +721,17 @@ export const Followups = () => {
                           {f.clientStatus}
                         </span>
                       </td>
-                      <td className="p-3.5 text-slate-700 italic font-medium">{f.advisorNotes}</td>
+                      <td className="p-3.5 text-slate-700 italic font-medium border-r border-slate-200/80">{f.advisorNotes}</td>
+                      <td className="p-3.5 text-center">
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteSpreadsheetFollowup(f.id, f.clientName)}
+                          className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-100 hover:text-rose-800 border border-rose-200 transition cursor-pointer inline-flex items-center justify-center"
+                          title="Delete Follow-up Entry"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </td>
                     </tr>
                   );
                 }))}
@@ -673,9 +762,24 @@ export const Followups = () => {
                   </div>
                   <h4 className="text-sm font-black text-slate-900">{step.stageName}</h4>
                   <p className="text-xs text-slate-700 bg-white p-3 rounded-xl border border-slate-200">{step.conversationNotes}</p>
-                  <div className="flex items-center justify-between text-xs pt-1">
-                    <span>👤 Assigned: <strong>{step.assignedTo}</strong></span>
-                    <span>✍️ Created By: <strong>{step.createdBy}</strong></span>
+                  <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-200">
+                    <span>👤 Assigned: <strong>{step.assignedTo}</strong> • ✍️ By: <strong>{step.createdBy}</strong></span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleDeleteStage(selectedClientHistoryModal.clientId, step.stepId);
+                        const remaining = selectedClientHistoryModal.history.filter(h => h.stepId !== step.stepId);
+                        if (remaining.length === 0) {
+                          setSelectedClientHistoryModal(null);
+                        } else {
+                          setSelectedClientHistoryModal({ ...selectedClientHistoryModal, history: remaining });
+                        }
+                      }}
+                      className="text-rose-600 hover:underline font-extrabold flex items-center space-x-1 cursor-pointer"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                      <span>Delete Step</span>
+                    </button>
                   </div>
                 </div>
               ))}
