@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { 
   ShieldCheck, Clock, User, FileText, Search, Filter, Plus, Download, 
-  Sparkles, CheckCircle2, Lock, X, Activity, UserCheck
+  Sparkles, CheckCircle2, Lock, X, Activity, UserCheck, Calendar
 } from 'lucide-react';
 
 const DEFAULT_AUDIT_LOGS = [
@@ -20,6 +20,8 @@ export const AuditLogs = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedModule, setSelectedModule] = useState('ALL');
+  const [filterStartDate, setFilterStartDate] = useState('');
+  const [filterEndDate, setFilterEndDate] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
 
   const [newLogForm, setNewLogForm] = useState({
@@ -47,6 +49,15 @@ export const AuditLogs = () => {
 
     if (!matchesSearch) return false;
     if (selectedModule !== 'ALL' && module !== selectedModule) return false;
+
+    if (filterStartDate || filterEndDate) {
+      const logDate = log.timestamp ? new Date(log.timestamp) : null;
+      if (logDate && !isNaN(logDate.getTime())) {
+        if (filterStartDate && logDate < new Date(filterStartDate + 'T00:00:00')) return false;
+        if (filterEndDate && logDate > new Date(filterEndDate + 'T23:59:59')) return false;
+      }
+    }
+
     return true;
   });
 
@@ -175,21 +186,65 @@ export const AuditLogs = () => {
           />
         </div>
 
-        <div className="flex items-center space-x-2 w-full sm:w-auto">
-          <Filter className="h-4 w-4 text-slate-400" />
-          <select
-            value={selectedModule}
-            onChange={(e) => setSelectedModule(e.target.value)}
-            className="px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold bg-white outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer"
-          >
-            <option value="ALL">All Modules ({logsList.length})</option>
-            <option value="Auth">Auth &amp; Login</option>
-            <option value="Customers">Customers</option>
-            <option value="Policies">Policies</option>
-            <option value="Claims">Claims</option>
-            <option value="Followups">Followups</option>
-            <option value="Staff Portal">Staff Portal</option>
-          </select>
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+          <div className="flex items-center space-x-2">
+            <Filter className="h-4 w-4 text-slate-400" />
+            <select
+              value={selectedModule}
+              onChange={(e) => setSelectedModule(e.target.value)}
+              className="px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-bold bg-white outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer"
+            >
+              <option value="ALL">All Modules ({logsList.length})</option>
+              <option value="Auth">Auth &amp; Login</option>
+              <option value="Customers">Customers</option>
+              <option value="Policies">Policies</option>
+              <option value="Claims">Claims</option>
+              <option value="Followups">Followups</option>
+              <option value="Staff Portal">Staff Portal</option>
+            </select>
+          </div>
+
+          {/* Date Range Custom Filter */}
+          <div className="flex items-center space-x-2 bg-slate-50 px-3 py-1 rounded-xl border border-slate-200">
+            <div className="flex items-center space-x-1 text-slate-600 font-bold text-xs shrink-0">
+              <Calendar className="h-3.5 w-3.5 text-slate-500" />
+              <span>Date:</span>
+            </div>
+            <input 
+              type="date" 
+              value={filterStartDate} 
+              onChange={(e) => setFilterStartDate(e.target.value)}
+              className="px-2 py-1 text-xs font-medium rounded-lg border border-slate-300 bg-white text-slate-800 shadow-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="dd-mm-yyyy"
+            />
+            <span className="text-slate-400 font-bold">-</span>
+            <input 
+              type="date" 
+              value={filterEndDate} 
+              onChange={(e) => setFilterEndDate(e.target.value)}
+              className="px-2 py-1 text-xs font-medium rounded-lg border border-slate-300 bg-white text-slate-800 shadow-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="dd-mm-yyyy"
+            />
+            <button
+              type="button"
+              onClick={() => {}}
+              className="px-3 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition cursor-pointer flex items-center justify-center"
+            >
+              Filter
+            </button>
+            {(filterStartDate || filterEndDate) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setFilterStartDate('');
+                  setFilterEndDate('');
+                }}
+                className="text-xs text-rose-600 font-bold hover:underline cursor-pointer"
+              >
+                Clear
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

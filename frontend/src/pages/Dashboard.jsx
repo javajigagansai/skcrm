@@ -1738,28 +1738,42 @@ export const Dashboard = () => {
 
         {/* Custom Date Range Selector (Visible when Custom Date is selected) */}
         {dateFilter === 'CUSTOM' && (
-          <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-100 bg-slate-50/80 p-3 rounded-xl">
-            <div className="flex items-center space-x-2">
-              <label className="text-xs font-bold text-slate-600">From:</label>
-              <input 
-                type="date" 
-                value={customStartDate} 
-                onChange={(e) => setCustomStartDate(e.target.value)}
-                className="px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+          <div className="flex flex-wrap items-center gap-2.5 pt-3 border-t border-slate-100 bg-slate-50/80 p-3 rounded-xl">
+            <div className="flex items-center space-x-1.5 text-slate-600 font-bold text-xs shrink-0">
+              <CalendarIcon className="h-4 w-4 text-slate-500" />
+              <span>Date:</span>
             </div>
-            <div className="flex items-center space-x-2">
-              <label className="text-xs font-bold text-slate-600">To:</label>
-              <input 
-                type="date" 
-                value={customEndDate} 
-                onChange={(e) => setCustomEndDate(e.target.value)}
-                className="px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+            <input 
+              type="date" 
+              value={customStartDate} 
+              onChange={(e) => setCustomStartDate(e.target.value)}
+              className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-300 bg-white text-slate-800 shadow-xs focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[135px]"
+              placeholder="dd-mm-yyyy"
+            />
+            <span className="text-slate-400 font-bold">-</span>
+            <input 
+              type="date" 
+              value={customEndDate} 
+              onChange={(e) => setCustomEndDate(e.target.value)}
+              className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-300 bg-white text-slate-800 shadow-xs focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[135px]"
+              placeholder="dd-mm-yyyy"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                if (!customStartDate && !customEndDate) {
+                  const today = new Date().toISOString().split('T')[0];
+                  setCustomStartDate(today);
+                  setCustomEndDate(today);
+                }
+              }}
+              className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition cursor-pointer flex items-center justify-center"
+            >
+              Filter
+            </button>
             {customStartDate && customEndDate && (
-              <span className="badge badge-brand text-[10px]">
-                Range: {customStartDate} ➔ {customEndDate}
+              <span className="badge badge-brand text-[10px] ml-1">
+                Active Range: {customStartDate} ➔ {customEndDate}
               </span>
             )}
           </div>

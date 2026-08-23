@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCustomer360 } from '../context/Customer360Context';
 import { useData } from '../context/DataContext';
 import { downloadPolicyCertificate, exportFollowupsPDF, exportPoliciesExcel } from '../utils/exportUtils';
-import { FileText, Plus, Search, CheckCircle2, Edit3, Trash2, X, Shield, ShieldCheck, Download, Building2, Sparkles, UserCheck, Filter, RotateCcw, FileSpreadsheet } from 'lucide-react';
+import { FileText, Plus, Search, CheckCircle2, Edit3, Trash2, X, Shield, ShieldCheck, Download, Building2, Sparkles, UserCheck, Filter, RotateCcw, FileSpreadsheet, Calendar } from 'lucide-react';
 
 export const Policies = () => {
   const { user } = useAuth();
@@ -42,6 +42,8 @@ export const Policies = () => {
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [filterStaff, setFilterStaff] = useState('ALL');
   const [filterPremiumRange, setFilterPremiumRange] = useState('ALL');
+  const [filterStartDate, setFilterStartDate] = useState('');
+  const [filterEndDate, setFilterEndDate] = useState('');
 
   const [showIssueModal, setShowIssueModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -54,6 +56,8 @@ export const Policies = () => {
     setFilterStatus('ALL');
     setFilterStaff('ALL');
     setFilterPremiumRange('ALL');
+    setFilterStartDate('');
+    setFilterEndDate('');
   };
 
   // New Policy Form State
@@ -216,16 +220,25 @@ export const Policies = () => {
         if (filterPremiumRange === 'ABOVE_1L' && prem <= 100000) return false;
       }
 
+      if (filterStartDate) {
+        if (pol.startDate && pol.startDate < filterStartDate) return false;
+      }
+      if (filterEndDate) {
+        if (pol.startDate && pol.startDate > filterEndDate) return false;
+      }
+
       return true;
     });
-  }, [policies, searchTerm, filterCategory, filterCompany, filterStatus, filterStaff, filterPremiumRange]);
+  }, [policies, searchTerm, filterCategory, filterCompany, filterStatus, filterStaff, filterPremiumRange, filterStartDate, filterEndDate]);
 
   const activeFiltersCount = (searchTerm ? 1 : 0) +
     (filterCategory !== 'ALL' ? 1 : 0) +
     (filterCompany !== 'ALL' ? 1 : 0) +
     (filterStatus !== 'ALL' ? 1 : 0) +
     (filterStaff !== 'ALL' ? 1 : 0) +
-    (filterPremiumRange !== 'ALL' ? 1 : 0);
+    (filterPremiumRange !== 'ALL' ? 1 : 0) +
+    (filterStartDate ? 1 : 0) +
+    (filterEndDate ? 1 : 0);
 
   // Extract unique staff members for dropdown
   const uniqueStaffAdvisors = useMemo(() => {
@@ -393,6 +406,48 @@ export const Policies = () => {
             </select>
           </div>
 
+        </div>
+
+        {/* Date Range Custom Filter */}
+        <div className="flex flex-wrap items-center gap-2.5 pt-3 border-t border-slate-100 bg-slate-50/70 p-3 rounded-2xl">
+          <div className="flex items-center space-x-1.5 text-slate-600 font-bold text-xs shrink-0">
+            <Calendar className="h-4 w-4 text-slate-500" />
+            <span>Date:</span>
+          </div>
+          <input 
+            type="date" 
+            value={filterStartDate} 
+            onChange={(e) => setFilterStartDate(e.target.value)}
+            className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-300 bg-white text-slate-800 shadow-xs focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[135px]"
+            placeholder="dd-mm-yyyy"
+          />
+          <span className="text-slate-400 font-bold">-</span>
+          <input 
+            type="date" 
+            value={filterEndDate} 
+            onChange={(e) => setFilterEndDate(e.target.value)}
+            className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-300 bg-white text-slate-800 shadow-xs focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[135px]"
+            placeholder="dd-mm-yyyy"
+          />
+          <button
+            type="button"
+            onClick={() => {}}
+            className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition cursor-pointer flex items-center justify-center"
+          >
+            Filter
+          </button>
+          {(filterStartDate || filterEndDate) && (
+            <button
+              type="button"
+              onClick={() => {
+                setFilterStartDate('');
+                setFilterEndDate('');
+              }}
+              className="text-xs text-rose-600 font-bold hover:underline cursor-pointer ml-1"
+            >
+              Clear Date
+            </button>
+          )}
         </div>
 
         {/* Active Filter Summary Bar */}

@@ -23,6 +23,8 @@ export const Renewals = () => {
   const [filterType, setFilterType] = useState('ALL');
   const [filterInsurer, setFilterInsurer] = useState('ALL');
   const [filterPremiumRange, setFilterPremiumRange] = useState('ALL');
+  const [filterStartDate, setFilterStartDate] = useState('');
+  const [filterEndDate, setFilterEndDate] = useState('');
   const [toastMessage, setToastMessage] = useState(null);
 
   const clearAllFilters = () => {
@@ -31,6 +33,8 @@ export const Renewals = () => {
     setFilterType('ALL');
     setFilterInsurer('ALL');
     setFilterPremiumRange('ALL');
+    setFilterStartDate('');
+    setFilterEndDate('');
   };
 
   const renewalsList = (policies || []).map(p => {
@@ -123,15 +127,24 @@ export const Renewals = () => {
         if (filterPremiumRange === 'ABOVE_50K' && prem <= 50000) return false;
       }
 
+      if (filterStartDate) {
+        if (r.dueDate && r.dueDate < filterStartDate) return false;
+      }
+      if (filterEndDate) {
+        if (r.dueDate && r.dueDate > filterEndDate) return false;
+      }
+
       return true;
     });
-  }, [renewalsList, searchTerm, filterStatus, filterType, filterInsurer, filterPremiumRange]);
+  }, [renewalsList, searchTerm, filterStatus, filterType, filterInsurer, filterPremiumRange, filterStartDate, filterEndDate]);
 
   const activeFiltersCount = (searchTerm ? 1 : 0) +
     (filterStatus !== 'ALL' ? 1 : 0) +
     (filterType !== 'ALL' ? 1 : 0) +
     (filterInsurer !== 'ALL' ? 1 : 0) +
-    (filterPremiumRange !== 'ALL' ? 1 : 0);
+    (filterPremiumRange !== 'ALL' ? 1 : 0) +
+    (filterStartDate ? 1 : 0) +
+    (filterEndDate ? 1 : 0);
 
   // KPI Metrics
   const totalDueCount = renewalsList.filter(r => r.status === 'DUE_SOON').length;
@@ -314,6 +327,48 @@ export const Renewals = () => {
             </select>
           </div>
 
+        </div>
+
+        {/* Date Range Custom Filter */}
+        <div className="flex flex-wrap items-center gap-2.5 pt-3 border-t border-slate-100 bg-slate-50/70 p-3 rounded-2xl">
+          <div className="flex items-center space-x-1.5 text-slate-600 font-bold text-xs shrink-0">
+            <Calendar className="h-4 w-4 text-slate-500" />
+            <span>Date:</span>
+          </div>
+          <input 
+            type="date" 
+            value={filterStartDate} 
+            onChange={(e) => setFilterStartDate(e.target.value)}
+            className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-300 bg-white text-slate-800 shadow-xs focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[135px]"
+            placeholder="dd-mm-yyyy"
+          />
+          <span className="text-slate-400 font-bold">-</span>
+          <input 
+            type="date" 
+            value={filterEndDate} 
+            onChange={(e) => setFilterEndDate(e.target.value)}
+            className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-300 bg-white text-slate-800 shadow-xs focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[135px]"
+            placeholder="dd-mm-yyyy"
+          />
+          <button
+            type="button"
+            onClick={() => {}}
+            className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition cursor-pointer flex items-center justify-center"
+          >
+            Filter
+          </button>
+          {(filterStartDate || filterEndDate) && (
+            <button
+              type="button"
+              onClick={() => {
+                setFilterStartDate('');
+                setFilterEndDate('');
+              }}
+              className="text-xs text-rose-600 font-bold hover:underline cursor-pointer ml-1"
+            >
+              Clear Date
+            </button>
+          )}
         </div>
 
         {/* Summary Bar */}
