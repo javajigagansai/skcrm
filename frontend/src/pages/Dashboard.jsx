@@ -2630,9 +2630,9 @@ export const Dashboard = () => {
         </div>
       )}
 
-      {/* EXECUTIVE BUSINESS ANALYTICS & PORTFOLIO DISTRIBUTION CHARTS */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* GRAPH 1: Income vs Expense Variance */}
+      {/* EXECUTIVE BUSINESS ANALYTICS: INCOME VS EXPENSE */}
+      <div className="grid grid-cols-1 gap-6">
+        {/* Income vs Expense Variance */}
         <div 
           onClick={() => setActiveModal('INCOME_EXPENSE_CHART')}
           className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-card space-y-4 hover:border-emerald-400 hover:shadow-md transition cursor-pointer group"
@@ -2673,45 +2673,6 @@ export const Dashboard = () => {
                 <Bar dataKey="income" fill="#10B981" radius={[6, 6, 0, 0]} barSize={dateFilter === 'THIS_MONTH' ? 12 : 24} name="Income (Lakhs)" />
                 <Bar dataKey="expense" fill="#EF4444" radius={[6, 6, 0, 0]} barSize={dateFilter === 'THIS_MONTH' ? 12 : 24} name="Expense (Lakhs)" />
               </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* GRAPH 2: Product Portfolio Distribution Donut Chart */}
-        <div 
-          onClick={() => setActiveModal('PRODUCT_DISTRIBUTION_CHART')}
-          className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-card space-y-4 hover:border-brand hover:shadow-md transition cursor-pointer group"
-          title="Click to view detailed product share breakdown"
-        >
-          <div className="flex items-center justify-between border-b pb-3">
-            <div>
-              <h3 className="text-sm font-extrabold text-slate-900 group-hover:text-blue-600 transition flex items-center space-x-1.5">
-                <span>Insurance &amp; Financial Portfolio Share (%)</span>
-                <ArrowUpRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition" />
-              </h3>
-            </div>
-            <span className="badge badge-brand text-[10px]">Product Mix</span>
-          </div>
-
-          <div className="h-[340px] w-full bg-slate-50/50 p-4 rounded-2xl border border-slate-100 flex items-center justify-center">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={dynamicProductDistributionChart}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={65}
-                  outerRadius={105}
-                  paddingAngle={4}
-                  dataKey="value"
-                >
-                  {dynamicProductDistributionChart.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend wrapperStyle={{ paddingTop: '10px' }} />
-              </PieChart>
             </ResponsiveContainer>
           </div>
         </div>
