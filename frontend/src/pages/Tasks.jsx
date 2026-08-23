@@ -126,9 +126,11 @@ export const Tasks = () => {
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">
             {isStaffAdvisor ? 'My Assigned Tasks Desk' : 'Task & Follow-up Desk'}
           </h1>
-          <p className="text-xs text-slate-500 font-semibold">
-            {isStaffAdvisor ? 'Tasks assigned specifically to your staff profile for execution.' : 'Assign tasks, track deadlines, and monitor advisor execution in real-time.'}
-          </p>
+          {isStaffAdvisor && (
+            <p className="text-xs text-slate-500 font-semibold">
+              Tasks assigned specifically to your staff profile for execution.
+            </p>
+          )}
         </div>
         {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
           <button 
