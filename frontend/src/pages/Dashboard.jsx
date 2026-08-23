@@ -2694,7 +2694,6 @@ export const Dashboard = () => {
                 <ArrowUpRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition" />
               </h3>
             </div>
-            <span className="badge badge-green text-[10px]">Net Margin +64%</span>
           </div>
 
           <div className="h-[340px] w-full bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
