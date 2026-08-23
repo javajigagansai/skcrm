@@ -345,28 +345,138 @@ export const INSURANCE_PRODUCTS_CATALOG = {
 };
 
 /**
+ * Retrieves the live merged catalog from LocalStorage or base catalog.
+ */
+export const getLiveCatalog = () => {
+  try {
+    const saved = localStorage.getItem('crm_v2_insurance_catalog');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
+        // Deep merge with base catalog to ensure base items aren't lost while custom items are preserved
+        const merged = { ...INSURANCE_PRODUCTS_CATALOG };
+        Object.keys(parsed).forEach(comp => {
+          if (!merged[comp]) {
+            merged[comp] = parsed[comp];
+          } else {
+            merged[comp] = { ...merged[comp] };
+            Object.keys(parsed[comp]).forEach(cat => {
+              if (!merged[comp][cat]) {
+                merged[comp][cat] = parsed[comp][cat];
+              } else {
+                // Merge unique items preserving order
+                const set = new Set([...merged[comp][cat], ...parsed[comp][cat]]);
+                merged[comp][cat] = Array.from(set);
+              }
+            });
+          }
+        });
+        return merged;
+      }
+    }
+  } catch (e) {
+    console.error("Error reading live catalog from storage", e);
+  }
+  return INSURANCE_PRODUCTS_CATALOG;
+};
+
+/**
+ * Saves live catalog to LocalStorage and dispatches sync event across CRM.
+ */
+export const saveLiveCatalog = (catalog) => {
+  try {
+    localStorage.setItem('crm_v2_insurance_catalog', JSON.stringify(catalog));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('crm_catalog_updated', { detail: catalog }));
+    }
+  } catch (e) {
+    console.error("Error saving live catalog to storage", e);
+  }
+};
+
+/**
+ * Add a new Plan Name for a specific Insurance Company and Category.
+ */
+export const addCustomPlan = (companyName, categoryName, planName) => {
+  if (!companyName || !categoryName || !planName || !planName.trim()) return null;
+  const catalog = getLiveCatalog();
+  const trimmedCompany = companyName.trim();
+  const trimmedCategory = categoryName.trim();
+  const trimmedPlan = planName.trim();
+
+  // Find or create company entry
+  const compKey = Object.keys(catalog).find(
+    k => k.toLowerCase().trim() === trimmedCompany.toLowerCase()
+  ) || trimmedCompany;
+
+  if (!catalog[compKey]) {
+    catalog[compKey] = {};
+  }
+
+  // Find or create category entry
+  const catKey = Object.keys(catalog[compKey]).find(
+    c => c.toLowerCase().trim() === trimmedCategory.toLowerCase()
+  ) || trimmedCategory;
+
+  if (!catalog[compKey][catKey]) {
+    catalog[compKey][catKey] = [];
+  }
+
+  // Prevent duplicate plan names
+  if (!catalog[compKey][catKey].some(p => p.toLowerCase().trim() === trimmedPlan.toLowerCase())) {
+    catalog[compKey][catKey] = [trimmedPlan, ...catalog[compKey][catKey]];
+    saveLiveCatalog(catalog);
+  }
+
+  return catalog;
+};
+
+/**
+ * Delete a specific Plan Name from a Company and Category.
+ */
+export const deleteCustomPlan = (companyName, categoryName, planName) => {
+  if (!companyName || !categoryName || !planName) return null;
+  const catalog = getLiveCatalog();
+  const compKey = Object.keys(catalog).find(
+    k => k.toLowerCase().trim() === companyName.toLowerCase().trim()
+  );
+  if (!compKey || !catalog[compKey]) return catalog;
+
+  const catKey = Object.keys(catalog[compKey]).find(
+    c => c.toLowerCase().trim() === categoryName.toLowerCase().trim()
+  );
+  if (!catKey || !catalog[compKey][catKey]) return catalog;
+
+  catalog[compKey][catKey] = catalog[compKey][catKey].filter(
+    p => p.toLowerCase().trim() !== planName.toLowerCase().trim()
+  );
+
+  saveLiveCatalog(catalog);
+  return catalog;
+};
+
+/**
  * Returns predefined policy names for a given insurance company and category.
  * If exact match isn't found, returns all policies for that company, or category fallbacks.
  */
 export const getPredefinedPolicies = (companyName, categoryName) => {
   if (!companyName) return [];
+  const catalog = getLiveCatalog();
 
   // Normalize company name match
-  const compKey = Object.keys(INSURANCE_PRODUCTS_CATALOG).find(
+  const compKey = Object.keys(catalog).find(
     k => k.toLowerCase().trim() === companyName.toLowerCase().trim() ||
          k.toLowerCase().includes(companyName.toLowerCase().trim()) ||
          companyName.toLowerCase().includes(k.toLowerCase().trim())
   );
 
   if (!compKey) {
-    // Return generic category recommendations
     return getGenericCategoryPolicies(categoryName);
   }
 
-  const compData = INSURANCE_PRODUCTS_CATALOG[compKey] || {};
+  const compData = catalog[compKey] || {};
 
   if (categoryName && categoryName !== 'ALL' && categoryName !== 'CUSTOM') {
-    // Look for exact or fuzzy category match
     const catKey = Object.keys(compData).find(
       c => c.toLowerCase().trim() === categoryName.toLowerCase().trim() ||
            c.toLowerCase().includes(categoryName.toLowerCase().trim()) ||
@@ -378,7 +488,6 @@ export const getPredefinedPolicies = (companyName, categoryName) => {
     }
   }
 
-  // If category wasn't specified, aggregate all policies for this company
   const allForComp = [];
   Object.values(compData).forEach(arr => {
     if (Array.isArray(arr)) allForComp.push(...arr);

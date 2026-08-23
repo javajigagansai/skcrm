@@ -6,12 +6,16 @@ import { downloadPolicyCertificate, exportFollowupsPDF, exportPoliciesExcel } fr
 import { 
   FileText, Plus, Search, CheckCircle2, Edit3, Trash2, X, 
   Shield, ShieldCheck, Download, Building2, Sparkles, UserCheck, 
-  Filter, RotateCcw, FileSpreadsheet, Calendar, Layers, Check
+  Filter, RotateCcw, FileSpreadsheet, Calendar, Layers, Check,
+  BookOpen, FolderPlus, ListPlus
 } from 'lucide-react';
 import { 
   INSURANCE_COMPANIES, 
   POLICY_CATEGORIES, 
   getPredefinedPolicies, 
+  getLiveCatalog,
+  addCustomPlan,
+  deleteCustomPlan,
   INSURANCE_PRODUCTS_CATALOG 
 } from '../data/insuranceCatalog';
 
@@ -19,7 +23,10 @@ export const Policies = () => {
   const { user } = useAuth();
   const { openCustomer360 } = useCustomer360();
   const { policies, addPolicy, setPolicies } = useData();
-  const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN' || user?.role === 'MANAGER';
+
+  // Catalog Version State for reactive CRM-wide updates
+  const [catalogVersion, setCatalogVersion] = useState(0);
 
   // Dynamic Insurance Companies List with LocalStorage Persistence
   const [insuranceCompanies, setInsuranceCompanies] = useState(() => {
@@ -48,8 +55,13 @@ export const Policies = () => {
     ];
   });
 
+  // Manage Catalog Modal State
+  const [showCatalogModal, setShowCatalogModal] = useState(false);
+  const [catalogModalTab, setCatalogModalTab] = useState('PLANS'); // 'PLANS' | 'COMPANIES'
+  const [manageSelectedCompany, setManageSelectedCompany] = useState('Star Health Insurance');
+  const [manageSelectedCategory, setManageSelectedCategory] = useState('Health Insurance');
+  const [newPlanNameInput, setNewPlanNameInput] = useState('');
   const [newCompanyName, setNewCompanyName] = useState('');
-  const [showManageCompaniesModal, setShowManageCompaniesModal] = useState(false);
 
   // Filters State
   const [searchTerm, setSearchTerm] = useState('');
@@ -64,6 +76,15 @@ export const Policies = () => {
   const [showIssueModal, setShowIssueModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingPolicy, setEditingPolicy] = useState(null);
+
+  // Sync across CRM on custom catalog events
+  useEffect(() => {
+    const handleCatalogUpdate = () => {
+      setCatalogVersion(v => v + 1);
+    };
+    window.addEventListener('crm_catalog_updated', handleCatalogUpdate);
+    return () => window.removeEventListener('crm_catalog_updated', handleCatalogUpdate);
+  }, []);
 
   const clearAllFilters = () => {
     setSearchTerm('');
@@ -97,14 +118,19 @@ export const Policies = () => {
     const comp = newPolicy.insuranceCompany === 'CUSTOM' ? newPolicy.customCompany : newPolicy.insuranceCompany;
     const cat = newPolicy.type === 'CUSTOM' ? newPolicy.customType : newPolicy.type;
     return getPredefinedPolicies(comp, cat);
-  }, [newPolicy.insuranceCompany, newPolicy.customCompany, newPolicy.type, newPolicy.customType]);
+  }, [newPolicy.insuranceCompany, newPolicy.customCompany, newPolicy.type, newPolicy.customType, catalogVersion]);
 
   const editingPolicyAvailablePlans = useMemo(() => {
     if (!editingPolicy) return [];
     const comp = editingPolicy.insuranceCompany === 'CUSTOM' ? editingPolicy.customCompany : editingPolicy.insuranceCompany;
     const cat = editingPolicy.type === 'CUSTOM' ? editingPolicy.customType : editingPolicy.type;
     return getPredefinedPolicies(comp, cat);
-  }, [editingPolicy?.insuranceCompany, editingPolicy?.customCompany, editingPolicy?.type, editingPolicy?.customType]);
+  }, [editingPolicy?.insuranceCompany, editingPolicy?.customCompany, editingPolicy?.type, editingPolicy?.customType, catalogVersion]);
+
+  // Plans listed inside the Admin Catalog Management Modal
+  const currentManagePlansList = useMemo(() => {
+    return getPredefinedPolicies(manageSelectedCompany, manageSelectedCategory);
+  }, [manageSelectedCompany, manageSelectedCategory, catalogVersion]);
 
   const saveCompaniesToStorage = (list) => {
     setInsuranceCompanies(list);
@@ -114,20 +140,39 @@ export const Policies = () => {
   const handleAddCompany = (e) => {
     e.preventDefault();
     if (!newCompanyName.trim()) return;
-    if (insuranceCompanies.includes(newCompanyName.trim())) {
+    if (insuranceCompanies.some(c => c.toLowerCase().trim() === newCompanyName.trim().toLowerCase())) {
       alert("This insurance company already exists in the registry!");
       return;
     }
     const updated = [...insuranceCompanies, newCompanyName.trim()];
     saveCompaniesToStorage(updated);
     setNewCompanyName('');
-    alert(`Insurance Company "${newCompanyName.trim()}" added successfully!`);
+    alert(`Insurance Company "${newCompanyName.trim()}" registered successfully across the entire CRM!`);
   };
 
   const handleDeleteCompany = (compName) => {
     if (window.confirm(`Are you sure you want to remove "${compName}" from the insurance companies directory?`)) {
       const updated = insuranceCompanies.filter(c => c !== compName);
       saveCompaniesToStorage(updated);
+    }
+  };
+
+  // Add Plan Name handler for Admin
+  const handleAddNewPlan = (e) => {
+    e.preventDefault();
+    if (!newPlanNameInput.trim()) return;
+    addCustomPlan(manageSelectedCompany, manageSelectedCategory, newPlanNameInput.trim());
+    setCatalogVersion(v => v + 1);
+    const addedName = newPlanNameInput.trim();
+    setNewPlanNameInput('');
+    alert(`Plan "${addedName}" added to "${manageSelectedCompany}" (${manageSelectedCategory})!\n\nThis plan is now directly available across all policy forms in the CRM.`);
+  };
+
+  // Delete Plan Name handler for Admin
+  const handleDeletePlan = (planName) => {
+    if (window.confirm(`Are you sure you want to remove plan "${planName}" from "${manageSelectedCompany}" (${manageSelectedCategory})?`)) {
+      deleteCustomPlan(manageSelectedCompany, manageSelectedCategory, planName);
+      setCatalogVersion(v => v + 1);
     }
   };
 
@@ -332,12 +377,14 @@ export const Policies = () => {
             </>
           )}
 
+          {/* Admin Managed Plans & Catalog Button */}
           <button 
-            onClick={() => setShowManageCompaniesModal(true)}
-            className="flex items-center space-x-2 px-4 py-2.5 rounded-2xl bg-purple-50 hover:bg-purple-100 text-purple-700 font-extrabold text-xs shadow-xs border border-purple-200 transition cursor-pointer"
+            onClick={() => setShowCatalogModal(true)}
+            className="flex items-center space-x-2 px-4 py-2.5 rounded-2xl bg-purple-50 hover:bg-purple-100 text-purple-800 font-extrabold text-xs shadow-xs border border-purple-200 transition cursor-pointer"
+            title="Configure and add custom plan names and company categories"
           >
-            <Building2 className="h-4 w-4 text-purple-600" />
-            <span>Manage Companies ({insuranceCompanies.length})</span>
+            <Layers className="h-4 w-4 text-purple-600" />
+            <span>Manage Plans &amp; Catalog</span>
           </button>
 
           <button 
@@ -616,68 +663,214 @@ export const Policies = () => {
         </div>
       </div>
 
-      {/* ================= MANAGE INSURANCE COMPANIES MODAL ================= */}
-      {showManageCompaniesModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-100">
-            <div className="flex items-center justify-between border-b pb-3">
-              <h3 className="text-base font-black text-slate-900 flex items-center space-x-2">
-                <Building2 className="h-5 w-5 text-purple-600" />
-                <span>Insurance Companies Directory</span>
-              </h3>
-              <button onClick={() => setShowManageCompaniesModal(false)} className="text-slate-400 hover:text-slate-600"><X className="h-5 w-5" /></button>
+      {/* ================= ADMIN MASTER CATALOG & PLANS MANAGEMENT MODAL ================= */}
+      {showCatalogModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 space-y-5 shadow-2xl border border-slate-100 my-8">
+            <div className="flex items-center justify-between border-b pb-3.5">
+              <div>
+                <h3 className="text-base font-black text-slate-900 flex items-center space-x-2">
+                  <Layers className="h-5 w-5 text-purple-600" />
+                  <span>Insurance Catalog &amp; Plan Management Center</span>
+                </h3>
+                <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                  Configure real-world policy plan names for each company &amp; category. Changes reflect instantly across all CRM dropdowns and forms.
+                </p>
+              </div>
+              <button onClick={() => setShowCatalogModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                <X className="h-5 w-5" />
+              </button>
             </div>
 
-            {/* Add New Company Form */}
-            <form onSubmit={handleAddCompany} className="space-y-2">
-              <label className="block text-[11px] font-black uppercase text-slate-600">Add New Insurance Company</label>
-              <div className="flex items-center space-x-2">
-                <input 
-                  type="text" 
-                  required
-                  placeholder="e.g. Max Life / Reliance General"
-                  value={newCompanyName}
-                  onChange={(e) => setNewCompanyName(e.target.value)}
-                  className="flex-1 px-3 py-2 rounded-xl border text-xs font-semibold outline-none focus:ring-2 focus:ring-purple-600"
-                />
-                <button 
-                  type="submit"
-                  className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs transition cursor-pointer shrink-0"
-                >
-                  + Add
-                </button>
-              </div>
-            </form>
+            {/* Modal Tabs */}
+            <div className="flex items-center space-x-2 bg-slate-100 p-1 rounded-2xl">
+              <button
+                onClick={() => setCatalogModalTab('PLANS')}
+                className={`flex-1 py-2 rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center space-x-1.5 ${
+                  catalogModalTab === 'PLANS' ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <BookOpen className="h-4 w-4" />
+                <span>1. Manage Policy Plans ({manageSelectedCompany})</span>
+              </button>
+              <button
+                onClick={() => setCatalogModalTab('COMPANIES')}
+                className={`flex-1 py-2 rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center space-x-1.5 ${
+                  catalogModalTab === 'COMPANIES' ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Building2 className="h-4 w-4" />
+                <span>2. Manage Insurance Companies ({insuranceCompanies.length})</span>
+              </button>
+            </div>
 
-            {/* Company List */}
-            <div className="space-y-2 max-h-60 overflow-y-auto pr-1 border-t pt-3">
-              <span className="text-[11px] font-black uppercase text-slate-500 block mb-1">Active Insurers ({insuranceCompanies.length})</span>
-              {insuranceCompanies.map((comp, idx) => (
-                <div key={idx} className="flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-800">
-                  <span className="flex items-center space-x-2">
-                    <Building2 className="h-3.5 w-3.5 text-purple-600" />
-                    <span>{comp}</span>
-                  </span>
-
-                  {isAdmin && (
-                    <button 
-                      onClick={() => handleDeleteCompany(comp)}
-                      className="p-1 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition"
-                      title="Delete Company"
+            {/* TAB 1: MANAGE PLAN NAMES BY COMPANY & CATEGORY */}
+            {catalogModalTab === 'PLANS' && (
+              <div className="space-y-4">
+                {/* Select Company & Category Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-purple-50/50 p-3.5 rounded-2xl border border-purple-100">
+                  <div>
+                    <label className="block text-[11px] font-black uppercase text-purple-950 mb-1">
+                      Step 1: Select Insurance Company
+                    </label>
+                    <select
+                      value={manageSelectedCompany}
+                      onChange={(e) => setManageSelectedCompany(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-purple-200 text-xs font-bold bg-white outline-none focus:ring-2 focus:ring-purple-600"
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
+                      {insuranceCompanies.map((comp, idx) => (
+                        <option key={idx} value={comp}>{comp}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-black uppercase text-purple-950 mb-1">
+                      Step 2: Select Policy Category
+                    </label>
+                    <select
+                      value={manageSelectedCategory}
+                      onChange={(e) => setManageSelectedCategory(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-purple-200 text-xs font-bold bg-white outline-none focus:ring-2 focus:ring-purple-600"
+                    >
+                      {POLICY_CATEGORIES.map((cat, idx) => (
+                        <option key={idx} value={cat}>{cat}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Add New Plan Name Form */}
+                <form onSubmit={handleAddNewPlan} className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2">
+                  <label className="block text-[11px] font-black uppercase text-slate-700 flex items-center justify-between">
+                    <span className="flex items-center space-x-1.5">
+                      <ListPlus className="h-4 w-4 text-purple-600" />
+                      <span>Add New Policy / Plan Name to {manageSelectedCompany}</span>
+                    </span>
+                    <span className="text-purple-700 font-extrabold text-[10px]">{manageSelectedCategory}</span>
+                  </label>
+                  <div className="flex items-center space-x-2">
+                    <input 
+                      type="text"
+                      required
+                      placeholder="e.g. Star Comprehensive Platinum Cover / Optima Super Secure 4X..."
+                      value={newPlanNameInput}
+                      onChange={(e) => setNewPlanNameInput(e.target.value)}
+                      className="flex-1 px-3 py-2 rounded-xl border border-slate-300 text-xs font-bold outline-none focus:ring-2 focus:ring-purple-600 bg-white"
+                    />
+                    <button 
+                      type="submit"
+                      className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs transition cursor-pointer shrink-0 shadow-xs flex items-center space-x-1"
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span>Add Plan</span>
                     </button>
+                  </div>
+                </form>
+
+                {/* Active Registered Plans List */}
+                <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-black uppercase text-slate-500">
+                      Active Registered Plans ({currentManagePlansList.length})
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-bold">
+                      {manageSelectedCompany} • {manageSelectedCategory}
+                    </span>
+                  </div>
+
+                  {currentManagePlansList.length === 0 ? (
+                    <div className="p-4 text-center rounded-2xl border border-dashed border-slate-200 text-xs text-slate-400 font-bold">
+                      No custom plans configured for this company/category yet. Add one using the form above!
+                    </div>
+                  ) : (
+                    currentManagePlansList.map((planName, idx) => (
+                      <div key={idx} className="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 shadow-2xs hover:border-purple-300 transition">
+                        <div className="flex items-center space-x-2.5">
+                          <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
+                          <div>
+                            <p className="font-extrabold text-slate-900">{planName}</p>
+                            <p className="text-[10px] text-slate-400 font-semibold">{manageSelectedCompany}</p>
+                          </div>
+                        </div>
+
+                        {isAdmin && (
+                          <button 
+                            onClick={() => handleDeletePlan(planName)}
+                            className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                            title={`Remove "${planName}" from catalog`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    ))
                   )}
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
 
-            <div className="pt-2">
+            {/* TAB 2: MANAGE INSURANCE COMPANIES */}
+            {catalogModalTab === 'COMPANIES' && (
+              <div className="space-y-4">
+                {/* Add New Company Form */}
+                <form onSubmit={handleAddCompany} className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2">
+                  <label className="block text-[11px] font-black uppercase text-slate-700 flex items-center space-x-1.5">
+                    <FolderPlus className="h-4 w-4 text-purple-600" />
+                    <span>Register New Insurance Company</span>
+                  </label>
+                  <div className="flex items-center space-x-2">
+                    <input 
+                      type="text" 
+                      required
+                      placeholder="e.g. Kotak General Insurance / Universal Sompo..."
+                      value={newCompanyName}
+                      onChange={(e) => setNewCompanyName(e.target.value)}
+                      className="flex-1 px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold outline-none focus:ring-2 focus:ring-purple-600 bg-white"
+                    />
+                    <button 
+                      type="submit"
+                      className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs transition cursor-pointer shrink-0 shadow-xs flex items-center space-x-1"
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span>Add Insurer</span>
+                    </button>
+                  </div>
+                </form>
+
+                {/* Company List */}
+                <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                  <span className="text-[11px] font-black uppercase text-slate-500 block mb-1">
+                    Registered Insurance Providers ({insuranceCompanies.length})
+                  </span>
+                  {insuranceCompanies.map((comp, idx) => (
+                    <div key={idx} className="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 shadow-2xs hover:border-purple-300 transition">
+                      <span className="flex items-center space-x-2.5">
+                        <Building2 className="h-4 w-4 text-purple-600" />
+                        <span className="font-extrabold text-slate-900">{comp}</span>
+                      </span>
+
+                      {isAdmin && (
+                        <button 
+                          onClick={() => handleDeleteCompany(comp)}
+                          className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                          title="Delete Company"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="pt-2 border-t">
               <button 
-                onClick={() => setShowManageCompaniesModal(false)}
-                className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-extrabold text-xs transition cursor-pointer"
+                onClick={() => setShowCatalogModal(false)}
+                className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs transition cursor-pointer"
               >
-                Close Directory
+                Close Catalog Management Center
               </button>
             </div>
           </div>
