@@ -63,7 +63,6 @@ export const Expenses = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">Expense Management Tracker</h1>
-          <p className="text-xs text-slate-500 font-semibold">Monitor branch operations expenses, staff salaries, marketing, and utilities.</p>
         </div>
         {user?.role !== 'VIEWER' && (
           <button 
