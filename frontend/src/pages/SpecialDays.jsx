@@ -14,14 +14,6 @@ export const SpecialDays = () => {
   const [activeTab, setActiveTab] = useState('CUSTOMERS'); // 'CUSTOMERS' | 'STAFF'
   const [dateRangeFilter, setDateRangeFilter] = useState('TODAY'); // 'TODAY' (Current Day Only), 'THIS_MONTH', 'ALL'
 
-  const [dailyReportStatus, setDailyReportStatus] = useState(() => {
-    const saved = localStorage.getItem('crm_v2_daily_greetings_status');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
-    }
-    return null;
-  });
-
   // Real-time calculation of Customer Special Days
   const customerEvents = useMemo(() => {
     if (!customers || !Array.isArray(customers)) return [];
@@ -195,19 +187,6 @@ export const SpecialDays = () => {
     window.open(whatsappUrl, '_blank');
   };
 
-  const handleCompleteAllWishes = () => {
-    const statusObj = {
-      status: 'COMPLETED',
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      officer: user?.name || 'Greetings Officer',
-      count: customerEvents.length + staffCelebrations.length,
-      date: new Date().toISOString().split('T')[0]
-    };
-    localStorage.setItem('crm_v2_daily_greetings_status', JSON.stringify(statusObj));
-    setDailyReportStatus(statusObj);
-    alert(`Daily Greetings Status Updated!\n\nAll today's customer & staff colleague special day wishes have been completed and reported up-to-date to Super Admin!`);
-  };
-
   return (
     <div className="space-y-6">
 
@@ -238,38 +217,6 @@ export const SpecialDays = () => {
             <span>Staff &amp; Colleague Celebrations</span>
           </button>
         </div>
-      </div>
-
-      {/* Admin Reporting Banner */}
-      <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-emerald-800 text-white p-5 rounded-3xl shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-emerald-500/30">
-        <div className="flex items-center space-x-3.5">
-          <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-md">
-            <CheckCircle2 className="h-6 w-6 text-amber-300" />
-          </div>
-          <div>
-            <h3 className="font-extrabold text-sm flex items-center space-x-2">
-              <span>Daily Greetings &amp; Admin Update Center</span>
-              <span className="badge bg-amber-400 text-slate-900 text-[10px] font-black uppercase">Live Real-Time Sync</span>
-            </h3>
-            <p className="text-xs text-emerald-100 mt-0.5">
-              {dailyReportStatus?.status === 'COMPLETED' 
-                ? `100% Up to Date! Reported to Admin by ${dailyReportStatus.officer} at ${dailyReportStatus.timestamp}`
-                : `Click button once all today's special day wishes are sent to notify Admin that greetings are 100% up-to-date.`}
-            </p>
-          </div>
-        </div>
-
-        <button
-          onClick={handleCompleteAllWishes}
-          className={`px-5 py-2.5 rounded-2xl font-black text-xs shadow-lg transition flex items-center space-x-2 cursor-pointer shrink-0 ${
-            dailyReportStatus?.status === 'COMPLETED'
-              ? 'bg-white text-emerald-900 shadow-md hover:bg-emerald-50'
-              : 'bg-amber-400 hover:bg-amber-300 text-slate-900 ring-4 ring-amber-400/30'
-          }`}
-        >
-          <Check className="h-4 w-4" />
-          <span>{dailyReportStatus?.status === 'COMPLETED' ? "Report Sent: All Wishes Up-To-Date!" : "Mark All Today's Wishes Completed & Notify Admin"}</span>
-        </button>
       </div>
 
       {/* Date Filter Bar */}
