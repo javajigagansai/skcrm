@@ -12,7 +12,6 @@ export const SpecialDays = () => {
   const { customers } = useData();
 
   const [activeTab, setActiveTab] = useState('CUSTOMERS'); // 'CUSTOMERS' | 'STAFF'
-  const [dateRangeFilter, setDateRangeFilter] = useState('TODAY'); // 'TODAY' (Current Day Only), 'THIS_MONTH', 'ALL'
 
   // Real-time calculation of Customer Special Days
   const customerEvents = useMemo(() => {
@@ -146,25 +145,12 @@ export const SpecialDays = () => {
   }, []);
 
   const filteredCustomerEvents = useMemo(() => {
-    if (dateRangeFilter === 'TODAY') {
-      const todayList = customerEvents.filter(e => e.isToday);
-      return todayList.length > 0 ? todayList : customerEvents.slice(0, 2);
-    } else if (dateRangeFilter === 'THIS_MONTH') {
-      const currentMonthStr = String(new Date().getMonth() + 1).padStart(2, '0');
-      return customerEvents.filter(e => {
-        const parts = (e.date || '').split('-');
-        return parts.length === 3 && parts[1] === currentMonthStr;
-      });
-    }
-    return customerEvents;
-  }, [customerEvents, dateRangeFilter]);
+    return [...customerEvents].sort((a, b) => (b.isToday ? 1 : 0) - (a.isToday ? 1 : 0));
+  }, [customerEvents]);
 
   const filteredStaffCelebrations = useMemo(() => {
-    if (dateRangeFilter === 'TODAY') {
-      return staffCelebrations.slice(0, 2);
-    }
     return staffCelebrations;
-  }, [staffCelebrations, dateRangeFilter]);
+  }, [staffCelebrations]);
 
   const handleSendWhatsAppWish = (evt) => {
     const rawPhone = (evt.phone || '9876543210').replace(/\D/g, '');
@@ -215,31 +201,6 @@ export const SpecialDays = () => {
           >
             <UserCheck className="h-4 w-4" />
             <span>Staff &amp; Colleague Celebrations</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Date Filter Bar */}
-      <div className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-card flex items-center justify-between flex-wrap gap-3">
-        <span className="text-xs font-black uppercase text-slate-700 tracking-wider">Date Period Filter:</span>
-        <div className="flex items-center space-x-2 bg-slate-100 p-1.5 rounded-2xl">
-          <button 
-            onClick={() => setDateRangeFilter('TODAY')}
-            className={`px-4 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${dateRangeFilter === 'TODAY' ? 'bg-amber-500 text-white shadow-md' : 'text-slate-600 hover:text-slate-900'}`}
-          >
-            🌟 Today
-          </button>
-          <button 
-            onClick={() => setDateRangeFilter('THIS_MONTH')}
-            className={`px-4 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${dateRangeFilter === 'THIS_MONTH' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-600 hover:text-slate-900'}`}
-          >
-            📅 Monthly
-          </button>
-          <button 
-            onClick={() => setDateRangeFilter('ALL')}
-            className={`px-4 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${dateRangeFilter === 'ALL' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-600 hover:text-slate-900'}`}
-          >
-            📋 All
           </button>
         </div>
       </div>
