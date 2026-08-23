@@ -48,7 +48,8 @@ export const Tasks = () => {
     customerName: '',
     description: '',
     assignedStaff: 'Priya Sharma',
-    dueDate: '2026-08-15',
+    dueDate: new Date().toISOString().split('T')[0],
+    dueTime: '10:00',
     priority: 'MEDIUM',
     status: 'PENDING'
   });
@@ -94,7 +95,7 @@ export const Tasks = () => {
       recipientName: newTask.assignedStaff,
       type: 'TASK_ASSIGNED',
       title: 'New Task Assigned 📋',
-      message: `${newTask.title}: ${newTask.description}`,
+      message: `${newTask.title} (Due: ${newTask.dueDate}${newTask.dueTime ? ` at ${newTask.dueTime}` : ''}): ${newTask.description}`,
       taskId: taskObj.id
     });
 
@@ -109,6 +110,7 @@ export const Tasks = () => {
       description: '',
       assignedStaff: 'Priya Sharma',
       dueDate: new Date().toISOString().split('T')[0],
+      dueTime: '10:00',
       priority: 'MEDIUM',
       status: 'PENDING'
     });
@@ -204,8 +206,9 @@ export const Tasks = () => {
                     <UserCheck className="h-3.5 w-3.5 text-blue-600" />
                     <span>Assigned To: <strong className="text-slate-900">{t.assignedStaff || t.assignedToName || 'Staff'}</strong></span>
                   </span>
-                  <span className={t.dueDate && new Date(t.dueDate) < new Date() && !isDone ? 'text-red-600 font-black' : ''}>
-                    Due: {t.dueDate}
+                  <span className={`flex items-center space-x-1 ${t.dueDate && new Date(t.dueDate) < new Date() && !isDone ? 'text-red-600 font-black' : 'text-slate-700 font-extrabold'}`}>
+                    <Clock className="h-3.5 w-3.5 text-slate-400" />
+                    <span>Due: {t.dueDate}{t.dueTime ? ` at ${t.dueTime}` : ''}</span>
                   </span>
                 </div>
               </div>
@@ -228,13 +231,13 @@ export const Tasks = () => {
           <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between border-b pb-3">
               <h3 className="text-base font-black text-slate-900">Assign New Task</h3>
-              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600"><X className="h-5 w-5" /></button>
+              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer"><X className="h-5 w-5" /></button>
             </div>
 
             <form onSubmit={handleCreateTask} className="space-y-3 text-xs font-semibold">
               <div>
-                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Task Title</label>
-                <input type="text" required value={newTask.title} onChange={(e) => setNewTask({...newTask, title: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600 font-bold" placeholder="e.g. Follow up on Health SIP Policy" />
+                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Task Title *</label>
+                <input type="text" required value={newTask.title} onChange={(e) => setNewTask({...newTask, title: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600 font-bold bg-white" />
               </div>
               
               <div>
@@ -242,7 +245,7 @@ export const Tasks = () => {
                 <select 
                   value={newTask.assignedStaff} 
                   onChange={(e) => setNewTask({...newTask, assignedStaff: e.target.value})} 
-                  className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white"
+                  className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white cursor-pointer"
                 >
                   {staffList.map((st, idx) => (
                     <option key={idx} value={st}>{st}</option>
@@ -252,12 +255,13 @@ export const Tasks = () => {
 
               <div>
                 <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Description</label>
-                <textarea required value={newTask.description} onChange={(e) => setNewTask({...newTask, description: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600 font-medium" rows="3" placeholder="Provide task instructions..."></textarea>
+                <textarea value={newTask.description} onChange={(e) => setNewTask({...newTask, description: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600 font-medium bg-white" rows="3"></textarea>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+
+              <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Priority</label>
-                  <select value={newTask.priority} onChange={(e) => setNewTask({...newTask, priority: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white">
+                  <select value={newTask.priority} onChange={(e) => setNewTask({...newTask, priority: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white cursor-pointer">
                     <option value="HIGH">HIGH</option>
                     <option value="MEDIUM">MEDIUM</option>
                     <option value="LOW">LOW</option>
@@ -265,7 +269,11 @@ export const Tasks = () => {
                 </div>
                 <div>
                   <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Due Date</label>
-                  <input type="date" value={newTask.dueDate} onChange={(e) => setNewTask({...newTask, dueDate: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600 font-mono font-bold" />
+                  <input type="date" value={newTask.dueDate} onChange={(e) => setNewTask({...newTask, dueDate: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600 font-mono font-bold bg-white" />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Due Time</label>
+                  <input type="time" value={newTask.dueTime || ''} onChange={(e) => setNewTask({...newTask, dueTime: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600 font-mono font-bold bg-white" />
                 </div>
               </div>
               <button type="submit" className="w-full py-2.5 rounded-xl bg-blue-600 text-white font-extrabold text-xs shadow hover:bg-blue-700 cursor-pointer">Save &amp; Assign Task</button>

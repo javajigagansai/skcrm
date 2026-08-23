@@ -958,7 +958,7 @@ export const Customer360Provider = ({ children }) => {
                           <span className="text-xs font-black text-slate-900">{tsk.title}</span>
                           <span className="badge bg-blue-100 text-blue-800 text-[10px] font-extrabold">{tsk.status}</span>
                         </div>
-                        <p className="text-xs text-slate-500">Due: {tsk.dueDate} • Priority: {tsk.priority} • Assigned: {tsk.assignedStaff}</p>
+                        <p className="text-xs text-slate-500">Due: {tsk.dueDate}{tsk.dueTime ? ` at ${tsk.dueTime}` : ''} • Priority: {tsk.priority} • Assigned: {tsk.assignedStaff}</p>
                       </div>
                     ))}
 
