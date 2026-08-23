@@ -387,7 +387,7 @@ export const Followups = () => {
               className={`px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center space-x-1.5 ${viewMode === 'SPREADSHEET_TABLE' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-700 hover:text-slate-900'}`}
             >
               <FileSpreadsheet className="h-3.5 w-3.5" />
-              <span>Sample Spreadsheet Register (19 Entries)</span>
+              <span>Follow-up Register View</span>
             </button>
           </div>
         </div>
