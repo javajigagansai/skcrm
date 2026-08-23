@@ -1,15 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { User, Mail, Shield, Key, Save, CheckCircle2, Camera, Calendar, Heart, Sparkles, Image, Upload } from 'lucide-react';
-
-const PRESET_AVATARS = [
-  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256',
-  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=256',
-  'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=256',
-  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=256',
-  'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=256',
-  'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=256'
-];
+import { User, Mail, Shield, Key, Save, CheckCircle2, Camera, Calendar, Heart, Sparkles, Upload } from 'lucide-react';
 
 export const Profile = () => {
   const { user, setUser, resetPassword } = useAuth();
@@ -172,25 +163,6 @@ export const Profile = () => {
                 SK CRM Team Member
               </span>
             </div>
-          </div>
-        </div>
-
-        {/* Preset Avatars Selection */}
-        <div className="space-y-2">
-          <label className="block text-xs font-black uppercase text-slate-600 flex items-center space-x-1.5">
-            <Image className="h-3.5 w-3.5 text-blue-600" />
-            <span>Or Pick an Avatar Preset</span>
-          </label>
-          <div className="flex items-center space-x-3 overflow-x-auto pb-2">
-            {PRESET_AVATARS.map((url, idx) => (
-              <img
-                key={idx}
-                src={url}
-                alt={`Avatar ${idx}`}
-                onClick={() => setFormData(prev => ({ ...prev, avatarUrl: url }))}
-                className={`h-12 w-12 rounded-2xl object-cover cursor-pointer transition border-2 ${formData.avatarUrl === url ? 'border-blue-600 scale-105 shadow-md' : 'border-transparent opacity-70 hover:opacity-100'}`}
-              />
-            ))}
           </div>
         </div>
 
