@@ -576,12 +576,16 @@ export const downloadPolicyCertificatePDF = (policy) => {
             <td class="value">${policy.customerName || 'N/A'}</td>
           </tr>
           <tr>
-            <td class="label">Insurance Category:</td>
-            <td class="value">${policy.type || 'N/A'}</td>
+            <td class="label">Insurance Provider:</td>
+            <td class="value">${policy.provider || policy.insuranceCompany || 'N/A'}</td>
           </tr>
           <tr>
-            <td class="label">Insurance Provider:</td>
-            <td class="value">${policy.provider || 'N/A'}</td>
+            <td class="label">Policy Category:</td>
+            <td class="value">${policy.type || policy.category || 'N/A'}</td>
+          </tr>
+          <tr>
+            <td class="label">Policy / Plan Name:</td>
+            <td class="value" style="color:#1e40af;">${policy.policyName || policy.planName || policy.type || 'Standard Protection Plan'}</td>
           </tr>
           <tr>
             <td class="label">Sum Assured / Coverage:</td>
@@ -808,13 +812,14 @@ export const exportCustomerDirectoryExcel = (customerList = []) => {
 
 // Export Insurance Policies Register to Excel (.xlsx)
 export const exportPoliciesExcel = (policyList = []) => {
-  const headers = ['Policy Number', 'Customer Name', 'Insurance Company', 'Policy Category', 'Sum Insured (₹)', 'Gross Premium (₹)', 'Issue Date', 'Expiry Date', 'Assigned Staff Advisor', 'Policy Status'];
+  const headers = ['Policy Number', 'Customer Name', 'Insurance Company', 'Policy Category', 'Policy / Plan Name', 'Sum Insured (₹)', 'Gross Premium (₹)', 'Issue Date', 'Expiry Date', 'Assigned Staff Advisor', 'Policy Status'];
   
   const rows = policyList.map(p => [
     p.id || p.policyNumber || 'SK-POL-101',
     p.customerName || 'N/A',
     p.insuranceCompany || p.provider || 'Star Health Insurance',
     p.type || p.category || 'Health Insurance',
+    p.policyName || p.planName || p.type || 'Standard Policy Plan',
     p.sumInsured ? `₹${Number(p.sumInsured).toLocaleString('en-IN')}` : '₹5,00,000',
     p.grossPremium ? `₹${Number(p.grossPremium).toLocaleString('en-IN')}` : '₹25,000',
     p.startDate || p.issueDate || '2026-01-15',
