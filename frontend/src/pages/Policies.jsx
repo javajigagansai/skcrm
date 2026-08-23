@@ -1017,9 +1017,6 @@ export const Policies = () => {
                     className="w-full px-3 py-2 rounded-xl border border-blue-400 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white"
                   />
                 )}
-                <p className="text-[10px] text-blue-700 font-semibold">
-                  💡 Choose from verified online company catalog or enter a custom customized policy name.
-                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
