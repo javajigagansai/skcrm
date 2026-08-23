@@ -1979,91 +1979,129 @@ export const Dashboard = () => {
 
       {/* ADMIN-ONLY: POLICY CATEGORY OVERVIEW VISUALIZATION */}
       {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') && (
-        <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-card space-y-5">
+        <div className="bg-white p-6 sm:p-7 rounded-3xl border border-slate-200/90 shadow-card space-y-6">
           {/* Header with Title, View Mode Switcher, and Multi-Company Filter */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between border-b pb-4 gap-4">
-            <div>
-              <div className="flex items-center space-x-2.5">
-                <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
-                  <ShieldCheck className="h-5 w-5" />
-                </div>
-                <h3 className="text-base font-black text-slate-900 tracking-tight flex items-center space-x-2">
-                  <span>Policy Category Overview</span>
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between border-b border-slate-100 pb-5 gap-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-2.5 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20">
+                <ShieldCheck className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
+                  Policy Category Overview
                 </h3>
+                <p className="text-xs text-slate-500 font-semibold">
+                  Cross-company policy volume, category distribution &amp; provider performance analytics
+                </p>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2.5 self-start md:self-auto">
-              {/* View Mode Toggle: Dual / By Category / By Company */}
-              <div className="flex items-center bg-slate-100 p-1 rounded-xl text-xs font-bold">
+            <div className="flex flex-wrap items-center gap-2.5 self-start lg:self-auto">
+              {/* Segmented View Mode Toggle */}
+              <div className="flex items-center bg-slate-100/90 p-1 rounded-2xl border border-slate-200/60 text-xs font-bold">
                 <button
+                  type="button"
                   onClick={() => setPolicyOverviewViewMode('DUAL')}
-                  className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${policyOverviewViewMode === 'DUAL' ? 'bg-white text-blue-600 shadow-xs font-black' : 'text-slate-600 hover:text-slate-900'}`}
+                  className={`px-3.5 py-1.5 rounded-xl transition cursor-pointer flex items-center space-x-1.5 ${
+                    policyOverviewViewMode === 'DUAL' 
+                      ? 'bg-white text-blue-600 shadow-sm font-black' 
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
                 >
-                  Dual Comparison
+                  <BarChart3 className="h-3.5 w-3.5" />
+                  <span>Dual View</span>
                 </button>
                 <button
+                  type="button"
                   onClick={() => setPolicyOverviewViewMode('CATEGORY')}
-                  className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${policyOverviewViewMode === 'CATEGORY' ? 'bg-white text-blue-600 shadow-xs font-black' : 'text-slate-600 hover:text-slate-900'}`}
+                  className={`px-3.5 py-1.5 rounded-xl transition cursor-pointer flex items-center space-x-1.5 ${
+                    policyOverviewViewMode === 'CATEGORY' 
+                      ? 'bg-white text-blue-600 shadow-sm font-black' 
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
                 >
-                  By Category
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  <span>By Category</span>
                 </button>
                 <button
+                  type="button"
                   onClick={() => setPolicyOverviewViewMode('COMPANY')}
-                  className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${policyOverviewViewMode === 'COMPANY' ? 'bg-white text-purple-600 shadow-xs font-black' : 'text-slate-600 hover:text-slate-900'}`}
+                  className={`px-3.5 py-1.5 rounded-xl transition cursor-pointer flex items-center space-x-1.5 ${
+                    policyOverviewViewMode === 'COMPANY' 
+                      ? 'bg-white text-purple-600 shadow-sm font-black' 
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
                 >
-                  By Company
+                  <Building2 className="h-3.5 w-3.5" />
+                  <span>By Company</span>
                 </button>
               </div>
 
-              {/* Company Selector Filter */}
-              <div className="flex items-center space-x-1.5">
+              {/* Company Selector Dropdown */}
+              <div className="flex items-center space-x-1.5 bg-slate-50 px-3 py-1.5 rounded-2xl border border-slate-200">
                 <Building2 className="h-4 w-4 text-slate-400 shrink-0" />
                 <select
                   value={selectedCategoryCompanyFilter}
                   onChange={(e) => setSelectedCategoryCompanyFilter(e.target.value)}
-                  className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold bg-white text-slate-800 outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer shadow-xs"
-                  title="Filter policy category breakdown by specific insurance provider"
+                  className="text-xs font-bold bg-transparent text-slate-800 outline-none cursor-pointer pr-1"
+                  title="Filter policy categories by specific insurance provider"
                 >
-                  <option value="ALL">All Companies ({policyCategoryOverview.companies.length})</option>
+                  <option value="ALL">All Providers ({policyCategoryOverview.companies.length})</option>
                   {policyCategoryOverview.companies.map((comp, idx) => (
                     <option key={idx} value={comp}>{comp}</option>
                   ))}
                 </select>
               </div>
 
+              {/* Matrix Table Modal Trigger */}
               <button
+                type="button"
                 onClick={() => setActiveModal('POLICY_CATEGORY_OVERVIEW_MODAL')}
-                className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs transition cursor-pointer flex items-center space-x-1"
-                title="View complete category and company matrix table"
+                className="px-3.5 py-2 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition cursor-pointer flex items-center space-x-1.5 shadow-sm"
+                title="View complete cross-company policy matrix table"
               >
-                <BarChart3 className="h-3.5 w-3.5 text-blue-600" />
-                <span>Matrix</span>
+                <BarChart3 className="h-3.5 w-3.5 text-blue-400" />
+                <span>Matrix Table</span>
               </button>
             </div>
           </div>
 
-          {/* Quick Metrics Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-            <div className="bg-slate-50/80 p-3.5 rounded-2xl border border-slate-200/60">
-              <span className="text-[10px] font-extrabold uppercase text-slate-500 block">Total Policies</span>
-              <p className="text-xl font-black text-slate-900">{policyCategoryOverview.totalPolicies}</p>
-              <span className="text-[10px] text-blue-600 font-bold">Across All Categories</span>
+          {/* Quick Metrics KPI Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/70 space-y-1 hover:bg-slate-50 transition">
+              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Total Policies</span>
+              <p className="text-2xl font-black text-slate-900">{policyCategoryOverview.totalPolicies}</p>
+              <div className="flex items-center space-x-1 pt-0.5">
+                <span className="badge badge-brand text-[10px]">All Portfolio Contracts</span>
+              </div>
             </div>
-            <div className="bg-slate-50/80 p-3.5 rounded-2xl border border-slate-200/60">
-              <span className="text-[10px] font-extrabold uppercase text-slate-500 block">Active Categories</span>
-              <p className="text-xl font-black text-indigo-700">{policyCategoryOverview.chartData.length}</p>
-              <span className="text-[10px] text-slate-500 font-bold">Distinct Segments</span>
+
+            <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/70 space-y-1 hover:bg-slate-50 transition">
+              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Active Categories</span>
+              <p className="text-2xl font-black text-indigo-700">{policyCategoryOverview.chartData.length}</p>
+              <div className="flex items-center space-x-1 pt-0.5">
+                <span className="badge badge-purple text-[10px]">Distinct Segments</span>
+              </div>
             </div>
-            <div className="bg-slate-50/80 p-3.5 rounded-2xl border border-slate-200/60">
-              <span className="text-[10px] font-extrabold uppercase text-slate-500 block">Top Category</span>
-              <p className="text-sm font-black text-emerald-700 truncate">{policyCategoryOverview.topCategory?.category || 'Health Insurance'}</p>
-              <span className="text-[10px] text-emerald-600 font-bold">{policyCategoryOverview.topCategory?.policyCount || 0} Policies ({policyCategoryOverview.totalPolicies ? Math.round(((policyCategoryOverview.topCategory?.policyCount || 0) / policyCategoryOverview.totalPolicies) * 100) : 0}%)</span>
+
+            <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/70 space-y-1 hover:bg-slate-50 transition">
+              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Leading Category</span>
+              <p className="text-base font-black text-emerald-700 truncate">{policyCategoryOverview.topCategory?.category || 'Health Insurance'}</p>
+              <div className="flex items-center space-x-1 pt-0.5">
+                <span className="badge badge-green text-[10px]">
+                  {policyCategoryOverview.topCategory?.policyCount || 0} Policies ({policyCategoryOverview.totalPolicies ? Math.round(((policyCategoryOverview.topCategory?.policyCount || 0) / policyCategoryOverview.totalPolicies) * 100) : 0}%)
+                </span>
+              </div>
             </div>
-            <div className="bg-slate-50/80 p-3.5 rounded-2xl border border-slate-200/60">
-              <span className="text-[10px] font-extrabold uppercase text-slate-500 block">Top Provider</span>
-              <p className="text-sm font-black text-purple-700 truncate">{policyCategoryOverview.topCompany?.name || 'Star Health'}</p>
-              <span className="text-[10px] text-purple-600 font-bold">{policyCategoryOverview.topCompany?.count || 0} Total Policies</span>
+
+            <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/70 space-y-1 hover:bg-slate-50 transition">
+              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Top Partner Insurer</span>
+              <p className="text-base font-black text-purple-700 truncate">{policyCategoryOverview.topCompany?.name || 'Star Health'}</p>
+              <div className="flex items-center space-x-1 pt-0.5">
+                <span className="badge bg-purple-100 text-purple-800 text-[10px] font-extrabold">
+                  {policyCategoryOverview.topCompany?.count || 0} Contracts Underwritten
+                </span>
+              </div>
             </div>
           </div>
 
@@ -2072,13 +2110,20 @@ export const Dashboard = () => {
             
             {/* VISUALIZATION 1: Category Distribution Bar Chart */}
             {(policyOverviewViewMode === 'DUAL' || policyOverviewViewMode === 'CATEGORY') && (
-              <div className="bg-slate-50/60 p-4 rounded-2xl border border-slate-100 space-y-2">
-                <div className="flex items-center justify-between border-b pb-2">
-                  <h4 className="text-xs font-black text-slate-800 flex items-center space-x-1.5">
-                    <ShieldCheck className="h-4 w-4 text-blue-600" />
-                    <span>Policies by Category</span>
-                  </h4>
-                  <span className="badge badge-brand text-[10px]">Category Distribution</span>
+              <div className="bg-slate-50/50 p-5 rounded-2xl border border-slate-100 space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-200/60 pb-2.5">
+                  <div className="flex items-center space-x-2">
+                    <div className="p-1.5 rounded-lg bg-blue-100 text-blue-700">
+                      <ShieldCheck className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black text-slate-800">
+                        Policies by Category
+                      </h4>
+                      <p className="text-[10px] text-slate-500 font-semibold">Distribution of active contracts across insurance types</p>
+                    </div>
+                  </div>
+                  <span className="badge badge-brand text-[10px] font-extrabold">{policyCategoryOverview.chartData.length} Categories</span>
                 </div>
 
                 <div className="h-[310px] w-full">
@@ -2094,7 +2139,7 @@ export const Dashboard = () => {
                         tickLine={false} 
                         axisLine={false} 
                         interval={0}
-                        angle={-20}
+                        angle={-18}
                         textAnchor="end"
                         height={45}
                         tick={{ fontSize: 10, fontWeight: 800, fill: '#334155' }} 
@@ -2114,24 +2159,24 @@ export const Dashboard = () => {
                               : 0;
 
                             return (
-                              <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xl space-y-1.5 text-xs font-semibold max-w-xs">
-                                <div className="flex items-center justify-between border-b border-slate-100 pb-1">
+                              <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xl space-y-2 text-xs font-semibold max-w-xs">
+                                <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
                                   <p className="font-black text-slate-900 text-sm">{data.category}</p>
                                   <span className="badge badge-brand text-[10px]">{sharePct}% Share</span>
                                 </div>
-                                <div className="space-y-0.5">
+                                <div className="space-y-1">
                                   <p className="flex justify-between items-center text-slate-600">
                                     <span>Total Policies:</span>
                                     <span className="font-black text-blue-700">{data.policyCount} Policies</span>
                                   </p>
                                   <p className="flex justify-between items-center text-slate-600">
-                                    <span>Gross Premium:</span>
+                                    <span>Gross Premium Value:</span>
                                     <span className="font-black text-emerald-700">₹{(data.totalPremium || 0).toLocaleString()}</span>
                                   </p>
                                 </div>
                                 {companyKeys.length > 0 && (
-                                  <div className="pt-1.5 border-t border-slate-100">
-                                    <p className="text-[10px] font-extrabold uppercase text-slate-400 mb-0.5">Company Breakdown:</p>
+                                  <div className="pt-2 border-t border-slate-100">
+                                    <p className="text-[10px] font-extrabold uppercase text-slate-400 mb-1">Company Breakdown:</p>
                                     <div className="space-y-0.5">
                                       {companyKeys.slice(0, 4).map(([comp, count], i) => (
                                         <p key={i} className="flex justify-between items-center text-[11px]">
@@ -2169,13 +2214,20 @@ export const Dashboard = () => {
 
             {/* VISUALIZATION 2: Insurance Company Comparison Bar Chart */}
             {(policyOverviewViewMode === 'DUAL' || policyOverviewViewMode === 'COMPANY') && (
-              <div className="bg-slate-50/60 p-4 rounded-2xl border border-slate-100 space-y-2">
-                <div className="flex items-center justify-between border-b pb-2">
-                  <h4 className="text-xs font-black text-slate-800 flex items-center space-x-1.5">
-                    <Building2 className="h-4 w-4 text-purple-600" />
-                    <span>Company Comparison &amp; Share</span>
-                  </h4>
-                  <span className="badge badge-purple text-[10px]">Company Distribution</span>
+              <div className="bg-slate-50/50 p-5 rounded-2xl border border-slate-100 space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-200/60 pb-2.5">
+                  <div className="flex items-center space-x-2">
+                    <div className="p-1.5 rounded-lg bg-purple-100 text-purple-700">
+                      <Building2 className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black text-slate-800">
+                        Company Comparison &amp; Share
+                      </h4>
+                      <p className="text-[10px] text-slate-500 font-semibold">Underwritten volume across partner insurance companies</p>
+                    </div>
+                  </div>
+                  <span className="badge badge-purple text-[10px] font-extrabold">{policyCategoryOverview.companyChartData.length} Providers</span>
                 </div>
 
                 <div className="h-[310px] w-full">
@@ -2191,7 +2243,7 @@ export const Dashboard = () => {
                         tickLine={false} 
                         axisLine={false} 
                         interval={0}
-                        angle={-20}
+                        angle={-18}
                         textAnchor="end"
                         height={45}
                         tick={{ fontSize: 10, fontWeight: 800, fill: '#334155' }} 
@@ -2211,8 +2263,8 @@ export const Dashboard = () => {
                               : 0;
 
                             return (
-                              <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xl space-y-1.5 text-xs font-semibold max-w-xs">
-                                <div className="flex items-center justify-between border-b border-slate-100 pb-1">
+                              <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xl space-y-2 text-xs font-semibold max-w-xs">
+                                <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
                                   <p className="font-black text-slate-900 text-sm">{data.company}</p>
                                   <span className="badge badge-purple text-[10px]">{sharePct}% Share</span>
                                 </div>
@@ -2221,8 +2273,8 @@ export const Dashboard = () => {
                                   <span className="font-black text-purple-700">{data.policyCount} Policies</span>
                                 </p>
                                 {catEntries.length > 0 && (
-                                  <div className="pt-1.5 border-t border-slate-100">
-                                    <p className="text-[10px] font-extrabold uppercase text-slate-400 mb-0.5">Category Breakdown:</p>
+                                  <div className="pt-2 border-t border-slate-100">
+                                    <p className="text-[10px] font-extrabold uppercase text-slate-400 mb-1">Category Breakdown:</p>
                                     <div className="space-y-0.5">
                                       {catEntries.map(([cat, count], i) => (
                                         <p key={i} className="flex justify-between items-center text-[11px]">
@@ -2258,6 +2310,29 @@ export const Dashboard = () => {
               </div>
             )}
 
+          </div>
+
+          {/* Interactive Category Chips Strip */}
+          <div className="pt-2 border-t border-slate-100">
+            <span className="text-[11px] font-black uppercase text-slate-400 block mb-2">Category Portfolio Quick View:</span>
+            <div className="flex flex-wrap items-center gap-2">
+              {policyCategoryOverview.chartData.map((item, idx) => {
+                const pct = policyCategoryOverview.totalPolicies ? Math.round((item.policyCount / policyCategoryOverview.totalPolicies) * 100) : 0;
+                const colors = ['border-blue-200 bg-blue-50/50 text-blue-800', 'border-emerald-200 bg-emerald-50/50 text-emerald-800', 'border-purple-200 bg-purple-50/50 text-purple-800', 'border-amber-200 bg-amber-50/50 text-amber-800', 'border-rose-200 bg-rose-50/50 text-rose-800', 'border-cyan-200 bg-cyan-50/50 text-cyan-800'];
+                const colorClass = colors[idx % colors.length];
+
+                return (
+                  <div 
+                    key={idx} 
+                    className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center space-x-2 transition ${colorClass}`}
+                  >
+                    <span>{item.category}:</span>
+                    <span className="font-black">{item.policyCount}</span>
+                    <span className="text-[10px] font-semibold opacity-75">({pct}%)</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
