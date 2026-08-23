@@ -2641,7 +2641,7 @@ export const Dashboard = () => {
           <div className="flex items-center justify-between border-b pb-3">
             <div>
               <h3 className="text-sm font-extrabold text-slate-900 group-hover:text-emerald-600 transition flex items-center space-x-1.5">
-                <span>Income vs Expense Variance (Lakhs)</span>
+                <span>Income vs Expense</span>
                 <ArrowUpRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition" />
               </h3>
             </div>
