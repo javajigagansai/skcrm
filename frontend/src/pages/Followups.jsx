@@ -348,8 +348,7 @@ export const Followups = () => {
       {/* HEADER BAR WITH EXPORT ACTIONS */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-card">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Client Follow-up Progression &amp; Sales Register</h1>
-          <p className="text-xs text-slate-500 font-semibold">1-Client Consolidated Progression View + Complete Sample Spreadsheet Register with PDF &amp; Excel (.xlsx) Exports.</p>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Client Follow-ups</h1>
         </div>
 
         <div className="flex items-center space-x-2.5">
