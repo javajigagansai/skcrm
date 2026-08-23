@@ -338,9 +338,11 @@ export const Customers = () => {
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">
             {isStaffAdvisor ? 'My Assigned Client Portfolios' : 'Customer 360° Directory'}
           </h1>
-          <p className="text-xs text-slate-500 font-semibold">
-            {isStaffAdvisor ? 'Showing client portfolios assigned to your staff profile.' : 'Complete master client directory with linked policies, family profiles, claims & holdings.'}
-          </p>
+          {isStaffAdvisor && (
+            <p className="text-xs text-slate-500 font-semibold">
+              Showing client portfolios assigned to your staff profile.
+            </p>
+          )}
         </div>
         
         <div className="flex items-center space-x-2.5">
