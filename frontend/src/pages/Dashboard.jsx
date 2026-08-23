@@ -1413,11 +1413,11 @@ export const Dashboard = () => {
                   dataKey="label" 
                   tickLine={false} 
                   axisLine={false} 
-                  interval={dateFilter === 'THIS_MONTH' ? 4 : 0}
-                  angle={0}
-                  textAnchor="middle"
-                  height={dateFilter === 'TODAY' ? 0 : 30}
-                  tick={dateFilter === 'TODAY' ? false : { fontSize: dateFilter === 'THIS_MONTH' ? 10 : 11, fontWeight: 700 }} 
+                  interval={0}
+                  angle={dateFilter === 'THIS_MONTH' ? -45 : 0}
+                  textAnchor={dateFilter === 'THIS_MONTH' ? 'end' : 'middle'}
+                  height={dateFilter === 'TODAY' ? 0 : dateFilter === 'THIS_MONTH' ? 55 : 30}
+                  tick={dateFilter === 'TODAY' ? false : { fontSize: dateFilter === 'THIS_MONTH' ? 9 : 11, fontWeight: 700 }} 
                 />
                 <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700 }} unit="L" />
                 <Tooltip cursor={{ fill: '#F1F5F9' }} />
@@ -2707,11 +2707,11 @@ export const Dashboard = () => {
                   dataKey="month" 
                   tickLine={false} 
                   axisLine={false} 
-                  interval={dateFilter === 'THIS_MONTH' ? 4 : 0}
-                  angle={0}
-                  textAnchor="middle"
-                  height={dateFilter === 'TODAY' ? 0 : 30}
-                  tick={dateFilter === 'TODAY' ? false : { fontSize: dateFilter === 'THIS_MONTH' ? 10 : 11, fontWeight: 700 }} 
+                  interval={0}
+                  angle={dateFilter === 'THIS_MONTH' ? -45 : 0}
+                  textAnchor={dateFilter === 'THIS_MONTH' ? 'end' : 'middle'}
+                  height={dateFilter === 'TODAY' ? 0 : dateFilter === 'THIS_MONTH' ? 55 : 30}
+                  tick={dateFilter === 'TODAY' ? false : { fontSize: dateFilter === 'THIS_MONTH' ? 9 : 11, fontWeight: 700 }} 
                 />
                 <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700 }} unit="L" />
                 <Tooltip cursor={{ fill: '#F1F5F9' }} />
