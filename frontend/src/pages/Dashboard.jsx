@@ -452,10 +452,42 @@ export const Dashboard = () => {
         return { label, month: label, revenue, income: revenue, salaryExpense, operationalExpense, totalExpenses, expense: totalExpenses, netProfit, govtTaxAdvantage };
       });
     } else if (dateFilter === 'THIS_WEEK') {
-      const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      const weights = [0.12, 0.16, 0.18, 0.15, 0.19, 0.12, 0.08];
+      // Exact rolling 7 days up to today
+      const days = [];
+      const weights = [0.12, 0.14, 0.16, 0.15, 0.18, 0.15, 0.10];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
+        const dayNum = String(d.getDate()).padStart(2, '0');
+        const monthShort = d.toLocaleDateString('en-US', { month: 'short' });
+        days.push(`${dayNum} ${monthShort} (${dayName})`);
+      }
       return days.map((label, idx) => {
-        const weight = weights[idx];
+        const weight = weights[idx] || (1 / 7);
+        const revenue = Number((totalRevLakhs * weight).toFixed(2));
+        const salaryExpense = Number((totalSalExpLakhs * weight).toFixed(2));
+        const operationalExpense = Number((totalOpExpLakhs * weight).toFixed(2));
+        const totalExpenses = Number((salaryExpense + operationalExpense).toFixed(2));
+        const netProfit = Number((revenue - totalExpenses).toFixed(2));
+        const govtTaxAdvantage = Number((totalExpenses * 0.25).toFixed(2));
+        return { label, month: label, revenue, income: revenue, salaryExpense, operationalExpense, totalExpenses, expense: totalExpenses, netProfit, govtTaxAdvantage };
+      });
+    } else if (dateFilter === 'THIS_MONTH') {
+      // Rolling 4 weekly slices spanning 1 month back up to today
+      const intervals = [];
+      const weights = [0.22, 0.28, 0.24, 0.26];
+      for (let i = 3; i >= 0; i--) {
+        const start = new Date();
+        start.setDate(start.getDate() - ((i + 1) * 7) + 1);
+        const end = new Date();
+        end.setDate(end.getDate() - (i * 7));
+        const startStr = `${String(start.getDate()).padStart(2, '0')} ${start.toLocaleDateString('en-US', { month: 'short' })}`;
+        const endStr = i === 0 ? 'Today' : `${String(end.getDate()).padStart(2, '0')} ${end.toLocaleDateString('en-US', { month: 'short' })}`;
+        intervals.push(`${startStr} - ${endStr}`);
+      }
+      return intervals.map((label, idx) => {
+        const weight = weights[idx] || 0.25;
         const revenue = Number((totalRevLakhs * weight).toFixed(2));
         const salaryExpense = Number((totalSalExpLakhs * weight).toFixed(2));
         const operationalExpense = Number((totalOpExpLakhs * weight).toFixed(2));
@@ -465,10 +497,16 @@ export const Dashboard = () => {
         return { label, month: label, revenue, income: revenue, salaryExpense, operationalExpense, totalExpenses, expense: totalExpenses, netProfit, govtTaxAdvantage };
       });
     } else if (dateFilter === 'LAST_MONTH') {
-      const dates = ['W1 (1-7)', 'W2 (8-14)', 'W3 (15-21)', 'W4 (22-30)'];
-      const weights = [0.24, 0.26, 0.25, 0.25];
-      return dates.map((label, idx) => {
-        const weight = weights[idx];
+      // Semi-Annual (Past 6 Months rolling up to today)
+      const months = [];
+      const weights = [0.15, 0.16, 0.18, 0.16, 0.18, 0.17];
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date();
+        d.setMonth(d.getMonth() - i);
+        months.push(d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }));
+      }
+      return months.map((label, idx) => {
+        const weight = weights[idx] || (1 / 6);
         const revenue = Number((totalRevLakhs * 0.9 * weight).toFixed(2));
         const salaryExpense = Number((totalSalExpLakhs * 0.9 * weight).toFixed(2));
         const operationalExpense = Number((totalOpExpLakhs * 0.9 * weight).toFixed(2));
@@ -480,7 +518,7 @@ export const Dashboard = () => {
     } else if (dateFilter === 'CUSTOM') {
       let labels = ['Period 1', 'Period 2', 'Period 3', 'Period 4'];
       if (customStartDate && customEndDate) {
-        labels = [customStartDate, 'Mid Period', customEndDate];
+        labels = [customStartDate, 'Mid Period 1', 'Mid Period 2', customEndDate];
       }
       const weight = 1 / labels.length;
       return labels.map((label) => {
@@ -492,26 +530,14 @@ export const Dashboard = () => {
         const govtTaxAdvantage = Number((totalExpenses * 0.25).toFixed(2));
         return { label, month: label, revenue, income: revenue, salaryExpense, operationalExpense, totalExpenses, expense: totalExpenses, netProfit, govtTaxAdvantage };
       });
-    } else if (dateFilter === 'THIS_MONTH') {
-      const now = new Date();
-      const yr = now.getFullYear();
-      const mo = String(now.getMonth() + 1).padStart(2, '0');
-      const dates = [`07-${mo}-${yr}`, `14-${mo}-${yr}`, `21-${mo}-${yr}`, `28-${mo}-${yr}`];
-      
-      const weights = [0.22, 0.28, 0.24, 0.26];
-      return dates.map((label, idx) => {
-        const weight = weights[idx];
-        const revenue = Number((totalRevLakhs * weight).toFixed(2));
-        const salaryExpense = Number((totalSalExpLakhs * weight).toFixed(2));
-        const operationalExpense = Number((totalOpExpLakhs * weight).toFixed(2));
-        const totalExpenses = Number((salaryExpense + operationalExpense).toFixed(2));
-        const netProfit = Number((revenue - totalExpenses).toFixed(2));
-        const govtTaxAdvantage = Number((totalExpenses * 0.25).toFixed(2));
-        return { label, month: label, revenue, income: revenue, salaryExpense, operationalExpense, totalExpenses, expense: totalExpenses, netProfit, govtTaxAdvantage };
-      });
     } else {
-      // THIS_YEAR (12 Months)
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      // Annual (Past 12 Months rolling up to today)
+      const months = [];
+      for (let i = 11; i >= 0; i--) {
+        const d = new Date();
+        d.setMonth(d.getMonth() - i);
+        months.push(d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }));
+      }
       return months.map((label, idx) => {
         const weight = 0.06 + (idx * 0.004);
         const revenue = Number((totalRevLakhs * weight).toFixed(2));
@@ -542,19 +568,51 @@ export const Dashboard = () => {
         return { month, label: month, newClients, policiesIssued };
       });
     } else if (dateFilter === 'THIS_WEEK') {
-      const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      const weights = [0.12, 0.16, 0.18, 0.15, 0.19, 0.12, 0.08];
+      const days = [];
+      const weights = [0.12, 0.14, 0.16, 0.15, 0.18, 0.15, 0.10];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
+        const dayNum = String(d.getDate()).padStart(2, '0');
+        const monthShort = d.toLocaleDateString('en-US', { month: 'short' });
+        days.push(`${dayNum} ${monthShort} (${dayName})`);
+      }
       return days.map((month, idx) => {
-        const weight = weights[idx];
+        const weight = weights[idx] || (1 / 7);
+        const newClients = Math.max(1, Math.round(totalClients * weight));
+        const policiesIssued = Math.max(1, Math.round(totalPolicies * weight));
+        return { month, label: month, newClients, policiesIssued };
+      });
+    } else if (dateFilter === 'THIS_MONTH') {
+      const intervals = [];
+      const weights = [0.22, 0.28, 0.24, 0.26];
+      for (let i = 3; i >= 0; i--) {
+        const start = new Date();
+        start.setDate(start.getDate() - ((i + 1) * 7) + 1);
+        const end = new Date();
+        end.setDate(end.getDate() - (i * 7));
+        const startStr = `${String(start.getDate()).padStart(2, '0')} ${start.toLocaleDateString('en-US', { month: 'short' })}`;
+        const endStr = i === 0 ? 'Today' : `${String(end.getDate()).padStart(2, '0')} ${end.toLocaleDateString('en-US', { month: 'short' })}`;
+        intervals.push(`${startStr} - ${endStr}`);
+      }
+      return intervals.map((month, idx) => {
+        const weight = weights[idx] || 0.25;
         const newClients = Math.max(1, Math.round(totalClients * weight));
         const policiesIssued = Math.max(1, Math.round(totalPolicies * weight));
         return { month, label: month, newClients, policiesIssued };
       });
     } else if (dateFilter === 'LAST_MONTH') {
-      const dates = ['W1 (1-7)', 'W2 (8-14)', 'W3 (15-21)', 'W4 (22-30)'];
-      const weights = [0.24, 0.26, 0.25, 0.25];
-      return dates.map((month, idx) => {
-        const weight = weights[idx];
+      // Semi-Annual (Past 6 Months rolling up to today)
+      const months = [];
+      const weights = [0.15, 0.16, 0.18, 0.16, 0.18, 0.17];
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date();
+        d.setMonth(d.getMonth() - i);
+        months.push(d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }));
+      }
+      return months.map((month, idx) => {
+        const weight = weights[idx] || (1 / 6);
         const newClients = Math.max(1, Math.round(totalClients * weight * 0.9));
         const policiesIssued = Math.max(1, Math.round(totalPolicies * weight * 0.9));
         return { month, label: month, newClients, policiesIssued };
@@ -562,7 +620,7 @@ export const Dashboard = () => {
     } else if (dateFilter === 'CUSTOM') {
       let labels = ['Period 1', 'Period 2', 'Period 3', 'Period 4'];
       if (customStartDate && customEndDate) {
-        labels = [customStartDate, 'Mid Period', customEndDate];
+        labels = [customStartDate, 'Mid Period 1', 'Mid Period 2', customEndDate];
       }
       const weight = 1 / labels.length;
       return labels.map((month) => {
@@ -570,21 +628,14 @@ export const Dashboard = () => {
         const policiesIssued = Math.max(1, Math.round(totalPolicies * weight));
         return { month, label: month, newClients, policiesIssued };
       });
-    } else if (dateFilter === 'THIS_MONTH') {
-      const now = new Date();
-      const yr = now.getFullYear();
-      const mo = String(now.getMonth() + 1).padStart(2, '0');
-      const dates = [`07-${mo}-${yr}`, `14-${mo}-${yr}`, `21-${mo}-${yr}`, `28-${mo}-${yr}`];
-      const weights = [0.22, 0.28, 0.24, 0.26];
-
-      return dates.map((month, idx) => {
-        const weight = weights[idx];
-        const newClients = Math.max(1, Math.round(totalClients * weight));
-        const policiesIssued = Math.max(1, Math.round(totalPolicies * weight));
-        return { month, label: month, newClients, policiesIssued };
-      });
     } else {
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      // Annual (Past 12 Months rolling up to today)
+      const months = [];
+      for (let i = 11; i >= 0; i--) {
+        const d = new Date();
+        d.setMonth(d.getMonth() - i);
+        months.push(d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }));
+      }
       return months.map((month, idx) => {
         const weight = 0.05 + (idx * 0.005);
         const newClients = Math.max(1, Math.round(totalClients * weight));
@@ -1367,10 +1418,10 @@ export const Dashboard = () => {
                   tickLine={false} 
                   axisLine={false} 
                   interval={0}
-                  angle={dateFilter === 'THIS_MONTH' ? -45 : 0}
-                  textAnchor={dateFilter === 'THIS_MONTH' ? 'end' : 'middle'}
-                  height={dateFilter === 'THIS_MONTH' ? 55 : 30}
-                  tick={{ fontSize: dateFilter === 'THIS_MONTH' ? 10 : 11, fontWeight: 700 }} 
+                  angle={dateFilter === 'THIS_MONTH' || dateFilter === 'THIS_WEEK' || dateFilter === 'THIS_YEAR' || dateFilter === 'LAST_MONTH' ? -20 : 0}
+                  textAnchor={dateFilter === 'THIS_MONTH' || dateFilter === 'THIS_WEEK' || dateFilter === 'THIS_YEAR' || dateFilter === 'LAST_MONTH' ? 'end' : 'middle'}
+                  height={dateFilter === 'THIS_MONTH' || dateFilter === 'THIS_WEEK' || dateFilter === 'THIS_YEAR' || dateFilter === 'LAST_MONTH' ? 45 : 30}
+                  tick={{ fontSize: 10, fontWeight: 700 }} 
                 />
                 <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700 }} unit="L" />
                 <Tooltip cursor={{ fill: '#F1F5F9' }} />
@@ -2652,7 +2703,7 @@ export const Dashboard = () => {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart 
                 data={currentMetrics.incomeExpenseChart}
-                margin={{ top: 15, right: 20, left: -10, bottom: dateFilter === 'THIS_MONTH' ? 20 : 0 }}
+                margin={{ top: 15, right: 20, left: -10, bottom: dateFilter === 'TODAY' ? 0 : 15 }}
                 barGap={6}
                 barCategoryGap="40%"
               >
@@ -2662,10 +2713,10 @@ export const Dashboard = () => {
                   tickLine={false} 
                   axisLine={false} 
                   interval={0}
-                  angle={dateFilter === 'THIS_MONTH' ? -45 : 0}
-                  textAnchor={dateFilter === 'THIS_MONTH' ? 'end' : 'middle'}
-                  height={dateFilter === 'THIS_MONTH' ? 55 : 30}
-                  tick={{ fontSize: dateFilter === 'THIS_MONTH' ? 10 : 11, fontWeight: 700 }} 
+                  angle={dateFilter === 'THIS_MONTH' || dateFilter === 'THIS_WEEK' || dateFilter === 'THIS_YEAR' || dateFilter === 'LAST_MONTH' ? -20 : 0}
+                  textAnchor={dateFilter === 'THIS_MONTH' || dateFilter === 'THIS_WEEK' || dateFilter === 'THIS_YEAR' || dateFilter === 'LAST_MONTH' ? 'end' : 'middle'}
+                  height={dateFilter === 'THIS_MONTH' || dateFilter === 'THIS_WEEK' || dateFilter === 'THIS_YEAR' || dateFilter === 'LAST_MONTH' ? 45 : 30}
+                  tick={{ fontSize: 10, fontWeight: 700 }} 
                 />
                 <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700 }} unit="L" />
                 <Tooltip cursor={{ fill: '#F1F5F9' }} />
