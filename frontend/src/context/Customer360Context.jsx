@@ -456,8 +456,14 @@ export const Customer360Provider = ({ children }) => {
                       <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-1.5">
                         <div className="flex items-center space-x-2 text-slate-600 font-bold text-xs">
                           <Phone className="h-4 w-4 text-blue-600" />
-                          <span>Mobile: {selectedCustomer.phone || '9876543210'}</span>
+                          <span>Primary Mobile: <strong className="font-mono text-slate-900">{selectedCustomer.phone || '9876543210'}</strong></span>
                         </div>
+                        {selectedCustomer.alternatePhone && (
+                          <div className="flex items-center space-x-2 text-slate-600 font-bold text-xs">
+                            <Phone className="h-4 w-4 text-emerald-600" />
+                            <span>Alternate Mobile: <strong className="font-mono text-slate-900">{selectedCustomer.alternatePhone}</strong></span>
+                          </div>
+                        )}
                         <div className="flex items-center space-x-2 text-slate-600 font-bold text-xs">
                           <Mail className="h-4 w-4 text-blue-600" />
                           <span>Email: {selectedCustomer.email || `${selectedCustomer.name?.toLowerCase().replace(/\s+/g, '')}@example.com`}</span>
@@ -938,9 +944,9 @@ export const Customer360Provider = ({ children }) => {
                   <span>2. Contact &amp; Full Residential Address</span>
                 </h4>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Mobile Phone</label>
+                    <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Primary Mobile Phone *</label>
                     <input 
                       type="text"
                       required
@@ -950,14 +956,25 @@ export const Customer360Provider = ({ children }) => {
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Email Address</label>
+                    <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Alternate Mobile Number</label>
                     <input 
-                      type="email"
-                      value={editCustomerData.email || ''}
-                      onChange={(e) => setEditCustomerData({...editCustomerData, email: e.target.value})}
-                      className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600 bg-white"
+                      type="text"
+                      placeholder="+91 98765 00000 (Optional)"
+                      value={editCustomerData.alternatePhone || editCustomerData.altPhone || ''}
+                      onChange={(e) => setEditCustomerData({...editCustomerData, alternatePhone: e.target.value, altPhone: e.target.value})}
+                      className="w-full px-3 py-2 rounded-xl border text-xs font-mono outline-none focus:ring-2 focus:ring-blue-600 bg-white"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Email Address</label>
+                  <input 
+                    type="email"
+                    value={editCustomerData.email || ''}
+                    onChange={(e) => setEditCustomerData({...editCustomerData, email: e.target.value})}
+                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600 bg-white"
+                  />
                 </div>
 
                 <div>

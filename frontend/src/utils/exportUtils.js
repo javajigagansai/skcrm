@@ -104,7 +104,7 @@ export const exportCustomer360PDF = (customer) => {
       <table>
         <tr>
           <td style="width: 20%; font-weight: 800; background:#f8fafc;">Mobile Phone:</td>
-          <td>${customer.phone}</td>
+          <td>${customer.phone || 'N/A'}${customer.alternatePhone ? `<br/><small style="color:#64748b; font-weight:700;">Alt: ${customer.alternatePhone}</small>` : ''}</td>
           <td style="width: 20%; font-weight: 800; background:#f8fafc;">Email Address:</td>
           <td>${customer.email || `${customer.name?.toLowerCase().replace(/\s+/g, '')}@example.com`}</td>
         </tr>
@@ -228,7 +228,7 @@ export const exportCustomerRegistryPDF = (customers) => {
           ${c.maritalStatus === 'Married' ? 'Married 💍' : 'Single 👤'}
         </span>
       </td>
-      <td>${c.phone}<br/><span style="font-size:9px; color:#64748b;">${c.email || ''}</span></td>
+      <td>${c.phone}${(c.alternatePhone || c.altPhone) ? `<br/><span style="font-size:9px; color:#059669; font-weight:700;">Alt: ${c.alternatePhone || c.altPhone}</span>` : ''}<br/><span style="font-size:9px; color:#64748b;">${c.email || ''}</span></td>
       <td><span style="background:#f3e8ff; color:#7e22ce; padding:3px 8px; border-radius:10px; font-weight:800;">👤 ${c.assignedAdvisorName || 'Priya Sharma'}</span></td>
       <td><strong>${c.insuranceCompany || 'Tata AIA Life'}</strong><br/><span style="font-size:9px; color:#2563eb; font-weight:700;">${c.insuranceType || 'LIFE'} Policy</span></td>
       <td>${c.salesPitch || 'Retirement Plan'}</td>
@@ -783,15 +783,16 @@ export const exportFollowupsExcel = (followupList = []) => {
 
 // Export Customer 360 Directory to Excel (.xlsx)
 export const exportCustomerDirectoryExcel = (customerList = []) => {
-  const headers = ['Customer Code', 'Full Name', 'Mobile Number', 'Email Address', 'City / Location', 'Assigned Staff Advisor', 'Active Policies', 'Total Portfolio Value (₹)'];
+  const headers = ['Customer Code', 'Full Name', 'Primary Mobile Number', 'Alternate Mobile Number', 'Email Address', 'City / Location', 'Assigned Staff Advisor', 'Active Policies', 'Total Portfolio Value (₹)'];
   
   const rows = customerList.map(c => [
     c.customerCode || c.id || 'SK-CUST-101',
     c.name || c.customerName || 'N/A',
     c.phone || c.mobile || 'N/A',
+    c.alternatePhone || c.altPhone || 'N/A',
     c.email || 'N/A',
     c.city || 'N/A',
-    c.assignedAdvisorName || c.assignedStaff || c.assignedToName || 'Prakash Gajendiran',
+    c.assignedAdvisorName || c.assignedStaff || c.assignedToName || 'Priya Sharma',
     c.activePoliciesCount !== undefined ? c.activePoliciesCount : (c.policiesCount || 1),
     c.totalPortfolioValue ? `₹${Number(c.totalPortfolioValue).toLocaleString('en-IN')}` : '₹5,00,000'
   ]);

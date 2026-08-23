@@ -80,6 +80,8 @@ export const Customers = () => {
     name: '',
     email: '',
     phone: '',
+    alternatePhone: '',
+    altPhone: '',
     gender: 'Male',
     dob: '',
     maritalStatus: 'Single',
@@ -133,6 +135,8 @@ export const Customers = () => {
       email: newCustomer.email || '',
       phone: newCustomer.phone,
       mobileNumber: newCustomer.phone,
+      alternatePhone: newCustomer.alternatePhone || newCustomer.altPhone || '',
+      altPhone: newCustomer.alternatePhone || newCustomer.altPhone || '',
       insuranceType: newCustomer.insuranceType || '',
       insuranceCompany: newCustomer.insuranceCompany || '',
       salesPitch: newCustomer.salesPitch || '',
@@ -307,6 +311,11 @@ export const Customers = () => {
     const matchesSearch = 
       c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       c.phone.includes(searchTerm) ||
+      (c.alternatePhone && c.alternatePhone.includes(searchTerm)) ||
+      (c.altPhone && c.altPhone.includes(searchTerm)) ||
+      (c.email && c.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (c.city && c.city.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (c.pan && c.pan.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (c.insuranceCompany && c.insuranceCompany.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (c.salesPitch && c.salesPitch.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (c.advisorNotes && c.advisorNotes.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -562,7 +571,15 @@ export const Customers = () => {
                           <Sparkles className="h-3 w-3 text-blue-500 opacity-80" />
                         </button>
                       </td>
-                      <td className="p-3.5 font-mono font-bold text-slate-900 border-r border-slate-200/80">{c.phone}</td>
+                      <td className="p-3.5 font-mono font-bold text-slate-900 border-r border-slate-200/80">
+                        <div>{c.phone}</div>
+                        {(c.alternatePhone || c.altPhone) && (
+                          <div className="text-[10px] text-slate-500 font-semibold mt-0.5 flex items-center space-x-1">
+                            <span className="text-slate-400 font-sans">Alt:</span>
+                            <span>{c.alternatePhone || c.altPhone}</span>
+                          </div>
+                        )}
+                      </td>
                       <td className="p-3.5 border-r border-slate-200/80">
                         <span className="badge bg-purple-100 text-purple-900 border border-purple-300 text-[10px] font-black px-2.5 py-1 rounded-lg inline-flex items-center space-x-1 shadow-2xs">
                           <UserCheck className="h-3 w-3 text-purple-700 shrink-0" />
@@ -867,8 +884,14 @@ export const Customers = () => {
                       <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-1.5">
                         <div className="flex items-center space-x-2 text-slate-600 font-bold text-xs">
                           <Phone className="h-4 w-4 text-blue-600" />
-                          <span>Mobile: {selectedCustomer.phone}</span>
+                          <span>Primary Mobile: <strong className="font-mono text-slate-900">{selectedCustomer.phone}</strong></span>
                         </div>
+                        {(selectedCustomer.alternatePhone || selectedCustomer.altPhone) && (
+                          <div className="flex items-center space-x-2 text-slate-600 font-bold text-xs">
+                            <Phone className="h-4 w-4 text-emerald-600" />
+                            <span>Alternate Mobile: <strong className="font-mono text-slate-900">{selectedCustomer.alternatePhone || selectedCustomer.altPhone}</strong></span>
+                          </div>
+                        )}
                         <div className="flex items-center space-x-2 text-slate-600 font-bold text-xs">
                           <Mail className="h-4 w-4 text-blue-600" />
                           <span>Email: {selectedCustomer.email || `${selectedCustomer.name?.toLowerCase().replace(/\s+/g, '')}@example.com`}</span>
@@ -1279,28 +1302,39 @@ export const Customers = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Phone Mobile</label>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Primary Mobile Number *</label>
                   <input 
                     type="text" 
                     required 
                     placeholder="+91 98765 43210"
                     value={newCustomer.phone} 
                     onChange={(e) => setNewCustomer({...newCustomer, phone: e.target.value})} 
-                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600" 
+                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600 font-mono font-bold" 
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Email Address</label>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Alternate Mobile Number</label>
                   <input 
-                    type="email" 
-                    placeholder="ramesh@example.com"
-                    value={newCustomer.email} 
-                    onChange={(e) => setNewCustomer({...newCustomer, email: e.target.value})} 
-                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600" 
+                    type="text" 
+                    placeholder="+91 98765 00000 (Optional)"
+                    value={newCustomer.alternatePhone || ''} 
+                    onChange={(e) => setNewCustomer({...newCustomer, alternatePhone: e.target.value, altPhone: e.target.value})} 
+                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600 font-mono" 
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Email Address</label>
+                <input 
+                  type="email" 
+                  placeholder="ramesh@example.com"
+                  value={newCustomer.email} 
+                  onChange={(e) => setNewCustomer({...newCustomer, email: e.target.value})} 
+                  className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600" 
+                />
               </div>
 
               {/* MARITAL STATUS & ANNIVERSARY OPTION */}
@@ -1623,9 +1657,9 @@ export const Customers = () => {
                   <span>2. Contact &amp; Full Residential Address</span>
                 </h4>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Mobile Phone</label>
+                    <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Primary Mobile Phone *</label>
                     <input 
                       type="text"
                       required
@@ -1635,14 +1669,25 @@ export const Customers = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Email Address</label>
+                    <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Alternate Mobile Number</label>
                     <input 
-                      type="email"
-                      value={editCustomerData.email || ''}
-                      onChange={(e) => setEditCustomerData({...editCustomerData, email: e.target.value})}
-                      className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600 bg-white"
+                      type="text"
+                      placeholder="+91 98765 00000 (Optional)"
+                      value={editCustomerData.alternatePhone || editCustomerData.altPhone || ''}
+                      onChange={(e) => setEditCustomerData({...editCustomerData, alternatePhone: e.target.value, altPhone: e.target.value})}
+                      className="w-full px-3 py-2 rounded-xl border text-xs font-mono outline-none focus:ring-2 focus:ring-blue-600 bg-white"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Email Address</label>
+                  <input 
+                    type="email"
+                    value={editCustomerData.email || ''}
+                    onChange={(e) => setEditCustomerData({...editCustomerData, email: e.target.value})}
+                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600 bg-white"
+                  />
                 </div>
 
                 <div>
