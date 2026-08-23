@@ -458,10 +458,9 @@ export const Dashboard = () => {
       for (let i = 6; i >= 0; i--) {
         const d = new Date();
         d.setDate(d.getDate() - i);
-        const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
         const dayNum = String(d.getDate()).padStart(2, '0');
         const monthShort = d.toLocaleDateString('en-US', { month: 'short' });
-        days.push(`${dayNum} ${monthShort} (${dayName})`);
+        days.push(`${dayNum} ${monthShort}`);
       }
       return days.map((label, idx) => {
         const weight = weights[idx] || (1 / 7);
@@ -503,7 +502,7 @@ export const Dashboard = () => {
       for (let i = 5; i >= 0; i--) {
         const d = new Date();
         d.setMonth(d.getMonth() - i);
-        months.push(d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }));
+        months.push(`${d.toLocaleDateString('en-US', { month: 'short' })} '${d.getFullYear().toString().slice(-2)}`);
       }
       return months.map((label, idx) => {
         const weight = weights[idx] || (1 / 6);
@@ -536,7 +535,7 @@ export const Dashboard = () => {
       for (let i = 11; i >= 0; i--) {
         const d = new Date();
         d.setMonth(d.getMonth() - i);
-        months.push(d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }));
+        months.push(d.toLocaleDateString('en-US', { month: 'short' }));
       }
       return months.map((label, idx) => {
         const weight = 0.06 + (idx * 0.004);
@@ -573,10 +572,9 @@ export const Dashboard = () => {
       for (let i = 6; i >= 0; i--) {
         const d = new Date();
         d.setDate(d.getDate() - i);
-        const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
         const dayNum = String(d.getDate()).padStart(2, '0');
         const monthShort = d.toLocaleDateString('en-US', { month: 'short' });
-        days.push(`${dayNum} ${monthShort} (${dayName})`);
+        days.push(`${dayNum} ${monthShort}`);
       }
       return days.map((month, idx) => {
         const weight = weights[idx] || (1 / 7);
@@ -609,7 +607,7 @@ export const Dashboard = () => {
       for (let i = 5; i >= 0; i--) {
         const d = new Date();
         d.setMonth(d.getMonth() - i);
-        months.push(d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }));
+        months.push(`${d.toLocaleDateString('en-US', { month: 'short' })} '${d.getFullYear().toString().slice(-2)}`);
       }
       return months.map((month, idx) => {
         const weight = weights[idx] || (1 / 6);
@@ -634,7 +632,7 @@ export const Dashboard = () => {
       for (let i = 11; i >= 0; i--) {
         const d = new Date();
         d.setMonth(d.getMonth() - i);
-        months.push(d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }));
+        months.push(d.toLocaleDateString('en-US', { month: 'short' }));
       }
       return months.map((month, idx) => {
         const weight = 0.05 + (idx * 0.005);
@@ -1418,10 +1416,10 @@ export const Dashboard = () => {
                   tickLine={false} 
                   axisLine={false} 
                   interval={0}
-                  angle={dateFilter === 'THIS_MONTH' || dateFilter === 'THIS_WEEK' || dateFilter === 'THIS_YEAR' || dateFilter === 'LAST_MONTH' ? -20 : 0}
-                  textAnchor={dateFilter === 'THIS_MONTH' || dateFilter === 'THIS_WEEK' || dateFilter === 'THIS_YEAR' || dateFilter === 'LAST_MONTH' ? 'end' : 'middle'}
-                  height={dateFilter === 'THIS_MONTH' || dateFilter === 'THIS_WEEK' || dateFilter === 'THIS_YEAR' || dateFilter === 'LAST_MONTH' ? 45 : 30}
-                  tick={{ fontSize: 10, fontWeight: 700 }} 
+                  angle={0}
+                  textAnchor="middle"
+                  height={30}
+                  tick={{ fontSize: 11, fontWeight: 700 }} 
                 />
                 <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700 }} unit="L" />
                 <Tooltip cursor={{ fill: '#F1F5F9' }} />
@@ -2703,7 +2701,7 @@ export const Dashboard = () => {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart 
                 data={currentMetrics.incomeExpenseChart}
-                margin={{ top: 15, right: 20, left: -10, bottom: dateFilter === 'TODAY' ? 0 : 15 }}
+                margin={{ top: 15, right: 20, left: -10, bottom: 5 }}
                 barGap={6}
                 barCategoryGap="40%"
               >
@@ -2713,10 +2711,10 @@ export const Dashboard = () => {
                   tickLine={false} 
                   axisLine={false} 
                   interval={0}
-                  angle={dateFilter === 'THIS_MONTH' || dateFilter === 'THIS_WEEK' || dateFilter === 'THIS_YEAR' || dateFilter === 'LAST_MONTH' ? -20 : 0}
-                  textAnchor={dateFilter === 'THIS_MONTH' || dateFilter === 'THIS_WEEK' || dateFilter === 'THIS_YEAR' || dateFilter === 'LAST_MONTH' ? 'end' : 'middle'}
-                  height={dateFilter === 'THIS_MONTH' || dateFilter === 'THIS_WEEK' || dateFilter === 'THIS_YEAR' || dateFilter === 'LAST_MONTH' ? 45 : 30}
-                  tick={{ fontSize: 10, fontWeight: 700 }} 
+                  angle={0}
+                  textAnchor="middle"
+                  height={30}
+                  tick={{ fontSize: 11, fontWeight: 700 }} 
                 />
                 <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700 }} unit="L" />
                 <Tooltip cursor={{ fill: '#F1F5F9' }} />
