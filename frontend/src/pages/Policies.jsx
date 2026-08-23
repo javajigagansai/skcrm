@@ -104,22 +104,23 @@ export const Policies = () => {
     setFilterEndDate('');
   };
 
-  // New Policy Form State
+  // New Policy Form State (Empty by default)
   const [newPolicy, setNewPolicy] = useState({
     customerName: '',
     phone: '',
-    insuranceCompany: 'Star Health Insurance',
-    type: 'Health Insurance',
-    policyName: 'Star Comprehensive Insurance Policy',
-    sumInsured: 1000000,
-    grossPremium: 25000,
-    startDate: new Date().toISOString().split('T')[0],
-    expiryDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
-    assignedStaff: 'Priya Sharma (Senior Advisor)'
+    insuranceCompany: '',
+    type: '',
+    policyName: '',
+    sumInsured: '',
+    grossPremium: '',
+    startDate: '',
+    expiryDate: '',
+    assignedStaff: ''
   });
 
   // Dynamic Predefined Plans calculation based on selected company & category
   const newPolicyAvailablePlans = useMemo(() => {
+    if (!newPolicy.insuranceCompany && !newPolicy.type) return [];
     return getPredefinedPolicies(newPolicy.insuranceCompany, newPolicy.type);
   }, [newPolicy.insuranceCompany, newPolicy.type, catalogVersion]);
 
@@ -305,18 +306,19 @@ export const Policies = () => {
     setShowCompSuggest(false);
     setShowCatSuggest(false);
     setShowPlanSuggest(false);
+    setShowStaffSuggest(false);
 
     setNewPolicy({
       customerName: '',
       phone: '',
-      insuranceCompany: 'Star Health Insurance',
-      type: 'Health Insurance',
-      policyName: 'Star Comprehensive Insurance Policy',
-      sumInsured: 1000000,
-      grossPremium: 25000,
+      insuranceCompany: '',
+      type: '',
+      policyName: '',
+      sumInsured: '',
+      grossPremium: '',
       startDate: new Date().toISOString().split('T')[0],
       expiryDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
-      assignedStaff: user?.name || 'Priya Sharma (Senior Advisor)'
+      assignedStaff: ''
     });
     alert(`Policy ${created?.id || 'POL-NEW'} issued successfully for ${created.customerName} with plan "${planName}"! Directly linked to Customer 360.`);
   };
@@ -1280,6 +1282,7 @@ export const Policies = () => {
                   <input 
                     type="number" 
                     required 
+                    placeholder="Enter Coverage Amount (₹)"
                     value={newPolicy.sumInsured} 
                     onChange={(e) => setNewPolicy({...newPolicy, sumInsured: e.target.value})} 
                     className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600 font-bold" 
@@ -1290,6 +1293,7 @@ export const Policies = () => {
                   <input 
                     type="number" 
                     required 
+                    placeholder="Enter Annual Premium (₹)"
                     value={newPolicy.grossPremium} 
                     onChange={(e) => setNewPolicy({...newPolicy, grossPremium: e.target.value})} 
                     className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600 font-mono font-bold text-emerald-700" 
@@ -1302,7 +1306,6 @@ export const Policies = () => {
                   <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Issue Start Date</label>
                   <input 
                     type="date" 
-                    required 
                     value={newPolicy.startDate} 
                     onChange={(e) => setNewPolicy({...newPolicy, startDate: e.target.value})} 
                     className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600" 
@@ -1312,7 +1315,6 @@ export const Policies = () => {
                   <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Expiry / Due Date</label>
                   <input 
                     type="date" 
-                    required 
                     value={newPolicy.expiryDate} 
                     onChange={(e) => setNewPolicy({...newPolicy, expiryDate: e.target.value})} 
                     className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600" 
