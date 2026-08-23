@@ -429,9 +429,36 @@ export const SpecialDays = () => {
                   )}
 
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-base font-black text-slate-900 truncate">{stf.name}</h4>
-                    <p className="text-xs text-slate-500 font-semibold mt-0.5 truncate">{stf.role || 'Staff Advisor'}</p>
-                    <p className="text-[11px] font-mono font-bold text-slate-600 mt-0.5">{stf.phone || '9876543210'}</p>
+                    <h4 className="text-base font-black text-slate-900 truncate">{stf.name || 'Team Colleague'}</h4>
+                    <div className="flex items-center space-x-2 mt-0.5">
+                      <span className="inline-flex items-center space-x-1 text-[11px] font-bold text-slate-500">
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></span>
+                        <span>Team: <strong className="text-slate-700">{stf.role || 'Staff Advisor'}</strong></span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Structured Details Cards */}
+                <div className="grid grid-cols-2 gap-2.5 mb-4 p-3 bg-slate-50/80 rounded-2xl border border-slate-100 relative z-10">
+                  <div className="space-y-0.5 min-w-0">
+                    <span className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider flex items-center space-x-1">
+                      <UserCheck className="w-3 h-3 text-blue-500 shrink-0" />
+                      <span>Role</span>
+                    </span>
+                    <p className="text-xs font-black text-slate-800 truncate" title={stf.role}>
+                      {stf.role || 'Staff Advisor'}
+                    </p>
+                  </div>
+
+                  <div className="space-y-0.5 min-w-0">
+                    <span className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider flex items-center space-x-1">
+                      <Phone className="w-3 h-3 text-emerald-500 shrink-0" />
+                      <span>Contact</span>
+                    </span>
+                    <p className="text-xs font-mono font-bold text-slate-800 truncate">
+                      {stf.phone || '9876543210'}
+                    </p>
                   </div>
                 </div>
 
