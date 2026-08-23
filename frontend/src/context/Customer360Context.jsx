@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { 
   X, UserCheck, Users, ShieldCheck, ShieldAlert, Award, Sparkles, IndianRupee, 
   FileText, Heart, Phone, Mail, MapPin, CreditCard, ChevronRight, 
-  Edit3, Download, Plus, CheckCircle2, Trash2
+  Edit3, Download, Plus, CheckCircle2, Trash2, Clock, AlertCircle, Building2
 } from 'lucide-react';
 import { exportCustomer360PDF } from '../utils/exportUtils';
 import { updateCustomerBackend, deleteCustomerBackend } from '../services/apiService';
@@ -31,7 +31,16 @@ const loadStaffListFromStorage = () => {
 
 export const Customer360Provider = ({ children }) => {
   const { user } = useAuth();
-  const { getCustomerAggregatedDetails, updateCustomer, deleteCustomer } = useData();
+  const { 
+    getCustomerAggregatedDetails, 
+    updateCustomer, 
+    deleteCustomer,
+    claims,
+    addClaim,
+    updateClaim,
+    updateClaimStatus,
+    deleteClaim
+  } = useData();
 
   // Staff list — required so the edit modal can write the UID, not just the name
   const [staffList360, setStaffList360] = useState(loadStaffListFromStorage);
@@ -59,6 +68,22 @@ export const Customer360Provider = ({ children }) => {
     phone: ''
   });
 
+  // Claims Modal States (Direct Customer 360 <-> Claims Desk Synchronization)
+  const [showAddClaimModal, setShowAddClaimModal] = useState(false);
+  const [showEditClaimModal, setShowEditClaimModal] = useState(false);
+  const [newClaimData, setNewClaimData] = useState({
+    policyNo: '',
+    insuranceCompany: '',
+    claimType: 'Health Hospitalization',
+    claimAmount: '',
+    settlementAmount: '',
+    hospitalOrGarage: '',
+    claimDate: new Date().toISOString().split('T')[0],
+    assignedStaff: 'Priya Sharma (Senior Advisor)',
+    status: 'SUBMITTED'
+  });
+  const [editClaimData, setEditClaimData] = useState(null);
+
   const openCustomer360 = (customerOrName, initialTab = 'OVERVIEW') => {
     if (!customerOrName) return;
     const aggregated = getCustomerAggregatedDetails(customerOrName);
@@ -72,6 +97,8 @@ export const Customer360Provider = ({ children }) => {
     setSelectedCustomer(null);
     setShowEditModal(false);
     setShowAddFamilyModal(false);
+    setShowAddClaimModal(false);
+    setShowEditClaimModal(false);
   };
 
   const handleSaveEditCustomer = async (e) => {
@@ -171,11 +198,97 @@ export const Customer360Provider = ({ children }) => {
     status: 'ACTIVE'
   }] : []);
 
-  const activeClaimsList = selectedCustomer?.claimsList || selectedCustomer?.claims || [];
+  // Reactively derive live claims from shared DataContext so Claims Desk & Customer 360 are always 100% in sync
+  const activeClaimsList = useMemo(() => {
+    if (!selectedCustomer) return [];
+    const effectiveCode = selectedCustomer.customerCode || selectedCustomer.id;
+    const effectiveName = selectedCustomer.name;
+
+    const matched = (claims || []).filter(c => {
+      const recCode = c.customerCode || c.customerId || c.customer_id;
+      if (effectiveCode && recCode) {
+        return recCode.toLowerCase().trim() === effectiveCode.toLowerCase().trim();
+      }
+      return c.customerName && effectiveName && c.customerName.toLowerCase().trim() === effectiveName.toLowerCase().trim();
+    });
+
+    if (matched.length > 0) return matched;
+    return selectedCustomer.claimsList || selectedCustomer.claims || [];
+  }, [claims, selectedCustomer]);
+
   const activeRenewalsList = selectedCustomer?.renewalsList || [];
   const activeInvestmentsList = selectedCustomer?.investmentsList || selectedCustomer?.activePortfolios || [];
   const activeTasksList = selectedCustomer?.tasksList || [];
   const activeFollowupsList = selectedCustomer?.followupsList || [];
+
+  // Claims Action Handlers
+  const handleOpenAddClaim = () => {
+    const firstPolicy = activePoliciesList[0];
+    setNewClaimData({
+      policyNo: firstPolicy?.id || firstPolicy?.policyNo || '',
+      insuranceCompany: firstPolicy?.insuranceCompany || 'Star Health Insurance',
+      claimType: firstPolicy?.type ? `${firstPolicy.type} Claim` : 'Health Hospitalization',
+      claimAmount: '',
+      settlementAmount: '',
+      hospitalOrGarage: '',
+      claimDate: new Date().toISOString().split('T')[0],
+      assignedStaff: selectedCustomer?.assignedAdvisorName || selectedCustomer?.assignedStaff || user?.name || 'Priya Sharma',
+      status: 'SUBMITTED'
+    });
+    setShowAddClaimModal(true);
+  };
+
+  const handleSaveAddClaim = async (e) => {
+    e.preventDefault();
+    if (!newClaimData.claimAmount) {
+      alert('Please enter Claim Amount');
+      return;
+    }
+    const claimToSave = {
+      ...newClaimData,
+      customerId: selectedCustomer.id || selectedCustomer.customerCode,
+      customerCode: selectedCustomer.customerCode || selectedCustomer.id,
+      customerName: selectedCustomer.name,
+      phone: selectedCustomer.phone || '',
+      claimAmount: parseFloat(newClaimData.claimAmount || 0),
+      settlementAmount: parseFloat(newClaimData.settlementAmount || 0),
+      assignedStaff: newClaimData.assignedStaff || selectedCustomer.assignedAdvisorName || 'Priya Sharma'
+    };
+    const created = await addClaim(claimToSave);
+    setShowAddClaimModal(false);
+    alert(`Claim ${created?.id || 'CLM-NEW'} filed successfully for ${selectedCustomer.name}! Directly updated in Claims Desk.`);
+  };
+
+  const handleOpenEditClaim = (clm) => {
+    setEditClaimData({
+      ...clm,
+      claimAmount: clm.claimAmount || clm.amount || '',
+      settlementAmount: clm.settlementAmount || '',
+      status: clm.status || 'SUBMITTED',
+      hospitalOrGarage: clm.hospitalOrGarage || clm.hospital || '',
+      assignedStaff: clm.assignedStaff || clm.assignedStaffName || 'Priya Sharma'
+    });
+    setShowEditClaimModal(true);
+  };
+
+  const handleSaveEditClaim = async (e) => {
+    e.preventDefault();
+    if (!editClaimData || !editClaimData.id) return;
+    await updateClaim(editClaimData);
+    setShowEditClaimModal(false);
+    setEditClaimData(null);
+    alert(`Claim ${editClaimData.id} updated successfully! Directly reflected in Claims Desk.`);
+  };
+
+  const handleQuickStatusChange = async (claimId, newStatus) => {
+    await updateClaimStatus(claimId, newStatus);
+  };
+
+  const handleDeleteClaim360 = async (claimId) => {
+    if (window.confirm(`Are you sure you want to delete claim ${claimId}? This will remove it from both Customer 360 and Claims Desk.`)) {
+      await deleteClaim(claimId);
+    }
+  };
 
   return (
     <Customer360Context.Provider value={{ openCustomer360, closeCustomer360, selectedCustomer }}>
@@ -615,14 +728,31 @@ export const Customer360Provider = ({ children }) => {
                 </div>
               )}
 
-              {/* TAB 4: CLAIMS HISTORY */}
+              {/* TAB 4: CLAIMS HISTORY & ACTIVE ASSISTANCE (DIRECT SYNC WITH CLAIMS DESK) */}
               {active360Tab === 'CLAIMS' && (
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-xs font-black uppercase text-slate-700 tracking-wider">Claims Record</h4>
-                    <span className="badge bg-amber-100 text-amber-800 text-[10px] font-bold">
-                      {activeClaimsList.length} Claims Filed
-                    </span>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-amber-50/60 p-4 rounded-2xl border border-amber-200/70">
+                    <div>
+                      <h4 className="text-xs font-black uppercase text-amber-950 tracking-wider flex items-center space-x-2">
+                        <ShieldAlert className="h-4 w-4 text-amber-600" />
+                        <span>Claims Record &amp; Assistance Desk</span>
+                      </h4>
+                      <p className="text-[11px] text-amber-800 font-semibold mt-0.5">
+                        Claims created or updated here directly synchronize in real-time with the Claims Desk.
+                      </p>
+                    </div>
+                    <div className="flex items-center space-x-2 shrink-0">
+                      <span className="badge bg-amber-200 text-amber-900 text-[10px] font-black">
+                        {activeClaimsList.length} Claims Filed
+                      </span>
+                      <button 
+                        onClick={handleOpenAddClaim}
+                        className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer flex items-center space-x-1.5"
+                      >
+                        <Plus className="h-4 w-4" />
+                        <span>+ File New Claim</span>
+                      </button>
+                    </div>
                   </div>
 
                   <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
@@ -630,32 +760,92 @@ export const Customer360Provider = ({ children }) => {
                       <thead>
                         <tr className="bg-slate-900 text-white text-[10px] font-black uppercase tracking-wider">
                           <th className="p-3 border-r border-slate-800">Claim ID</th>
-                          <th className="p-3 border-r border-slate-800">Insurer / Policy</th>
+                          <th className="p-3 border-r border-slate-800">Insurer &amp; Policy</th>
                           <th className="p-3 border-r border-slate-800">Hospital / Garage</th>
                           <th className="p-3 border-r border-slate-800">Claim Amount</th>
+                          <th className="p-3 border-r border-slate-800">Settled Amount</th>
                           <th className="p-3 border-r border-slate-800">Assigned Staff</th>
-                          <th className="p-3 text-center">Status</th>
+                          <th className="p-3 border-r border-slate-800 text-center">Status</th>
+                          <th className="p-3 text-center">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-200 text-xs font-semibold text-slate-800">
                         {activeClaimsList.length > 0 ? (
                           activeClaimsList.map((clm, cIdx) => (
                             <tr key={clm.id || cIdx} className="hover:bg-slate-50 transition">
-                              <td className="p-3 font-mono font-bold text-blue-900 border-r border-slate-100">{clm.id}</td>
-                              <td className="p-3 font-extrabold text-slate-900 border-r border-slate-100">{clm.insuranceCompany} ({clm.policyNo})</td>
-                              <td className="p-3 border-r border-slate-100"><span className="text-slate-800 font-bold">{clm.hospitalOrGarage || clm.hospital || 'Hospital Provider'}</span></td>
-                              <td className="p-3 font-black text-blue-900 border-r border-slate-100">₹ {Number(clm.claimAmount || clm.amount || 0).toLocaleString()}</td>
+                              <td className="p-3 font-mono font-bold text-blue-900 border-r border-slate-100">
+                                {clm.id}
+                                <span className="block text-[10px] text-slate-400 font-normal">{clm.claimDate || 'Recent'}</span>
+                              </td>
                               <td className="p-3 border-r border-slate-100">
-                                <span className="badge bg-purple-100 text-purple-800 text-[10px] font-extrabold">{clm.assignedStaff || 'Priya Sharma'}</span>
+                                <p className="font-extrabold text-slate-900">{clm.insuranceCompany || 'Insurance Provider'}</p>
+                                <p className="text-[10px] text-slate-500 font-mono">Policy: {clm.policyNo || 'N/A'}</p>
+                              </td>
+                              <td className="p-3 border-r border-slate-100">
+                                <span className="text-slate-800 font-bold">{clm.hospitalOrGarage || clm.hospital || 'Hospital / Workshop'}</span>
+                                {clm.claimType && <span className="block text-[10px] text-slate-400 font-semibold">{clm.claimType}</span>}
+                              </td>
+                              <td className="p-3 font-black text-blue-900 border-r border-slate-100">
+                                ₹ {Number(clm.claimAmount || clm.amount || 0).toLocaleString()}
+                              </td>
+                              <td className="p-3 font-black text-emerald-700 border-r border-slate-100">
+                                {Number(clm.settlementAmount || 0) > 0 ? `₹ ${Number(clm.settlementAmount).toLocaleString()}` : <span className="text-slate-400 font-normal text-[11px]">Pending</span>}
+                              </td>
+                              <td className="p-3 border-r border-slate-100">
+                                <span className="badge bg-purple-100 text-purple-800 text-[10px] font-extrabold">
+                                  {clm.assignedStaff || clm.assignedStaffName || 'Priya Sharma'}
+                                </span>
+                              </td>
+                              <td className="p-3 border-r border-slate-100 text-center">
+                                <select 
+                                  value={clm.status || 'SUBMITTED'} 
+                                  onChange={(e) => handleQuickStatusChange(clm.id, e.target.value)}
+                                  className={`text-[10px] font-extrabold px-2 py-1 rounded-lg border cursor-pointer outline-none ${
+                                    clm.status === 'SETTLED' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
+                                    clm.status === 'APPROVED' ? 'bg-blue-50 text-blue-800 border-blue-300' :
+                                    clm.status === 'REJECTED' ? 'bg-rose-50 text-rose-800 border-rose-300' :
+                                    'bg-amber-50 text-amber-800 border-amber-300'
+                                  }`}
+                                >
+                                  <option value="SUBMITTED">SUBMITTED</option>
+                                  <option value="IN_REVIEW">IN_REVIEW</option>
+                                  <option value="APPROVED">APPROVED</option>
+                                  <option value="SETTLED">SETTLED</option>
+                                  <option value="REJECTED">REJECTED</option>
+                                </select>
                               </td>
                               <td className="p-3 text-center">
-                                <span className={`badge text-[9px] font-extrabold ${clm.status === 'SETTLED' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>{clm.status || 'SUBMITTED'}</span>
+                                <div className="flex items-center justify-center space-x-1.5">
+                                  <button 
+                                    onClick={() => handleOpenEditClaim(clm)}
+                                    className="p-1.5 text-amber-600 hover:bg-amber-50 rounded-lg transition cursor-pointer"
+                                    title="Edit / Update Claim"
+                                  >
+                                    <Edit3 className="h-4 w-4" />
+                                  </button>
+                                  <button 
+                                    onClick={() => handleDeleteClaim360(clm.id)}
+                                    className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                                    title="Delete Claim"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           ))
                         ) : (
                           <tr>
-                            <td colSpan="6" className="p-4 text-center text-slate-400 font-semibold">No claims history filed for this customer.</td>
+                            <td colSpan="8" className="p-8 text-center text-slate-400 font-semibold">
+                              <ShieldAlert className="h-8 w-8 text-slate-300 mx-auto mb-2" />
+                              <p>No claims history filed for {selectedCustomer.name}.</p>
+                              <button 
+                                onClick={handleOpenAddClaim}
+                                className="mt-2 text-xs text-amber-600 hover:underline font-bold cursor-pointer"
+                              >
+                                + File first claim for this customer
+                              </button>
+                            </td>
                           </tr>
                         )}
                       </tbody>
@@ -1287,10 +1477,277 @@ export const Customer360Provider = ({ children }) => {
               </div>
 
               <button 
-                type="submit"
+                type="submit" 
                 className="w-full py-2.5 rounded-xl bg-pink-600 hover:bg-pink-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer"
               >
                 Add Family Member Record
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================= GLOBAL FILE NEW CLAIM MODAL (DIRECT SYNC WITH CLAIMS DESK) ================= */}
+      {showAddClaimModal && selectedCustomer && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-100 my-8 animate-fadeIn">
+            <div className="flex items-center justify-between border-b pb-3">
+              <h3 className="text-base font-black text-slate-900 flex items-center space-x-2">
+                <ShieldAlert className="h-5 w-5 text-amber-600" />
+                <span>File New Insurance Claim for {selectedCustomer.name}</span>
+              </h3>
+              <button onClick={() => setShowAddClaimModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveAddClaim} className="space-y-3.5" autoComplete="off">
+              {/* Customer Info Pill */}
+              <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200/80 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-black text-amber-950">{selectedCustomer.name}</p>
+                  <p className="text-[10px] text-amber-700 font-mono">Code: {selectedCustomer.customerCode || selectedCustomer.id} • {selectedCustomer.phone || 'No Phone'}</p>
+                </div>
+                <span className="badge bg-amber-200 text-amber-900 text-[10px] font-black">Direct Desk Sync</span>
+              </div>
+
+              {/* Policy Selector */}
+              <div>
+                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Select Policy / Contract *</label>
+                <select 
+                  value={newClaimData.policyNo}
+                  onChange={(e) => {
+                    const selNo = e.target.value;
+                    const matchedPol = activePoliciesList.find(p => p.id === selNo);
+                    setNewClaimData({
+                      ...newClaimData,
+                      policyNo: selNo,
+                      insuranceCompany: matchedPol?.insuranceCompany || newClaimData.insuranceCompany,
+                      claimType: matchedPol?.type ? `${matchedPol.type} Claim` : newClaimData.claimType
+                    });
+                  }}
+                  className="w-full px-3 py-2.5 rounded-xl border text-xs font-bold bg-white outline-none focus:ring-2 focus:ring-amber-500"
+                >
+                  {activePoliciesList.length > 0 ? (
+                    activePoliciesList.map((pol, idx) => (
+                      <option key={pol.id || idx} value={pol.id}>
+                        {pol.id} — {pol.insuranceCompany} ({pol.policyName || pol.type || 'Policy'})
+                      </option>
+                    ))
+                  ) : (
+                    <option value="POL-GEN-01">POL-GEN-01 (General Active Policy)</option>
+                  )}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Insurance Company Provider *</label>
+                  <input 
+                    type="text" 
+                    required 
+                    placeholder="e.g. Star Health Insurance"
+                    value={newClaimData.insuranceCompany}
+                    onChange={(e) => setNewClaimData({...newClaimData, insuranceCompany: e.target.value})}
+                    className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-amber-500 bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Claim Type / Nature *</label>
+                  <input 
+                    type="text" 
+                    required 
+                    placeholder="e.g. Hospitalization / Damage"
+                    value={newClaimData.claimType}
+                    onChange={(e) => setNewClaimData({...newClaimData, claimType: e.target.value})}
+                    className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-amber-500 bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Claim Amount (₹) *</label>
+                  <input 
+                    type="number" 
+                    required 
+                    placeholder="e.g. 50000"
+                    value={newClaimData.claimAmount}
+                    onChange={(e) => setNewClaimData({...newClaimData, claimAmount: e.target.value})}
+                    className="w-full px-3 py-2 rounded-xl border text-xs font-mono font-bold text-blue-900 outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Hospital / Garage / Workshop</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. Apollo Hospital Chennai"
+                    value={newClaimData.hospitalOrGarage}
+                    onChange={(e) => setNewClaimData({...newClaimData, hospitalOrGarage: e.target.value})}
+                    className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Incident / Claim Date</label>
+                  <input 
+                    type="date" 
+                    value={newClaimData.claimDate}
+                    onChange={(e) => setNewClaimData({...newClaimData, claimDate: e.target.value})}
+                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Initial Claim Status</label>
+                  <select 
+                    value={newClaimData.status}
+                    onChange={(e) => setNewClaimData({...newClaimData, status: e.target.value})}
+                    className="w-full px-3 py-2 rounded-xl border text-xs font-bold bg-white outline-none focus:ring-2 focus:ring-amber-500"
+                  >
+                    <option value="SUBMITTED">SUBMITTED</option>
+                    <option value="IN_REVIEW">IN_REVIEW</option>
+                    <option value="APPROVED">APPROVED</option>
+                    <option value="SETTLED">SETTLED</option>
+                    <option value="REJECTED">REJECTED</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Assigned Assistance Officer</label>
+                <select 
+                  value={newClaimData.assignedStaff}
+                  onChange={(e) => setNewClaimData({...newClaimData, assignedStaff: e.target.value})}
+                  className="w-full px-3 py-2 rounded-xl border text-xs font-bold bg-white outline-none focus:ring-2 focus:ring-purple-600"
+                >
+                  <option value="Priya Sharma (Senior Advisor)">Priya Sharma (Senior Advisor)</option>
+                  <option value="Anitha S. (Insurance Specialist)">Anitha S. (Insurance Specialist)</option>
+                  <option value="Karthik Subramanian (Manager)">Karthik Subramanian (Manager)</option>
+                  <option value="Rajesh V. (Relationship Manager)">Rajesh V. (Relationship Manager)</option>
+                  <option value="Rahul Dravid (Staff Advisor)">Rahul Dravid (Staff Advisor)</option>
+                </select>
+              </div>
+
+              <button 
+                type="submit" 
+                className="w-full py-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer flex items-center justify-center space-x-2"
+              >
+                <ShieldCheck className="h-4 w-4" />
+                <span>Submit &amp; Sync Claim to Claims Desk</span>
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================= GLOBAL EDIT CLAIM MODAL (DIRECT SYNC WITH CLAIMS DESK) ================= */}
+      {showEditClaimModal && editClaimData && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-100 my-8 animate-fadeIn">
+            <div className="flex items-center justify-between border-b pb-3">
+              <h3 className="text-base font-black text-slate-900 flex items-center space-x-2">
+                <Edit3 className="h-5 w-5 text-blue-600" />
+                <span>Update Claim Details ({editClaimData.id})</span>
+              </h3>
+              <button onClick={() => setShowEditClaimModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditClaim} className="space-y-3.5" autoComplete="off">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Claim Status *</label>
+                  <select 
+                    value={editClaimData.status || 'SUBMITTED'}
+                    onChange={(e) => setEditClaimData({...editClaimData, status: e.target.value})}
+                    className="w-full px-3 py-2 rounded-xl border text-xs font-black bg-white outline-none focus:ring-2 focus:ring-blue-600"
+                  >
+                    <option value="SUBMITTED">SUBMITTED</option>
+                    <option value="IN_REVIEW">IN_REVIEW</option>
+                    <option value="APPROVED">APPROVED</option>
+                    <option value="SETTLED">SETTLED</option>
+                    <option value="REJECTED">REJECTED</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Settled / Payout Amount (₹)</label>
+                  <input 
+                    type="number" 
+                    placeholder="Enter settled ₹ amount"
+                    value={editClaimData.settlementAmount || ''}
+                    onChange={(e) => setEditClaimData({...editClaimData, settlementAmount: e.target.value})}
+                    className="w-full px-3 py-2 rounded-xl border text-xs font-mono font-bold text-emerald-700 outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Total Claim Amount (₹) *</label>
+                  <input 
+                    type="number" 
+                    required
+                    value={editClaimData.claimAmount || ''}
+                    onChange={(e) => setEditClaimData({...editClaimData, claimAmount: e.target.value})}
+                    className="w-full px-3 py-2 rounded-xl border text-xs font-mono font-bold text-blue-900 outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Hospital / Garage</label>
+                  <input 
+                    type="text" 
+                    value={editClaimData.hospitalOrGarage || ''}
+                    onChange={(e) => setEditClaimData({...editClaimData, hospitalOrGarage: e.target.value})}
+                    className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Insurance Provider</label>
+                  <input 
+                    type="text" 
+                    value={editClaimData.insuranceCompany || ''}
+                    onChange={(e) => setEditClaimData({...editClaimData, insuranceCompany: e.target.value})}
+                    className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Policy Number</label>
+                  <input 
+                    type="text" 
+                    value={editClaimData.policyNo || ''}
+                    onChange={(e) => setEditClaimData({...editClaimData, policyNo: e.target.value})}
+                    className="w-full px-3 py-2 rounded-xl border text-xs font-mono font-bold outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Assigned Followup Staff</label>
+                <select 
+                  value={editClaimData.assignedStaff || 'Priya Sharma'}
+                  onChange={(e) => setEditClaimData({...editClaimData, assignedStaff: e.target.value})}
+                  className="w-full px-3 py-2 rounded-xl border text-xs font-bold bg-white outline-none focus:ring-2 focus:ring-purple-600"
+                >
+                  <option value="Priya Sharma">Priya Sharma</option>
+                  <option value="Anitha S.">Anitha S.</option>
+                  <option value="Karthik Subramanian">Karthik Subramanian</option>
+                  <option value="Rajesh V.">Rajesh V.</option>
+                  <option value="Rahul Dravid">Rahul Dravid</option>
+                </select>
+              </div>
+
+              <button 
+                type="submit" 
+                className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs shadow-md transition cursor-pointer flex items-center justify-center space-x-2"
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                <span>Save Changes &amp; Sync with Claims Desk</span>
               </button>
             </form>
           </div>

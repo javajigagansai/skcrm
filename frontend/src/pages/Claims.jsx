@@ -8,7 +8,7 @@ import { Plus, Search, ShieldCheck, CheckCircle2, Clock, AlertCircle, X, UserChe
 export const Claims = () => {
   const { user } = useAuth();
   const { openCustomer360 } = useCustomer360();
-  const { claims, addClaim, updateClaimStatus } = useData();
+  const { claims, addClaim, updateClaim, updateClaimStatus, deleteClaim, customers, policies } = useData();
   const isAdmin = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN';
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -17,6 +17,8 @@ export const Claims = () => {
   const [filterAmountRange, setFilterAmountRange] = useState('ALL');
 
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingClaim, setEditingClaim] = useState(null);
 
   const clearAllFilters = () => {
     setSearchTerm('');
@@ -29,29 +31,61 @@ export const Claims = () => {
     policyNo: '',
     customerName: '',
     insuranceCompany: '',
+    claimType: 'Health Hospitalization',
     claimAmount: '',
+    settlementAmount: '',
     hospitalOrGarage: '',
-    assignedStaff: user?.name || 'Priya Sharma'
+    assignedStaff: 'Priya Sharma (Senior Advisor)',
+    status: 'SUBMITTED'
   });
 
-  const handleFileClaim = (e) => {
+  const handleFileClaim = async (e) => {
     e.preventDefault();
     if (!newClaim.customerName || !newClaim.policyNo) {
       alert("Please fill in Customer Name and Policy Number");
       return;
     }
-    const created = addClaim({
+    const matchedCust = (customers || []).find(c => c.name?.toLowerCase().trim() === newClaim.customerName.toLowerCase().trim());
+    const created = await addClaim({
       ...newClaim,
+      customerId: matchedCust?.id || matchedCust?.customerCode || '',
+      customerCode: matchedCust?.customerCode || matchedCust?.id || '',
       claimAmount: parseFloat(newClaim.claimAmount || 0),
+      settlementAmount: parseFloat(newClaim.settlementAmount || 0),
       assignedStaff: newClaim.assignedStaff || user?.name || 'Priya Sharma'
     });
     setShowAddModal(false);
-    setNewClaim({ policyNo: '', customerName: '', insuranceCompany: '', claimAmount: '', hospitalOrGarage: '', assignedStaff: user?.name || '' });
-    alert(`Claim ${created.id} submitted successfully!`);
+    setNewClaim({ policyNo: '', customerName: '', insuranceCompany: '', claimType: 'Health Hospitalization', claimAmount: '', settlementAmount: '', hospitalOrGarage: '', assignedStaff: user?.name || 'Priya Sharma', status: 'SUBMITTED' });
+    alert(`Claim ${created.id} submitted successfully! Directly synced to Customer 360.`);
+  };
+
+  const handleOpenEdit = (clm) => {
+    setEditingClaim({
+      ...clm,
+      claimAmount: clm.claimAmount || clm.amount || '',
+      settlementAmount: clm.settlementAmount || '',
+      status: clm.status || 'SUBMITTED'
+    });
+    setShowEditModal(true);
+  };
+
+  const handleSaveEdit = async (e) => {
+    e.preventDefault();
+    if (!editingClaim || !editingClaim.id) return;
+    await updateClaim(editingClaim);
+    setShowEditModal(false);
+    setEditingClaim(null);
+    alert(`Claim ${editingClaim.id} updated successfully! Directly reflected in Customer 360.`);
   };
 
   const handleUpdateClaimStatus = (id, newStatus) => {
     updateClaimStatus(id, newStatus);
+  };
+
+  const handleDeleteClaimDesk = (id) => {
+    if (window.confirm(`Are you sure you want to delete claim ${id}? This will remove it from both Claims Desk and Customer 360.`)) {
+      deleteClaim(id);
+    }
   };
 
   const filtered = useMemo(() => {
@@ -261,11 +295,12 @@ export const Claims = () => {
               <tr className="bg-slate-50 border-b border-slate-200/80 text-[11px] font-black uppercase tracking-wider text-slate-500">
                 <th className="p-4">Claim ID &amp; Policy</th>
                 <th className="p-4">Customer Details</th>
-                <th className="p-4">Insurer</th>
+                <th className="p-4">Insurer &amp; Type</th>
                 <th className="p-4">Claim Amount</th>
+                <th className="p-4">Settled Amount</th>
                 <th className="p-4">Assigned Staff / Officer</th>
-                <th className="p-4">Status</th>
-                <th className="p-4 text-right">Update Status</th>
+                <th className="p-4 text-center">Status</th>
+                <th className="p-4 text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-xs font-semibold text-slate-700">
@@ -277,38 +312,66 @@ export const Claims = () => {
                   </td>
                   <td className="p-4">
                     <button
-                      onClick={() => openCustomer360(c.customerName)}
+                      onClick={() => openCustomer360(c.customerName, 'CLAIMS')}
                       className="font-black text-slate-900 hover:text-blue-600 hover:underline transition cursor-pointer text-left flex items-center space-x-1"
-                      title="Click to view Customer 360° Profile"
+                      title="Click to view Customer 360° Profile (Claims Tab)"
                     >
                       <span>{c.customerName}</span>
                       <Sparkles className="h-3 w-3 text-blue-500 opacity-80" />
                     </button>
+                    {c.hospitalOrGarage && (
+                      <p className="text-[10px] text-slate-400 font-medium">{c.hospitalOrGarage}</p>
+                    )}
                   </td>
-                  <td className="p-4">{c.insuranceCompany}</td>
-                  <td className="p-4 font-mono font-black text-slate-900">₹{c.claimAmount.toLocaleString()}</td>
+                  <td className="p-4">
+                    <p className="font-extrabold text-slate-900">{c.insuranceCompany}</p>
+                    <span className="badge bg-slate-100 text-slate-700 text-[9px] font-bold">{c.claimType || 'Insurance Claim'}</span>
+                  </td>
+                  <td className="p-4 font-mono font-black text-slate-900">₹{Number(c.claimAmount || 0).toLocaleString()}</td>
+                  <td className="p-4 font-mono font-black text-emerald-700">
+                    {Number(c.settlementAmount || 0) > 0 ? `₹${Number(c.settlementAmount).toLocaleString()}` : <span className="text-slate-400 font-normal">Pending</span>}
+                  </td>
                   <td className="p-4">
                     <span className="badge bg-blue-50 text-blue-700 border border-blue-200 text-[11px] font-extrabold px-2.5 py-1 rounded-lg inline-flex items-center space-x-1">
                       <UserCheck className="h-3 w-3 text-blue-600 shrink-0" />
-                      <span>{c.assignedStaff || 'Karthik Subramanian (Claims Head)'}</span>
+                      <span>{c.assignedStaff || 'Priya Sharma'}</span>
                     </span>
                   </td>
-                  <td className="p-4">
-                    <span className={`badge ${c.status === 'SETTLED' ? 'badge-green' : c.status === 'UNDER_PROCESS' ? 'badge-amber' : 'badge-brand'}`}>
-                      {c.status}
-                    </span>
-                  </td>
-                  <td className="p-4 text-right">
+                  <td className="p-4 text-center">
                     <select 
-                      value={c.status} 
+                      value={c.status || 'SUBMITTED'} 
                       onChange={(e) => handleUpdateClaimStatus(c.id, e.target.value)}
-                      className="px-2.5 py-1 rounded-xl text-[11px] font-bold border border-slate-200 bg-white"
+                      className={`px-2.5 py-1 rounded-xl text-[11px] font-extrabold border cursor-pointer outline-none ${
+                        c.status === 'SETTLED' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
+                        c.status === 'APPROVED' ? 'bg-blue-50 text-blue-800 border-blue-300' :
+                        c.status === 'REJECTED' ? 'bg-rose-50 text-rose-800 border-rose-300' :
+                        'bg-amber-50 text-amber-800 border-amber-300'
+                      }`}
                     >
                       <option value="SUBMITTED">SUBMITTED</option>
-                      <option value="UNDER_PROCESS">UNDER_PROCESS</option>
+                      <option value="IN_REVIEW">IN_REVIEW</option>
+                      <option value="APPROVED">APPROVED</option>
                       <option value="SETTLED">SETTLED</option>
                       <option value="REJECTED">REJECTED</option>
                     </select>
+                  </td>
+                  <td className="p-4 text-center">
+                    <div className="flex items-center justify-center space-x-1.5">
+                      <button 
+                        onClick={() => handleOpenEdit(c)}
+                        className="p-1.5 text-amber-600 hover:bg-amber-50 rounded-lg transition cursor-pointer"
+                        title="Edit Claim Details"
+                      >
+                        <Edit3 className="h-4 w-4" />
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteClaimDesk(c.id)}
+                        className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                        title="Delete Claim Record"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -317,28 +380,77 @@ export const Claims = () => {
         </div>
       </div>
 
+      {/* FILE NEW CLAIM MODAL */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-100">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-100 my-8 animate-fadeIn">
             <div className="flex items-center justify-between border-b pb-3">
-              <h3 className="text-base font-black text-slate-900">File Insurance Claim Request</h3>
-              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600"><X className="h-5 w-5" /></button>
+              <h3 className="text-base font-black text-slate-900 flex items-center space-x-2">
+                <ShieldCheck className="h-5 w-5 text-blue-600" />
+                <span>File Insurance Claim Request</span>
+              </h3>
+              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer"><X className="h-5 w-5" /></button>
             </div>
 
-            <form onSubmit={handleFileClaim} className="space-y-3">
+            <form onSubmit={handleFileClaim} className="space-y-3" autoComplete="off">
               <div>
-                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Customer Full Name</label>
-                <input type="text" required placeholder="Enter Customer Name" value={newClaim.customerName} onChange={(e) => setNewClaim({...newClaim, customerName: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600" />
+                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Customer Full Name *</label>
+                <input 
+                  type="text" 
+                  required 
+                  placeholder="Enter Customer Name" 
+                  value={newClaim.customerName} 
+                  onChange={(e) => setNewClaim({...newClaim, customerName: e.target.value})} 
+                  className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white" 
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Policy Number</label>
-                  <input type="text" required value={newClaim.policyNo} onChange={(e) => setNewClaim({...newClaim, policyNo: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600" />
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Policy Number *</label>
+                  <input 
+                    type="text" 
+                    required 
+                    placeholder="e.g. POL-1001"
+                    value={newClaim.policyNo} 
+                    onChange={(e) => setNewClaim({...newClaim, policyNo: e.target.value})} 
+                    className="w-full px-3 py-2 rounded-xl border text-xs font-mono font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white" 
+                  />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Claim Amount (₹)</label>
-                  <input type="number" required value={newClaim.claimAmount} onChange={(e) => setNewClaim({...newClaim, claimAmount: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600" />
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Insurance Company Provider *</label>
+                  <input 
+                    type="text" 
+                    required 
+                    placeholder="e.g. Star Health Insurance"
+                    value={newClaim.insuranceCompany} 
+                    onChange={(e) => setNewClaim({...newClaim, insuranceCompany: e.target.value})} 
+                    className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white" 
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Claim Amount (₹) *</label>
+                  <input 
+                    type="number" 
+                    required 
+                    placeholder="Enter claim ₹ amount"
+                    value={newClaim.claimAmount} 
+                    onChange={(e) => setNewClaim({...newClaim, claimAmount: e.target.value})} 
+                    className="w-full px-3 py-2 rounded-xl border text-xs font-mono font-bold text-blue-900 outline-none focus:ring-2 focus:ring-blue-600" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Hospital / Garage / Provider</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. Apollo Hospital Chennai"
+                    value={newClaim.hospitalOrGarage} 
+                    onChange={(e) => setNewClaim({...newClaim, hospitalOrGarage: e.target.value})} 
+                    className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600" 
+                  />
                 </div>
               </div>
 
@@ -349,14 +461,133 @@ export const Claims = () => {
                   onChange={(e) => setNewClaim({...newClaim, assignedStaff: e.target.value})} 
                   className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white"
                 >
+                  <option value="Priya Sharma (Senior Advisor)">Priya Sharma (Senior Advisor)</option>
                   <option value="Karthik Subramanian (Claims Head)">Karthik Subramanian (Claims Head)</option>
                   <option value="Anitha S. (Claim Specialist)">Anitha S. (Claim Specialist)</option>
-                  <option value="Priya Sharma (Senior Advisor)">Priya Sharma (Senior Advisor)</option>
                   <option value="Rajesh V. (Relationship Manager)">Rajesh V. (Relationship Manager)</option>
+                  <option value="Rahul Dravid (Staff Advisor)">Rahul Dravid (Staff Advisor)</option>
                 </select>
               </div>
 
-              <button type="submit" className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow cursor-pointer">Submit Claim to Desk</button>
+              <button 
+                type="submit" 
+                className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer flex items-center justify-center space-x-2"
+              >
+                <ShieldCheck className="h-4 w-4" />
+                <span>Submit Claim &amp; Sync to Customer 360</span>
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT CLAIM MODAL */}
+      {showEditModal && editingClaim && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-100 my-8 animate-fadeIn">
+            <div className="flex items-center justify-between border-b pb-3">
+              <h3 className="text-base font-black text-slate-900 flex items-center space-x-2">
+                <Edit3 className="h-5 w-5 text-amber-600" />
+                <span>Edit Claim Details ({editingClaim.id})</span>
+              </h3>
+              <button onClick={() => setShowEditModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer"><X className="h-5 w-5" /></button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="space-y-3" autoComplete="off">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Claim Status</label>
+                  <select 
+                    value={editingClaim.status || 'SUBMITTED'} 
+                    onChange={(e) => setEditingClaim({...editingClaim, status: e.target.value})} 
+                    className="w-full px-3 py-2 rounded-xl border text-xs font-black outline-none focus:ring-2 focus:ring-blue-600 bg-white"
+                  >
+                    <option value="SUBMITTED">SUBMITTED</option>
+                    <option value="IN_REVIEW">IN_REVIEW</option>
+                    <option value="APPROVED">APPROVED</option>
+                    <option value="SETTLED">SETTLED</option>
+                    <option value="REJECTED">REJECTED</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Settled Amount (₹)</label>
+                  <input 
+                    type="number" 
+                    placeholder="Enter settled ₹ amount"
+                    value={editingClaim.settlementAmount || ''} 
+                    onChange={(e) => setEditingClaim({...editingClaim, settlementAmount: e.target.value})} 
+                    className="w-full px-3 py-2 rounded-xl border text-xs font-mono font-bold text-emerald-700 outline-none focus:ring-2 focus:ring-emerald-500" 
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Claim Amount (₹) *</label>
+                  <input 
+                    type="number" 
+                    required 
+                    value={editingClaim.claimAmount || ''} 
+                    onChange={(e) => setEditingClaim({...editingClaim, claimAmount: e.target.value})} 
+                    className="w-full px-3 py-2 rounded-xl border text-xs font-mono font-bold text-blue-900 outline-none focus:ring-2 focus:ring-blue-600" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Hospital / Garage / Provider</label>
+                  <input 
+                    type="text" 
+                    value={editingClaim.hospitalOrGarage || ''} 
+                    onChange={(e) => setEditingClaim({...editingClaim, hospitalOrGarage: e.target.value})} 
+                    className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600" 
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Customer Full Name</label>
+                  <input 
+                    type="text" 
+                    required 
+                    value={editingClaim.customerName || ''} 
+                    onChange={(e) => setEditingClaim({...editingClaim, customerName: e.target.value})} 
+                    className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Policy Number</label>
+                  <input 
+                    type="text" 
+                    required 
+                    value={editingClaim.policyNo || ''} 
+                    onChange={(e) => setEditingClaim({...editingClaim, policyNo: e.target.value})} 
+                    className="w-full px-3 py-2 rounded-xl border text-xs font-mono font-bold outline-none focus:ring-2 focus:ring-blue-600" 
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Assigned Claims Staff</label>
+                <select 
+                  value={editingClaim.assignedStaff || 'Priya Sharma'} 
+                  onChange={(e) => setEditingClaim({...editingClaim, assignedStaff: e.target.value})} 
+                  className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white"
+                >
+                  <option value="Priya Sharma">Priya Sharma</option>
+                  <option value="Karthik Subramanian (Claims Head)">Karthik Subramanian (Claims Head)</option>
+                  <option value="Anitha S. (Claim Specialist)">Anitha S. (Claim Specialist)</option>
+                  <option value="Rajesh V. (Relationship Manager)">Rajesh V. (Relationship Manager)</option>
+                  <option value="Rahul Dravid (Staff Advisor)">Rahul Dravid (Staff Advisor)</option>
+                </select>
+              </div>
+
+              <button 
+                type="submit" 
+                className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer flex items-center justify-center space-x-2"
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                <span>Save Changes &amp; Sync to Customer 360</span>
+              </button>
             </form>
           </div>
         </div>

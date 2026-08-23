@@ -911,21 +911,78 @@ export const DataProvider = ({ children }) => {
     const newClaim = {
       ...claimData,
       id,
+      claimAmount: parseFloat(claimData.claimAmount || claimData.amount || 0),
+      settlementAmount: parseFloat(claimData.settlementAmount || 0),
       assignedStaffId,
       assignedStaffName,
       assignedStaff: assignedStaffName,
       claimDate: claimData.claimDate || new Date().toISOString().split('T')[0],
-      status: 'SUBMITTED'
+      status: claimData.status || 'SUBMITTED',
+      createdAt: new Date().toISOString()
     };
 
     setClaims(prev => [newClaim, ...prev]);
     try { await setDoc(doc(db, 'claims', id), newClaim, { merge: true }); } catch (e) {}
+
+    addAuditLog({
+      userName: user?.name || 'Staff Advisor',
+      userRole: user?.role || 'STAFF',
+      action: 'CREATE_CLAIM',
+      module: 'Claims',
+      affectedRecord: `${id} - ${newClaim.customerName}`,
+      details: `Filed claim of ₹${newClaim.claimAmount} for policy ${newClaim.policyNo || 'N/A'} (${newClaim.insuranceCompany || 'Provider'})`
+    });
     return newClaim;
   };
 
+  const updateClaim = async (updatedClaim) => {
+    if (!updatedClaim || !updatedClaim.id) return;
+    const cleanObj = {
+      ...updatedClaim,
+      claimAmount: parseFloat(updatedClaim.claimAmount || updatedClaim.amount || 0),
+      settlementAmount: parseFloat(updatedClaim.settlementAmount || 0),
+      updatedAt: new Date().toISOString()
+    };
+
+    setClaims(prev => prev.map(clm => clm.id === cleanObj.id ? { ...clm, ...cleanObj } : clm));
+    try { await setDoc(doc(db, 'claims', cleanObj.id), cleanObj, { merge: true }); } catch (e) {}
+
+    addAuditLog({
+      userName: user?.name || 'Staff Advisor',
+      userRole: user?.role || 'STAFF',
+      action: 'UPDATE_CLAIM',
+      module: 'Claims',
+      affectedRecord: `${cleanObj.id} - ${cleanObj.customerName}`,
+      details: `Updated claim status to ${cleanObj.status || 'SUBMITTED'}, Settlement ₹${cleanObj.settlementAmount || 0}`
+    });
+    return cleanObj;
+  };
+
   const updateClaimStatus = async (id, newStatus) => {
-    setClaims(prev => prev.map(clm => clm.id === id ? { ...clm, status: newStatus } : clm));
-    try { await setDoc(doc(db, 'claims', id), { status: newStatus }, { merge: true }); } catch (e) {}
+    setClaims(prev => prev.map(clm => clm.id === id ? { ...clm, status: newStatus, updatedAt: new Date().toISOString() } : clm));
+    try { await setDoc(doc(db, 'claims', id), { status: newStatus, updatedAt: new Date().toISOString() }, { merge: true }); } catch (e) {}
+    addAuditLog({
+      userName: user?.name || 'Staff Advisor',
+      userRole: user?.role || 'STAFF',
+      action: 'UPDATE_CLAIM_STATUS',
+      module: 'Claims',
+      affectedRecord: String(id),
+      details: `Changed claim status to ${newStatus}`
+    });
+  };
+
+  const deleteClaim = async (id) => {
+    if (!id) return;
+    setClaims(prev => prev.filter(c => c.id !== id));
+    try { await deleteDoc(doc(db, 'claims', id)); } catch (e) {}
+    addAuditLog({
+      userName: user?.name || 'Admin User',
+      userRole: user?.role || 'ADMIN',
+      action: 'DELETE_CLAIM',
+      module: 'Claims',
+      affectedRecord: String(id),
+      details: `Deleted claim record ${id}`
+    });
   };
 
   const addLead = (leadData) => {
@@ -1150,7 +1207,9 @@ export const DataProvider = ({ children }) => {
       addInvestment,
       updateInvestmentStatus,
       addClaim,
+      updateClaim,
       updateClaimStatus,
+      deleteClaim,
       addLead,
       convertLeadToCustomer,
       addFollowup,
