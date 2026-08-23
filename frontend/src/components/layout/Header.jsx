@@ -2,51 +2,33 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Search, Shield, LogOut, User, ChevronDown, X, PartyPopper, CheckCircle2, AlertCircle, Clock, CheckSquare } from 'lucide-react';
+import { Bell, Shield, LogOut, User, ChevronDown, CheckSquare, AlertCircle } from 'lucide-react';
 
 export const Header = () => {
   const { user, logout } = useAuth();
   const { notifications, unreadNotificationCount, markNotificationAsRead, markAllNotificationsAsRead } = useNotification();
   const navigate = useNavigate();
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isOpen, setIsOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
-  const searchRef = useRef(null);
   const notifRef = useRef(null);
+  const userMenuRef = useRef(null);
 
   const isManagerOrAdmin = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER';
 
-  const MOCK_INDEX = [];
-
-  const searchResults = searchTerm.trim() === '' 
-    ? [] 
-    : MOCK_INDEX.filter(item => 
-        item.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        item.subtitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.type.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (searchRef.current && !searchRef.current.contains(e.target)) {
-        setIsOpen(false);
-      }
       if (notifRef.current && !notifRef.current.contains(e.target)) {
         setShowNotifications(false);
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
+        setShowUserMenu(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  const handleSelectResult = (path) => {
-    navigate(path);
-    setSearchTerm('');
-    setIsOpen(false);
-  };
 
   const handleNotifClick = async (notif) => {
     await markNotificationAsRead(notif.id);
@@ -59,59 +41,7 @@ export const Header = () => {
   };
 
   return (
-    <header className="h-16 bg-white border-b border-slate-200/80 px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs">
-      {/* Search Input with Live Results Dropdown */}
-      <div className="relative w-80 sm:w-96" ref={searchRef}>
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-        <input 
-          type="text"
-          value={searchTerm}
-          onChange={(e) => {
-            setSearchTerm(e.target.value);
-            setIsOpen(true);
-          }}
-          onFocus={() => setIsOpen(true)}
-          placeholder="Search customers, investments, policies..."
-          className="w-full pl-10 pr-8 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition font-medium text-slate-800"
-        />
-        {searchTerm && (
-          <button 
-            onClick={() => { setSearchTerm(''); setIsOpen(false); }}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-        )}
-
-        {/* Live Search Results Dropdown */}
-        {isOpen && searchTerm.trim().length > 0 && (
-          <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden z-50 max-h-80 overflow-y-auto">
-            {searchResults.length > 0 ? (
-              <div className="p-2 space-y-1">
-                <div className="px-3 py-1.5 text-[10px] font-black uppercase text-slate-400 tracking-wider">Search Results ({searchResults.length})</div>
-                {searchResults.map((res, idx) => (
-                  <div
-                    key={idx}
-                    onClick={() => handleSelectResult(res.path)}
-                    className="p-2.5 rounded-xl hover:bg-blue-50/80 transition cursor-pointer flex items-center justify-between group"
-                  >
-                    <div>
-                      <p className="text-xs font-bold text-slate-900 group-hover:text-blue-700">{res.title}</p>
-                      <p className="text-[11px] text-slate-400">{res.subtitle}</p>
-                    </div>
-                    <span className="badge badge-brand text-[10px] font-extrabold">{res.type}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="p-4 text-center text-xs text-slate-400 font-semibold">
-                No matching records found for "{searchTerm}"
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
+    <header className="h-16 bg-white border-b border-slate-200/80 px-6 flex items-center justify-end sticky top-0 z-30 shadow-xs">
       {/* Header Right Actions */}
       <div className="flex items-center space-x-3">
         {/* User Role Badge */}
@@ -191,7 +121,7 @@ export const Header = () => {
         </div>
 
         {/* User Profile & Direct Logout/Switch Login Link */}
-        <div className="relative">
+        <div className="relative" ref={userMenuRef}>
           <button 
             onClick={() => setShowUserMenu(!showUserMenu)}
             className="flex items-center space-x-2 p-1.5 rounded-xl hover:bg-slate-100 transition cursor-pointer border border-slate-200/60"
