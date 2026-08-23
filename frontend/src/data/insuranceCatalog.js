@@ -5,25 +5,35 @@
 
 export const INSURANCE_COMPANIES = [
   'Star Health Insurance',
-  'HDFC ERGO General',
-  'ICICI Lombard',
   'Tata AIA Life',
+  'Tata AIG General Insurance',
+  'Tata AIA Life Insurance',
+  'HDFC ERGO General',
+  'HDFC Life Insurance',
+  'ICICI Lombard',
+  'ICICI Prudential Life',
   'Niva Bupa Health',
   'Care Health Insurance',
   'LIC of India',
   'SBI General Insurance',
+  'SBI Life Insurance',
   'Max Life Insurance',
   'Bajaj Allianz General',
+  'Bajaj Allianz Life',
   'Aditya Birla Capital',
   'Reliance General Insurance',
   'Kotak Mahindra Life',
+  'Kotak General Insurance',
   'National Insurance Company',
   'The New India Assurance',
   'Oriental Insurance Company',
   'United India Insurance',
   'Go Digit General Insurance',
   'Acko General Insurance',
-  'ManipalCigna Health Insurance'
+  'ManipalCigna Health Insurance',
+  'Future Generali India',
+  'Chola MS General Insurance',
+  'Royal Sundaram General'
 ];
 
 export const POLICY_CATEGORIES = [
@@ -466,8 +476,8 @@ export const getPredefinedPolicies = (companyName, categoryName) => {
   // Normalize company name match
   const compKey = Object.keys(catalog).find(
     k => k.toLowerCase().trim() === companyName.toLowerCase().trim() ||
-         k.toLowerCase().includes(companyName.toLowerCase().trim()) ||
-         companyName.toLowerCase().includes(k.toLowerCase().trim())
+      k.toLowerCase().includes(companyName.toLowerCase().trim()) ||
+      companyName.toLowerCase().includes(k.toLowerCase().trim())
   );
 
   if (!compKey) {
@@ -479,8 +489,8 @@ export const getPredefinedPolicies = (companyName, categoryName) => {
   if (categoryName && categoryName !== 'ALL' && categoryName !== 'CUSTOM') {
     const catKey = Object.keys(compData).find(
       c => c.toLowerCase().trim() === categoryName.toLowerCase().trim() ||
-           c.toLowerCase().includes(categoryName.toLowerCase().trim()) ||
-           categoryName.toLowerCase().includes(c.toLowerCase().trim())
+        c.toLowerCase().includes(categoryName.toLowerCase().trim()) ||
+        categoryName.toLowerCase().includes(c.toLowerCase().trim())
     );
 
     if (catKey && compData[catKey]) {

@@ -138,10 +138,20 @@ export const Policies = () => {
     ).slice(0, 10);
   }, [customers, newPolicy.customerName]);
 
-  const filteredCompanies = useMemo(() => {
-    if (!newPolicy.insuranceCompany.trim()) return insuranceCompanies;
+  // Ranked Company Matching: Starts-With matches prioritized, followed by Contains matches
+  const companySearchResults = useMemo(() => {
+    const rawList = insuranceCompanies;
+    if (!newPolicy.insuranceCompany || !newPolicy.insuranceCompany.trim()) {
+      return { startsWith: rawList, contains: [], total: rawList.length };
+    }
     const q = newPolicy.insuranceCompany.toLowerCase().trim();
-    return insuranceCompanies.filter(comp => comp.toLowerCase().includes(q));
+    const startsWith = rawList.filter(c => c.toLowerCase().trim().startsWith(q));
+    const contains = rawList.filter(c => !c.toLowerCase().trim().startsWith(q) && c.toLowerCase().includes(q));
+    return {
+      startsWith,
+      contains,
+      total: startsWith.length + contains.length
+    };
   }, [insuranceCompanies, newPolicy.insuranceCompany]);
 
   const filteredCategories = useMemo(() => {
@@ -203,6 +213,22 @@ export const Policies = () => {
       deleteCustomPlan(manageSelectedCompany, manageSelectedCategory, planName);
       setCatalogVersion(v => v + 1);
     }
+  };
+
+  // Highlight Matching Substrings in Search Dropdowns
+  const renderHighlight = (text, query) => {
+    if (!query || !query.trim()) return text;
+    const q = query.trim().toLowerCase();
+    const lower = text.toLowerCase();
+    const idx = lower.indexOf(q);
+    if (idx === -1) return text;
+    return (
+      <span>
+        {text.substring(0, idx)}
+        <span className="bg-purple-100 text-purple-950 font-black px-0.5 rounded">{text.substring(idx, idx + q.length)}</span>
+        {text.substring(idx + q.length)}
+      </span>
+    );
   };
 
   const handleIssuePolicy = async (e) => {
@@ -774,9 +800,9 @@ export const Policies = () => {
                   </label>
                   <div className="flex items-center space-x-2">
                     <input 
-                      type="text"
+                      type="text" 
                       required
-                      placeholder="e.g. Star Comprehensive Platinum Cover / Optima Super Secure 4X..."
+                      placeholder="Enter policy plan name..."
                       value={newPlanNameInput}
                       onChange={(e) => setNewPlanNameInput(e.target.value)}
                       className="flex-1 px-3 py-2 rounded-xl border border-slate-300 text-xs font-bold outline-none focus:ring-2 focus:ring-purple-600 bg-white"
@@ -846,7 +872,7 @@ export const Policies = () => {
                     <input 
                       type="text" 
                       required
-                      placeholder="e.g. Kotak General Insurance / Universal Sompo..."
+                      placeholder="Enter company name..."
                       value={newCompanyName}
                       onChange={(e) => setNewCompanyName(e.target.value)}
                       className="flex-1 px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold outline-none focus:ring-2 focus:ring-purple-600 bg-white"
@@ -900,7 +926,7 @@ export const Policies = () => {
         </div>
       )}
 
-      {/* ================= ISSUE NEW POLICY MODAL (WITH LIVE SEARCHABLE TYPEAHEAD) ================= */}
+      {/* ================= ISSUE NEW POLICY MODAL (CLEAN & SNAPPY) ================= */}
       {showIssueModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-100 my-8">
@@ -909,23 +935,20 @@ export const Policies = () => {
                 <Shield className="h-5 w-5 text-blue-600" />
                 <span>Issue New Insurance Policy</span>
               </h3>
-              <button onClick={() => setShowIssueModal(false)} className="text-slate-400 hover:text-slate-600"><X className="h-5 w-5" /></button>
+              <button onClick={() => setShowIssueModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer"><X className="h-5 w-5" /></button>
             </div>
 
             <form onSubmit={handleIssuePolicy} className="space-y-3.5" autoComplete="off">
-              {/* FIELD 1: CUSTOMER FULL NAME (WITH LIVE AUTOCOMPLETE SEARCH) */}
+              {/* FIELD 1: CUSTOMER FULL NAME */}
               <div className="relative">
-                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1 flex items-center justify-between">
-                  <span>Customer Full Name *</span>
-                  {newPolicy.customerName && (
-                    <span className="text-[10px] text-blue-600 font-bold">Type keyword to search existing customer</span>
-                  )}
+                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">
+                  Customer Full Name *
                 </label>
                 <div className="relative">
                   <input 
                     type="text" 
                     required 
-                    placeholder="Type name (e.g. Jawaji / Rahul Sharma)..." 
+                    placeholder="Enter Customer Full Name" 
                     value={newPolicy.customerName} 
                     onFocus={() => setShowCustSuggest(true)}
                     onChange={(e) => {
@@ -982,17 +1005,16 @@ export const Policies = () => {
                 )}
               </div>
 
-              {/* FIELD 2: INSURANCE COMPANY PROVIDER (WITH LIVE AUTOCOMPLETE SEARCH) */}
+              {/* FIELD 2: INSURANCE COMPANY PROVIDER (WITH LIVE PREFIX "STARTS WITH" & "CONTAINS" AUTOCOMPLETE) */}
               <div className="relative">
-                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1 flex items-center justify-between">
-                  <span>Insurance Company Provider *</span>
-                  <span className="text-[10px] text-purple-600 font-bold">Type to filter (e.g. Tata / Star / HDFC)</span>
+                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">
+                  Insurance Company Provider *
                 </label>
                 <div className="relative">
                   <input 
                     type="text" 
                     required 
-                    placeholder="Type or select company (e.g. Tata AIA / Star Health)..." 
+                    placeholder="Select or Type Insurance Company" 
                     value={newPolicy.insuranceCompany} 
                     onFocus={() => setShowCompSuggest(true)}
                     onChange={(e) => {
@@ -1011,10 +1033,10 @@ export const Policies = () => {
                 </div>
 
                 {/* Floating Companies Suggestions Dropdown */}
-                {showCompSuggest && filteredCompanies.length > 0 && (
-                  <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white rounded-2xl border border-slate-200 shadow-xl max-h-48 overflow-y-auto divide-y divide-slate-100 animate-fadeIn">
-                    <div className="p-2 bg-slate-50 text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between">
-                      <span>Matching Companies ({filteredCompanies.length})</span>
+                {showCompSuggest && companySearchResults.total > 0 && (
+                  <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white rounded-2xl border border-slate-200 shadow-xl max-h-56 overflow-y-auto divide-y divide-slate-100 animate-fadeIn">
+                    <div className="p-2 bg-slate-50 text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between sticky top-0 z-10 border-b">
+                      <span>Matching Companies ({companySearchResults.total})</span>
                       <button 
                         type="button"
                         onClick={() => setShowCompSuggest(false)} 
@@ -1023,44 +1045,86 @@ export const Policies = () => {
                         ✕
                       </button>
                     </div>
-                    {filteredCompanies.map((comp, idx) => (
-                      <div 
-                        key={idx}
-                        onClick={() => {
-                          const plans = getPredefinedPolicies(comp, newPolicy.type);
-                          setNewPolicy({
-                            ...newPolicy,
-                            insuranceCompany: comp,
-                            policyName: plans[0] || newPolicy.policyName
-                          });
-                          setShowCompSuggest(false);
-                        }}
-                        className="p-2.5 hover:bg-purple-50 cursor-pointer transition flex items-center justify-between text-xs font-bold text-slate-800"
-                      >
-                        <span className="flex items-center space-x-2">
-                          <Building2 className="h-3.5 w-3.5 text-purple-600" />
-                          <span>{comp}</span>
-                        </span>
-                        {newPolicy.insuranceCompany === comp && (
-                          <Check className="h-3.5 w-3.5 text-purple-600" />
+
+                    {/* Group 1: Exact Starts With Matches */}
+                    {companySearchResults.startsWith.length > 0 && (
+                      <div>
+                        {newPolicy.insuranceCompany.trim() && (
+                          <div className="px-2.5 py-1 bg-purple-50/70 text-[9px] font-black uppercase text-purple-900 tracking-wider">
+                            Starts with "{newPolicy.insuranceCompany}" ({companySearchResults.startsWith.length})
+                          </div>
                         )}
+                        {companySearchResults.startsWith.map((comp, idx) => (
+                          <div 
+                            key={`start-${idx}`}
+                            onClick={() => {
+                              const plans = getPredefinedPolicies(comp, newPolicy.type);
+                              setNewPolicy({
+                                ...newPolicy,
+                                insuranceCompany: comp,
+                                policyName: plans[0] || newPolicy.policyName
+                              });
+                              setShowCompSuggest(false);
+                            }}
+                            className="p-2.5 hover:bg-purple-50 cursor-pointer transition flex items-center justify-between text-xs font-bold text-slate-800"
+                          >
+                            <span className="flex items-center space-x-2">
+                              <Building2 className="h-3.5 w-3.5 text-purple-600 shrink-0" />
+                              <span>{renderHighlight(comp, newPolicy.insuranceCompany)}</span>
+                            </span>
+                            {newPolicy.insuranceCompany === comp && (
+                              <Check className="h-3.5 w-3.5 text-purple-600 shrink-0" />
+                            )}
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
+
+                    {/* Group 2: Other Matches Containing Keyword */}
+                    {companySearchResults.contains.length > 0 && (
+                      <div>
+                        <div className="px-2.5 py-1 bg-slate-100 text-[9px] font-black uppercase text-slate-600 tracking-wider">
+                          Other Matches Containing "{newPolicy.insuranceCompany}" ({companySearchResults.contains.length})
+                        </div>
+                        {companySearchResults.contains.map((comp, idx) => (
+                          <div 
+                            key={`cont-${idx}`}
+                            onClick={() => {
+                              const plans = getPredefinedPolicies(comp, newPolicy.type);
+                              setNewPolicy({
+                                ...newPolicy,
+                                insuranceCompany: comp,
+                                policyName: plans[0] || newPolicy.policyName
+                              });
+                              setShowCompSuggest(false);
+                            }}
+                            className="p-2.5 hover:bg-slate-50 cursor-pointer transition flex items-center justify-between text-xs font-bold text-slate-800"
+                          >
+                            <span className="flex items-center space-x-2">
+                              <Building2 className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                              <span>{renderHighlight(comp, newPolicy.insuranceCompany)}</span>
+                            </span>
+                            {newPolicy.insuranceCompany === comp && (
+                              <Check className="h-3.5 w-3.5 text-purple-600 shrink-0" />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
 
-              {/* FIELD 3: POLICY CATEGORY (WITH LIVE AUTOCOMPLETE SEARCH) */}
+              {/* FIELD 3: POLICY CATEGORY */}
               <div className="relative">
-                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1 flex items-center justify-between">
-                  <span>Policy Category / Plan Type *</span>
-                  <span className="text-[10px] text-blue-600 font-bold">Type to filter (e.g. Health / Life / Motor)</span>
+                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">
+                  Policy Category / Plan Type *
                 </label>
                 <div className="relative">
                   <input 
                     type="text" 
                     required 
-                    placeholder="Type or select category (e.g. Health Insurance / Term Life)..." 
+                    placeholder="Select or Type Policy Category" 
                     value={newPolicy.type} 
                     onFocus={() => setShowCatSuggest(true)}
                     onChange={(e) => {
@@ -1082,7 +1146,7 @@ export const Policies = () => {
                 {showCatSuggest && filteredCategories.length > 0 && (
                   <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white rounded-2xl border border-slate-200 shadow-xl max-h-48 overflow-y-auto divide-y divide-slate-100 animate-fadeIn">
                     <div className="p-2 bg-slate-50 text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between">
-                      <span>Matching Categories ({filteredCategories.length})</span>
+                      <span>Categories ({filteredCategories.length})</span>
                       <button 
                         type="button"
                         onClick={() => setShowCatSuggest(false)} 
@@ -1115,38 +1179,31 @@ export const Policies = () => {
                 )}
               </div>
 
-              {/* FIELD 4: OFFICIAL POLICY / PLAN NAME (WITH LIVE SEARCHABLE PREDEFINED CATALOG) */}
-              <div className="relative bg-blue-50/70 p-3.5 rounded-2xl border border-blue-200/80 space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="block text-[11px] font-black uppercase text-blue-950 flex items-center space-x-1.5">
-                    <Sparkles className="h-3.5 w-3.5 text-blue-600" />
-                    <span>Official Policy / Plan Name *</span>
-                  </label>
-                  <span className="badge bg-blue-100 text-blue-800 text-[10px] font-black px-2 py-0.5 rounded-md">
-                    {newPolicyAvailablePlans.length} Predefined Plans
-                  </span>
-                </div>
-
+              {/* FIELD 4: OFFICIAL POLICY / PLAN NAME */}
+              <div className="relative">
+                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">
+                  Official Policy / Plan Name *
+                </label>
                 <div className="relative">
                   <input 
                     type="text" 
                     required 
-                    placeholder="Type or select plan name (e.g. Star Comprehensive / Optima Restore)..." 
+                    placeholder="Select or Type Policy Plan Name" 
                     value={newPolicy.policyName} 
                     onFocus={() => setShowPlanSuggest(true)}
                     onChange={(e) => {
                       setNewPolicy({...newPolicy, policyName: e.target.value});
                       setShowPlanSuggest(true);
                     }} 
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-blue-300 text-xs font-extrabold outline-none focus:ring-2 focus:ring-blue-600 bg-white" 
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white" 
                   />
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-400 pointer-events-none" />
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
                 </div>
 
                 {/* Floating Plans Suggestions Dropdown */}
                 {showPlanSuggest && (
-                  <div className="absolute left-3.5 right-3.5 top-full mt-1 z-30 bg-white rounded-2xl border border-blue-200 shadow-2xl max-h-52 overflow-y-auto divide-y divide-slate-100 animate-fadeIn">
-                    <div className="p-2 bg-blue-50 text-[10px] font-black uppercase text-blue-900 tracking-wider flex items-center justify-between">
+                  <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white rounded-2xl border border-slate-200 shadow-xl max-h-52 overflow-y-auto divide-y divide-slate-100 animate-fadeIn">
+                    <div className="p-2 bg-slate-50 text-[10px] font-black uppercase text-slate-500 tracking-wider flex items-center justify-between">
                       <span>Predefined Plans for {newPolicy.insuranceCompany} ({filteredPlans.length})</span>
                       <button 
                         type="button"
@@ -1177,7 +1234,7 @@ export const Policies = () => {
                       ))
                     ) : (
                       <div className="p-3 text-xs text-slate-400 font-semibold text-center">
-                        No exact predefined match. Keep typing to use custom plan name!
+                        No predefined matches. You can keep your custom typed plan name.
                       </div>
                     )}
                   </div>
@@ -1261,7 +1318,7 @@ export const Policies = () => {
                 <Edit3 className="h-5 w-5 text-amber-600" />
                 <span>Edit Policy Details ({editingPolicy.id})</span>
               </h3>
-              <button onClick={() => setShowEditModal(false)} className="text-slate-400 hover:text-slate-600"><X className="h-5 w-5" /></button>
+              <button onClick={() => setShowEditModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer"><X className="h-5 w-5" /></button>
             </div>
 
             <form onSubmit={handleSaveEditPolicy} className="space-y-3.5">
@@ -1321,34 +1378,25 @@ export const Policies = () => {
               </div>
 
               {/* EDIT MODAL POLICY / PLAN NAME SELECTION */}
-              <div className="bg-amber-50/70 p-3.5 rounded-2xl border border-amber-200/80 space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="block text-[11px] font-black uppercase text-amber-950 flex items-center space-x-1.5">
-                    <Sparkles className="h-3.5 w-3.5 text-amber-600" />
-                    <span>Official Policy / Plan Name</span>
-                  </label>
-                  <span className="badge bg-amber-100 text-amber-900 text-[10px] font-black px-2 py-0.5 rounded-md">
-                    {editingPolicyAvailablePlans.length} Predefined Plans
-                  </span>
-                </div>
-
+              <div>
+                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Official Policy / Plan Name</label>
                 <input 
                   type="text" 
                   required 
-                  placeholder="Type policy plan name..." 
+                  placeholder="Select or Type Policy Plan Name" 
                   value={editingPolicy.policyName || ''} 
                   onChange={(e) => setEditingPolicy({...editingPolicy, policyName: e.target.value})} 
-                  className="w-full px-3 py-2 rounded-xl border border-amber-400 text-xs font-bold outline-none focus:ring-2 focus:ring-amber-500 bg-white" 
+                  className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-amber-500 bg-white" 
                 />
 
                 {editingPolicyAvailablePlans.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 pt-1">
+                  <div className="flex flex-wrap gap-1.5 pt-2">
                     {editingPolicyAvailablePlans.slice(0, 5).map((pName, idx) => (
                       <button
                         key={idx}
                         type="button"
                         onClick={() => setEditingPolicy({...editingPolicy, policyName: pName})}
-                        className="px-2 py-1 bg-white border border-amber-300 hover:bg-amber-100 rounded-lg text-[10px] font-extrabold text-amber-900 transition cursor-pointer"
+                        className="px-2 py-1 bg-slate-50 border border-slate-200 hover:bg-amber-50 hover:border-amber-300 rounded-lg text-[10px] font-bold text-slate-800 transition cursor-pointer"
                       >
                         {pName}
                       </button>
