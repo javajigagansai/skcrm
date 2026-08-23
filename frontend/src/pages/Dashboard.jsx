@@ -1418,8 +1418,8 @@ export const Dashboard = () => {
                   interval={0}
                   angle={0}
                   textAnchor="middle"
-                  height={30}
-                  tick={{ fontSize: 11, fontWeight: 700 }} 
+                  height={dateFilter === 'TODAY' ? 0 : 30}
+                  tick={dateFilter === 'TODAY' ? false : { fontSize: 11, fontWeight: 700 }} 
                 />
                 <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700 }} unit="L" />
                 <Tooltip cursor={{ fill: '#F1F5F9' }} />
@@ -2713,8 +2713,8 @@ export const Dashboard = () => {
                   interval={0}
                   angle={0}
                   textAnchor="middle"
-                  height={30}
-                  tick={{ fontSize: 11, fontWeight: 700 }} 
+                  height={dateFilter === 'TODAY' ? 0 : 30}
+                  tick={dateFilter === 'TODAY' ? false : { fontSize: 11, fontWeight: 700 }} 
                 />
                 <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700 }} unit="L" />
                 <Tooltip cursor={{ fill: '#F1F5F9' }} />
