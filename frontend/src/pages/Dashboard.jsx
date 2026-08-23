@@ -21,8 +21,39 @@ export const Dashboard = () => {
   const { customers, leads, policies, investments, income, expenses, claims, followups, tasks } = useData();
 
   const [dateFilter, setDateFilter] = useState('THIS_MONTH');
-  const [customStartDate, setCustomStartDate] = useState('');
-  const [customEndDate, setCustomEndDate] = useState('');
+  const [customStartDate, setCustomStartDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 29);
+    return d.toISOString().split('T')[0];
+  });
+  const [customEndDate, setCustomEndDate] = useState(() => {
+    return new Date().toISOString().split('T')[0];
+  });
+
+  const customRangeInfo = useMemo(() => {
+    let start = customStartDate ? new Date(customStartDate) : null;
+    let end = customEndDate ? new Date(customEndDate) : null;
+    if (!start && !end) {
+      end = new Date();
+      start = new Date();
+      start.setDate(start.getDate() - 29);
+    } else if (start && !end) {
+      end = new Date(start);
+    } else if (!start && end) {
+      start = new Date(end);
+    }
+    if (start > end) {
+      const t = start; start = end; end = t;
+    }
+    start.setHours(0, 0, 0, 0);
+    end.setHours(23, 59, 59, 999);
+    const diffDays = Math.max(1, Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+    return { start, end, diffDays };
+  }, [customStartDate, customEndDate]);
+
+  const isSingleDay = dateFilter === 'TODAY' || (dateFilter === 'CUSTOM' && customRangeInfo.diffDays === 1);
+  const isDenseBars = dateFilter === 'THIS_MONTH' || (dateFilter === 'CUSTOM' && customRangeInfo.diffDays > 12);
+
   const [activeModal, setActiveModal] = useState(null);
   const [reportSummary, setReportSummary] = useState(null);
   const [selectedCategoryCompanyFilter, setSelectedCategoryCompanyFilter] = useState('ALL');
@@ -513,20 +544,106 @@ export const Dashboard = () => {
         return { label, month: label, revenue, income: revenue, salaryExpense, operationalExpense, totalExpenses, expense: totalExpenses, netProfit, govtTaxAdvantage };
       });
     } else if (dateFilter === 'CUSTOM') {
-      let labels = ['Period 1', 'Period 2', 'Period 3', 'Period 4'];
-      if (customStartDate && customEndDate) {
-        labels = [customStartDate, 'Mid Period 1', 'Mid Period 2', customEndDate];
+      const { start, end, diffDays } = customRangeInfo;
+
+      if (diffDays === 1) {
+        const hours = ['09:00 AM', '11:00 AM', '01:00 PM', '03:00 PM', '05:00 PM', '07:00 PM'];
+        return hours.map((label, idx) => {
+          const factor = (idx + 1) / hours.length;
+          const revenue = Number((totalRevLakhs * 0.15 * factor).toFixed(2));
+          const salaryExpense = Number((totalSalExpLakhs * 0.15 * factor).toFixed(2));
+          const operationalExpense = Number((totalOpExpLakhs * 0.15 * factor).toFixed(2));
+          const totalExpenses = Number((salaryExpense + operationalExpense).toFixed(2));
+          const netProfit = Number((revenue - totalExpenses).toFixed(2));
+          const govtTaxAdvantage = Number((totalExpenses * 0.25).toFixed(2));
+          return { label, month: label, fullLabel: `${label} (${start.toLocaleDateString('en-US', { day: '2-digit', month: 'short' })})`, revenue, income: revenue, salaryExpense, operationalExpense, totalExpenses, expense: totalExpenses, netProfit, govtTaxAdvantage };
+        });
+      } else if (diffDays <= 10) {
+        const days = [];
+        for (let i = 0; i < diffDays; i++) {
+          const d = new Date(start);
+          d.setDate(d.getDate() + i);
+          const dayNum = String(d.getDate()).padStart(2, '0');
+          const monthShort = d.toLocaleDateString('en-US', { month: 'short' });
+          days.push({ label: `${dayNum} ${monthShort}`, fullLabel: `${dayNum} ${monthShort} ${d.getFullYear()}` });
+        }
+        const baseWeight = 1 / diffDays;
+        return days.map(({ label, fullLabel }, idx) => {
+          const weight = baseWeight * (0.8 + (idx / diffDays) * 0.4);
+          const revenue = Number((totalRevLakhs * weight).toFixed(2));
+          const salaryExpense = Number((totalSalExpLakhs * weight).toFixed(2));
+          const operationalExpense = Number((totalOpExpLakhs * weight).toFixed(2));
+          const totalExpenses = Number((salaryExpense + operationalExpense).toFixed(2));
+          const netProfit = Number((revenue - totalExpenses).toFixed(2));
+          const govtTaxAdvantage = Number((totalExpenses * 0.25).toFixed(2));
+          return { label, month: label, fullLabel, revenue, income: revenue, salaryExpense, operationalExpense, totalExpenses, expense: totalExpenses, netProfit, govtTaxAdvantage };
+        });
+      } else if (diffDays <= 31) {
+        const days = [];
+        for (let i = 0; i < diffDays; i++) {
+          const d = new Date(start);
+          d.setDate(d.getDate() + i);
+          const dayNum = String(d.getDate());
+          const monthShort = d.toLocaleDateString('en-US', { month: 'short' });
+          days.push({ label: dayNum, fullLabel: `${String(d.getDate()).padStart(2, '0')} ${monthShort} ${d.getFullYear()}` });
+        }
+        const baseWeight = 1 / diffDays;
+        return days.map(({ label, fullLabel }, idx) => {
+          const weight = baseWeight * (0.7 + (idx / diffDays) * 0.6);
+          const revenue = Number((totalRevLakhs * weight).toFixed(2));
+          const salaryExpense = Number((totalSalExpLakhs * weight).toFixed(2));
+          const operationalExpense = Number((totalOpExpLakhs * weight).toFixed(2));
+          const totalExpenses = Number((salaryExpense + operationalExpense).toFixed(2));
+          const netProfit = Number((revenue - totalExpenses).toFixed(2));
+          const govtTaxAdvantage = Number((totalExpenses * 0.25).toFixed(2));
+          return { label, month: label, fullLabel, revenue, income: revenue, salaryExpense, operationalExpense, totalExpenses, expense: totalExpenses, netProfit, govtTaxAdvantage };
+        });
+      } else if (diffDays <= 120) {
+        const weekCount = Math.min(12, Math.ceil(diffDays / 7));
+        const intervals = [];
+        for (let i = 0; i < weekCount; i++) {
+          const wStart = new Date(start);
+          wStart.setDate(wStart.getDate() + i * 7);
+          const wEnd = new Date(wStart);
+          wEnd.setDate(wEnd.getDate() + 6);
+          if (wEnd > end) wEnd.setTime(end.getTime());
+          const startStr = `${String(wStart.getDate()).padStart(2, '0')} ${wStart.toLocaleDateString('en-US', { month: 'short' })}`;
+          const endStr = `${String(wEnd.getDate()).padStart(2, '0')} ${wEnd.toLocaleDateString('en-US', { month: 'short' })}`;
+          intervals.push({ label: startStr, fullLabel: `${startStr} - ${endStr}` });
+        }
+        const baseWeight = 1 / intervals.length;
+        return intervals.map(({ label, fullLabel }, idx) => {
+          const weight = baseWeight * (0.8 + (idx / intervals.length) * 0.4);
+          const revenue = Number((totalRevLakhs * weight).toFixed(2));
+          const salaryExpense = Number((totalSalExpLakhs * weight).toFixed(2));
+          const operationalExpense = Number((totalOpExpLakhs * weight).toFixed(2));
+          const totalExpenses = Number((salaryExpense + operationalExpense).toFixed(2));
+          const netProfit = Number((revenue - totalExpenses).toFixed(2));
+          const govtTaxAdvantage = Number((totalExpenses * 0.25).toFixed(2));
+          return { label, month: label, fullLabel, revenue, income: revenue, salaryExpense, operationalExpense, totalExpenses, expense: totalExpenses, netProfit, govtTaxAdvantage };
+        });
+      } else {
+        const months = [];
+        const cur = new Date(start);
+        cur.setDate(1);
+        while (cur <= end) {
+          const monthShort = cur.toLocaleDateString('en-US', { month: 'short' });
+          const yr = cur.getFullYear().toString().slice(-2);
+          months.push({ label: `${monthShort} '${yr}`, fullLabel: cur.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) });
+          cur.setMonth(cur.getMonth() + 1);
+        }
+        const baseWeight = 1 / Math.max(1, months.length);
+        return months.map(({ label, fullLabel }, idx) => {
+          const weight = baseWeight * (0.7 + (idx / months.length) * 0.6);
+          const revenue = Number((totalRevLakhs * weight).toFixed(2));
+          const salaryExpense = Number((totalSalExpLakhs * weight).toFixed(2));
+          const operationalExpense = Number((totalOpExpLakhs * weight).toFixed(2));
+          const totalExpenses = Number((salaryExpense + operationalExpense).toFixed(2));
+          const netProfit = Number((revenue - totalExpenses).toFixed(2));
+          const govtTaxAdvantage = Number((totalExpenses * 0.25).toFixed(2));
+          return { label, month: label, fullLabel, revenue, income: revenue, salaryExpense, operationalExpense, totalExpenses, expense: totalExpenses, netProfit, govtTaxAdvantage };
+        });
       }
-      const weight = 1 / labels.length;
-      return labels.map((label) => {
-        const revenue = Number((totalRevLakhs * weight).toFixed(2));
-        const salaryExpense = Number((totalSalExpLakhs * weight).toFixed(2));
-        const operationalExpense = Number((totalOpExpLakhs * weight).toFixed(2));
-        const totalExpenses = Number((salaryExpense + operationalExpense).toFixed(2));
-        const netProfit = Number((revenue - totalExpenses).toFixed(2));
-        const govtTaxAdvantage = Number((totalExpenses * 0.25).toFixed(2));
-        return { label, month: label, revenue, income: revenue, salaryExpense, operationalExpense, totalExpenses, expense: totalExpenses, netProfit, govtTaxAdvantage };
-      });
     } else {
       // Annual (Past 12 Months rolling up to today)
       const months = [];
@@ -614,16 +731,81 @@ export const Dashboard = () => {
         return { month, label: month, newClients, policiesIssued };
       });
     } else if (dateFilter === 'CUSTOM') {
-      let labels = ['Period 1', 'Period 2', 'Period 3', 'Period 4'];
-      if (customStartDate && customEndDate) {
-        labels = [customStartDate, 'Mid Period 1', 'Mid Period 2', customEndDate];
+      const { start, end, diffDays } = customRangeInfo;
+
+      if (diffDays === 1) {
+        const hours = ['09:00 AM', '11:00 AM', '01:00 PM', '03:00 PM', '05:00 PM', '07:00 PM'];
+        return hours.map((month, idx) => {
+          const factor = (idx + 1) / hours.length;
+          const newClients = Math.max(1, Math.round((totalClients / 6) * factor));
+          const policiesIssued = Math.max(1, Math.round((totalPolicies / 6) * factor));
+          return { month, label: month, newClients, policiesIssued };
+        });
+      } else if (diffDays <= 10) {
+        const days = [];
+        for (let i = 0; i < diffDays; i++) {
+          const d = new Date(start);
+          d.setDate(d.getDate() + i);
+          const dayNum = String(d.getDate()).padStart(2, '0');
+          const monthShort = d.toLocaleDateString('en-US', { month: 'short' });
+          days.push(`${dayNum} ${monthShort}`);
+        }
+        const baseWeight = 1 / diffDays;
+        return days.map((month, idx) => {
+          const weight = baseWeight * (0.8 + (idx / diffDays) * 0.4);
+          const newClients = Math.max(1, Math.round(totalClients * weight));
+          const policiesIssued = Math.max(1, Math.round(totalPolicies * weight));
+          return { month, label: month, newClients, policiesIssued };
+        });
+      } else if (diffDays <= 31) {
+        const days = [];
+        for (let i = 0; i < diffDays; i++) {
+          const d = new Date(start);
+          d.setDate(d.getDate() + i);
+          const dayNum = String(d.getDate());
+          days.push(dayNum);
+        }
+        const baseWeight = 1 / diffDays;
+        return days.map((month, idx) => {
+          const weight = baseWeight * (0.7 + (idx / diffDays) * 0.6);
+          const newClients = Math.max(1, Math.round(totalClients * weight));
+          const policiesIssued = Math.max(1, Math.round(totalPolicies * weight));
+          return { month, label: month, newClients, policiesIssued };
+        });
+      } else if (diffDays <= 120) {
+        const weekCount = Math.min(12, Math.ceil(diffDays / 7));
+        const intervals = [];
+        for (let i = 0; i < weekCount; i++) {
+          const wStart = new Date(start);
+          wStart.setDate(wStart.getDate() + i * 7);
+          const startStr = `${String(wStart.getDate()).padStart(2, '0')} ${wStart.toLocaleDateString('en-US', { month: 'short' })}`;
+          intervals.push(startStr);
+        }
+        const baseWeight = 1 / intervals.length;
+        return intervals.map((month, idx) => {
+          const weight = baseWeight * (0.8 + (idx / intervals.length) * 0.4);
+          const newClients = Math.max(1, Math.round(totalClients * weight));
+          const policiesIssued = Math.max(1, Math.round(totalPolicies * weight));
+          return { month, label: month, newClients, policiesIssued };
+        });
+      } else {
+        const months = [];
+        const cur = new Date(start);
+        cur.setDate(1);
+        while (cur <= end) {
+          const monthShort = cur.toLocaleDateString('en-US', { month: 'short' });
+          const yr = cur.getFullYear().toString().slice(-2);
+          months.push(`${monthShort} '${yr}`);
+          cur.setMonth(cur.getMonth() + 1);
+        }
+        const baseWeight = 1 / Math.max(1, months.length);
+        return months.map((month, idx) => {
+          const weight = baseWeight * (0.7 + (idx / months.length) * 0.6);
+          const newClients = Math.max(1, Math.round(totalClients * weight));
+          const policiesIssued = Math.max(1, Math.round(totalPolicies * weight));
+          return { month, label: month, newClients, policiesIssued };
+        });
       }
-      const weight = 1 / labels.length;
-      return labels.map((month) => {
-        const newClients = Math.max(1, Math.round(totalClients * weight));
-        const policiesIssued = Math.max(1, Math.round(totalPolicies * weight));
-        return { month, label: month, newClients, policiesIssued };
-      });
     } else {
       // Annual (Past 12 Months rolling up to today)
       const months = [];
@@ -1416,14 +1598,14 @@ export const Dashboard = () => {
                   interval={0}
                   angle={0}
                   textAnchor="middle"
-                  height={dateFilter === 'TODAY' ? 0 : 25}
-                  tick={dateFilter === 'TODAY' ? false : { fontSize: dateFilter === 'THIS_MONTH' ? 9 : 11, fontWeight: 700 }} 
+                  height={isSingleDay ? 0 : 25}
+                  tick={isSingleDay ? false : { fontSize: isDenseBars ? 9 : 11, fontWeight: 700 }} 
                 />
                 <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700 }} unit="L" />
                 <Tooltip cursor={{ fill: '#F1F5F9' }} />
                 <Legend wrapperStyle={{ paddingTop: '10px' }} />
-                <Bar dataKey="revenue" fill="#10B981" radius={[6, 6, 0, 0]} barSize={dateFilter === 'THIS_MONTH' ? 7 : 24} name="Income (Lakhs)" />
-                <Bar dataKey="totalExpenses" fill="#EF4444" radius={[6, 6, 0, 0]} barSize={dateFilter === 'THIS_MONTH' ? 7 : 24} name="Expense (Lakhs)" />
+                <Bar dataKey="revenue" fill="#10B981" radius={[6, 6, 0, 0]} barSize={isDenseBars ? 7 : 24} name="Income (Lakhs)" />
+                <Bar dataKey="totalExpenses" fill="#EF4444" radius={[6, 6, 0, 0]} barSize={isDenseBars ? 7 : 24} name="Expense (Lakhs)" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -1780,7 +1962,7 @@ export const Dashboard = () => {
               setDateFilter('CUSTOM');
             }}
             className={`px-2.5 py-1.5 text-xs font-medium rounded-xl border bg-white text-slate-800 shadow-xs focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[130px] ${
-              dateFilter === 'CUSTOM' && customStartDate ? 'border-blue-500 ring-1 ring-blue-500' : 'border-slate-300'
+              dateFilter === 'CUSTOM' ? 'border-blue-500 ring-1 ring-blue-500 font-bold' : 'border-slate-300'
             }`}
             placeholder="dd-mm-yyyy"
           />
@@ -1793,17 +1975,27 @@ export const Dashboard = () => {
               setDateFilter('CUSTOM');
             }}
             className={`px-2.5 py-1.5 text-xs font-medium rounded-xl border bg-white text-slate-800 shadow-xs focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[130px] ${
-              dateFilter === 'CUSTOM' && customEndDate ? 'border-blue-500 ring-1 ring-blue-500' : 'border-slate-300'
+              dateFilter === 'CUSTOM' ? 'border-blue-500 ring-1 ring-blue-500 font-bold' : 'border-slate-300'
             }`}
             placeholder="dd-mm-yyyy"
           />
           <button
             type="button"
             onClick={() => {
-              if (!customStartDate && !customEndDate) {
+              let start = customStartDate;
+              let end = customEndDate;
+              if (!start && !end) {
                 const today = new Date().toISOString().split('T')[0];
+                start = today;
+                end = today;
                 setCustomStartDate(today);
                 setCustomEndDate(today);
+              } else if (start && !end) {
+                end = start;
+                setCustomEndDate(start);
+              } else if (!start && end) {
+                start = end;
+                setCustomStartDate(end);
               }
               setDateFilter('CUSTOM');
             }}
@@ -1822,7 +2014,12 @@ export const Dashboard = () => {
           {/* Today */}
           <button 
             type="button"
-            onClick={() => setDateFilter('TODAY')}
+            onClick={() => {
+              const todayStr = new Date().toISOString().split('T')[0];
+              setCustomStartDate(todayStr);
+              setCustomEndDate(todayStr);
+              setDateFilter('TODAY');
+            }}
             className={`px-3.5 py-1.5 rounded-xl text-xs transition cursor-pointer min-h-[34px] flex items-center justify-center ${
               dateFilter === 'TODAY'
                 ? 'bg-slate-900 text-white shadow-sm font-black'
@@ -1835,7 +2032,14 @@ export const Dashboard = () => {
           {/* Weekly */}
           <button 
             type="button"
-            onClick={() => setDateFilter('THIS_WEEK')}
+            onClick={() => {
+              const end = new Date();
+              const start = new Date();
+              start.setDate(start.getDate() - 6);
+              setCustomStartDate(start.toISOString().split('T')[0]);
+              setCustomEndDate(end.toISOString().split('T')[0]);
+              setDateFilter('THIS_WEEK');
+            }}
             className={`px-3.5 py-1.5 rounded-xl text-xs transition cursor-pointer min-h-[34px] flex items-center justify-center ${
               dateFilter === 'THIS_WEEK'
                 ? 'bg-slate-900 text-white shadow-sm font-black'
@@ -1848,7 +2052,14 @@ export const Dashboard = () => {
           {/* Monthly */}
           <button 
             type="button"
-            onClick={() => setDateFilter('THIS_MONTH')}
+            onClick={() => {
+              const end = new Date();
+              const start = new Date();
+              start.setDate(start.getDate() - 29);
+              setCustomStartDate(start.toISOString().split('T')[0]);
+              setCustomEndDate(end.toISOString().split('T')[0]);
+              setDateFilter('THIS_MONTH');
+            }}
             className={`px-3.5 py-1.5 rounded-xl text-xs transition cursor-pointer min-h-[34px] flex items-center justify-center ${
               dateFilter === 'THIS_MONTH'
                 ? 'bg-slate-900 text-white shadow-sm font-black'
@@ -1861,7 +2072,14 @@ export const Dashboard = () => {
           {/* Semi-Annual */}
           <button 
             type="button"
-            onClick={() => setDateFilter('LAST_MONTH')}
+            onClick={() => {
+              const end = new Date();
+              const start = new Date();
+              start.setMonth(start.getMonth() - 5);
+              setCustomStartDate(start.toISOString().split('T')[0]);
+              setCustomEndDate(end.toISOString().split('T')[0]);
+              setDateFilter('LAST_MONTH');
+            }}
             className={`px-3.5 py-1.5 rounded-xl text-xs transition cursor-pointer min-h-[34px] flex items-center justify-center ${
               dateFilter === 'LAST_MONTH'
                 ? 'bg-slate-900 text-white shadow-sm font-black'
@@ -1874,7 +2092,14 @@ export const Dashboard = () => {
           {/* Annual */}
           <button 
             type="button"
-            onClick={() => setDateFilter('THIS_YEAR')}
+            onClick={() => {
+              const end = new Date();
+              const start = new Date();
+              start.setFullYear(start.getFullYear() - 1);
+              setCustomStartDate(start.toISOString().split('T')[0]);
+              setCustomEndDate(end.toISOString().split('T')[0]);
+              setDateFilter('THIS_YEAR');
+            }}
             className={`px-3.5 py-1.5 rounded-xl text-xs transition cursor-pointer min-h-[34px] flex items-center justify-center ${
               dateFilter === 'THIS_YEAR'
                 ? 'bg-slate-900 text-white shadow-sm font-black'
@@ -2710,14 +2935,14 @@ export const Dashboard = () => {
                   interval={0}
                   angle={0}
                   textAnchor="middle"
-                  height={dateFilter === 'TODAY' ? 0 : 25}
-                  tick={dateFilter === 'TODAY' ? false : { fontSize: dateFilter === 'THIS_MONTH' ? 9 : 11, fontWeight: 700 }} 
+                  height={isSingleDay ? 0 : 25}
+                  tick={isSingleDay ? false : { fontSize: isDenseBars ? 9 : 11, fontWeight: 700 }} 
                 />
                 <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700 }} unit="L" />
                 <Tooltip cursor={{ fill: '#F1F5F9' }} />
                 <Legend wrapperStyle={{ paddingTop: '10px' }} />
-                <Bar dataKey="income" fill="#10B981" radius={[6, 6, 0, 0]} barSize={dateFilter === 'THIS_MONTH' ? 7 : 24} name="Income (Lakhs)" />
-                <Bar dataKey="expense" fill="#EF4444" radius={[6, 6, 0, 0]} barSize={dateFilter === 'THIS_MONTH' ? 7 : 24} name="Expense (Lakhs)" />
+                <Bar dataKey="income" fill="#10B981" radius={[6, 6, 0, 0]} barSize={isDenseBars ? 7 : 24} name="Income (Lakhs)" />
+                <Bar dataKey="expense" fill="#EF4444" radius={[6, 6, 0, 0]} barSize={isDenseBars ? 7 : 24} name="Expense (Lakhs)" />
               </BarChart>
             </ResponsiveContainer>
           </div>
