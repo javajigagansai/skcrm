@@ -12,13 +12,29 @@ import {
 export const Followups = () => {
   const { user } = useAuth();
   const { openCustomer360 } = useCustomer360();
-  const { followups, addFollowup } = useData();
+  const { followups, addFollowup, customers = [] } = useData();
   const isAdminOrManager = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER';
   const isAdmin = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN';
 
   const [viewMode, setViewMode] = useState('CLIENT_CONSOLIDATED'); // CLIENT_CONSOLIDATED or SPREADSHEET_TABLE
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTab, setFilterTab] = useState(isAdminOrManager ? 'ALL' : 'MY_ASSIGNED'); // ALL, MY_ASSIGNED, PENDING, COMPLETED
+
+  const [showCreateNewClientModal, setShowCreateNewClientModal] = useState(false);
+  const [newClientForm, setNewClientForm] = useState({
+    selectedCustomerId: '',
+    clientName: '',
+    phone: '',
+    category: 'High Networth Client',
+    insuranceTypeInterest: 'Term & Savings Life Insurance',
+    insuranceCompany: 'Tata AIA / Star Health',
+    stageName: 'Prospect Onboarded & Requirement Captured',
+    type: 'Phone Call',
+    assignedTo: user?.name || 'Priya Sharma',
+    date: 'Today, 05:00 PM',
+    conversationNotes: '',
+    status: 'PENDING'
+  });
 
   const [selectedClientHistoryModal, setSelectedClientHistoryModal] = useState(null);
   const [showAddStageModal, setShowAddStageModal] = useState(false);
@@ -159,6 +175,86 @@ export const Followups = () => {
 
       localStorage.setItem('crm_v2_admin_manager_notifications', JSON.stringify([mgmtNotif, staffNotif, ...existing]));
     } catch (e) {}
+  };
+
+  const handleCreateNewClientFollowup = (e) => {
+    e.preventDefault();
+    if (!newClientForm.clientName || !newClientForm.phone || !newClientForm.stageName) {
+      alert('Please fill in Client Name, Mobile Number, and Follow-up Stage Title!');
+      return;
+    }
+
+    const newClientId = `SK-CUST-${Math.floor(100 + Math.random() * 900)}`;
+    const stepId = `FLW-2026-${Math.floor(100 + Math.random() * 900)}`;
+    const createdByStr = `${user?.name || 'Admin'} (${user?.roleDisplayName || 'Staff'})`;
+
+    const newHubObj = {
+      clientId: newClientId,
+      clientName: newClientForm.clientName,
+      phone: newClientForm.phone,
+      category: newClientForm.category,
+      insuranceTypeInterest: newClientForm.insuranceTypeInterest,
+      currentStage: newClientForm.stageName,
+      currentAssignedTo: newClientForm.assignedTo,
+      currentCreatedBy: createdByStr,
+      overallStatus: newClientForm.status,
+      history: [
+        {
+          stepId: stepId,
+          stageName: newClientForm.stageName,
+          date: newClientForm.date || 'Today, 05:00 PM',
+          type: newClientForm.type,
+          assignedTo: newClientForm.assignedTo,
+          createdBy: createdByStr,
+          conversationNotes: newClientForm.conversationNotes || 'Initial follow-up registered.',
+          status: newClientForm.status,
+          isCurrentActive: true
+        }
+      ]
+    };
+
+    const newSpreadsheetObj = {
+      id: String(Date.now()),
+      date: new Date().toISOString().slice(0, 10),
+      clientCategory: newClientForm.category,
+      clientName: newClientForm.clientName,
+      phone: newClientForm.phone,
+      insuranceType: newClientForm.insuranceTypeInterest,
+      insuranceCompany: newClientForm.insuranceCompany || 'Tata AIA / Star Health',
+      salesPitch: newClientForm.stageName,
+      clientStatus: newClientForm.status === 'COMPLETED' ? 'Closed' : 'Under Review',
+      advisorNotes: newClientForm.conversationNotes || 'Initial follow-up registered.',
+      assignedTo: newClientForm.assignedTo
+    };
+
+    setClientData(prev => [newHubObj, ...prev]);
+    setSpreadsheetData(prev => [newSpreadsheetObj, ...prev]);
+
+    dispatchFollowupNotifications(
+      newClientForm.clientName,
+      newClientForm.stageName,
+      newClientForm.assignedTo,
+      createdByStr,
+      newClientForm.status
+    );
+
+    setShowCreateNewClientModal(false);
+    setNewClientForm({
+      selectedCustomerId: '',
+      clientName: '',
+      phone: '',
+      category: 'High Networth Client',
+      insuranceTypeInterest: 'Term & Savings Life Insurance',
+      insuranceCompany: 'Tata AIA / Star Health',
+      stageName: 'Prospect Onboarded & Requirement Captured',
+      type: 'Phone Call',
+      assignedTo: user?.name || 'Priya Sharma',
+      date: 'Today, 05:00 PM',
+      conversationNotes: '',
+      status: 'PENDING'
+    });
+
+    alert(`New Client Follow-up for "${newClientForm.clientName}" created successfully & notification sent to ${newClientForm.assignedTo}!`);
   };
 
   const handleAddStage = (e) => {
@@ -323,16 +419,19 @@ export const Followups = () => {
 
     const assignedName = (item.currentAssignedTo || item.assignedTo || item.assignedStaff || '').toLowerCase().trim();
     const assignedEmail = (item.assignedEmail || item.assignedToEmail || '').toLowerCase().trim();
+    const createdByName = (item.currentCreatedBy || item.createdBy || '').toLowerCase().trim();
 
     if (assignedName && (assignedName === activeName || (activeFirst.length > 2 && assignedName.split(' ')[0] === activeFirst))) return true;
     if (assignedEmail && activeEmail && assignedEmail === activeEmail) return true;
     if (item.assignedToId && item.assignedToId === activeUid) return true;
+    if (createdByName && (createdByName.includes(activeName) || (activeFirst.length > 2 && createdByName.includes(activeFirst)))) return true;
 
     // Check if any stage in client history is assigned to staff
     if (item.history && Array.isArray(item.history)) {
       const hasHistoryMatch = item.history.some(h => {
         const hName = (h.assignedTo || '').toLowerCase().trim();
-        return hName === activeName || (activeFirst.length > 2 && hName.split(' ')[0] === activeFirst);
+        const cName = (h.createdBy || '').toLowerCase().trim();
+        return hName === activeName || (activeFirst.length > 2 && hName.split(' ')[0] === activeFirst) || (cName && cName.includes(activeName));
       });
       if (hasHistoryMatch) return true;
     }
@@ -341,18 +440,45 @@ export const Followups = () => {
     return false;
   };
 
-  const filteredClients = clientData.filter(client => {
-    // Restrict staff view strictly to assigned followups
-    if (!isFollowupAssignedToStaff(client)) return false;
+  const filteredClients = (clientData || []).filter(client => {
+    const isAssigned = isFollowupAssignedToStaff(client);
 
-    const matchesSearch = 
-      client.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.phone.includes(searchTerm) ||
-      client.currentStage.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.currentAssignedTo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.history.some(h => h.conversationNotes.toLowerCase().includes(searchTerm.toLowerCase()));
+    // If search term is present, perform comprehensive matching across all fields
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase().trim();
+      const rawTerm = searchTerm.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+      const rawPhone = (client.phone || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
 
-    if (!matchesSearch) return false;
+      const nameMatch = (client.clientName || '').toLowerCase().includes(term);
+      const phoneMatch = (client.phone || '').toLowerCase().includes(term) || (rawTerm.length > 2 && rawPhone.includes(rawTerm));
+      const idMatch = (client.clientId || '').toLowerCase().includes(term);
+      const categoryMatch = (client.category || '').toLowerCase().includes(term);
+      const insuranceTypeMatch = (client.insuranceTypeInterest || '').toLowerCase().includes(term);
+      const stageMatch = (client.currentStage || '').toLowerCase().includes(term);
+      const assignedMatch = (client.currentAssignedTo || '').toLowerCase().includes(term);
+      const createdByMatch = (client.currentCreatedBy || '').toLowerCase().includes(term);
+      const statusMatch = (client.overallStatus || '').toLowerCase().includes(term);
+
+      const historyMatch = (client.history || []).some(h => 
+        (h.stageName || '').toLowerCase().includes(term) ||
+        (h.conversationNotes || '').toLowerCase().includes(term) ||
+        (h.assignedTo || '').toLowerCase().includes(term) ||
+        (h.createdBy || '').toLowerCase().includes(term) ||
+        (h.stepId || '').toLowerCase().includes(term) ||
+        (h.type || '').toLowerCase().includes(term) ||
+        (h.status || '').toLowerCase().includes(term) ||
+        (h.date || '').toLowerCase().includes(term)
+      );
+
+      const matchesSearch = nameMatch || phoneMatch || idMatch || categoryMatch || insuranceTypeMatch || 
+                            stageMatch || assignedMatch || createdByMatch || statusMatch || historyMatch;
+
+      if (!matchesSearch) return false;
+      return true;
+    }
+
+    // When NOT searching, enforce staff privacy filter and tab filters
+    if (!isAssigned) return false;
 
     if (filterTab === 'PENDING') {
       return client.overallStatus === 'PENDING' || client.overallStatus === 'IN_PROGRESS';
@@ -364,17 +490,32 @@ export const Followups = () => {
   });
 
   const filteredSpreadsheet = (spreadsheetData || []).filter(f => {
-    // Restrict staff view strictly to assigned followups
-    if (!isFollowupAssignedToStaff(f)) return false;
+    const isAssigned = isFollowupAssignedToStaff(f);
 
-    const matchesSearch = 
-      f.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      f.phone.includes(searchTerm) ||
-      f.insuranceCompany.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      f.salesPitch.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      f.advisorNotes.toLowerCase().includes(searchTerm.toLowerCase());
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase().trim();
+      const rawTerm = searchTerm.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+      const rawPhone = (f.phone || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
 
-    if (!matchesSearch) return false;
+      const matchesSearch = 
+        (f.clientName || '').toLowerCase().includes(term) ||
+        (f.phone || '').toLowerCase().includes(term) ||
+        (rawTerm.length > 2 && rawPhone.includes(rawTerm)) ||
+        (f.clientCategory || f.category || '').toLowerCase().includes(term) ||
+        (f.insuranceType || '').toLowerCase().includes(term) ||
+        (f.insuranceCompany || '').toLowerCase().includes(term) ||
+        (f.salesPitch || '').toLowerCase().includes(term) ||
+        (f.clientStatus || '').toLowerCase().includes(term) ||
+        (f.advisorNotes || '').toLowerCase().includes(term) ||
+        (f.assignedTo || '').toLowerCase().includes(term) ||
+        (f.date || '').toLowerCase().includes(term);
+
+      if (!matchesSearch) return false;
+      return true;
+    }
+
+    if (!isAssigned) return false;
+
     return true;
   });
 
@@ -403,10 +544,20 @@ export const Followups = () => {
       {/* HEADER BAR WITH EXPORT ACTIONS */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-card">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Client Follow-ups</h1>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Customer Follow-ups</h1>
         </div>
 
         <div className="flex items-center space-x-2.5">
+          <button 
+            type="button"
+            onClick={() => setShowCreateNewClientModal(true)}
+            className="flex items-center space-x-1.5 px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs shadow-md transition cursor-pointer shrink-0"
+            title="Create New Client Follow-up Record"
+          >
+            <Plus className="h-4 w-4" />
+            <span>+ Add Follow-up</span>
+          </button>
+
           {isAdminOrManager && (
             <>
               <button 
@@ -435,7 +586,7 @@ export const Followups = () => {
               className={`px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center space-x-1.5 ${viewMode === 'CLIENT_CONSOLIDATED' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-700 hover:text-slate-900'}`}
             >
               <UsersIcon className="h-3.5 w-3.5" />
-              <span>Single Client Progression Mode</span>
+              <span>Single Customer Progression Mode</span>
             </button>
             <button
               onClick={() => setViewMode('SPREADSHEET_TABLE')}
@@ -454,11 +605,21 @@ export const Followups = () => {
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <input 
             type="text"
-            placeholder="Search Client Name, Phone, Conversation Notes, or Assigned Officer..."
+            placeholder="Search Customer Name, Phone, Notes, Stage, Category, or Officer..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-blue-600 outline-none"
+            className="w-full pl-10 pr-8 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-blue-600 outline-none"
           />
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => setSearchTerm('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+              title="Clear Search"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
 
         <div className="flex items-center space-x-1.5 bg-slate-100 p-1 rounded-2xl">
@@ -494,10 +655,18 @@ export const Followups = () => {
               <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
                 <Clock className="h-6 w-6" />
               </div>
-              <h3 className="text-base font-black text-slate-900">No Client Follow-ups Registered</h3>
+              <h3 className="text-base font-black text-slate-900">No Customer Follow-ups Registered</h3>
               <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                There are currently 0 active follow-up records. Add a follow-up stage or client to begin tracking progression.
+                There are currently 0 active follow-up records. Add a follow-up stage or customer to begin tracking progression.
               </p>
+              <button 
+                type="button"
+                onClick={() => setShowCreateNewClientModal(true)}
+                className="px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs shadow transition cursor-pointer inline-flex items-center space-x-1.5 mt-2"
+              >
+                <Plus className="h-4 w-4" />
+                <span>+ Add Follow-up</span>
+              </button>
             </div>
           ) : (
             filteredClients.map((client) => {
@@ -666,13 +835,13 @@ export const Followups = () => {
               <thead>
                 <tr className="bg-slate-900 text-white text-[11px] font-black uppercase tracking-wider border-b border-slate-800">
                   <th className="p-3.5 border-r border-slate-800">Date</th>
-                  <th className="p-3.5 border-r border-slate-800">Client</th>
-                  <th className="p-3.5 border-r border-slate-800">Client Name</th>
+                  <th className="p-3.5 border-r border-slate-800">Customer Category</th>
+                  <th className="p-3.5 border-r border-slate-800">Customer Name</th>
                   <th className="p-3.5 border-r border-slate-800">Mobile Number</th>
                   <th className="p-3.5 border-r border-slate-800">Type Of Insurance</th>
                   <th className="p-3.5 border-r border-slate-800">Insurance Company</th>
                   <th className="p-3.5 border-r border-slate-800">Sales Pitch</th>
-                  <th className="p-3.5 border-r border-slate-800">Client Status</th>
+                  <th className="p-3.5 border-r border-slate-800">Customer Status</th>
                   <th className="p-3.5 border-r border-slate-800">Advisor Notes</th>
                   <th className="p-3.5 text-center">Actions</th>
                 </tr>
@@ -920,6 +1089,215 @@ export const Followups = () => {
               </div>
 
               <button type="submit" className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow">Save Step Changes</button>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* CREATE NEW CLIENT FOLLOW-UP MODAL */}
+      {showCreateNewClientModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b pb-3">
+              <div>
+                <h3 className="text-base font-black text-slate-900 flex items-center space-x-2">
+                  <Plus className="h-5 w-5 text-blue-600" />
+                  <span>Create New Client Follow-up</span>
+                </h3>
+                <p className="text-xs text-slate-500 font-medium">Add a new customer or prospect to your active follow-up pipeline</p>
+              </div>
+              <button onClick={() => setShowCreateNewClientModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateNewClientFollowup} className="space-y-3.5">
+              {/* Select Existing Customer or Custom Entry */}
+              {customers && customers.length > 0 && (
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">
+                    Select Customer from CRM Database (Optional)
+                  </label>
+                  <select 
+                    value={newClientForm.selectedCustomerId} 
+                    onChange={(e) => {
+                      const id = e.target.value;
+                      if (!id || id === 'CUSTOM') {
+                        setNewClientForm(prev => ({ ...prev, selectedCustomerId: '', clientName: '', phone: '' }));
+                      } else {
+                        const cust = customers.find(c => String(c.id || c.uid || c.clientId) === String(id));
+                        if (cust) {
+                          setNewClientForm(prev => ({
+                            ...prev,
+                            selectedCustomerId: id,
+                            clientName: cust.name || cust.clientName || '',
+                            phone: cust.phone || cust.mobile || cust.contact || '',
+                            category: cust.category || prev.category
+                          }));
+                        }
+                      }
+                    }} 
+                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold text-blue-700 bg-blue-50/50"
+                  >
+                    <option value="">-- Choose Existing Customer or Enter Custom Below --</option>
+                    {customers.map(c => (
+                      <option key={c.id || c.uid || c.clientId} value={c.id || c.uid || c.clientId}>
+                        {c.name || c.clientName} ({c.phone || c.mobile || 'No Phone'})
+                      </option>
+                    ))}
+                    <option value="CUSTOM">➕ Enter Custom Prospect / New Lead</option>
+                  </select>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Client / Prospect Name *</label>
+                  <input 
+                    type="text" 
+                    required 
+                    placeholder="e.g. Ramesh Kumar"
+                    value={newClientForm.clientName} 
+                    onChange={(e) => setNewClientForm({ ...newClientForm, clientName: e.target.value })} 
+                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Mobile Number *</label>
+                  <input 
+                    type="text" 
+                    required 
+                    placeholder="e.g. +91 98765 43210"
+                    value={newClientForm.phone} 
+                    onChange={(e) => setNewClientForm({ ...newClientForm, phone: e.target.value })} 
+                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-mono font-bold" 
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Client Category</label>
+                  <select 
+                    value={newClientForm.category} 
+                    onChange={(e) => setNewClientForm({ ...newClientForm, category: e.target.value })} 
+                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold"
+                  >
+                    <option value="High Networth Client">High Networth Client</option>
+                    <option value="Retail Investor">Retail Investor</option>
+                    <option value="Corporate Executive">Corporate Executive</option>
+                    <option value="SME Business Owner">SME Business Owner</option>
+                    <option value="NRI Investor">NRI Investor</option>
+                    <option value="New Lead">New Lead</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Product / Insurance Interest</label>
+                  <select 
+                    value={newClientForm.insuranceTypeInterest} 
+                    onChange={(e) => setNewClientForm({ ...newClientForm, insuranceTypeInterest: e.target.value })} 
+                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold"
+                  >
+                    <option value="Term & Savings Life Insurance">Term &amp; Savings Life Insurance</option>
+                    <option value="Family Health Guard Policy">Family Health Guard Policy</option>
+                    <option value="Comprehensive Motor Insurance">Comprehensive Motor Insurance</option>
+                    <option value="Mutual Funds & SIP">Mutual Funds &amp; SIP</option>
+                    <option value="ULIP & Retirement Plan">ULIP &amp; Retirement Plan</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Initial Follow-up Stage Title *</label>
+                <input 
+                  type="text" 
+                  required 
+                  placeholder="e.g. Prospect Onboarded & Requirement Captured"
+                  value={newClientForm.stageName} 
+                  onChange={(e) => setNewClientForm({ ...newClientForm, stageName: e.target.value })} 
+                  className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold text-blue-900" 
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Initial Conversation Notes / Topic</label>
+                <textarea 
+                  rows="2" 
+                  placeholder="Details of client requirements, quotes shared, or discussion points..."
+                  value={newClientForm.conversationNotes} 
+                  onChange={(e) => setNewClientForm({ ...newClientForm, conversationNotes: e.target.value })} 
+                  className="w-full px-3 py-2 rounded-xl border text-xs outline-none" 
+                ></textarea>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Interaction Type</label>
+                  <select 
+                    value={newClientForm.type} 
+                    onChange={(e) => setNewClientForm({ ...newClientForm, type: e.target.value })} 
+                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold"
+                  >
+                    <option value="Phone Call">Phone Call</option>
+                    <option value="Branch Meeting">Branch Meeting</option>
+                    <option value="WhatsApp Message">WhatsApp Message</option>
+                    <option value="Video Call">Video Call</option>
+                    <option value="Email">Email</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Assigned Officer</label>
+                  <select 
+                    value={newClientForm.assignedTo} 
+                    onChange={(e) => setNewClientForm({ ...newClientForm, assignedTo: e.target.value })} 
+                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold"
+                  >
+                    {staffMembers.map(staff => (
+                      <option key={staff} value={staff}>{staff}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Status</label>
+                  <select 
+                    value={newClientForm.status} 
+                    onChange={(e) => setNewClientForm({ ...newClientForm, status: e.target.value })} 
+                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold"
+                  >
+                    <option value="PENDING">PENDING</option>
+                    <option value="IN_PROGRESS">IN_PROGRESS</option>
+                    <option value="COMPLETED">COMPLETED</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Scheduled Date &amp; Time</label>
+                <input 
+                  type="text" 
+                  value={newClientForm.date} 
+                  onChange={(e) => setNewClientForm({ ...newClientForm, date: e.target.value })} 
+                  className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold text-blue-700" 
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateNewClientModal(false)}
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-100 transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow transition cursor-pointer"
+                >
+                  Create Follow-up Record
+                </button>
+              </div>
             </form>
           </div>
         </div>

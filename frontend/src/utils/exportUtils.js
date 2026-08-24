@@ -655,7 +655,7 @@ export const exportFollowupsPDF = (followupList = []) => {
     <!DOCTYPE html>
     <html>
     <head>
-      <title>SK Smart Investments - Client Follow-up Register</title>
+      <title>SK Smart Investments - Customer Follow-up Register</title>
       <style>
         @media print { body { -webkit-print-color-adjust: exact; } }
         body { font-family: 'Segoe UI', Arial, sans-serif; color: #0f172a; margin: 0; padding: 25px; background: #fff; }
@@ -672,7 +672,7 @@ export const exportFollowupsPDF = (followupList = []) => {
       <div class="header">
         <div>
           <div class="logo">SK SMART INVESTMENTS &amp; INSURANCE</div>
-          <div class="sub">Client Follow-up Register &amp; Sales Pitch Log</div>
+          <div class="sub">Customer Follow-up Register &amp; Sales Pitch Log</div>
         </div>
         <div style="text-align: right; font-size: 11px; color: #64748b;">
           <strong>Total Records:</strong> ${followupList.length}<br/>
@@ -684,13 +684,13 @@ export const exportFollowupsPDF = (followupList = []) => {
         <thead>
           <tr>
             <th>Date</th>
-            <th>Client</th>
-            <th>Client Name</th>
+            <th>Customer Category</th>
+            <th>Customer Name</th>
             <th>Mobile Number</th>
             <th>Type Of Insurance</th>
             <th>Insurance Company</th>
             <th>Sales Pitch</th>
-            <th>Client Status</th>
+            <th>Customer Status</th>
             <th>Advisor Notes</th>
           </tr>
         </thead>
@@ -762,7 +762,7 @@ const createExcelSpreadsheetBlob = (headers = [], rows = [], sheetName = 'Data S
 
 // Export Follow-up Register to Excel (.xlsx)
 export const exportFollowupsExcel = (followupList = []) => {
-  const headers = ['Date', 'Client Category', 'Client Name', 'Mobile Number', 'Type Of Insurance', 'Insurance Company', 'Sales Pitch', 'Client Status', 'Advisor Notes'];
+  const headers = ['Date', 'Customer Category', 'Customer Name', 'Mobile Number', 'Type Of Insurance', 'Insurance Company', 'Sales Pitch', 'Customer Status', 'Advisor Notes'];
   
   const rows = followupList.map(f => [
     f.date || new Date().toISOString().slice(0, 10),
@@ -776,10 +776,10 @@ export const exportFollowupsExcel = (followupList = []) => {
     f.advisorNotes || f.conversationNotes || ''
   ]);
 
-  const blob = createExcelSpreadsheetBlob(headers, rows, 'Client Follow-ups');
+  const blob = createExcelSpreadsheetBlob(headers, rows, 'Customer Follow-ups');
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
-  link.download = `SK_Client_Followups_Register_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  link.download = `SK_Customer_Followups_Register_${new Date().toISOString().slice(0, 10)}.xlsx`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

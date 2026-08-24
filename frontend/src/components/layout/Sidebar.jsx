@@ -29,7 +29,7 @@ export const Sidebar = () => {
   const navItems = [
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'EMPLOYEE', 'USER'] },
     { label: 'Special Days & Wishes', path: '/special-days', icon: PartyPopper, roles: ['SUPER_ADMIN', 'ADMIN', 'GREETINGS_OFFICER', 'MANAGER'] },
-    { label: 'Client Follow-ups', path: '/followups', icon: Clock, roles: ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'EMPLOYEE', 'USER'] },
+    { label: 'Customer Follow-ups', path: '/followups', icon: Clock, roles: ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'EMPLOYEE', 'USER'] },
     { label: 'Customer 360', path: '/customers', icon: UserCheck, roles: ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'EMPLOYEE', 'USER'] },
     { label: 'Insurance Policies', path: '/policies', icon: FileText, roles: ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'EMPLOYEE', 'USER'] },
     { label: 'Investments Register', path: '/investments', icon: Briefcase, roles: ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'EMPLOYEE', 'USER'] },

@@ -1062,7 +1062,7 @@ export const Dashboard = () => {
     return myAssignedCustomers.length > 0 ? myAssignedCustomers : customers;
   }, [isStaffAdvisor, myAssignedCustomers, customers]);
 
-  const staffBusinessLeaderboard = useMemo(() => {
+  const combinedStaffPerformance = useMemo(() => {
     const staffMap = {};
 
     // Load all real registered staff members
@@ -1074,14 +1074,21 @@ export const Dashboard = () => {
 
     (registeredStaff || []).forEach(st => {
       if (st && st.name) {
-        staffMap[st.name.trim()] = { name: st.name.trim(), businessAmount: 0, policyCount: 0 };
+        staffMap[st.name.trim()] = { 
+          name: st.name.trim(), 
+          businessAmount: 0, 
+          policyCount: 0,
+          activeCount: 0,
+          completedCount: 0,
+          totalCount: 0
+        };
       }
     });
 
     // 1. Compute real-time business totals from active policies
     (policies || []).forEach(p => {
       const name = (p.assignedStaff || p.assignedTo || p.advisorName || 'Priya Sharma').trim();
-      if (!staffMap[name]) staffMap[name] = { name, businessAmount: 0, policyCount: 0 };
+      if (!staffMap[name]) staffMap[name] = { name, businessAmount: 0, policyCount: 0, activeCount: 0, completedCount: 0, totalCount: 0 };
       staffMap[name].businessAmount += Number(p.grossPremium || p.premiumAmount || 0);
       staffMap[name].policyCount += 1;
     });
@@ -1089,32 +1096,15 @@ export const Dashboard = () => {
     // 2. Compute real-time business totals from active investments
     (investments || []).forEach(i => {
       const name = (i.advisorName || i.assignedStaff || 'Priya Sharma').trim();
-      if (!staffMap[name]) staffMap[name] = { name, businessAmount: 0, policyCount: 0 };
+      if (!staffMap[name]) staffMap[name] = { name, businessAmount: 0, policyCount: 0, activeCount: 0, completedCount: 0, totalCount: 0 };
       staffMap[name].businessAmount += Number(i.amount || i.investmentAmount || 0);
       staffMap[name].policyCount += 1;
     });
 
-    return Object.values(staffMap).sort((a, b) => b.businessAmount - a.businessAmount);
-  }, [policies, investments]);
-
-  const staffClientLeaderboard = useMemo(() => {
-    const staffMap = {};
-
-    let registeredStaff = [];
-    try {
-      const saved = localStorage.getItem('crm_v2_users_list');
-      if (saved) registeredStaff = JSON.parse(saved);
-    } catch (e) {}
-
-    (registeredStaff || []).forEach(st => {
-      if (st && st.name) {
-        staffMap[st.name.trim()] = { name: st.name.trim(), activeCount: 0, completedCount: 0, totalCount: 0 };
-      }
-    });
-
+    // 3. Compute client counts from customers
     (customers || []).forEach(c => {
       const name = (c.assignedAdvisorName || c.assignedStaff || c.assignedToName || c.advisorName || 'Priya Sharma').trim();
-      if (!staffMap[name]) staffMap[name] = { name, activeCount: 0, completedCount: 0, totalCount: 0 };
+      if (!staffMap[name]) staffMap[name] = { name, businessAmount: 0, policyCount: 0, activeCount: 0, completedCount: 0, totalCount: 0 };
 
       const isCompleted = c.status === 'Completed' || c.status === 'INACTIVE' || c.isCompleted === true;
       if (isCompleted) {
@@ -1125,8 +1115,14 @@ export const Dashboard = () => {
       staffMap[name].totalCount += 1;
     });
 
-    return Object.values(staffMap).sort((a, b) => b.totalCount - a.totalCount);
-  }, [customers]);
+    return Object.values(staffMap).sort((a, b) => b.businessAmount - a.businessAmount || b.totalCount - a.totalCount);
+  }, [policies, investments, customers]);
+
+  const staffBusinessLeaderboard = combinedStaffPerformance;
+
+  const staffClientLeaderboard = useMemo(() => {
+    return [...combinedStaffPerformance].sort((a, b) => b.totalCount - a.totalCount);
+  }, [combinedStaffPerformance]);
 
   const dynamicStaffPerformanceChart = useMemo(() => {
     if (reportSummary?.staffPerformanceChart && Array.isArray(reportSummary.staffPerformanceChart) && reportSummary.staffPerformanceChart.length > 0) {
@@ -2089,7 +2085,7 @@ export const Dashboard = () => {
           </button>
         </div>
 
-        {/* Quick Range Presets: Today | This Week | This Month | Last Month | Semi-Annual | Annual */}
+        {/* Quick Range Presets: Today | Weekly | Monthly | Last Month | Semi-Annual | Annual */}
         <div className="flex flex-wrap items-center gap-1.5">
           {/* Today */}
           <button 
@@ -2109,7 +2105,7 @@ export const Dashboard = () => {
             Today
           </button>
 
-          {/* This Week */}
+          {/* Weekly */}
           <button 
             type="button"
             onClick={() => {
@@ -2128,10 +2124,10 @@ export const Dashboard = () => {
                 : 'bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold'
             }`}
           >
-            This Week
+            Weekly
           </button>
 
-          {/* This Month */}
+          {/* Monthly */}
           <button 
             type="button"
             onClick={() => {
@@ -2149,7 +2145,7 @@ export const Dashboard = () => {
                 : 'bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold'
             }`}
           >
-            This Month
+            Monthly
           </button>
 
           {/* Last Month */}
@@ -2231,11 +2227,11 @@ export const Dashboard = () => {
             }
           }}
           className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-card space-y-2 hover:border-blue-500 hover:shadow-lg transition cursor-pointer group relative"
-          title={isStaffAdvisor ? 'Click to view your assigned client portfolios' : 'Click to view detailed customer breakdown & analysis'}
+          title={isStaffAdvisor ? 'Click to view your assigned customer portfolios' : 'Click to view detailed customer breakdown & analysis'}
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-extrabold text-slate-500 uppercase group-hover:text-blue-600 transition">
-              {isStaffAdvisor ? 'My Assigned Clients' : 'Total Customers'}
+              {isStaffAdvisor ? 'My Assigned Customers' : 'Total Customers'}
             </span>
             <div className="p-2 rounded-xl bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition"><Users className="h-4 w-4" /></div>
           </div>
@@ -2316,113 +2312,70 @@ export const Dashboard = () => {
 
 
 
-      {/* DASHBOARD STAFF PERFORMANCE LEADERBOARDS (MANAGERS & ADMINS ONLY) */}
+      {/* DASHBOARD STAFF PERFORMANCE LEADERBOARD (MANAGERS & ADMINS ONLY) */}
       {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER' || user?.role === 'BRANCH_MANAGER') && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* LEADERBOARD A: STAFF GENERATING MOST BUSINESS */}
-          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-card space-y-4">
-            <div className="flex items-center justify-between border-b pb-3">
-              <div>
-                <h3 className="text-sm font-black text-slate-900 flex items-center space-x-2">
-                  <Award className="h-5 w-5 text-amber-500" />
-                  <span>Employee Performance</span>
-                </h3>
-              </div>
-              <span className="badge badge-amber text-[10px] uppercase font-black">Business Value</span>
+        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-card space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-3 gap-2">
+            <div>
+              <h3 className="text-sm sm:text-base font-black text-slate-900 flex items-center space-x-2">
+                <Award className="h-5 w-5 text-amber-500" />
+                <span>Employee Performance</span>
+              </h3>
             </div>
+            <div className="flex items-center space-x-2">
+              <span className="badge badge-amber text-[10px] uppercase font-black">Business Value</span>
+              <span className="badge badge-purple text-[10px] uppercase font-black">Total Leads</span>
+            </div>
+          </div>
 
-            <div className="overflow-x-auto rounded-2xl border border-slate-100">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 text-slate-600 font-extrabold uppercase text-[10px]">
-                  <tr>
-                    <th className="p-3">Rank</th>
-                    <th className="p-3">Staff Advisor</th>
-                    <th className="p-3">Policies / SIPs</th>
-                    <th className="p-3">Total Business Value</th>
-                    <th className="p-3">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {staffBusinessLeaderboard.map((st, idx) => (
+          <div className="overflow-x-auto rounded-2xl border border-slate-100">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 text-slate-600 font-extrabold uppercase text-[10px] tracking-wider">
+                <tr>
+                  <th className="p-3 whitespace-nowrap">Rank</th>
+                  <th className="p-3 whitespace-nowrap">Staff Advisor</th>
+                  <th className="p-3 whitespace-nowrap">Policies / SIPs</th>
+                  <th className="p-3 whitespace-nowrap">Total Business Value</th>
+                  <th className="p-3 whitespace-nowrap">Active Assigned</th>
+                  <th className="p-3 whitespace-nowrap">Completed Clients</th>
+                  <th className="p-3 whitespace-nowrap">Total Clients</th>
+                  <th className="p-3 whitespace-nowrap">Portfolio Share</th>
+                  <th className="p-3 whitespace-nowrap">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {combinedStaffPerformance.map((st, idx) => {
+                  const totalCusts = customers.length || 1;
+                  const pct = ((st.totalCount / totalCusts) * 100).toFixed(1);
+                  return (
                     <tr key={idx} className="hover:bg-slate-50 transition">
-                      <td className="p-3 font-black">
+                      <td className="p-3 font-black whitespace-nowrap">
                         {idx === 0 ? '🥇 #1' : idx === 1 ? '🥈 #2' : idx === 2 ? '🥉 #3' : `#${idx + 1}`}
                       </td>
-                      <td className="p-3 font-extrabold text-slate-900 flex items-center space-x-1.5">
+                      <td className="p-3 font-extrabold text-slate-900 flex items-center space-x-1.5 whitespace-nowrap">
                         <UserCheck className="h-3.5 w-3.5 text-blue-600" />
                         <span>{st.name}</span>
                       </td>
-                      <td className="p-3 font-bold text-slate-700">{st.policyCount} Contracts</td>
-                      <td className="p-3 font-black text-emerald-700">₹{st.businessAmount.toLocaleString()}</td>
-                      <td className="p-3">
-                        {idx === 0 ? (
+                      <td className="p-3 font-bold text-slate-700 whitespace-nowrap">{st.policyCount} Contracts</td>
+                      <td className="p-3 font-black text-emerald-700 whitespace-nowrap">₹{st.businessAmount.toLocaleString()}</td>
+                      <td className="p-3 font-bold text-indigo-700 whitespace-nowrap">{st.activeCount} Active</td>
+                      <td className="p-3 font-bold text-emerald-700 whitespace-nowrap">{st.completedCount} Completed</td>
+                      <td className="p-3 font-black text-slate-900 whitespace-nowrap">{st.totalCount} Total</td>
+                      <td className="p-3 font-black text-slate-800 whitespace-nowrap">{pct}% Share</td>
+                      <td className="p-3 whitespace-nowrap">
+                        {idx === 0 && st.businessAmount > 0 ? (
                           <span className="badge badge-green text-[10px]">Top Business Leader 🏆</span>
+                        ) : st.activeCount > 0 ? (
+                          <span className="badge badge-purple text-[10px]">Active Workload ⚡</span>
                         ) : (
                           <span className="badge badge-brand text-[10px]">Active Business</span>
                         )}
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* LEADERBOARD B: STAFF HANDLING MOST CLIENTS */}
-          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-card space-y-4">
-            <div className="flex items-center justify-between border-b pb-3">
-              <div>
-                <h3 className="text-sm font-black text-slate-900 flex items-center space-x-2">
-                  <Users className="h-5 w-5 text-indigo-600" />
-                  <span>Employee Performance</span>
-                </h3>
-              </div>
-              <span className="badge badge-purple text-[10px] uppercase font-black">Total Leads</span>
-            </div>
-
-            <div className="overflow-x-auto rounded-2xl border border-slate-100">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 text-slate-600 font-extrabold uppercase text-[10px]">
-                  <tr>
-                    <th className="p-3">Rank</th>
-                    <th className="p-3">Staff Advisor</th>
-                    <th className="p-3">Active Assigned</th>
-                    <th className="p-3">Completed Clients</th>
-                    <th className="p-3">Total Clients</th>
-                    <th className="p-3">Portfolio Share</th>
-                    <th className="p-3">Capacity Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {staffClientLeaderboard.map((st, idx) => {
-                    const totalCusts = customers.length || 1;
-                    const pct = ((st.totalCount / totalCusts) * 100).toFixed(1);
-                    return (
-                      <tr key={idx} className="hover:bg-slate-50 transition">
-                        <td className="p-3 font-black">
-                          {idx === 0 ? '🥇 #1' : idx === 1 ? '🥈 #2' : idx === 2 ? '🥉 #3' : `#${idx + 1}`}
-                        </td>
-                        <td className="p-3 font-extrabold text-slate-900 flex items-center space-x-1.5">
-                          <UserCheck className="h-3.5 w-3.5 text-purple-600" />
-                          <span>{st.name}</span>
-                        </td>
-                        <td className="p-3 font-bold text-indigo-700">{st.activeCount} Active</td>
-                        <td className="p-3 font-bold text-emerald-700">{st.completedCount} Completed</td>
-                        <td className="p-3 font-black text-slate-900">{st.totalCount} Total</td>
-                        <td className="p-3 font-black text-slate-800">{pct}% Share</td>
-                        <td className="p-3">
-                          {idx === 0 ? (
-                            <span className="badge badge-purple text-[10px]">Max Workload ⚡</span>
-                          ) : (
-                            <span className="badge badge-green text-[10px]">Optimal Load</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
@@ -2440,16 +2393,6 @@ export const Dashboard = () => {
                 <h3 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
                   Policy Category &amp; Company Overview
                 </h3>
-                <p className="text-xs text-slate-500 font-semibold">
-                  {policyOverviewViewMode === 'CATEGORY' 
-                    ? (selectedOverviewCategoryFilter === 'ALL' 
-                        ? 'Visual distribution of active insurance policies across all categories' 
-                        : `Provider underwriter breakdown for ${selectedOverviewCategoryFilter}`)
-                    : (selectedCategoryCompanyFilter === 'ALL'
-                        ? 'Partner insurance companies and category distribution'
-                        : `Category portfolio mix underwritten by ${selectedCategoryCompanyFilter}`)
-                  }
-                </p>
               </div>
             </div>
 
@@ -2581,11 +2524,6 @@ export const Dashboard = () => {
                         ? 'All Insurance Categories Distribution'
                         : `${selectedOverviewCategoryFilter} – Underwriter Provider Distribution`}
                     </h4>
-                    <p className="text-[11px] text-slate-500 font-semibold">
-                      {selectedOverviewCategoryFilter === 'ALL'
-                        ? 'Policy volume comparison across all active insurance categories'
-                        : `Breakdown of insurance companies underwriting ${selectedOverviewCategoryFilter} policies`}
-                    </p>
                   </div>
                 </div>
 

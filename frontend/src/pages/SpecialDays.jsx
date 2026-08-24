@@ -351,8 +351,8 @@ export const SpecialDays = () => {
           </span>
           {[
             { key: 'TODAY', label: 'Today' },
-            { key: 'THIS_WEEK', label: 'This Week' },
-            { key: 'THIS_MONTH', label: 'This Month' },
+            { key: 'THIS_WEEK', label: 'Weekly' },
+            { key: 'THIS_MONTH', label: 'Monthly' },
             { key: 'ALL', label: 'All' },
           ].map((preset) => (
             <button

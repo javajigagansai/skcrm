@@ -376,10 +376,9 @@ export const Customers = () => {
               </button>
             </>
           )}
-          
-          <button 
+                    <button 
             onClick={() => setShowAddModal(true)}
-            className="flex items-center space-x-1.5 px-4 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs shadow-md transition cursor-pointer"
+            className="flex items-center space-x-1.5 px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer"
           >
             <Plus className="h-4 w-4" />
             <span>Add New Customer</span>
@@ -430,90 +429,90 @@ export const Customers = () => {
             <thead>
               <tr className="bg-slate-900 text-white text-[11px] font-black uppercase tracking-wider border-b border-slate-800">
                 <th className="p-3.5 border-r border-slate-800">Date</th>
-                <th className="p-3.5 border-r border-slate-800">Client Category</th>
-                <th className="p-3.5 border-r border-slate-800">Client Name</th>
+                <th className="p-3.5 border-r border-slate-800">Customer Category</th>
+                <th className="p-3.5 border-r border-slate-800">Customer Name</th>
                 <th className="p-3.5 border-r border-slate-800">Mobile Number</th>
                 <th className="p-3.5 border-r border-slate-800">Present Handling Staff</th>
                 <th className="p-3.5 border-r border-slate-800">Active Policy &amp; Insurer</th>
                 <th className="p-3.5 border-r border-slate-800">Sales Pitch</th>
-                <th className="p-3.5 border-r border-slate-800">Client Status</th>
+                <th className="p-3.5 border-r border-slate-800">Customer Status</th>
                 <th className="p-3.5 border-r border-slate-800">Advisor Notes</th>
                 <th className="p-3.5 text-center">360° Profile</th>
               </tr>
-              {/* Interactive Column Filters Row */}
-              <tr className="bg-slate-850 border-b border-slate-700">
-                <th className="p-2 border-r border-slate-700">
+              {/* Interactive Column Filters Row (Clean Light Theme) */}
+              <tr className="bg-slate-100/90 border-b border-slate-200">
+                <th className="p-2 border-r border-slate-200/80">
                   <input 
                     type="date" 
                     value={colFilters.date} 
                     onChange={(e) => handleColFilterChange('date', e.target.value)} 
-                    className="w-full px-2 py-1 bg-slate-800 text-amber-300 rounded-lg border border-slate-700 text-[10px] outline-none focus:border-blue-500 font-bold cursor-pointer" 
+                    className="w-full px-2 py-1 bg-white text-blue-700 rounded-lg border border-slate-300 text-[10px] outline-none focus:ring-2 focus:ring-blue-600 font-bold cursor-pointer shadow-xs" 
                     title="Select Date to Filter"
                   />
                 </th>
-                <th className="p-2 border-r border-slate-700">
+                <th className="p-2 border-r border-slate-200/80">
                   <select 
                     value={colFilters.clientCategory} 
                     onChange={(e) => handleColFilterChange('clientCategory', e.target.value)} 
-                    className="w-full px-1.5 py-1 bg-slate-800 text-white rounded-lg border border-slate-700 text-[10px] outline-none font-bold focus:border-blue-500 cursor-pointer"
+                    className="w-full px-1.5 py-1 bg-white text-slate-800 rounded-lg border border-slate-300 text-[10px] outline-none font-bold focus:ring-2 focus:ring-blue-600 cursor-pointer shadow-xs"
                   >
                     <option value="ALL">All Categories</option>
                     <option value="New Lead">New Lead 🔵</option>
                     <option value="Existing Lead">Existing Lead 🟣</option>
-                    <option value="VIP Client">VIP Client ⭐</option>
+                    <option value="VIP Client">VIP Customer ⭐</option>
                   </select>
                 </th>
-                <th className="p-2 border-r border-slate-700">
+                <th className="p-2 border-r border-slate-200/80">
                   <input 
                     type="text" 
                     placeholder="🔍 Filter Name..." 
                     value={colFilters.name} 
                     onChange={(e) => handleColFilterChange('name', e.target.value)} 
-                    className="w-full px-2 py-1 bg-slate-800 text-white rounded-lg border border-slate-700 text-[10px] outline-none focus:border-blue-500 font-medium placeholder-slate-400" 
+                    className="w-full px-2 py-1 bg-white text-slate-800 rounded-lg border border-slate-300 text-[10px] outline-none focus:ring-2 focus:ring-blue-600 font-semibold placeholder-slate-400 shadow-xs" 
                   />
                 </th>
-                <th className="p-2 border-r border-slate-700">
+                <th className="p-2 border-r border-slate-200/80">
                   <input 
                     type="text" 
                     placeholder="📞 Filter Phone..." 
                     value={colFilters.phone} 
                     onChange={(e) => handleColFilterChange('phone', e.target.value)} 
-                    className="w-full px-2 py-1 bg-slate-800 text-white rounded-lg border border-slate-700 text-[10px] outline-none focus:border-blue-500 font-mono font-medium placeholder-slate-400" 
+                    className="w-full px-2 py-1 bg-white text-slate-800 rounded-lg border border-slate-300 text-[10px] outline-none focus:ring-2 focus:ring-blue-600 font-mono font-semibold placeholder-slate-400 shadow-xs" 
                   />
                 </th>
-                <th className="p-2 border-r border-slate-700">
+                <th className="p-2 border-r border-slate-200/80">
                   <select 
                     value={colFilters.assignedStaff} 
                     onChange={(e) => handleColFilterChange('assignedStaff', e.target.value)} 
-                    className="w-full px-1.5 py-1 bg-slate-800 text-white rounded-lg border border-slate-700 text-[10px] outline-none font-bold focus:border-blue-500 cursor-pointer"
+                    className="w-full px-1.5 py-1 bg-white text-slate-800 rounded-lg border border-slate-300 text-[10px] outline-none font-bold focus:ring-2 focus:ring-blue-600 cursor-pointer shadow-xs"
                   >
                     <option value="ALL">All Staff</option>
                     {staffList.map(st => <option key={st.name} value={st.name}>{st.name}</option>)}
                   </select>
                 </th>
-                <th className="p-2 border-r border-slate-700">
+                <th className="p-2 border-r border-slate-200/80">
                   <input 
                     type="text" 
                     placeholder="🛡️ Filter Insurer..." 
                     value={colFilters.insurer} 
                     onChange={(e) => handleColFilterChange('insurer', e.target.value)} 
-                    className="w-full px-2 py-1 bg-slate-800 text-white rounded-lg border border-slate-700 text-[10px] outline-none focus:border-blue-500 font-medium placeholder-slate-400" 
+                    className="w-full px-2 py-1 bg-white text-slate-800 rounded-lg border border-slate-300 text-[10px] outline-none focus:ring-2 focus:ring-blue-600 font-semibold placeholder-slate-400 shadow-xs" 
                   />
                 </th>
-                <th className="p-2 border-r border-slate-700">
+                <th className="p-2 border-r border-slate-200/80">
                   <input 
                     type="text" 
                     placeholder="📊 Filter Pitch..." 
                     value={colFilters.salesPitch} 
                     onChange={(e) => handleColFilterChange('salesPitch', e.target.value)} 
-                    className="w-full px-2 py-1 bg-slate-800 text-white rounded-lg border border-slate-700 text-[10px] outline-none focus:border-blue-500 font-medium placeholder-slate-400" 
+                    className="w-full px-2 py-1 bg-white text-slate-800 rounded-lg border border-slate-300 text-[10px] outline-none focus:ring-2 focus:ring-blue-600 font-semibold placeholder-slate-400 shadow-xs" 
                   />
                 </th>
-                <th className="p-2 border-r border-slate-700">
+                <th className="p-2 border-r border-slate-200/80">
                   <select 
                     value={colFilters.clientStatus} 
                     onChange={(e) => handleColFilterChange('clientStatus', e.target.value)} 
-                    className="w-full px-1.5 py-1 bg-slate-800 text-white rounded-lg border border-slate-700 text-[10px] outline-none font-bold focus:border-blue-500 cursor-pointer"
+                    className="w-full px-1.5 py-1 bg-white text-slate-800 rounded-lg border border-slate-300 text-[10px] outline-none font-bold focus:ring-2 focus:ring-blue-600 cursor-pointer shadow-xs"
                   >
                     <option value="ALL">All Statuses</option>
                     <option value="Quotation Shared">Quotation Shared</option>
@@ -523,22 +522,22 @@ export const Customers = () => {
                     <option value="Active">Active</option>
                   </select>
                 </th>
-                <th className="p-2 border-r border-slate-700">
+                <th className="p-2 border-r border-slate-200/80">
                   <input 
                     type="text" 
                     placeholder="📝 Filter Notes..." 
                     value={colFilters.advisorNotes} 
                     onChange={(e) => handleColFilterChange('advisorNotes', e.target.value)} 
-                    className="w-full px-2 py-1 bg-slate-800 text-white rounded-lg border border-slate-700 text-[10px] outline-none focus:border-blue-500 font-medium placeholder-slate-400" 
+                    className="w-full px-2 py-1 bg-white text-slate-800 rounded-lg border border-slate-300 text-[10px] outline-none focus:ring-2 focus:ring-blue-600 font-semibold placeholder-slate-400 shadow-xs" 
                   />
                 </th>
                 <th className="p-2 text-center">
                   <button 
                     onClick={clearAllColFilters} 
-                    className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-[9px] font-black uppercase transition cursor-pointer shadow-2xs"
+                    className="w-full py-1 px-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg text-[10px] font-black uppercase transition cursor-pointer border border-rose-200 shadow-xs"
                     title="Reset all column filters"
                   >
-                    Reset
+                    Clear ✕
                   </button>
                 </th>
               </tr>
@@ -1796,16 +1795,16 @@ export const Customers = () => {
                 </div>
               </div>
 
-              {/* SECTION 5: ASSIGNED STAFF & POLICY MANAGEMENT */}
-              <div className="bg-purple-50/70 p-4 rounded-2xl border border-purple-200/80 space-y-3">
-                <h4 className="text-xs font-black uppercase text-purple-900 tracking-wider flex items-center space-x-1.5">
-                  <UserCheck className="h-4 w-4 text-purple-600" />
+              {/* SECTION 5: ASSIGNED STAFF & ACTIVE POLICY CONTRACT */}
+              <div className="bg-gradient-to-r from-blue-50/80 via-purple-50/60 to-slate-50 p-4.5 rounded-2xl border border-blue-200/90 space-y-3.5 shadow-xs">
+                <h4 className="text-xs font-black uppercase text-blue-900 tracking-wider flex items-center space-x-1.5 border-b border-blue-100 pb-2">
+                  <ShieldCheck className="h-4.5 w-4.5 text-blue-600" />
                   <span>5. Handling Staff &amp; Active Policy Contract</span>
                 </h4>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                   <div>
-                    <label className="block text-[11px] font-black uppercase text-purple-800 mb-1">Present Handling Staff Officer</label>
+                    <label className="block text-[11px] font-black uppercase text-purple-900 mb-1">Present Handling Staff Officer</label>
                     {/* PERMANENT FIX: onChange writes both UID + name so data isolation works correctly */}
                     <select 
                       value={editCustomerData.assignedStaffId || editCustomerData.assignedAdvisorName || 'Priya Sharma'}
@@ -1818,76 +1817,87 @@ export const Customers = () => {
                           assignedAdvisorName: selectedSt?.name || e.target.value
                         });
                       }}
-                      className="w-full px-3 py-2 rounded-xl border border-purple-200 text-xs font-extrabold bg-white text-purple-900 outline-none focus:ring-2 focus:ring-purple-600 cursor-pointer"
+                      className="w-full px-3 py-2 rounded-xl border border-purple-200 text-xs font-extrabold bg-white text-purple-900 outline-none focus:ring-2 focus:ring-purple-600 cursor-pointer shadow-xs"
                     >
                       {staffList.map((st, idx) => (
                         <option key={st.uid || idx} value={st.uid || st.name}>{st.name} ({st.role || 'Staff'})</option>
                       ))}
                     </select>
                   </div>
+
                   <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Insurance Type</label>
+                    <label className="block text-[11px] font-black uppercase text-blue-900 mb-1">Insurance Company / Insurer</label>
+                    <select 
+                      value={editCustomerData.insuranceCompany || 'Tata AIA Life'}
+                      onChange={(e) => setEditCustomerData({...editCustomerData, insuranceCompany: e.target.value})}
+                      className="w-full px-3 py-2 rounded-xl border border-blue-200 text-xs font-extrabold text-blue-950 bg-white outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer shadow-xs"
+                    >
+                      <option value="Tata AIA Life">Tata AIA Life 🛡️</option>
+                      <option value="Star Health Insurance">Star Health Insurance 🏥</option>
+                      <option value="HDFC ERGO Health">HDFC ERGO Health 💙</option>
+                      <option value="Niva Bupa Health">Niva Bupa Health 🧡</option>
+                      <option value="ICICI Prudential Life">ICICI Prudential Life 🏢</option>
+                      <option value="LIC of India">LIC of India 🏦</option>
+                      <option value="SBI Life Insurance">SBI Life Insurance 💚</option>
+                      <option value="Max Life Insurance">Max Life Insurance ⭐</option>
+                      <option value="Bajaj Allianz">Bajaj Allianz 🚗</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Policy Category / Type</label>
                     <select 
                       value={editCustomerData.insuranceType || 'LIFE'}
                       onChange={(e) => setEditCustomerData({...editCustomerData, insuranceType: e.target.value})}
-                      className="w-full px-3 py-2 rounded-xl border text-xs font-bold bg-white outline-none focus:ring-2 focus:ring-blue-600"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold bg-white text-slate-900 outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer shadow-xs"
                     >
-                      <option value="LIFE">LIFE Insurance</option>
-                      <option value="HEALTH">HEALTH Insurance</option>
-                      <option value="MOTOR">MOTOR Insurance</option>
-                      <option value="GENERAL">GENERAL Insurance</option>
+                      <option value="LIFE">Life Insurance (LIFE)</option>
+                      <option value="HEALTH">Health / Medical (HEALTH)</option>
+                      <option value="MOTOR">Motor / Vehicle (MOTOR)</option>
+                      <option value="FIRE">Fire &amp; Asset Protection (FIRE)</option>
+                      <option value="SIP">Mutual Fund SIP (SIP)</option>
                     </select>
                   </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Insurance Company Name</label>
+                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Sales Pitch / Product Plan</label>
                     <input 
                       type="text"
-                      placeholder="e.g. Tata AIA Life / Niva Bupa / Star Health"
-                      value={editCustomerData.insuranceCompany || ''}
-                      onChange={(e) => setEditCustomerData({...editCustomerData, insuranceCompany: e.target.value})}
-                      className="w-full px-3 py-2 rounded-xl border text-xs font-extrabold text-blue-900 outline-none focus:ring-2 focus:ring-blue-600 bg-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Sales Pitch / Product Plan</label>
-                    <input 
-                      type="text"
-                      placeholder="e.g. Savings Plan / Re-Assure 3.0"
+                      placeholder="e.g. Guaranteed Return Savings Plan / Re-Assure 3.0"
                       value={editCustomerData.salesPitch || ''}
                       onChange={(e) => setEditCustomerData({...editCustomerData, salesPitch: e.target.value})}
-                      className="w-full px-3 py-2 rounded-xl border text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-600 bg-white"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-900 outline-none focus:ring-2 focus:ring-blue-600 bg-white shadow-xs"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                   <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Client Follow-up Status</label>
+                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Customer Pipeline Status</label>
                     <select 
                       value={editCustomerData.clientStatus || 'Quotation Shared'}
                       onChange={(e) => setEditCustomerData({...editCustomerData, clientStatus: e.target.value})}
-                      className="w-full px-3 py-2 rounded-xl border text-xs font-bold bg-white outline-none focus:ring-2 focus:ring-blue-600"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-white outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer shadow-xs"
                     >
-                      <option value="Quotation Shared">Quotation Shared</option>
-                      <option value="Call Back Tomorrow">Call Back Tomorrow</option>
-                      <option value="Call Back Scheduled">Call Back Scheduled</option>
-                      <option value="Followup Pending">Followup Pending</option>
-                      <option value="Appointment Scheduled">Appointment Scheduled</option>
-                      <option value="Call Back Weekend">Call Back Weekend</option>
-                      <option value="Policy Issued">Policy Issued &amp; Closed</option>
+                      <option value="Quotation Shared">Quotation Shared 📄</option>
+                      <option value="Under Review">Under Review ⏳</option>
+                      <option value="Interested">Interested 👍</option>
+                      <option value="Call Back Tomorrow">Call Back Tomorrow 📞</option>
+                      <option value="Active">Active Customer ✅</option>
+                      <option value="Closed">Closed / Policy Issued 🎉</option>
                     </select>
                   </div>
+
                   <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Advisor Call Notes</label>
+                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Advisor Call Notes</label>
                     <input 
                       type="text"
-                      placeholder="e.g. Call back tomorrow morning"
+                      placeholder="e.g. Call back tomorrow morning for proposal confirmation"
                       value={editCustomerData.advisorNotes || ''}
                       onChange={(e) => setEditCustomerData({...editCustomerData, advisorNotes: e.target.value})}
-                      className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600 bg-white"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs outline-none focus:ring-2 focus:ring-blue-600 bg-white shadow-xs"
                     />
                   </div>
                 </div>
