@@ -479,11 +479,11 @@ export const DataProvider = ({ children }) => {
 
   // CRUD Actions with Canonical Staff Identification
   const addCustomer = async (custData) => {
-    const id = custData.id || `SK-CUST-${100 + rawCustomers.length + 1}`;
-    const assignedStaffId = custData.assignedStaffId || custData.staffId || user?.uid || 'UID-STF-1003';
-    const assignedStaffName = custData.assignedStaffName || custData.assignedAdvisorName || custData.assignedStaff || user?.name || 'Priya Sharma';
-    const assignedStaffEmail = custData.assignedStaffEmail || custData.advisorEmail || user?.email || 'priya.sharma@sk-smart-investments.com';
-    const branchId = custData.branchId || custData.branch || user?.branchId || 'BR-KNM-001';
+    const id = custData.id || `SK-CUST-${Date.now()}`;
+    const assignedStaffId = custData.assignedStaffId || custData.staffId || user?.uid || '';
+    const assignedStaffName = custData.assignedStaffName || custData.assignedAdvisorName || custData.assignedStaff || user?.name || '';
+    const assignedStaffEmail = custData.assignedStaffEmail || custData.advisorEmail || user?.email || '';
+    const branchId = custData.branchId || custData.branch || user?.branchId || '';
 
     const newCust = {
       ...custData,
@@ -497,8 +497,14 @@ export const DataProvider = ({ children }) => {
       createdAt: new Date().toISOString()
     };
 
-    setCustomers(prev => [newCust, ...prev]);
-    try { await createCustomerBackend(newCust); } catch (e) { }
+    // 1. Write to Firestore first — onSnapshot will push update to all devices
+    try {
+      await setDoc(doc(db, 'customers', id), newCust, { merge: true });
+    } catch (e) {
+      console.warn('Firestore addCustomer error:', e);
+      // Fallback: update local state only if Firestore write fails
+      setCustomers(prev => [newCust, ...prev]);
+    }
 
     if (newCust.assignedStaffName || newCust.assignedAdvisorName) {
       notifyCustomerAssignment(
@@ -552,11 +558,12 @@ export const DataProvider = ({ children }) => {
       return c;
     }));
 
+    // Write directly to Firestore — onSnapshot propagates change to all devices
     if (finalUpdatedRecord) {
       try {
-        await updateCustomerBackend(targetId, finalUpdatedRecord);
+        await setDoc(doc(db, 'customers', String(targetId)), finalUpdatedRecord, { merge: true });
       } catch (e) {
-        try { await setDoc(doc(db, 'customers', targetId), finalUpdatedRecord, { merge: true }); } catch (_) { }
+        console.warn('Firestore updateCustomer error:', e);
       }
     }
 
@@ -608,26 +615,22 @@ export const DataProvider = ({ children }) => {
     const updatedDeleted = Array.from(new Set([...deletedIds, ...idsToBlacklist]));
     localStorage.setItem('crm_v2_deleted_customer_ids', JSON.stringify(updatedDeleted));
 
-    // Remove from rawCustomers state immediately
+    // Remove from local state immediately
     setCustomers(prev => prev.filter(c =>
       !updatedDeleted.includes(String(c.id)) &&
       !updatedDeleted.includes(String(c.customerCode)) &&
       !updatedDeleted.includes(String(c.name))
     ));
 
-    // Save clean list to localStorage immediately
+    // Delete from Firestore directly — onSnapshot propagates deletion to all devices
     try {
-      const current = JSON.parse(localStorage.getItem('crm_v2_customers') || '[]');
-      const cleaned = current.filter(c =>
-        !updatedDeleted.includes(String(c.id)) &&
-        !updatedDeleted.includes(String(c.customerCode)) &&
-        !updatedDeleted.includes(String(c.name))
-      );
-      localStorage.setItem('crm_v2_customers', JSON.stringify(cleaned));
-      window.dispatchEvent(new CustomEvent('crm_data_updated', { detail: { key: 'crm_v2_customers' } }));
-    } catch (e) { }
-
-    try { await deleteCustomerBackend(id); } catch (e) { }
+      // Delete by known doc ID variants
+      for (const delId of idsToBlacklist) {
+        try { await deleteDoc(doc(db, 'customers', delId)); } catch (_) {}
+      }
+    } catch (e) {
+      console.warn('Firestore deleteCustomer error:', e);
+    }
 
     addAuditLog({
       userName: user?.name || 'Admin User',
