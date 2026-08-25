@@ -1518,7 +1518,7 @@ export const Customers = () => {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Client Pipeline Status</label>
+                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Customer Status</label>
                     <select 
                       value={newCustomer.clientStatus} 
                       onChange={(e) => setNewCustomer({...newCustomer, clientStatus: e.target.value})} 
@@ -1875,7 +1875,7 @@ export const Customers = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                   <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Customer Pipeline Status</label>
+                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Customer Status</label>
                     <select 
                       value={editCustomerData.clientStatus || 'Quotation Shared'}
                       onChange={(e) => setEditCustomerData({...editCustomerData, clientStatus: e.target.value})}
