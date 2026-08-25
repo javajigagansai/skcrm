@@ -195,13 +195,11 @@ export const Dashboard = () => {
       return !cat.includes('salary') && !cat.includes('payroll');
     });
 
-    const total = opItems.length > 0 
-      ? opItems.reduce((s, e) => s + (Number(e.amount) || 0), 0)
-      : (expenses && expenses.length > 0 ? expenses.reduce((s, e) => s + (Number(e.amount) || 0), 0) : 830000);
+    const total = opItems.reduce((s, e) => s + (Number(e.amount) || 0), 0);
 
     return {
       totalAmount: total,
-      items: opItems.length > 0 ? opItems : expenses
+      items: opItems
     };
   }, [expenses]);
 
@@ -214,11 +212,11 @@ export const Dashboard = () => {
     const salaryFromExp = salaryItems.reduce((s, e) => s + (Number(e.amount) || 0), 0);
     const activeStaff = (staffListState || []).filter(s => s.status !== 'DISABLED');
     const salaryFromStaff = activeStaff.reduce((s, st) => {
-      const val = st.fixedSalary !== undefined ? Number(st.fixedSalary) : (st.monthlyTarget ? Math.round(st.monthlyTarget * 0.5) : 250000);
+      const val = st.fixedSalary !== undefined ? Number(st.fixedSalary) : 0;
       return s + val;
     }, 0);
 
-    const total = salaryFromExp > 0 ? salaryFromExp : (salaryFromStaff > 0 ? salaryFromStaff : 1640000);
+    const total = salaryFromExp > 0 ? salaryFromExp : salaryFromStaff;
 
     return {
       totalAmount: total,
@@ -1376,10 +1374,10 @@ export const Dashboard = () => {
       subtitle = `Detailed database audit of ${companyOperatingExpenses.items.length} live operational expense records totaling ₹${companyOperatingExpenses.totalAmount.toLocaleString()}.`;
       
       const totalExp = companyOperatingExpenses.totalAmount;
-      const rentAmount = companyOperatingExpenses.items.filter(e => (e.category || '').toLowerCase().includes('rent')).reduce((s, e) => s + Number(e.amount || 0), 0) || totalExp * 0.42;
-      const softwareAmount = companyOperatingExpenses.items.filter(e => (e.category || '').toLowerCase().includes('software') || (e.category || '').toLowerCase().includes('cloud')).reduce((s, e) => s + Number(e.amount || 0), 0) || totalExp * 0.26;
-      const marketingAmount = companyOperatingExpenses.items.filter(e => (e.category || '').toLowerCase().includes('market') || (e.category || '').toLowerCase().includes('ad')).reduce((s, e) => s + Number(e.amount || 0), 0) || totalExp * 0.18;
-      const utilAmount = companyOperatingExpenses.items.filter(e => (e.category || '').toLowerCase().includes('util') || (e.category || '').toLowerCase().includes('infra')).reduce((s, e) => s + Number(e.amount || 0), 0) || totalExp * 0.14;
+      const rentAmount = companyOperatingExpenses.items.filter(e => (e.category || '').toLowerCase().includes('rent')).reduce((s, e) => s + Number(e.amount || 0), 0);
+      const softwareAmount = companyOperatingExpenses.items.filter(e => (e.category || '').toLowerCase().includes('software') || (e.category || '').toLowerCase().includes('cloud')).reduce((s, e) => s + Number(e.amount || 0), 0);
+      const marketingAmount = companyOperatingExpenses.items.filter(e => (e.category || '').toLowerCase().includes('market') || (e.category || '').toLowerCase().includes('ad')).reduce((s, e) => s + Number(e.amount || 0), 0);
+      const utilAmount = companyOperatingExpenses.items.filter(e => (e.category || '').toLowerCase().includes('util') || (e.category || '').toLowerCase().includes('infra')).reduce((s, e) => s + Number(e.amount || 0), 0);
 
       content = (
         <div className="space-y-6">

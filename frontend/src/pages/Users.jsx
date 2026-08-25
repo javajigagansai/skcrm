@@ -151,6 +151,7 @@ export const Users = () => {
       password: staffForm.password || 'Password@123',
       phone: staffForm.phone || '9876543210',
       branch: staffForm.branch || 'Chennai Main Head Office',
+      fixedSalary: staffForm.fixedSalary !== undefined ? Number(staffForm.fixedSalary) : 250000,
       status: 'ACTIVE'
     };
 
@@ -540,6 +541,19 @@ export const Users = () => {
                   placeholder="e.g. Chennai Main Head Office"
                 />
               </div>
+
+              {isAdminOrHigher && (
+                <div>
+                  <label className="block text-slate-700 mb-1 font-extrabold uppercase text-rose-600">Fixed Monthly Salary (₹) (Admin Only)</label>
+                  <input 
+                    type="number"
+                    value={staffForm.fixedSalary || ''}
+                    onChange={(e) => setStaffForm({ ...staffForm, fixedSalary: e.target.value })}
+                    className="w-full p-2.5 rounded-xl border border-rose-200 bg-rose-50/50 outline-none focus:ring-2 focus:ring-rose-500 font-mono font-black text-rose-700"
+                    placeholder="e.g. 250000"
+                  />
+                </div>
+              )}
 
               <div className="pt-2 flex items-center justify-end space-x-2">
                 <button 

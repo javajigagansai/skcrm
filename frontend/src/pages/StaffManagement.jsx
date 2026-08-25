@@ -879,13 +879,16 @@ export const StaffManagement = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-700 mb-1 font-extrabold uppercase text-rose-600">Fixed Monthly Salary (₹)</label>
+                  <label className="block text-slate-700 mb-1 font-extrabold uppercase text-rose-600">
+                    Fixed Monthly Salary (₹) {!isAdminOrHigher && <span className="text-[10px] text-slate-400 font-bold">🔒 (Admin Only)</span>}
+                  </label>
                   <input 
                     type="number" 
                     required
+                    disabled={!isAdminOrHigher}
                     value={editStaffForm.fixedSalary}
                     onChange={(e) => setEditStaffForm({ ...editStaffForm, fixedSalary: e.target.value })}
-                    className="w-full p-2.5 rounded-xl border border-rose-300 font-mono font-black text-rose-700 outline-none focus:ring-2 focus:ring-rose-500 bg-rose-50/50"
+                    className={`w-full p-2.5 rounded-xl border font-mono font-black outline-none ${isAdminOrHigher ? 'border-rose-300 text-rose-700 bg-rose-50/50 focus:ring-2 focus:ring-rose-500' : 'border-slate-200 text-slate-400 bg-slate-100 cursor-not-allowed'}`}
                     placeholder="e.g. 270000"
                   />
                 </div>
