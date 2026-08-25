@@ -2201,33 +2201,46 @@ export const Dashboard = () => {
       );
     }
 
+    const isMatrixModal = activeModal === 'POLICY_CATEGORY_OVERVIEW_MODAL';
+
     return (
-      <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-        <div className="bg-white max-w-3xl w-full rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-8 animate-fadeIn">
-          <div className="p-6 bg-slate-900 text-white flex items-start justify-between">
-            <div className="space-y-1">
+      <div className={`fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto ${isMatrixModal ? 'top-16 z-30' : 'z-50'}`}>
+        <div className={`bg-white w-full rounded-3xl shadow-2xl border border-slate-200 overflow-hidden animate-fadeIn ${
+          isMatrixModal 
+            ? 'max-w-[98vw] xl:max-w-7xl h-[calc(100vh-6rem)] flex flex-col my-auto' 
+            : 'max-w-3xl my-8'
+        }`}>
+          {/* Modal Header */}
+          <div className="p-5 sm:p-6 bg-slate-900 text-white flex items-start justify-between shrink-0">
+            <div className="space-y-1 pr-4">
               <div className="flex items-center space-x-2">
-                <BarChart3 className="h-5 w-5 text-blue-400" />
-                <h3 className="text-lg font-black tracking-tight">{title}</h3>
+                <BarChart3 className="h-5 w-5 text-blue-400 shrink-0" />
+                <h3 className="text-base sm:text-lg font-black tracking-tight">{title}</h3>
               </div>
               <p className="text-xs text-slate-400 font-semibold">{subtitle}</p>
             </div>
             <button 
               onClick={() => setActiveModal(null)}
               className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition cursor-pointer shrink-0"
+              title="Close Matrix View"
             >
               <X className="h-5 w-5" />
             </button>
           </div>
 
-          <div className="p-6 max-h-[70vh] overflow-y-auto">
+          {/* Modal Content Body */}
+          <div className={`p-4 sm:p-6 overflow-y-auto ${isMatrixModal ? 'flex-1' : 'max-h-[70vh]'}`}>
             {content}
           </div>
 
-          <div className="p-4 bg-slate-50 border-t border-slate-200/80 flex items-center justify-end">
+          {/* Modal Footer */}
+          <div className="p-4 bg-slate-50 border-t border-slate-200/80 flex items-center justify-between shrink-0">
+            <span className="text-xs font-bold text-slate-500 hidden sm:inline">
+              {isMatrixModal ? '📊 Multi-Company Policy Matrix Intelligence Active' : 'Admin Portfolio Analysis Window'}
+            </span>
             <button 
               onClick={() => setActiveModal(null)}
-              className="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs transition cursor-pointer"
+              className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs transition cursor-pointer ml-auto"
             >
               Close Analysis Window
             </button>
