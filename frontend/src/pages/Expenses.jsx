@@ -150,7 +150,7 @@ export const Expenses = () => {
             </div>
           </div>
           <p className="text-2xl font-black text-slate-900">₹{grandTotalExpenses.toLocaleString()}</p>
-          <p className="text-[11px] text-slate-500 font-medium">Combined Payroll &amp; Operational Costs</p>
+          <p className="text-[11px] text-slate-500 font-medium">Total Monthly Expense Outflow</p>
         </div>
 
         <div className="bg-white rounded-3xl p-5 border border-purple-200/80 shadow-xs space-y-2 bg-gradient-to-br from-white to-purple-50/30">
