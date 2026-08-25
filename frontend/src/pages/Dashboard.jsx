@@ -2153,7 +2153,7 @@ export const Dashboard = () => {
           {/* Modal Footer */}
           <div className="p-4 bg-slate-50 border-t border-slate-200/80 flex items-center justify-between shrink-0">
             <span className="text-xs font-bold text-slate-500 hidden sm:inline">
-              {isMatrixModal ? '📊 Multi-Company Policy Matrix Intelligence Active' : 'Admin Portfolio Analysis Window'}
+              {isMatrixModal ? '📊 Multi-Company Policy Matrix Intelligence Active' : 'Portfolio Analysis Overview'}
             </span>
             <button 
               onClick={() => setActiveModal(null)}
