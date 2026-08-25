@@ -12,7 +12,7 @@ import {
 export const Investments = () => {
   const { user } = useAuth();
   const { openCustomer360 } = useCustomer360();
-  const { investments, addInvestment, updateInvestmentStatus } = useData();
+  const { investments, addInvestment, updateInvestmentStatus, deleteInvestment } = useData();
   const isManagerOrAdmin = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER';
   const isAdmin = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN';
 
@@ -169,9 +169,11 @@ export const Investments = () => {
     }
   };
 
-  const handleDeleteInvestment = (id) => {
+  const handleDeleteInvestment = async (id) => {
     if (window.confirm(`Are you sure you want to delete investment record ${id}?`)) {
-      setInvestments(prev => prev.filter(i => i.id !== id));
+      if (deleteInvestment) {
+        await deleteInvestment(id);
+      }
     }
   };
 

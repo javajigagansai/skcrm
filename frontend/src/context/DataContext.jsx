@@ -68,41 +68,81 @@ export const DataProvider = ({ children }) => {
   const [rawInvestments, setInvestments] = useState(() => {
     const saved = localStorage.getItem('crm_v2_investments');
     if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(i => 
+            !['INV-2001', 'INV-2002', 'INV-2003'].includes(i.id) && 
+            !['Rahul Sharma', 'Priya Menon', 'Anand Kumar'].includes(i.customerName)
+          );
+        }
+      } catch (e) {}
     }
-    return initialInvestmentsSeed;
+    return [];
   });
 
   const [rawClaims, setClaims] = useState(() => {
     const saved = localStorage.getItem('crm_v2_claims');
     if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(c => 
+            !['CLM-3001', 'CLM-3002'].includes(c.id) && 
+            !['Rahul Sharma', 'Priya Menon', 'Anand Kumar'].includes(c.customerName)
+          );
+        }
+      } catch (e) {}
     }
-    return initialClaimsSeed;
+    return [];
   });
 
   const [rawLeads, setLeads] = useState(() => {
     const saved = localStorage.getItem('crm_v2_leads');
     if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(l => 
+            !['LD-4001', 'LD-4002'].includes(l.id) && 
+            !['Sanjay Gupta', 'Deepak Verma'].includes(l.customerName)
+          );
+        }
+      } catch (e) {}
     }
-    return initialLeadsSeed;
+    return [];
   });
 
   const [rawFollowups, setFollowups] = useState(() => {
     const saved = localStorage.getItem('crm_v2_followups');
     if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(f => 
+            !['FLW-5001', 'FLW-5002'].includes(f.id) && 
+            !['Rahul Sharma', 'Priya Menon', 'Anand Kumar'].includes(f.customerName)
+          );
+        }
+      } catch (e) {}
     }
-    return initialFollowupsSeed;
+    return [];
   });
 
   const [rawTasks, setTasks] = useState(() => {
     const saved = localStorage.getItem('crm_v2_tasks');
     if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(t => 
+            !['TSK-6001', 'TSK-6002'].includes(t.id) && 
+            !['Rahul Sharma', 'Priya Menon', 'Anand Kumar'].includes(t.customerName)
+          );
+        }
+      } catch (e) {}
     }
-    return initialTasksSeed;
+    return [];
   });
 
   const [rawIncome, setIncome] = useState(() => {
@@ -697,6 +737,29 @@ export const DataProvider = ({ children }) => {
     try { await setDoc(doc(db, 'investments', id), { status: newStatus }, { merge: true }); } catch (e) {}
   };
 
+  const deleteInvestment = async (id) => {
+    if (!id) return;
+    setInvestments(prev => prev.filter(i => String(i.id) !== String(id)));
+    try {
+      const saved = localStorage.getItem('crm_v2_investments');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          localStorage.setItem('crm_v2_investments', JSON.stringify(parsed.filter(i => String(i.id) !== String(id))));
+        }
+      }
+    } catch (e) {}
+    try { await deleteDoc(doc(db, 'investments', String(id))); } catch (e) {}
+    addAuditLog({
+      userName: user?.name || 'Admin User',
+      userRole: user?.role || 'ADMIN',
+      action: 'DELETE_INVESTMENT',
+      module: 'Investments',
+      affectedRecord: String(id),
+      details: `Deleted investment record ${id}`
+    });
+  };
+
   const addClaim = async (claimData) => {
     const id = claimData.id || `CLM-SK-${Math.floor(1000 + Math.random() * 9000)}`;
     const assignedStaffId = claimData.assignedStaffId || claimData.staffId || user?.uid || 'UID-STF-1003';
@@ -1076,6 +1139,7 @@ export const DataProvider = ({ children }) => {
       clearAllPolicies,
       addInvestment,
       updateInvestmentStatus,
+      deleteInvestment,
       addClaim,
       updateClaim,
       updateClaimStatus,
