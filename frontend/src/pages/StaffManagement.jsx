@@ -1,6 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
+import { db } from '../config/firebaseClient';
+import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell
 } from 'recharts';
@@ -10,13 +12,38 @@ import {
   Mail, Building2, Briefcase, FileText, Target, Sparkles, AlertCircle, ArrowUpRight
 } from 'lucide-react';
 
+const INITIAL_STAFF_SEED = [
+  { uid: 'UID-STF-1001', name: 'Prakash Gajendiran', email: 'admin@sk-smart-investments.com', role: 'SUPER_ADMIN', title: 'Super Admin / Executive Director', phone: '9876543210', branch: 'Chennai Main HQ Desk', status: 'ACTIVE', fixedSalary: 680000, monthlyTarget: 0, achievedRevenue: 0, assignedClientsCount: 0, policiesIssuedCount: 0, commissionEarned: 0, password: 'Password@123', joinDate: '2023-01-01' },
+  { uid: 'UID-STF-1002', name: 'Branch Manager', email: 'manager@sk-smart-investments.com', role: 'MANAGER', title: 'Regional Operations Manager', phone: '9812345678', branch: 'Bangalore Regional Desk', status: 'ACTIVE', fixedSalary: 540000, monthlyTarget: 0, achievedRevenue: 0, assignedClientsCount: 0, policiesIssuedCount: 0, commissionEarned: 0, password: 'Password@123', joinDate: '2023-11-01' },
+];
+
 export const StaffManagement = () => {
   const { user: activeUser } = useAuth();
-  const { customers, policies, followups, users: liveUsers, saveUserToFirestore } = useData();
+  const { customers, policies, followups } = useData();
   const isAdminOrHigher = activeUser?.role === 'SUPER_ADMIN' || activeUser?.role === 'ADMIN' || activeUser?.role === 'MANAGER' || !activeUser?.role;
 
-  // staffList is driven entirely by Firestore via DataContext — no local seed needed
-  const staffList = liveUsers || [];
+  const [staffList, setStaffList] = useState(() => {
+    const saved = localStorage.getItem('crm_v2_users_list');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const cleaned = parsed.map(u => ({
+            ...u,
+            achievedRevenue: 0,
+            assignedClientsCount: 0,
+            policiesIssuedCount: 0,
+            commissionEarned: 0
+          })).filter(u =>
+            !['Rahul Dravid', 'Kavita Menon', 'Greetings Officer', 'Anitha Selvam', 'Karthik Subramanian'].includes(u.name) &&
+            !['rahul.d@sksmart.com', 'kavita.m@sksmart.com', 'wishes@sksmart.com', 'anitha.s@sksmart.com', 'karthik.s@sksmart.com'].includes(u.email)
+          );
+          if (cleaned.length > 0) return cleaned;
+        }
+      } catch (e) { }
+    }
+    return INITIAL_STAFF_SEED;
+  });
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBranchFilter, setSelectedBranchFilter] = useState('ALL');
@@ -37,8 +64,8 @@ export const StaffManagement = () => {
     title: 'Staff Advisor',
     phone: '',
     branch: 'Chennai Main Head Office',
-    fixedSalary: 0,
-    monthlyTarget: 0
+    fixedSalary: 270000,
+    monthlyTarget: 400000
   });
 
   const [newStaffForm, setNewStaffForm] = useState({
@@ -48,11 +75,35 @@ export const StaffManagement = () => {
     title: 'Staff Advisor',
     phone: '',
     branch: 'Chennai Main Head Office',
-    fixedSalary: 0,
-    monthlyTarget: 0,
+    fixedSalary: 250000,
+    monthlyTarget: 400000,
     password: 'Password@123'
   });
 
+  // Keep local storage synced
+  useEffect(() => {
+    try {
+      localStorage.setItem('crm_v2_users_list', JSON.stringify(staffList));
+      window.dispatchEvent(new Event('storage_users_updated'));
+    } catch (e) { }
+  }, [staffList]);
+
+  // Listen to storage_users_updated event for instant synchronization from User Management
+  useEffect(() => {
+    const handleStorageUpdate = () => {
+      try {
+        const saved = localStorage.getItem('crm_v2_users_list');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setStaffList(parsed);
+          }
+        }
+      } catch (e) { }
+    };
+    window.addEventListener('storage_users_updated', handleStorageUpdate);
+    return () => window.removeEventListener('storage_users_updated', handleStorageUpdate);
+  }, []);
 
   const togglePasswordVisibility = (uid) => {
     setShowPasswords(prev => ({ ...prev, [uid]: !prev[uid] }));
@@ -66,10 +117,8 @@ export const StaffManagement = () => {
     }
 
     const createdMember = {
-      uid: 'UID-STF-' + Date.now() + '-' + Math.floor(1000 + Math.random() * 9000),
+      uid: 'UID-STF-' + Math.floor(1000 + Math.random() * 9000),
       ...newStaffForm,
-      fixedSalary: Number(newStaffForm.fixedSalary) || 0,
-      monthlyTarget: Number(newStaffForm.monthlyTarget) || 0,
       status: 'ACTIVE',
       achievedRevenue: 0,
       assignedClientsCount: 0,
@@ -78,8 +127,15 @@ export const StaffManagement = () => {
       joinDate: new Date().toISOString().split('T')[0]
     };
 
-    // Persist to Firestore — DataContext onSnapshot will update staffList everywhere
-    saveUserToFirestore(createdMember);
+    const updatedList = [createdMember, ...staffList];
+    setStaffList(updatedList);
+
+    // Save permanently to LocalStorage & Firestore users collection
+    try {
+      localStorage.setItem('crm_v2_users_list', JSON.stringify(updatedList));
+      window.dispatchEvent(new Event('storage_users_updated'));
+      setDoc(doc(db, 'users', createdMember.uid), createdMember, { merge: true }).catch(() => { });
+    } catch (e) { }
 
     setShowAddStaffModal(false);
     setNewStaffForm({
@@ -89,8 +145,7 @@ export const StaffManagement = () => {
       title: 'Staff Advisor',
       phone: '',
       branch: 'Chennai Main Head Office',
-      fixedSalary: 0,
-      monthlyTarget: 0,
+      monthlyTarget: 400000,
       password: 'Password@123'
     });
     alert(`Staff Member "${createdMember.name}" created successfully!`);
@@ -115,24 +170,53 @@ export const StaffManagement = () => {
     e.preventDefault();
     if (!editingStaff) return;
 
-    const updatedStaff = {
-      ...editingStaff,
-      name: editStaffForm.name,
-      email: editStaffForm.email,
-      role: editStaffForm.role,
-      title: editStaffForm.title,
-      phone: editStaffForm.phone,
-      branch: editStaffForm.branch,
-      fixedSalary: Number(editStaffForm.fixedSalary) || 0,
-      monthlyTarget: Number(editStaffForm.monthlyTarget) || 0
-    };
+    const updatedList = staffList.map(s => {
+      if (s.uid === editingStaff.uid) {
+        return {
+          ...s,
+          name: editStaffForm.name,
+          email: editStaffForm.email,
+          role: editStaffForm.role,
+          title: editStaffForm.title,
+          phone: editStaffForm.phone,
+          branch: editStaffForm.branch,
+          fixedSalary: Number(editStaffForm.fixedSalary) || 0,
+          monthlyTarget: Number(editStaffForm.monthlyTarget) || 0
+        };
+      }
+      return s;
+    });
 
-    // Persist to Firestore — DataContext onSnapshot propagates to all devices
-    saveUserToFirestore(updatedStaff);
+    setStaffList(updatedList);
 
     if (selectedStaff360 && selectedStaff360.uid === editingStaff.uid) {
-      setSelectedStaff360(updatedStaff);
+      setSelectedStaff360(prev => ({
+        ...prev,
+        name: editStaffForm.name,
+        email: editStaffForm.email,
+        role: editStaffForm.role,
+        title: editStaffForm.title,
+        phone: editStaffForm.phone,
+        branch: editStaffForm.branch,
+        fixedSalary: Number(editStaffForm.fixedSalary) || 0,
+        monthlyTarget: Number(editStaffForm.monthlyTarget) || 0
+      }));
     }
+
+    try {
+      localStorage.setItem('crm_v2_users_list', JSON.stringify(updatedList));
+      window.dispatchEvent(new Event('storage_users_updated'));
+      setDoc(doc(db, 'users', editingStaff.uid), {
+        name: editStaffForm.name,
+        email: editStaffForm.email,
+        role: editStaffForm.role,
+        title: editStaffForm.title,
+        phone: editStaffForm.phone,
+        branch: editStaffForm.branch,
+        fixedSalary: Number(editStaffForm.fixedSalary) || 0,
+        monthlyTarget: Number(editStaffForm.monthlyTarget) || 0
+      }, { merge: true }).catch(() => { });
+    } catch (err) { }
 
     setShowEditStaffModal(false);
     setEditingStaff(null);
@@ -143,10 +227,7 @@ export const StaffManagement = () => {
     e.preventDefault();
     if (!targetStaff || !newTargetAmount) return;
 
-    const targetObj = staffList.find(s => s.uid === targetStaff.uid);
-    if (targetObj) {
-      saveUserToFirestore({ ...targetObj, monthlyTarget: Number(newTargetAmount) });
-    }
+    setStaffList(prev => prev.map(s => s.uid === targetStaff.uid ? { ...s, monthlyTarget: Number(newTargetAmount) } : s));
     if (selectedStaff360 && selectedStaff360.uid === targetStaff.uid) {
       setSelectedStaff360(prev => ({ ...prev, monthlyTarget: Number(newTargetAmount) }));
     }
@@ -159,10 +240,7 @@ export const StaffManagement = () => {
 
   const handleStatusToggle = (uid, currentStatus) => {
     const nextStatus = currentStatus === 'ACTIVE' ? 'DISABLED' : 'ACTIVE';
-    const staffObj = staffList.find(s => s.uid === uid);
-    if (staffObj) {
-      saveUserToFirestore({ ...staffObj, status: nextStatus });
-    }
+    setStaffList(prev => prev.map(s => s.uid === uid ? { ...s, status: nextStatus } : s));
     if (selectedStaff360 && selectedStaff360.uid === uid) {
       setSelectedStaff360(prev => ({ ...prev, status: nextStatus }));
     }

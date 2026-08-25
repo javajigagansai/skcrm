@@ -7,12 +7,32 @@ import {
   CheckCircle2, Lock, RefreshCw, Copy, UserCheck, Award, Sparkles, Building2, Phone 
 } from 'lucide-react';
 
+const INITIAL_USERS_SEED = [
+  { uid: 'UID-STF-1001', name: 'Prakash Gajendiran', email: 'admin@sk-smart-investments.com', role: 'SUPER_ADMIN', password: 'Password@123', status: 'ACTIVE', phone: '9876543210', branch: 'Chennai Main Head Office' },
+  { uid: 'UID-STF-1002', name: 'Branch Manager', email: 'manager@sk-smart-investments.com', role: 'MANAGER', password: 'Password@123', status: 'ACTIVE', phone: '9812345678', branch: 'Bangalore Regional Desk' }
+];
+
 export const Users = () => {
   const { user: activeUser } = useAuth();
   const isAdminOrHigher = activeUser?.role === 'SUPER_ADMIN' || activeUser?.role === 'ADMIN';
 
-  // users is loaded entirely from Firestore via useEffect below — no hardcoded seed
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState(() => {
+    const saved = localStorage.getItem('crm_v2_users_list');
+    if (saved) {
+      try { 
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Filter out legacy fake demo accounts if present
+          const cleaned = parsed.filter(u => 
+            !['Rahul Dravid', 'Kavita Menon', 'Greetings Officer', 'Anitha Selvam', 'Priya Sharma', 'Karthik Subramanian'].includes(u.name) &&
+            !['rahul.d@sksmart.com', 'kavita.m@sksmart.com', 'wishes@sksmart.com', 'anitha.s@sksmart.com', 'priya.sharma@sk-smart-investments.com', 'karthik.s@sksmart.com'].includes(u.email)
+          );
+          if (cleaned.length > 0) return cleaned;
+        }
+      } catch (e) {}
+    }
+    return INITIAL_USERS_SEED;
+  });
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRoleFilter, setSelectedRoleFilter] = useState('ALL');
@@ -32,7 +52,15 @@ export const Users = () => {
     branch: 'Chennai Main Head Office'
   });
 
-  // When DataContext (onSnapshot) updates users list, propagate to local state
+  // Real-time synchronization to LocalStorage and broadcast event to all components
+  useEffect(() => {
+    try {
+      localStorage.setItem('crm_v2_users_list', JSON.stringify(users));
+      window.dispatchEvent(new Event('storage_users_updated'));
+    } catch (e) {}
+  }, [users]);
+
+  // Listen to storage_users_updated event for instant synchronization from Staff Management
   useEffect(() => {
     const handleStorageUpdate = () => {
       try {
