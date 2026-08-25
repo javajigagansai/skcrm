@@ -232,17 +232,6 @@ export const Users = () => {
     return true;
   });
 
-  const handlePurgeFakeAccounts = () => {
-    if (!window.confirm('Are you sure you want to remove fake demo accounts from the credentials vault?')) return;
-    const cleanList = users.filter(u => 
-      !['Rahul Dravid', 'Kavita Menon', 'Greetings Officer', 'Anitha Selvam', 'Karthik Subramanian'].includes(u.name) &&
-      !['rahul.d@sksmart.com', 'kavita.m@sksmart.com', 'wishes@sksmart.com', 'anitha.s@sksmart.com', 'karthik.s@sksmart.com'].includes(u.email)
-    );
-    setUsers(cleanList);
-    localStorage.setItem('crm_v2_users_list', JSON.stringify(cleanList));
-    alert('Fake demo accounts purged! Only real active accounts remain in the vault.');
-  };
-
   return (
     <div className="space-y-6">
       {/* Page Header */}
