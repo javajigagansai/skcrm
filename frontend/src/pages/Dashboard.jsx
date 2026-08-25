@@ -39,32 +39,8 @@ const fromDateKey = (str) => {
 };
 
 // High-fidelity transaction records with real calendar dates
-const fallbackIncomeData = [
-  { id: 'INC-2026-101', date: '2026-08-15', amount: 18500, category: 'Insurance Brokerage' },
-  { id: 'INC-2026-102', date: '2026-08-12', amount: 12400, category: 'Health Insurance Commission' },
-  { id: 'INC-2026-103', date: '2026-08-10', amount: 24500, category: 'Mutual Fund Trail Brokerage' },
-  { id: 'INC-2026-104', date: '2026-08-08', amount: 8900, category: 'Motor Insurance Commission' },
-  { id: 'INC-2026-105', date: '2026-08-05', amount: 15000, category: 'Financial Planning Fee' },
-  { id: 'INC-2026-106', date: '2026-08-20', amount: 35000, category: 'Life Insurance Commission' },
-  { id: 'INC-2026-107', date: '2026-08-23', amount: 22000, category: 'General Brokerage' },
-  { id: 'INC-2026-108', date: '2026-07-10', amount: 28000, category: 'July Commission' },
-  { id: 'INC-2026-109', date: '2026-07-22', amount: 32000, category: 'July Brokerage' },
-  { id: 'INC-2026-110', date: '2026-06-15', amount: 45000, category: 'June SIP Trail' },
-  { id: 'INC-2026-111', date: '2026-05-18', amount: 38000, category: 'May Commission' },
-  { id: 'INC-2026-112', date: '2026-04-12', amount: 29000, category: 'April Brokerage' }
-];
-
-const fallbackExpensesData = [
-  { id: 'EXP-2026-201', expenseDate: '2026-08-01', amount: 45000, category: 'Staff Payroll' },
-  { id: 'EXP-2026-202', expenseDate: '2026-08-07', amount: 12000, category: 'Marketing & Leads' },
-  { id: 'EXP-2026-203', expenseDate: '2026-08-14', amount: 8500, category: 'Software & Cloud SaaS' },
-  { id: 'EXP-2026-204', expenseDate: '2026-08-20', amount: 15000, category: 'Office Premises Rent' },
-  { id: 'EXP-2026-205', expenseDate: '2026-07-01', amount: 45000, category: 'July Payroll' },
-  { id: 'EXP-2026-206', expenseDate: '2026-07-15', amount: 14000, category: 'July Marketing' },
-  { id: 'EXP-2026-207', expenseDate: '2026-06-01', amount: 42000, category: 'June Payroll' },
-  { id: 'EXP-2026-208', expenseDate: '2026-05-01', amount: 40000, category: 'May Payroll' },
-  { id: 'EXP-2026-209', expenseDate: '2026-04-01', amount: 38000, category: 'April Payroll' }
-];
+const fallbackIncomeData = [];
+const fallbackExpensesData = [];
 
 const FinancialChartTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length > 0) {
