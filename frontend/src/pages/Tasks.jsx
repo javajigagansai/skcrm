@@ -3,16 +3,18 @@ import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useNotification } from '../context/NotificationContext';
 import { useCustomer360 } from '../context/Customer360Context';
-import { Plus, CheckSquare, Clock, AlertCircle, X, Sparkles, UserCheck } from 'lucide-react';
+import { Plus, CheckSquare, Clock, AlertCircle, X, Sparkles, UserCheck, Trash2, Lock } from 'lucide-react';
 
 const DEFAULT_STAFF = ['Priya Sharma', 'Rahul Dravid', 'Kavita Menon', 'Anitha Selvam', 'Karthik Subramanian', 'Branch Manager'];
 
 export const Tasks = () => {
   const { user } = useAuth();
-  const { tasks, addTask, updateTaskStatus } = useData();
+  const { tasks, addTask, updateTaskStatus, deleteTask } = useData();
   const { sendNotification } = useNotification();
   const { openCustomer360 } = useCustomer360();
   const [showAddModal, setShowAddModal] = useState(false);
+
+  const isAdminOrManager = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER';
 
   const [staffList, setStaffList] = useState(() => {
     try {
@@ -121,6 +123,19 @@ export const Tasks = () => {
     updateTaskStatus(id, status);
   };
 
+  const handleDeleteTask = async (id, title) => {
+    if (!isAdminOrManager) {
+      alert('Access Restricted: Only Admin or Manager can delete tasks.');
+      return;
+    }
+    if (window.confirm(`Are you sure you want to delete task "${title}"?`)) {
+      await deleteTask(id);
+      try {
+        window.dispatchEvent(new Event('storage_tasks_updated'));
+      } catch (err) {}
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -175,16 +190,32 @@ export const Tasks = () => {
                       </span>
                     )}
                   </div>
-                  <select
-                    value={t.status}
-                    onChange={(e) => handleStatusChange(t.id, e.target.value)}
-                    className="px-2.5 py-1 rounded-xl text-xs font-extrabold border bg-white"
-                  >
-                    <option value="PENDING">PENDING</option>
-                    <option value="IN_PROGRESS">IN PROGRESS</option>
-                    <option value="COMPLETED">COMPLETED</option>
-                    <option value="CANCELLED">CANCELLED</option>
-                  </select>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={t.status}
+                      onChange={(e) => handleStatusChange(t.id, e.target.value)}
+                      className="px-2.5 py-1 rounded-xl text-xs font-extrabold border bg-white cursor-pointer"
+                    >
+                      <option value="PENDING">PENDING</option>
+                      <option value="IN_PROGRESS">IN PROGRESS</option>
+                      <option value="COMPLETED">COMPLETED</option>
+                      <option value="CANCELLED">CANCELLED</option>
+                    </select>
+
+                    {isAdminOrManager ? (
+                      <button
+                        onClick={() => handleDeleteTask(t.id, t.title)}
+                        className="p-1.5 rounded-xl text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 transition cursor-pointer"
+                        title="Delete Task (Admin/Manager Only)"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    ) : (
+                      <span className="p-1.5 text-slate-300 cursor-not-allowed" title="Delete restricted to Admin/Manager">
+                        <Lock className="h-3.5 w-3.5" />
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div>

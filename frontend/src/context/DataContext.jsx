@@ -823,6 +823,28 @@ export const DataProvider = ({ children }) => {
     try { await setDoc(doc(db, 'tasks', id), { status: newStatus }, { merge: true }); } catch (e) {}
   };
 
+  const deleteTask = async (id) => {
+    setTasks(prev => prev.filter(t => t.id !== id));
+    try {
+      const saved = localStorage.getItem('crm_v2_tasks');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          localStorage.setItem('crm_v2_tasks', JSON.stringify(parsed.filter(t => t.id !== id)));
+        }
+      }
+    } catch (e) {}
+    try {
+      await deleteDoc(doc(db, 'tasks', String(id)));
+    } catch (e) {}
+    addAuditLog({
+      action: 'DELETE_TASK',
+      module: 'Tasks',
+      affectedRecord: String(id),
+      details: `Task ID ${id} deleted by Admin/Manager`
+    });
+  };
+
   const addIncome = (incData) => {
     const id = incData.id || `INC-SK-${Math.floor(1000 + Math.random() * 9000)}`;
     const newInc = { ...incData, id, date: incData.date || new Date().toISOString().split('T')[0] };
@@ -1024,6 +1046,7 @@ export const DataProvider = ({ children }) => {
       addFollowup,
       addTask,
       updateTaskStatus,
+      deleteTask,
       addIncome,
       addExpense,
       addAuditLog,
