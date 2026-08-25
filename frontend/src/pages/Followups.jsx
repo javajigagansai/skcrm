@@ -988,7 +988,7 @@ export const Followups = () => {
                 <input 
                   type="text" 
                   required 
-                  placeholder="e.g. Document Verification & Policy Issuance"
+                  placeholder=""
                   value={newStageForm.stageName} 
                   onChange={(e) => setNewStageForm({ ...newStageForm, stageName: e.target.value })} 
                   className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold" 
@@ -1000,7 +1000,7 @@ export const Followups = () => {
                 <textarea 
                   rows="3" 
                   required 
-                  placeholder="Record conversation details, client feedback, and instructions..."
+                  placeholder=""
                   value={newStageForm.conversationNotes} 
                   onChange={(e) => setNewStageForm({ ...newStageForm, conversationNotes: e.target.value })} 
                   className="w-full px-3 py-2 rounded-xl border text-xs outline-none" 
@@ -1120,51 +1120,13 @@ export const Followups = () => {
             </div>
 
             <form onSubmit={handleCreateNewClientFollowup} className="space-y-3.5">
-              {/* Select Existing Customer or Custom Entry */}
-              {customers && customers.length > 0 && (
-                <div>
-                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">
-                    Select Customer from CRM Database (Optional)
-                  </label>
-                  <select 
-                    value={newClientForm.selectedCustomerId} 
-                    onChange={(e) => {
-                      const id = e.target.value;
-                      if (!id || id === 'CUSTOM') {
-                        setNewClientForm(prev => ({ ...prev, selectedCustomerId: '', clientName: '', phone: '' }));
-                      } else {
-                        const cust = customers.find(c => String(c.id || c.uid || c.clientId) === String(id));
-                        if (cust) {
-                          setNewClientForm(prev => ({
-                            ...prev,
-                            selectedCustomerId: id,
-                            clientName: cust.name || cust.clientName || '',
-                            phone: cust.phone || cust.mobile || cust.contact || '',
-                            category: cust.category || prev.category
-                          }));
-                        }
-                      }
-                    }} 
-                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold text-blue-700 bg-blue-50/50"
-                  >
-                    <option value="">-- Choose Existing Customer or Enter Custom Below --</option>
-                    {customers.map(c => (
-                      <option key={c.id || c.uid || c.clientId} value={c.id || c.uid || c.clientId}>
-                        {c.name || c.clientName} ({c.phone || c.mobile || 'No Phone'})
-                      </option>
-                    ))}
-                    <option value="CUSTOM">➕ Enter Custom Prospect / New Lead</option>
-                  </select>
-                </div>
-              )}
-
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Client / Prospect Name *</label>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Customer / Prospect Name *</label>
                   <input 
                     type="text" 
                     required 
-                    placeholder="e.g. Ramesh Kumar"
+                    placeholder=""
                     value={newClientForm.clientName} 
                     onChange={(e) => setNewClientForm({ ...newClientForm, clientName: e.target.value })} 
                     className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold" 
@@ -1175,7 +1137,7 @@ export const Followups = () => {
                   <input 
                     type="text" 
                     required 
-                    placeholder="e.g. +91 98765 43210"
+                    placeholder=""
                     value={newClientForm.phone} 
                     onChange={(e) => setNewClientForm({ ...newClientForm, phone: e.target.value })} 
                     className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-mono font-bold" 
@@ -1185,13 +1147,13 @@ export const Followups = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Client Category</label>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Customer Category</label>
                   <select 
                     value={newClientForm.category} 
                     onChange={(e) => setNewClientForm({ ...newClientForm, category: e.target.value })} 
                     className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold"
                   >
-                    <option value="High Networth Client">High Networth Client</option>
+                    <option value="High Networth Client">High Networth Customer</option>
                     <option value="Retail Investor">Retail Investor</option>
                     <option value="Corporate Executive">Corporate Executive</option>
                     <option value="SME Business Owner">SME Business Owner</option>
@@ -1221,7 +1183,7 @@ export const Followups = () => {
                 <input 
                   type="text" 
                   required 
-                  placeholder="e.g. Prospect Onboarded & Requirement Captured"
+                  placeholder=""
                   value={newClientForm.stageName} 
                   onChange={(e) => setNewClientForm({ ...newClientForm, stageName: e.target.value })} 
                   className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold text-blue-900" 
@@ -1232,7 +1194,7 @@ export const Followups = () => {
                 <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Initial Conversation Notes / Topic</label>
                 <textarea 
                   rows="2" 
-                  placeholder="Details of client requirements, quotes shared, or discussion points..."
+                  placeholder=""
                   value={newClientForm.conversationNotes} 
                   onChange={(e) => setNewClientForm({ ...newClientForm, conversationNotes: e.target.value })} 
                   className="w-full px-3 py-2 rounded-xl border text-xs outline-none" 
