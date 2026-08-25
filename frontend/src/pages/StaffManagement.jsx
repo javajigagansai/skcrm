@@ -354,7 +354,7 @@ export const StaffManagement = () => {
             <Users className="h-7 w-7 text-blue-600" />
             <span>Staff Management &amp; Individual Staff 360° Portal</span>
           </h1>
-          <p className="text-xs text-slate-500 font-semibold">Admin Master Desk to monitor individual staff performance, client assignments, targets &amp; credentials.</p>
+          <p className="text-xs text-slate-500 font-semibold">Monitor individual staff performance, customer assignments, targets &amp; credentials.</p>
         </div>
 
         <button 
