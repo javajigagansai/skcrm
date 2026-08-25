@@ -297,49 +297,6 @@ export const Dashboard = () => {
       companyCategoryMatrix[comp][cat] = (companyCategoryMatrix[comp][cat] || 0) + 1;
     });
 
-    // Baseline Seed Insurance Categories (Strictly insurance, no SIPs)
-    const baselineCategories = [
-      { cat: 'Health Insurance', defaultCount: 42, defaultPremium: 1050000 },
-      { cat: 'Life Insurance', defaultCount: 28, defaultPremium: 1820000 },
-      { cat: 'Vehicle Insurance', defaultCount: 22, defaultPremium: 550000 },
-      { cat: 'General & Commercial Insurance', defaultCount: 14, defaultPremium: 420000 },
-      { cat: 'Travel Insurance', defaultCount: 8, defaultPremium: 160000 }
-    ];
-
-    baselineCategories.forEach(b => {
-      categoriesSet.add(b.cat);
-      if (!categoriesMap[b.cat]) {
-        categoriesMap[b.cat] = {
-          category: b.cat,
-          policyCount: b.defaultCount,
-          totalPremium: b.defaultPremium,
-          companies: { 
-            'Star Health Insurance': b.cat === 'Health Insurance' ? 24 : b.cat === 'Travel Insurance' ? 4 : 0, 
-            'HDFC ERGO General': b.cat === 'Vehicle Insurance' ? 12 : b.cat === 'Health Insurance' ? 10 : 4, 
-            'Tata AIA Life': b.cat === 'Life Insurance' ? 20 : 0,
-            'ICICI Lombard': b.cat === 'Vehicle Insurance' ? 8 : b.cat === 'General & Commercial Insurance' ? 8 : 4,
-            'SBI General Insurance': b.cat === 'Life Insurance' ? 8 : b.cat === 'Vehicle Insurance' ? 2 : 4,
-            'Niva Bupa Health': b.cat === 'Health Insurance' ? 8 : 0
-          }
-        };
-      }
-    });
-
-    const defaultCompanies = ['Star Health Insurance', 'HDFC ERGO General', 'Tata AIA Life', 'ICICI Lombard', 'Niva Bupa Health', 'SBI General Insurance'];
-    defaultCompanies.forEach(c => companiesSet.add(c));
-
-    defaultCompanies.forEach(comp => {
-      if (!companyCategoryMatrix[comp]) {
-        companyCategoryMatrix[comp] = {
-          'Health Insurance': comp === 'Star Health Insurance' ? 24 : comp === 'HDFC ERGO General' ? 10 : comp === 'Niva Bupa Health' ? 8 : 0,
-          'Life Insurance': comp === 'Tata AIA Life' ? 20 : comp === 'SBI General Insurance' ? 8 : 0,
-          'Vehicle Insurance': comp === 'HDFC ERGO General' ? 12 : comp === 'ICICI Lombard' ? 8 : comp === 'SBI General Insurance' ? 2 : 0,
-          'General & Commercial Insurance': comp === 'ICICI Lombard' ? 8 : comp === 'SBI General Insurance' ? 4 : comp === 'HDFC ERGO General' ? 2 : 0,
-          'Travel Insurance': comp === 'Star Health Insurance' ? 4 : comp === 'HDFC ERGO General' ? 4 : 0
-        };
-      }
-    });
-
     const allCategoriesList = Array.from(categoriesSet);
     const allCompaniesList = Array.from(companiesSet);
 
@@ -364,7 +321,7 @@ export const Dashboard = () => {
       };
     }).sort((a, b) => b.policyCount - a.policyCount);
 
-    const topCompanyEntry = companyChartData.length > 0 ? companyChartData[0] : { company: 'Star Health Insurance', policyCount: 28 };
+    const topCompanyEntry = companyChartData.length > 0 ? companyChartData[0] : null;
 
     // DRILLDOWN 1: If an individual Category is selected, which companies provide it?
     let categoryDrilldownData = [];
@@ -406,7 +363,7 @@ export const Dashboard = () => {
       companyDrilldownData,
       totalPolicies: totalPoliciesCount,
       topCategory,
-      topCompany: { name: topCompanyEntry.company, count: topCompanyEntry.policyCount },
+      topCompany: topCompanyEntry ? { name: topCompanyEntry.company, count: topCompanyEntry.policyCount } : null,
       companyBreakdown: companyCategoryMatrix
     };
   }, [policies, selectedOverviewCategoryFilter, selectedCategoryCompanyFilter, isAdminOnly]);
@@ -2734,7 +2691,7 @@ export const Dashboard = () => {
 
             <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/70 space-y-1 hover:bg-slate-50 transition">
               <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Leading Category</span>
-              <p className="text-base font-black text-emerald-700 truncate">{policyCategoryOverview.topCategory?.category || 'Health Insurance'}</p>
+              <p className="text-base font-black text-emerald-700 truncate">{policyCategoryOverview.topCategory?.category || 'None'}</p>
               <div className="flex items-center space-x-1 pt-0.5">
                 <span className="badge badge-green text-[10px]">
                   {policyCategoryOverview.topCategory?.policyCount || 0} Policies ({policyCategoryOverview.totalPolicies ? Math.round(((policyCategoryOverview.topCategory?.policyCount || 0) / policyCategoryOverview.totalPolicies) * 100) : 0}%)
@@ -2744,7 +2701,7 @@ export const Dashboard = () => {
 
             <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/70 space-y-1 hover:bg-slate-50 transition">
               <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Top Partner Insurer</span>
-              <p className="text-base font-black text-purple-700 truncate">{policyCategoryOverview.topCompany?.name || 'Star Health Insurance'}</p>
+              <p className="text-base font-black text-purple-700 truncate">{policyCategoryOverview.topCompany?.name || 'None'}</p>
               <div className="flex items-center space-x-1 pt-0.5">
                 <span className="badge bg-purple-100 text-purple-800 text-[10px] font-extrabold">
                   {policyCategoryOverview.topCompany?.count || 0} Contracts Underwritten
