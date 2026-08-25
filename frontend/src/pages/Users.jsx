@@ -257,14 +257,6 @@ export const Users = () => {
         {isAdminOrHigher && (
           <div className="flex items-center space-x-2">
             <button 
-              onClick={handlePurgeFakeAccounts}
-              className="px-3.5 py-2 rounded-2xl bg-rose-50 text-rose-700 hover:bg-rose-100 font-black text-xs border border-rose-200 transition cursor-pointer"
-              title="Remove fake sample demo accounts"
-            >
-              🧹 Purge Demo Accounts
-            </button>
-
-            <button 
               onClick={() => setShowAddStaffModal(true)}
               className="flex items-center space-x-2 px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer"
             >
