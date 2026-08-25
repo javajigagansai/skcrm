@@ -701,6 +701,15 @@ export const Followups = () => {
                   </div>
 
                   <div className="flex items-center space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => openCustomer360(client.clientName)}
+                      className="px-3 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-800 font-extrabold text-xs border border-purple-200 transition cursor-pointer flex items-center space-x-1.5 shadow-xs"
+                      title="Open Customer 360° Complete Profile"
+                    >
+                      <Sparkles className="h-3.5 w-3.5 text-purple-600" />
+                      <span>Customer 360°</span>
+                    </button>
                     <button 
                       type="button"
                       onClick={() => { setTargetClientForNewStage(client); setShowAddStageModal(true); }}

@@ -445,6 +445,38 @@ export const Customer360Provider = ({ children }) => {
                     </div>
                   </div>
 
+                  {/* Customer Follow-ups Progression Pipeline Highlight Card */}
+                  <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-5 rounded-2xl text-white shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-slate-800">
+                    <div className="flex items-center space-x-3.5">
+                      <div className="p-3 bg-blue-600 rounded-2xl text-white shadow-sm shrink-0">
+                        <Clock className="h-6 w-6" />
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-[10px] font-black uppercase text-blue-300 tracking-wider">Customer Follow-up Progression Pipeline</span>
+                          <span className={`badge text-[10px] font-black ${selectedCustomer.followupHub?.overallStatus === 'COMPLETED' ? 'bg-emerald-500 text-white' : 'bg-amber-500 text-white'}`}>
+                            {selectedCustomer.followupHub?.overallStatus || (activeFollowupsList.length > 0 ? 'ACTIVE_FOLLOWUP' : 'NO_FOLLOWUP_REGISTERED')}
+                          </span>
+                        </div>
+                        <h4 className="text-sm font-black text-white">
+                          Latest Stage: {activeFollowupsList[0]?.stageName || 'Quotation Shared & Under Review'}
+                        </h4>
+                        <p className="text-xs text-slate-300 line-clamp-1">
+                          Notes: {activeFollowupsList[0]?.conversationNotes || 'Regular advisor check-in and portfolio discussion.'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setActive360Tab('TASKS')}
+                      className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs transition cursor-pointer shrink-0 flex items-center space-x-1.5 shadow"
+                    >
+                      <span>View Follow-ups Timeline ({activeFollowupsList.length} Steps)</span>
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+
                   {/* Summary Metric Counters */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div className="bg-blue-50/70 p-3.5 rounded-2xl border border-blue-100">
@@ -946,39 +978,70 @@ export const Customer360Provider = ({ children }) => {
                 </div>
               )}
 
-              {/* TAB 7: TASKS & NOTES */}
+              {/* TAB 7: FOLLOW-UPS & NOTES */}
               {active360Tab === 'TASKS' && (
-                <div className="space-y-4">
-                  <h4 className="text-xs font-black uppercase text-slate-700 tracking-wider">Advisor Tasks &amp; Interaction Logs</h4>
-
-                  <div className="grid grid-cols-1 gap-3">
-                    {activeTasksList.map((tsk, tIdx) => (
-                      <div key={tsk.id || tIdx} className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-black text-slate-900">{tsk.title}</span>
-                          <span className="badge bg-blue-100 text-blue-800 text-[10px] font-extrabold">{tsk.status}</span>
-                        </div>
-                        <p className="text-xs text-slate-500">Due: {tsk.dueDate}{tsk.dueTime ? ` at ${tsk.dueTime}` : ''} • Priority: {tsk.priority} • Assigned: {tsk.assignedStaff}</p>
-                      </div>
-                    ))}
-
-                    {activeFollowupsList.map((flw, fIdx) => (
-                      <div key={flw.id || fIdx} className="bg-purple-50/50 p-4 rounded-2xl border border-purple-100 space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-black text-purple-900">{flw.stageName}</span>
-                          <span className="badge bg-purple-100 text-purple-800 text-[10px] font-extrabold">{flw.status}</span>
-                        </div>
-                        <p className="text-xs text-slate-600">{flw.conversationNotes}</p>
-                        <p className="text-[10px] text-slate-400 font-semibold">{flw.date} • Assigned: {flw.assignedTo}</p>
-                      </div>
-                    ))}
-
-                    {activeTasksList.length === 0 && activeFollowupsList.length === 0 && (
-                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-center text-xs text-slate-400">
-                        No tasks or follow-up interaction logs attached to this customer.
-                      </div>
-                    )}
+                <div className="space-y-5">
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                    <div>
+                      <h4 className="text-sm font-black text-slate-900">Customer Follow-up Step Timeline &amp; Notes</h4>
+                      <p className="text-xs text-slate-500 font-medium">Complete progression history linked directly with Customer Follow-ups Register</p>
+                    </div>
                   </div>
+
+                  {/* Followups Progression Timeline */}
+                  {activeFollowupsList.length > 0 && (
+                    <div className="space-y-3">
+                      <span className="text-[10px] font-black uppercase text-purple-700 tracking-wider block">Follow-up Stage History ({activeFollowupsList.length} Steps)</span>
+                      <div className="relative border-l-2 border-purple-200 ml-3 space-y-4 pl-4">
+                        {activeFollowupsList.map((flw, fIdx) => (
+                          <div key={flw.id || fIdx} className="relative group">
+                            <span className="absolute -left-[23px] top-1.5 w-3.5 h-3.5 rounded-full bg-purple-600 border-2 border-white ring-2 ring-purple-200"></span>
+                            <div className="bg-purple-50/60 hover:bg-purple-50 p-4 rounded-2xl border border-purple-100/90 space-y-1.5 transition">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-black text-purple-900 flex items-center space-x-1.5">
+                                  <span>Stage {fIdx + 1}: {flw.stageName}</span>
+                                </span>
+                                <span className={`badge text-[10px] font-extrabold ${flw.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-800' : 'bg-purple-100 text-purple-800'}`}>
+                                  {flw.status || 'PENDING'}
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-700 font-semibold">{flw.conversationNotes || 'No interaction notes logged for this step.'}</p>
+                              <div className="flex items-center justify-between pt-1 text-[10px] font-extrabold text-slate-500 border-t border-purple-100/60">
+                                <span>📅 {flw.date} • Officer: <strong>{flw.assignedTo || selectedCustomer.assignedAdvisorName || 'Assigned Officer'}</strong></span>
+                                {flw.source && <span className="badge bg-white text-slate-600 text-[9px] border border-slate-200">{flw.source}</span>}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tasks List */}
+                  {activeTasksList.length > 0 && (
+                    <div className="space-y-3 pt-2">
+                      <span className="text-[10px] font-black uppercase text-blue-700 tracking-wider block">Assigned Advisor Tasks ({activeTasksList.length})</span>
+                      <div className="grid grid-cols-1 gap-2.5">
+                        {activeTasksList.map((tsk, tIdx) => (
+                          <div key={tsk.id || tIdx} className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 space-y-1">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-black text-slate-900">{tsk.title}</span>
+                              <span className="badge bg-blue-100 text-blue-800 text-[10px] font-extrabold">{tsk.status}</span>
+                            </div>
+                            <p className="text-xs text-slate-500">Due: {tsk.dueDate}{tsk.dueTime ? ` at ${tsk.dueTime}` : ''} • Priority: {tsk.priority} • Assigned: {tsk.assignedStaff}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTasksList.length === 0 && activeFollowupsList.length === 0 && (
+                    <div className="bg-slate-50 p-8 rounded-2xl border border-slate-200 text-center space-y-2">
+                      <Clock className="h-8 w-8 text-slate-300 mx-auto" />
+                      <p className="text-xs font-bold text-slate-500">No follow-ups or tasks logged for {selectedCustomer.name}.</p>
+                      <p className="text-[11px] text-slate-400">Open Customer Follow-ups page to add follow-up stages &amp; pipeline progression.</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

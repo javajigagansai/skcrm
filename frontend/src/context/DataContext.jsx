@@ -1127,9 +1127,60 @@ export const DataProvider = ({ children }) => {
     const userPolicies = rawPolicies.filter(matchingRecord);
     const userInvestments = rawInvestments.filter(matchingRecord);
     const userClaims = rawClaims.filter(matchingRecord);
-    const userFollowups = rawFollowups.filter(matchingRecord);
     const userTasks = rawTasks.filter(matchingRecord);
     const userLeads = rawLeads.filter(matchingRecord);
+
+    // Pull LocalStorage Customer Follow-up Progression Hubs & Spreadsheet Records for complete Customer 360 Linking
+    let localHubs = [];
+    let localSpreadsheet = [];
+    try {
+      localHubs = JSON.parse(localStorage.getItem('crm_v2_client_followup_hubs') || '[]');
+      localSpreadsheet = JSON.parse(localStorage.getItem('crm_v2_spreadsheet_followups') || '[]');
+    } catch (e) {}
+
+    const matchingHubs = localHubs.filter(h => 
+      matchingName(h.clientName) || 
+      (h.clientId && effectiveCode && h.clientId.toLowerCase().trim() === effectiveCode.toLowerCase().trim()) ||
+      (h.phone && masterCustomer?.phone && masterCustomer.phone.length > 5 && h.phone.replace(/\D/g, '').endsWith(masterCustomer.phone.replace(/\D/g, '').slice(-10)))
+    );
+
+    const matchingSpreadsheet = localSpreadsheet.filter(s =>
+      matchingName(s.clientName) ||
+      (s.phone && masterCustomer?.phone && masterCustomer.phone.length > 5 && s.phone.replace(/\D/g, '').endsWith(masterCustomer.phone.replace(/\D/g, '').slice(-10)))
+    );
+
+    const hubSteps = matchingHubs.flatMap(h => 
+      (h.history || []).map(step => ({
+        id: step.stepId || `FLW-${step.stageName}`,
+        stageName: step.stageName,
+        date: step.date,
+        assignedTo: step.assignedTo,
+        createdBy: step.createdBy,
+        conversationNotes: step.conversationNotes,
+        status: step.status,
+        overallStatus: h.overallStatus,
+        activeProduct: h.activeProduct,
+        clientId: h.clientId,
+        clientName: h.clientName,
+        source: 'PROGRESSION_HUB'
+      }))
+    );
+
+    const spreadsheetSteps = matchingSpreadsheet.map(s => ({
+      id: s.id || `FLW-SP-${Math.random()}`,
+      stageName: `${s.clientStatus} (${s.insuranceType || 'General'})`,
+      date: s.date,
+      assignedTo: s.insuranceCompany || 'Staff Officer',
+      createdBy: s.clientCategory || 'Register',
+      conversationNotes: s.advisorNotes || s.salesPitch,
+      status: s.clientStatus,
+      clientName: s.clientName,
+      source: 'REGISTER'
+    }));
+
+    const rawMatched = rawFollowups.filter(matchingRecord);
+    const userFollowups = [...hubSteps, ...spreadsheetSteps, ...rawMatched];
+    const userFollowupHub = matchingHubs[0] || null;
 
     const userRenewals = userPolicies.map(p => ({
       id: `RNW-${p.id}`,
@@ -1165,6 +1216,7 @@ export const DataProvider = ({ children }) => {
       claimsList: userClaims,
       renewalsList: userRenewals,
       followupsList: userFollowups,
+      followupHub: userFollowupHub,
       tasksList: userTasks,
       leadsList: userLeads
     };
