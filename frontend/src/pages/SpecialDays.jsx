@@ -186,14 +186,6 @@ export const SpecialDays = () => {
       }
     });
 
-    // Fallback seed events if no dates populated yet
-    if (list.length === 0) {
-      return [
-        { id: 'SEED-1', customerName: 'Rahul Sharma', phone: '9876543210', type: 'BIRTHDAY', eventTitle: '🎂 Birthday of Rahul Sharma', date: '1988-05-14', isToday: true, assignedAdvisor: 'Priya Sharma', relation: 'Self' },
-        { id: 'SEED-2', customerName: 'Priya Menon', phone: '9876512345', type: 'ANNIVERSARY', eventTitle: '💍 Wedding Anniversary of Priya Menon', date: '2016-11-20', isToday: true, assignedAdvisor: 'Priya Sharma', relation: 'Self & Spouse' }
-      ];
-    }
-
     return list;
   }, [customers]);
 

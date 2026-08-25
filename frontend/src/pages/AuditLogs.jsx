@@ -6,13 +6,7 @@ import {
   Sparkles, CheckCircle2, Lock, X, Activity, UserCheck, Calendar
 } from 'lucide-react';
 
-const DEFAULT_AUDIT_LOGS = [
-  { id: 'LOG-1001', userName: 'Prakash Gajendiran', userRole: 'SUPER_ADMIN', action: 'USER_LOGIN', module: 'Auth', affectedRecord: 'Session', timestamp: new Date().toLocaleString('en-IN'), details: 'Super Admin logged in successfully' },
-  { id: 'LOG-1002', userName: 'Priya Sharma', userRole: 'EMPLOYEE', action: 'CREATE_CLIENT', module: 'Customers', affectedRecord: 'Rahul Sharma (SK-CUST-101)', timestamp: new Date(Date.now() - 3600000).toLocaleString('en-IN'), details: 'New customer profile registered' },
-  { id: 'LOG-1003', userName: 'Branch Manager', userRole: 'MANAGER', action: 'FILE_CLAIM', module: 'Claims', affectedRecord: 'CLM-2026-001 (Rahul Sharma)', timestamp: new Date(Date.now() - 7200000).toLocaleString('en-IN'), details: 'Health insurance claim submitted for ₹1,50,000' },
-  { id: 'LOG-1004', userName: 'Priya Sharma', userRole: 'EMPLOYEE', action: 'UPDATE_FOLLOWUP', module: 'Followups', affectedRecord: 'Priya Menon', timestamp: new Date(Date.now() - 10800000).toLocaleString('en-IN'), details: 'Scheduled callback for quotation review' },
-  { id: 'LOG-1005', userName: 'Prakash Gajendiran', userRole: 'SUPER_ADMIN', action: 'STAFF_REASSIGNMENT', module: 'Staff Portal', affectedRecord: 'Anand Kumar', timestamp: new Date(Date.now() - 14400000).toLocaleString('en-IN'), details: 'Reassigned 5 client portfolios to Priya Sharma' }
-];
+const DEFAULT_AUDIT_LOGS = [];
 
 export const AuditLogs = () => {
   const { user } = useAuth();

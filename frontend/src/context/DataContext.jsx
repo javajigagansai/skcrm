@@ -127,10 +127,7 @@ export const DataProvider = ({ children }) => {
     if (saved) {
       try { return JSON.parse(saved); } catch (e) {}
     }
-    return [
-      { id: 'LOG-1001', userName: 'Prakash Gajendiran', userRole: 'SUPER_ADMIN', action: 'USER_LOGIN', module: 'Auth', affectedRecord: 'Session', timestamp: '2026-08-13 09:15:20', details: 'Super Admin logged in successfully' },
-      { id: 'LOG-1002', userName: 'Priya Sharma', userRole: 'EMPLOYEE', action: 'CREATE_CLIENT', module: 'Customers', affectedRecord: 'Rahul Sharma (SK-CUST-101)', timestamp: '2026-08-13 09:30:10', details: 'New customer profile registered' }
-    ];
+    return [];
   });
 
   // NOTE: We intentionally do NOT reset business data (customers, policies, etc.) on logout.

@@ -49,15 +49,9 @@ export const Income = () => {
     loadIncome();
   }, [contextIncome]);
 
-  const sampleIncomeData = [
-    { id: 'INC-2026-101', date: '2026-08-15', clientName: 'Rahul Sharma', customerName: 'Rahul Sharma', category: 'Insurance Brokerage', payorCompany: 'Tata AIA Life Insurance', amount: 18500, tdsAmount: 925, netAmount: 17575, assignedStaffName: 'Prakash Gajendiran', status: 'RECEIVED' },
-    { id: 'INC-2026-102', date: '2026-08-12', clientName: 'Priya Menon', customerName: 'Priya Menon', category: 'Health Insurance Commission', payorCompany: 'Star Health Insurance', amount: 12400, tdsAmount: 620, netAmount: 11780, assignedStaffName: 'Priya Sharma', status: 'RECEIVED' },
-    { id: 'INC-2026-103', date: '2026-08-10', clientName: 'Anand Kumar', customerName: 'Anand Kumar', category: 'Mutual Fund Trail Brokerage', payorCompany: 'SBI Mutual Fund AMC', amount: 24500, tdsAmount: 1225, netAmount: 23275, assignedStaffName: 'Prakash Gajendiran', status: 'RECEIVED' },
-    { id: 'INC-2026-104', date: '2026-08-08', clientName: 'Kavitha Reddy', customerName: 'Kavitha Reddy', category: 'Motor Insurance Commission', payorCompany: 'HDFC ERGO General', amount: 8900, tdsAmount: 445, netAmount: 8455, assignedStaffName: 'Priya Sharma', status: 'RECEIVED' },
-    { id: 'INC-2026-105', date: '2026-08-05', clientName: 'Suresh Verma', customerName: 'Suresh Verma', category: 'Financial Planning Fee', payorCompany: 'Direct Consultancy', amount: 15000, tdsAmount: 750, netAmount: 14250, assignedStaffName: 'Prakash Gajendiran', status: 'RECEIVED' }
-  ];
+  const sampleIncomeData = [];
 
-  const displayList = incomeList.length > 0 ? incomeList : sampleIncomeData;
+  const displayList = incomeList;
 
   const filteredIncome = useMemo(() => {
     return displayList.filter(inc => {
