@@ -8,7 +8,7 @@ import { exportDashboardAnalyticsPDF } from '../utils/exportUtils';
 import { SpecialDays } from './SpecialDays';
 import { 
   Users, UserCheck, IndianRupee, TrendingUp, Plus, Download, Calendar as CalendarIcon, 
-  Clock, CheckCircle2, ShieldCheck, PartyPopper, Sparkles, Filter, Award, 
+  Clock, CheckCircle2, ShieldCheck, PartyPopper, Sparkles, Filter, Award, Trophy, Search,
   FileText, X, ExternalLink, ChevronRight, Info, BarChart3, PieChart as PieIcon,
   ShieldAlert, Activity, ArrowUpRight, Building2, TrendingDown, DollarSign, Percent, Scale, Briefcase, Mail, Phone
 } from 'lucide-react';
