@@ -140,6 +140,12 @@ export const Dashboard = () => {
   const [selectedOverviewCategoryFilter, setSelectedOverviewCategoryFilter] = useState('ALL');
   const [policyOverviewViewMode, setPolicyOverviewViewMode] = useState('CATEGORY'); // 'CATEGORY' or 'COMPANY'
 
+  // Matrix Table View Controls State
+  const [matrixSearchTerm, setMatrixSearchTerm] = useState('');
+  const [matrixFilterCompany, setMatrixFilterCompany] = useState('ALL');
+  const [matrixViewType, setMatrixViewType] = useState('HEATMAP'); // 'HEATMAP' or 'CLEAN'
+  const [matrixSortOrder, setMatrixSortOrder] = useState('DESC'); // 'DESC' or 'ALPHA'
+
   const isAdminOnly = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN';
   const isStaffAdvisor = user?.role === 'EMPLOYEE' || user?.role === 'USER' || user?.role === 'STAFF';
 
@@ -1894,64 +1900,302 @@ export const Dashboard = () => {
         </div>
       );
     } else if (activeModal === 'POLICY_CATEGORY_OVERVIEW_MODAL') {
-      title = "Policy Category Overview – Multi-Company Matrix";
-      subtitle = `Complete cross-company breakdown of policy contracts across ${policyCategoryOverview.chartData.length} distinct categories and ${policyCategoryOverview.companies.length} insurance companies.`;
+      title = "Policy Category & Insurer Cross-Matrix Intelligence Table";
+      subtitle = `Live interactive matrix breakdown of ${policyCategoryOverview.totalPolicies} active policy contracts across ${policyCategoryOverview.chartData.length} insurance categories and ${policyCategoryOverview.companies.length} underwriter providers.`;
+
+      // Filter and Sort Matrix Companies
+      const filteredCompanies = policyCategoryOverview.companies.filter(comp => {
+        if (matrixFilterCompany !== 'ALL' && comp !== matrixFilterCompany) return false;
+        if (matrixSearchTerm.trim()) {
+          const term = matrixSearchTerm.toLowerCase().trim();
+          const nameMatch = comp.toLowerCase().includes(term);
+          const hasMatchingCat = policyCategoryOverview.chartData.some(c => 
+            c.category.toLowerCase().includes(term) && 
+            ((policyCategoryOverview.companyBreakdown[comp] && policyCategoryOverview.companyBreakdown[comp][c.category]) || 0) > 0
+          );
+          return nameMatch || hasMatchingCat;
+        }
+        return true;
+      }).sort((a, b) => {
+        if (matrixSortOrder === 'ALPHA') return a.localeCompare(b);
+        // Default DESC by total volume
+        const totalA = policyCategoryOverview.chartData.reduce((sum, c) => sum + ((policyCategoryOverview.companyBreakdown[a] && policyCategoryOverview.companyBreakdown[a][c.category]) || 0), 0);
+        const totalB = policyCategoryOverview.chartData.reduce((sum, c) => sum + ((policyCategoryOverview.companyBreakdown[b] && policyCategoryOverview.companyBreakdown[b][c.category]) || 0), 0);
+        return totalB - totalA;
+      });
+
+      // Compute Column Totals
+      const colTotals = {};
+      policyCategoryOverview.chartData.forEach(c => {
+        colTotals[c.category] = policyCategoryOverview.companies.reduce((sum, comp) => {
+          return sum + ((policyCategoryOverview.companyBreakdown[comp] && policyCategoryOverview.companyBreakdown[comp][c.category]) || 0);
+        }, 0);
+      });
+
       content = (
         <div className="space-y-6">
-          <div className="overflow-x-auto rounded-2xl border border-slate-200">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-900 text-white font-extrabold uppercase text-[10px]">
-                <tr>
-                  <th className="p-3">Insurance Company / Provider</th>
+          {/* TOP ANALYTICAL HIGHLIGHT KPI CARDS */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="bg-gradient-to-tr from-blue-600 to-indigo-700 p-4 rounded-2xl text-white shadow-sm space-y-1">
+              <span className="text-[10px] font-black uppercase text-blue-200 tracking-wider block">Total Active Policies</span>
+              <p className="text-2xl font-black">{policyCategoryOverview.totalPolicies}</p>
+              <span className="text-[10px] font-extrabold text-blue-100 block">Across All Categories</span>
+            </div>
+
+            <div className="bg-gradient-to-tr from-purple-600 to-indigo-800 p-4 rounded-2xl text-white shadow-sm space-y-1">
+              <span className="text-[10px] font-black uppercase text-purple-200 tracking-wider block">Partner Insurers</span>
+              <p className="text-2xl font-black">{policyCategoryOverview.companies.length} Companies</p>
+              <span className="text-[10px] font-extrabold text-purple-100 block">Underwriter Providers</span>
+            </div>
+
+            <div className="bg-gradient-to-tr from-emerald-600 to-teal-700 p-4 rounded-2xl text-white shadow-sm space-y-1">
+              <span className="text-[10px] font-black uppercase text-emerald-200 tracking-wider block">Product Lines</span>
+              <p className="text-2xl font-black">{policyCategoryOverview.chartData.length} Lines</p>
+              <span className="text-[10px] font-extrabold text-emerald-100 block">Active Insurance Lines</span>
+            </div>
+
+            <div className="bg-gradient-to-tr from-amber-500 to-orange-600 p-4 rounded-2xl text-white shadow-sm space-y-1">
+              <span className="text-[10px] font-black uppercase text-amber-100 tracking-wider block flex items-center space-x-1">
+                <span>Leading Underwriter</span>
+                <Trophy className="h-3 w-3 text-amber-200" />
+              </span>
+              <p className="text-sm font-black truncate">{policyCategoryOverview.topCompany?.name || 'Star Health'}</p>
+              <span className="text-[10px] font-extrabold text-amber-100 block">
+                {policyCategoryOverview.topCompany?.count || 0} Policies Underwritten
+              </span>
+            </div>
+          </div>
+
+          {/* INTERACTIVE CONTROLS TOOLBAR */}
+          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input 
+                type="text"
+                placeholder="Search Insurer or Product Category..."
+                value={matrixSearchTerm}
+                onChange={(e) => setMatrixSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-8 py-2 rounded-xl border border-slate-200 text-xs font-semibold bg-white outline-none focus:ring-2 focus:ring-blue-600 shadow-xs"
+              />
+              {matrixSearchTerm && (
+                <button 
+                  onClick={() => setMatrixSearchTerm('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center space-x-2 overflow-x-auto shrink-0">
+              <select
+                value={matrixFilterCompany}
+                onChange={(e) => setMatrixFilterCompany(e.target.value)}
+                className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-extrabold bg-white text-slate-800 outline-none cursor-pointer shadow-xs"
+              >
+                <option value="ALL">All Insurers ({policyCategoryOverview.companies.length})</option>
+                {policyCategoryOverview.companies.map((comp, i) => (
+                  <option key={i} value={comp}>{comp}</option>
+                ))}
+              </select>
+
+              <div className="flex items-center space-x-1 bg-white p-1 rounded-xl border border-slate-200 shadow-xs">
+                <button
+                  onClick={() => setMatrixViewType('HEATMAP')}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-black transition cursor-pointer ${matrixViewType === 'HEATMAP' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                  title="Heatmap Density View"
+                >
+                  Heatmap 🎨
+                </button>
+                <button
+                  onClick={() => setMatrixViewType('CLEAN')}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-black transition cursor-pointer ${matrixViewType === 'CLEAN' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                  title="Standard Badge View"
+                >
+                  Standard 📊
+                </button>
+              </div>
+
+              <select
+                value={matrixSortOrder}
+                onChange={(e) => setMatrixSortOrder(e.target.value)}
+                className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold bg-white text-slate-800 outline-none cursor-pointer shadow-xs"
+              >
+                <option value="DESC">Sort: High Volume ⬇</option>
+                <option value="ALPHA">Sort: Alphabetical A-Z</option>
+              </select>
+
+              <button
+                onClick={() => exportFollowupsExcel(
+                  filteredCompanies.flatMap(comp => 
+                    policyCategoryOverview.chartData.map(c => ({
+                      date: new Date().toISOString().slice(0, 10),
+                      clientCategory: c.category,
+                      prospectName: comp,
+                      phone: 'N/A',
+                      insuranceType: c.category,
+                      insuranceCompany: comp,
+                      salesPitch: `${(policyCategoryOverview.companyBreakdown[comp] && policyCategoryOverview.companyBreakdown[comp][c.category]) || 0} Active Policies`,
+                      clientStatus: 'ACTIVE',
+                      advisorNotes: 'Cross-company matrix export'
+                    }))
+                  )
+                )}
+                className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow transition cursor-pointer flex items-center space-x-1 shrink-0"
+                title="Download Matrix Table Spreadsheet"
+              >
+                <Download className="h-3.5 w-3.5" />
+                <span>Export Excel</span>
+              </button>
+            </div>
+          </div>
+
+          {/* MATRIX TABLE GRID */}
+          <div className="overflow-x-auto rounded-2xl border border-slate-200/90 shadow-card bg-white">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-slate-900 text-white text-[11px] font-black uppercase tracking-wider border-b border-slate-800">
+                  <th className="p-3.5 border-r border-slate-800 sticky left-0 bg-slate-900 z-10 shadow-sm min-w-[200px]">
+                    Insurance Company / Underwriter
+                  </th>
                   {policyCategoryOverview.chartData.map((c, i) => (
-                    <th key={i} className="p-3 text-center">{c.category}</th>
+                    <th key={i} className="p-3.5 text-center border-r border-slate-800 whitespace-nowrap min-w-[130px]">
+                      {c.category}
+                    </th>
                   ))}
-                  <th className="p-3 text-right">Total Policies</th>
+                  <th className="p-3.5 text-right whitespace-nowrap min-w-[130px]">
+                    Total Underwritten
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-semibold">
-                {policyCategoryOverview.companies.map((comp, idx) => {
-                  let rowTotal = 0;
-                  return (
-                    <tr key={idx} className="hover:bg-slate-50 transition">
-                      <td className="p-3 font-extrabold text-slate-900 flex items-center space-x-2">
-                        <Building2 className="h-4 w-4 text-blue-600 shrink-0" />
-                        <span>{comp}</span>
-                      </td>
-                      {policyCategoryOverview.chartData.map((c, ci) => {
-                        const count = (policyCategoryOverview.companyBreakdown[comp] && policyCategoryOverview.companyBreakdown[comp][c.category]) || 0;
-                        rowTotal += count;
-                        return (
-                          <td key={ci} className="p-3 text-center font-bold text-slate-700">
-                            {count > 0 ? (
-                              <span className="badge badge-brand text-[11px] font-black">{count}</span>
-                            ) : (
-                              <span className="text-slate-300">-</span>
-                            )}
-                          </td>
-                        );
-                      })}
-                      <td className="p-3 text-right font-black text-blue-700">
-                        {rowTotal}
-                      </td>
-                    </tr>
-                  );
-                })}
+                {filteredCompanies.length === 0 ? (
+                  <tr>
+                    <td colSpan={policyCategoryOverview.chartData.length + 2} className="p-8 text-center text-slate-400 font-bold">
+                      No matching insurance companies found in matrix table.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredCompanies.map((comp, idx) => {
+                    let rowTotal = 0;
+                    policyCategoryOverview.chartData.forEach(c => {
+                      rowTotal += (policyCategoryOverview.companyBreakdown[comp] && policyCategoryOverview.companyBreakdown[comp][c.category]) || 0;
+                    });
+                    const rowPercentage = policyCategoryOverview.totalPolicies ? Math.round((rowTotal / policyCategoryOverview.totalPolicies) * 100) : 0;
+
+                    return (
+                      <tr key={idx} className="hover:bg-blue-50/50 transition group">
+                        {/* Sticky Insurer Name Column */}
+                        <td className="p-3.5 font-black text-slate-900 border-r border-slate-200/80 sticky left-0 bg-white group-hover:bg-blue-50/90 z-10 flex items-center justify-between shadow-xs">
+                          <div className="flex items-center space-x-2.5 truncate">
+                            <div className="p-2 rounded-xl bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition shrink-0">
+                              <Building2 className="h-4 w-4" />
+                            </div>
+                            <span className="truncate font-extrabold">{comp}</span>
+                          </div>
+                          <span className="text-[10px] font-extrabold text-slate-400 font-mono ml-2">{rowPercentage}%</span>
+                        </td>
+
+                        {/* Category Columns Cells */}
+                        {policyCategoryOverview.chartData.map((c, ci) => {
+                          const count = (policyCategoryOverview.companyBreakdown[comp] && policyCategoryOverview.companyBreakdown[comp][c.category]) || 0;
+                          const cellShare = rowTotal > 0 ? Math.round((count / rowTotal) * 100) : 0;
+
+                          // Heatmap Color Badges
+                          let badgeStyle = 'text-slate-300';
+                          if (count > 0) {
+                            if (matrixViewType === 'CLEAN') {
+                              badgeStyle = 'badge badge-brand text-[11px] font-black shadow-2xs';
+                            } else {
+                              if (count >= 5) {
+                                badgeStyle = 'bg-gradient-to-tr from-amber-500 to-emerald-600 text-white font-black text-[11px] px-2.5 py-1 rounded-xl shadow-md border border-amber-300';
+                              } else if (count >= 3) {
+                                badgeStyle = 'bg-indigo-100 text-indigo-900 font-black text-[11px] px-2.5 py-1 rounded-xl border border-indigo-300 shadow-2xs';
+                              } else {
+                                badgeStyle = 'bg-blue-50 text-blue-800 font-bold text-[11px] px-2.5 py-1 rounded-xl border border-blue-200';
+                              }
+                            }
+                          }
+
+                          return (
+                            <td key={ci} className="p-3 text-center border-r border-slate-100 font-bold">
+                              {count > 0 ? (
+                                <span 
+                                  className={`inline-flex items-center space-x-1 cursor-default ${badgeStyle}`}
+                                  title={`${comp} has ${count} policies in ${c.category} (${cellShare}% of insurer's portfolio)`}
+                                >
+                                  <span>{count}</span>
+                                  {count >= 5 && <Trophy className="h-3 w-3 text-amber-200 ml-0.5" />}
+                                </span>
+                              ) : (
+                                <span className="text-slate-300 font-mono text-xs">-</span>
+                              )}
+                            </td>
+                          );
+                        })}
+
+                        {/* Row Total Column */}
+                        <td className="p-3.5 text-right font-black border-l border-slate-200/80 bg-slate-50/40 group-hover:bg-blue-100/50 transition">
+                          <div className="flex flex-col items-end">
+                            <span className="text-sm text-blue-700 font-black">{rowTotal} Policies</span>
+                            <div className="w-16 h-1.5 bg-slate-200 rounded-full mt-1 overflow-hidden">
+                              <div 
+                                className="h-full bg-blue-600 rounded-full" 
+                                style={{ width: `${Math.min(100, rowPercentage * 2)}%` }} 
+                              />
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
+
+              {/* FOOTER SUMMARY ROW */}
+              <tfoot>
+                <tr className="bg-slate-900 text-white font-black text-xs uppercase tracking-wider border-t-2 border-slate-800">
+                  <td className="p-3.5 sticky left-0 bg-slate-900 z-10 border-r border-slate-800">
+                    Total Across All Insurers
+                  </td>
+                  {policyCategoryOverview.chartData.map((c, i) => {
+                    const totalForCat = colTotals[c.category] || 0;
+                    const catShare = policyCategoryOverview.totalPolicies ? Math.round((totalForCat / policyCategoryOverview.totalPolicies) * 100) : 0;
+                    return (
+                      <td key={i} className="p-3.5 text-center border-r border-slate-800">
+                        <div className="flex flex-col items-center">
+                          <span className="text-amber-300 font-black text-sm">{totalForCat}</span>
+                          <span className="text-[10px] text-slate-400 font-mono font-bold">{catShare}% Share</span>
+                        </div>
+                      </td>
+                    );
+                  })}
+                  <td className="p-3.5 text-right font-mono font-black text-amber-300 text-sm">
+                    {policyCategoryOverview.totalPolicies} Total
+                  </td>
+                </tr>
+              </tfoot>
             </table>
           </div>
-          <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-            <span className="text-xs text-slate-500 font-bold">Admin-Only Cross-Company Policy Intelligence</span>
-            <button 
-              onClick={() => {
-                setActiveModal(null);
-                navigate('/policies');
-              }}
-              className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition cursor-pointer"
-            >
-              <span>Go to Policies Register</span>
-              <ExternalLink className="h-3.5 w-3.5" />
-            </button>
+
+          {/* INSIGHTS FOOTER BAR */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-3 border-t border-slate-200 gap-3">
+            <div className="flex items-center space-x-2 text-xs text-slate-600 font-bold">
+              <Sparkles className="h-4 w-4 text-blue-600" />
+              <span>Real-time Multi-Underwriter Market Matrix</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <button 
+                onClick={() => {
+                  setActiveModal(null);
+                  navigate('/policies');
+                }}
+                className="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow transition cursor-pointer"
+              >
+                <span>Go to Full Policies Register</span>
+                <ExternalLink className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </div>
       );
@@ -2462,11 +2706,11 @@ export const Dashboard = () => {
               <button
                 type="button"
                 onClick={() => setActiveModal('POLICY_CATEGORY_OVERVIEW_MODAL')}
-                className="px-3.5 py-2 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition cursor-pointer flex items-center space-x-1.5 shadow-sm"
+                className="px-4 py-2 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-black text-xs transition cursor-pointer flex items-center space-x-1.5 shadow-md shadow-blue-500/20 shrink-0"
                 title="View complete cross-company policy matrix table"
               >
-                <BarChart3 className="h-3.5 w-3.5 text-blue-400" />
-                <span>Matrix Table</span>
+                <BarChart3 className="h-4 w-4 text-blue-200" />
+                <span>📊 Matrix Table View</span>
               </button>
             </div>
           </div>
