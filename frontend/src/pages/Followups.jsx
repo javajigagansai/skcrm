@@ -100,44 +100,18 @@ export const Followups = () => {
   const [clientData, setClientData] = useState(() => {
     const saved = localStorage.getItem('crm_v2_client_followup_hubs');
     if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
+      try { 
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(c => !['Rahul Sharma', 'Priya Menon', 'Anand Kumar'].includes(c.clientName));
+        }
+      } catch (e) {}
     }
-    return [
-      {
-        clientId: 'SK-CUST-101',
-        clientName: 'Rahul Sharma',
-        phone: '+91 98765 43210',
-        category: 'High Networth Client',
-        insuranceTypeInterest: 'Term & Savings Life Insurance',
-        currentStage: 'Quotation Shared & Under Review',
-        currentAssignedTo: 'Priya Sharma',
-        currentCreatedBy: 'Branch Manager',
-        overallStatus: 'PENDING',
-        history: [
-          { stepId: 'FLW-2026-101', stageName: 'Prospect Onboarded & Requirement Captured', date: '2026-08-10 10:30 AM', type: 'Branch Meeting', assignedTo: 'Priya Sharma', createdBy: 'Priya Sharma', conversationNotes: 'Client interested in ₹1 Cr Term Plan + ₹50,000/yr Guaranteed Savings Plan.', status: 'COMPLETED', isCurrentActive: false },
-          { stepId: 'FLW-2026-102', stageName: 'Quotation Shared & Under Review', date: '2026-08-12 02:15 PM', type: 'Phone Call', assignedTo: 'Priya Sharma', createdBy: 'Branch Manager', conversationNotes: 'Shared Tata AIA & HDFC Life comparison quotes. Follow-up scheduled for decision.', status: 'PENDING', isCurrentActive: true }
-        ]
-      },
-      {
-        clientId: 'SK-CUST-102',
-        clientName: 'Priya Menon',
-        phone: '+91 98765 12345',
-        category: 'Retail Investor',
-        insuranceTypeInterest: 'Family Health Guard Policy',
-        currentStage: 'Policy Issued & Closed',
-        currentAssignedTo: 'Priya Sharma',
-        currentCreatedBy: 'Priya Sharma',
-        overallStatus: 'COMPLETED',
-        history: [
-          { stepId: 'FLW-2026-201', stageName: 'Health Insurance Plan Selected', date: '2026-08-08 11:00 AM', type: 'Phone Call', assignedTo: 'Priya Sharma', createdBy: 'Priya Sharma', conversationNotes: 'Selected Niva Bupa Health Companion ₹10 Lakhs floater policy.', status: 'COMPLETED', isCurrentActive: true }
-        ]
-      }
-    ];
+    return [];
   });
 
   useEffect(() => {
     try {
-      localStorage.getItem('crm_v2_client_followup_hubs');
       localStorage.setItem('crm_v2_client_followup_hubs', JSON.stringify(clientData));
     } catch (e) {}
   }, [clientData]);
@@ -145,13 +119,14 @@ export const Followups = () => {
   const [spreadsheetData, setSpreadsheetData] = useState(() => {
     const saved = localStorage.getItem('crm_v2_spreadsheet_followups');
     if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
+      try { 
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(c => !['Rahul Sharma', 'Priya Menon', 'Anand Kumar'].includes(c.clientName));
+        }
+      } catch (e) {}
     }
-    return [
-      { id: '1', date: '2026-08-10', category: 'High Networth Client', clientName: 'Rahul Sharma', phone: '+91 98765 43210', insuranceType: 'Term Life Insurance', insuranceCompany: 'Tata AIA Life', salesPitch: 'Guaranteed Return Savings Plan', clientStatus: 'Under Review', advisorNotes: 'Quotation shared, callback scheduled', assignedTo: 'Priya Sharma' },
-      { id: '2', date: '2026-08-11', category: 'Retail Investor', clientName: 'Priya Menon', phone: '+91 98765 12345', insuranceType: 'Health Floater Guard', insuranceCompany: 'Niva Bupa Health', salesPitch: 'Family ₹10 Lakhs Coverage', clientStatus: 'Closed', advisorNotes: 'Policy issued & document sent', assignedTo: 'Priya Sharma' },
-      { id: '3', date: '2026-08-12', category: 'Corporate Executive', clientName: 'Anand Kumar', phone: '+91 98765 67890', insuranceType: 'Comprehensive Motor Insurance', insuranceCompany: 'HDFC ERGO', salesPitch: 'Zero Dep Car Policy Renewal', clientStatus: 'Interested', advisorNotes: 'Discount quote sent via WhatsApp', assignedTo: 'Branch Manager' }
-    ];
+    return [];
   });
 
   useEffect(() => {
