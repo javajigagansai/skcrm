@@ -1205,7 +1205,7 @@ export const Dashboard = () => {
       );
     } else if (activeModal === 'ACTIVE_POLICIES') {
       title = "Active Policies & Portfolio Distribution";
-      subtitle = `Detailed breakdown of active insurance policy contracts and mutual fund folios.`;
+      subtitle = "Active Policies & Portfolio Overview";
       content = (
         <div className="space-y-6">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
