@@ -276,7 +276,7 @@ export const Dashboard = () => {
         cat = 'General & Commercial Insurance';
       }
 
-      let comp = p.insuranceCompany || p.company || p.provider || 'Star Health Insurance';
+      let comp = p.insuranceCompany || p.company || p.provider || 'Other Insurer';
       companiesSet.add(comp);
       categoriesSet.add(cat);
 
