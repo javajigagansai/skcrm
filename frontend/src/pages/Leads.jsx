@@ -223,7 +223,7 @@ export const Leads = () => {
 
             <form onSubmit={handleAddLead} className="space-y-3.5 text-xs">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Customer / Prospect Name *</label>
+                <label className="font-bold text-slate-700 block mb-1">Customer Name *</label>
                 <input 
                   type="text" 
                   required

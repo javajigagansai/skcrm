@@ -1135,7 +1135,7 @@ export const Followups = () => {
             <form onSubmit={handleCreateNewClientFollowup} className="space-y-3.5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="relative">
-                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Customer / Prospect Name *</label>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Customer Name *</label>
                   <input 
                     type="text" 
                     required 
