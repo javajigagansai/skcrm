@@ -13,10 +13,8 @@ import {
 } from 'lucide-react';
 
 const INITIAL_STAFF_SEED = [
-  { uid: 'UID-STF-1001', name: 'Prakash Gajendiran', email: 'admin@sk-smart-investments.com', role: 'SUPER_ADMIN', title: 'Super Admin / Executive Director', phone: '9876543210', branch: 'Chennai Main HQ Desk', status: 'ACTIVE', fixedSalary: 680000, monthlyTarget: 1500000, achievedRevenue: 1420000, assignedClientsCount: 28, policiesIssuedCount: 45, commissionEarned: 142000, password: 'Password@123', joinDate: '2023-01-01' },
-  { uid: 'UID-STF-1002', name: 'Branch Manager', email: 'manager@sk-smart-investments.com', role: 'MANAGER', title: 'Regional Operations Manager', phone: '9812345678', branch: 'Bangalore Regional Desk', status: 'ACTIVE', fixedSalary: 540000, monthlyTarget: 1000000, achievedRevenue: 890000, assignedClientsCount: 22, policiesIssuedCount: 32, commissionEarned: 89000, password: 'Password@123', joinDate: '2023-11-01' },
-  { uid: 'UID-STF-1003', name: 'Priya Sharma', email: 'priya.sharma@sk-smart-investments.com', role: 'EMPLOYEE', title: 'Senior Wealth Advisor', phone: '9988776655', branch: 'Chennai Main Head Office', status: 'ACTIVE', fixedSalary: 270000, monthlyTarget: 500000, achievedRevenue: 420000, assignedClientsCount: 14, policiesIssuedCount: 18, commissionEarned: 42000, password: 'Password@123', joinDate: '2024-03-15' },
-  { uid: 'UID-STF-1004', name: 'Anitha Selvam', email: 'anitha.s@sk-smart-investments.com', role: 'EMPLOYEE', title: 'Greetings & Retention Officer', phone: '9944332211', branch: 'Client Support Operations Desk', status: 'ACTIVE', fixedSalary: 150000, monthlyTarget: 300000, achievedRevenue: 280000, assignedClientsCount: 10, policiesIssuedCount: 12, commissionEarned: 28000, password: 'Password@123', joinDate: '2024-05-01' }
+  { uid: 'UID-STF-1001', name: 'Prakash Gajendiran', email: 'admin@sk-smart-investments.com', role: 'SUPER_ADMIN', title: 'Super Admin / Executive Director', phone: '9876543210', branch: 'Chennai Main HQ Desk', status: 'ACTIVE', fixedSalary: 680000, monthlyTarget: 0, achievedRevenue: 0, assignedClientsCount: 0, policiesIssuedCount: 0, commissionEarned: 0, password: 'Password@123', joinDate: '2023-01-01' },
+  { uid: 'UID-STF-1002', name: 'Branch Manager', email: 'manager@sk-smart-investments.com', role: 'MANAGER', title: 'Regional Operations Manager', phone: '9812345678', branch: 'Bangalore Regional Desk', status: 'ACTIVE', fixedSalary: 540000, monthlyTarget: 0, achievedRevenue: 0, assignedClientsCount: 0, policiesIssuedCount: 0, commissionEarned: 0, password: 'Password@123', joinDate: '2023-11-01' },
 ];
 
 export const StaffManagement = () => {
@@ -29,7 +27,13 @@ export const StaffManagement = () => {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          const cleaned = parsed.filter(u => 
+          const cleaned = parsed.map(u => ({
+            ...u,
+            achievedRevenue: 0,
+            assignedClientsCount: 0,
+            policiesIssuedCount: 0,
+            commissionEarned: 0
+          })).filter(u => 
             !['Rahul Dravid', 'Kavita Menon', 'Greetings Officer', 'Anitha Selvam', 'Karthik Subramanian'].includes(u.name) &&
             !['rahul.d@sksmart.com', 'kavita.m@sksmart.com', 'wishes@sksmart.com', 'anitha.s@sksmart.com', 'karthik.s@sksmart.com'].includes(u.email)
           );
