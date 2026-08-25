@@ -252,7 +252,41 @@ export const DataProvider = ({ children }) => {
     };
   }, []);
 
-
+  useEffect(() => {
+    try {
+      const sampleNames = ['Rahul Sharma', 'Priya Menon', 'Anand Kumar', 'Sanjay Gupta', 'Deepak Verma'];
+      const sampleIds = ['CUST-101', 'CUST-102', 'CUST-103', 'POL-1001', 'POL-1002', 'POL-1003', 'INV-2001', 'INV-2002', 'INV-2003', 'CLM-3001', 'CLM-3002', 'LD-4001', 'LD-4002', 'FLW-5001', 'FLW-5002', 'TSK-6001', 'TSK-6002'];
+      const keysToClean = [
+        'crm_v2_customers',
+        'crm_v2_policies',
+        'crm_v2_investments',
+        'crm_v2_claims',
+        'crm_v2_leads',
+        'crm_v2_followups',
+        'crm_v2_tasks',
+        'crm_v2_income',
+        'crm_v2_audit_logs',
+        'crm_v2_client_followup_hubs',
+        'crm_v2_spreadsheet_followups'
+      ];
+      keysToClean.forEach(key => {
+        const saved = localStorage.getItem(key);
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed)) {
+              const cleaned = parsed.filter(item => {
+                const name = item.name || item.customerName || item.clientName || '';
+                const id = item.id || item.clientId || item.policyNo || '';
+                return !sampleNames.includes(name) && !sampleIds.includes(id);
+              });
+              localStorage.setItem(key, JSON.stringify(cleaned));
+            }
+          } catch (e) {}
+        }
+      });
+    } catch (e) {}
+  }, []);
 
   // Real-time Firestore snapshot listeners for zero-latency cross-device database synchronization
   useEffect(() => {
