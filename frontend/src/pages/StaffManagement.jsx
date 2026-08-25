@@ -20,6 +20,7 @@ const INITIAL_STAFF_SEED = [
 export const StaffManagement = () => {
   const { user: activeUser } = useAuth();
   const { customers, policies, followups } = useData();
+  const isAdminOrHigher = activeUser?.role === 'SUPER_ADMIN' || activeUser?.role === 'ADMIN' || activeUser?.role === 'MANAGER' || !activeUser?.role;
 
   const [staffList, setStaffList] = useState(() => {
     const saved = localStorage.getItem('crm_v2_users_list');
