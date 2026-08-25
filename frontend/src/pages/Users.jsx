@@ -269,7 +269,7 @@ export const Users = () => {
               className="flex items-center space-x-2 px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer"
             >
               <UserPlus className="h-4 w-4" />
-              <span>+ Create New Staff Member</span>
+              <span>Create New Staff Member</span>
             </button>
           </div>
         )}

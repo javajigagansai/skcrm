@@ -782,7 +782,7 @@ export const Customer360Provider = ({ children }) => {
                         className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer flex items-center space-x-1.5"
                       >
                         <Plus className="h-4 w-4" />
-                        <span>+ File New Claim</span>
+                        <span>File New Claim</span>
                       </button>
                     </div>
                   </div>
@@ -1462,7 +1462,7 @@ export const Customer360Provider = ({ children }) => {
                     className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs shadow-xs transition cursor-pointer flex items-center space-x-1"
                   >
                     <Plus className="h-3.5 w-3.5" />
-                    <span>+ Add New Claim</span>
+                    <span>Add New Claim</span>
                   </button>
                 </div>
 
