@@ -9,8 +9,7 @@ import {
 
 const INITIAL_USERS_SEED = [
   { uid: 'UID-STF-1001', name: 'Prakash Gajendiran', email: 'admin@sk-smart-investments.com', role: 'SUPER_ADMIN', password: 'Password@123', status: 'ACTIVE', phone: '9876543210', branch: 'Chennai Main Head Office' },
-  { uid: 'UID-STF-1002', name: 'Branch Manager', email: 'manager@sk-smart-investments.com', role: 'MANAGER', password: 'Password@123', status: 'ACTIVE', phone: '9812345678', branch: 'Bangalore Regional Desk' },
-  { uid: 'UID-STF-1003', name: 'Priya Sharma', email: 'priya.sharma@sk-smart-investments.com', role: 'EMPLOYEE', password: 'Password@123', status: 'ACTIVE', phone: '9988776655', branch: 'Chennai Main Head Office' }
+  { uid: 'UID-STF-1002', name: 'Branch Manager', email: 'manager@sk-smart-investments.com', role: 'MANAGER', password: 'Password@123', status: 'ACTIVE', phone: '9812345678', branch: 'Bangalore Regional Desk' }
 ];
 
 export const Users = () => {
@@ -25,8 +24,8 @@ export const Users = () => {
         if (Array.isArray(parsed) && parsed.length > 0) {
           // Filter out legacy fake demo accounts if present
           const cleaned = parsed.filter(u => 
-            !['Rahul Dravid', 'Kavita Menon', 'Greetings Officer', 'Anitha Selvam', 'Karthik Subramanian'].includes(u.name) &&
-            !['rahul.d@sksmart.com', 'kavita.m@sksmart.com', 'wishes@sksmart.com', 'anitha.s@sksmart.com', 'karthik.s@sksmart.com'].includes(u.email)
+            !['Rahul Dravid', 'Kavita Menon', 'Greetings Officer', 'Anitha Selvam', 'Priya Sharma', 'Karthik Subramanian'].includes(u.name) &&
+            !['rahul.d@sksmart.com', 'kavita.m@sksmart.com', 'wishes@sksmart.com', 'anitha.s@sksmart.com', 'priya.sharma@sk-smart-investments.com', 'karthik.s@sksmart.com'].includes(u.email)
           );
           if (cleaned.length > 0) return cleaned;
         }
