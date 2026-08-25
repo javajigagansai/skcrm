@@ -36,6 +36,19 @@ export const Followups = () => {
     status: 'PENDING'
   });
 
+  const [showCustomerAutocomplete, setShowCustomerAutocomplete] = useState(false);
+
+  const matchingCustomers = useMemo(() => {
+    const term = (newClientForm.clientName || '').trim().toLowerCase();
+    if (!term || term.length < 1) return [];
+    return (customers || []).filter(c => {
+      const name = (c.name || c.clientName || '').toLowerCase();
+      const phone = (c.phone || c.mobile || c.contact || '').toLowerCase();
+      const code = (c.customerCode || c.id || '').toLowerCase();
+      return name.includes(term) || phone.includes(term) || code.includes(term);
+    }).slice(0, 8);
+  }, [customers, newClientForm.clientName]);
+
   const [selectedClientHistoryModal, setSelectedClientHistoryModal] = useState(null);
   const [showAddStageModal, setShowAddStageModal] = useState(false);
   const [targetClientForNewStage, setTargetClientForNewStage] = useState(null);
@@ -1121,16 +1134,59 @@ export const Followups = () => {
 
             <form onSubmit={handleCreateNewClientFollowup} className="space-y-3.5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
+                <div className="relative">
                   <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Customer / Prospect Name *</label>
                   <input 
                     type="text" 
                     required 
                     placeholder=""
                     value={newClientForm.clientName} 
-                    onChange={(e) => setNewClientForm({ ...newClientForm, clientName: e.target.value })} 
-                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold" 
+                    onChange={(e) => {
+                      setNewClientForm({ ...newClientForm, clientName: e.target.value });
+                      setShowCustomerAutocomplete(true);
+                    }} 
+                    onFocus={() => setShowCustomerAutocomplete(true)}
+                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold focus:border-blue-600 focus:ring-2 focus:ring-blue-100" 
                   />
+
+                  {/* LIVE CRM CUSTOMER 360 AUTOCOMPLETE DROPDOWN */}
+                  {showCustomerAutocomplete && matchingCustomers.length > 0 && (
+                    <div className="absolute left-0 right-0 top-full mt-1 bg-white rounded-2xl border border-slate-200 shadow-2xl z-50 overflow-hidden divide-y divide-slate-100 max-h-56 overflow-y-auto">
+                      <div className="px-3 py-1.5 bg-slate-50 text-[10px] font-extrabold uppercase text-slate-500 flex items-center justify-between">
+                        <span>🔍 Verified CRM Customers ({matchingCustomers.length})</span>
+                        <span className="text-[9px] text-blue-600 font-bold">Click to Auto-fill</span>
+                      </div>
+                      {matchingCustomers.map((c) => (
+                        <button
+                          key={c.id || c.uid || c.customerCode}
+                          type="button"
+                          onClick={() => {
+                            setNewClientForm(prev => ({
+                              ...prev,
+                              selectedCustomerId: c.id || c.uid || c.customerCode || '',
+                              clientName: c.name || c.clientName || '',
+                              phone: c.phone || c.mobile || c.contact || prev.phone,
+                              category: c.category || prev.category
+                            }));
+                            setShowCustomerAutocomplete(false);
+                          }}
+                          className="w-full text-left p-2.5 hover:bg-blue-50/80 transition flex items-center justify-between group cursor-pointer"
+                        >
+                          <div className="space-y-0.5">
+                            <div className="flex items-center space-x-1.5">
+                              <span className="font-extrabold text-xs text-slate-900 group-hover:text-blue-700">{c.name || c.clientName}</span>
+                              <span className="text-[9px] font-extrabold bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded-md">Customer 360</span>
+                            </div>
+                            <div className="text-[11px] text-slate-500 font-medium flex items-center space-x-2">
+                              <span>📞 <strong className="font-mono text-slate-700">{c.phone || c.mobile || 'No Phone'}</strong></span>
+                              {c.city && <span>• {c.city}</span>}
+                            </div>
+                          </div>
+                          <span className="text-xs font-bold text-blue-600 opacity-0 group-hover:opacity-100 transition">Auto-fill ➔</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Mobile Number *</label>
