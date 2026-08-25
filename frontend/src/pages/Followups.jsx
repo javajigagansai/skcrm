@@ -1098,15 +1098,22 @@ export const Followups = () => {
                 </div>
                 <div>
                   <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Step Status</label>
-                  <select 
-                    value={editingStage.status} 
-                    onChange={(e) => setEditingStage({ ...editingStage, status: e.target.value })} 
-                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold"
-                  >
-                    <option value="PENDING">PENDING</option>
-                    <option value="IN_PROGRESS">IN_PROGRESS</option>
-                    <option value="COMPLETED">COMPLETED</option>
-                  </select>
+                  {isAdminOrManager ? (
+                    <select 
+                      value={editingStage.status} 
+                      onChange={(e) => setEditingStage({ ...editingStage, status: e.target.value })} 
+                      className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold bg-white text-slate-800"
+                    >
+                      <option value="PENDING">PENDING</option>
+                      <option value="IN_PROGRESS">IN_PROGRESS</option>
+                      <option value="COMPLETED">COMPLETED</option>
+                    </select>
+                  ) : (
+                    <div className="px-3 py-2 rounded-xl border text-xs font-bold bg-slate-100 text-slate-600 flex items-center justify-between">
+                      <span>{editingStage.status}</span>
+                      <span className="text-[10px] text-amber-800 font-extrabold bg-amber-100 px-2 py-0.5 rounded-md">🔒 Admin/Manager Only</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1288,15 +1295,22 @@ export const Followups = () => {
 
                 <div>
                   <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Status</label>
-                  <select 
-                    value={newClientForm.status} 
-                    onChange={(e) => setNewClientForm({ ...newClientForm, status: e.target.value })} 
-                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold"
-                  >
-                    <option value="PENDING">PENDING</option>
-                    <option value="IN_PROGRESS">IN_PROGRESS</option>
-                    <option value="COMPLETED">COMPLETED</option>
-                  </select>
+                  {isAdminOrManager ? (
+                    <select 
+                      value={newClientForm.status} 
+                      onChange={(e) => setNewClientForm({ ...newClientForm, status: e.target.value })} 
+                      className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold bg-white text-slate-800"
+                    >
+                      <option value="PENDING">PENDING</option>
+                      <option value="IN_PROGRESS">IN_PROGRESS</option>
+                      <option value="COMPLETED">COMPLETED</option>
+                    </select>
+                  ) : (
+                    <div className="px-3 py-2 rounded-xl border text-xs font-bold bg-slate-100 text-slate-600 flex items-center justify-between">
+                      <span>PENDING</span>
+                      <span className="text-[10px] text-amber-800 font-extrabold bg-amber-100 px-2 py-0.5 rounded-md">🔒 Admin/Manager Only</span>
+                    </div>
+                  )}
                 </div>
               </div>
 

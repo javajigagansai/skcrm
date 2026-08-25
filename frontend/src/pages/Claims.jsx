@@ -10,6 +10,7 @@ export const Claims = () => {
   const { openCustomer360 } = useCustomer360();
   const { claims, addClaim, updateClaim, updateClaimStatus, deleteClaim, customers, policies, getCustomerAggregatedDetails } = useData();
   const isAdmin = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN';
+  const isAdminOrManager = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER';
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('ALL');
@@ -204,6 +205,10 @@ export const Claims = () => {
   };
 
   const handleUpdateClaimStatus = (id, newStatus) => {
+    if (!isAdminOrManager) {
+      alert("Permission Denied: Claim status & settlement updates can only be performed by Admin or Manager.");
+      return;
+    }
     updateClaimStatus(id, newStatus);
   };
 
@@ -465,22 +470,37 @@ export const Claims = () => {
                     </span>
                   </td>
                   <td className="p-4 text-center">
-                    <select 
-                      value={c.status || 'SUBMITTED'} 
-                      onChange={(e) => handleUpdateClaimStatus(c.id, e.target.value)}
-                      className={`px-2.5 py-1 rounded-xl text-[11px] font-extrabold border cursor-pointer outline-none ${
-                        c.status === 'SETTLED' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
-                        c.status === 'APPROVED' ? 'bg-blue-50 text-blue-800 border-blue-300' :
-                        c.status === 'REJECTED' ? 'bg-rose-50 text-rose-800 border-rose-300' :
-                        'bg-amber-50 text-amber-800 border-amber-300'
-                      }`}
-                    >
-                      <option value="SUBMITTED">SUBMITTED</option>
-                      <option value="IN_REVIEW">IN_REVIEW</option>
-                      <option value="APPROVED">APPROVED</option>
-                      <option value="SETTLED">SETTLED</option>
-                      <option value="REJECTED">REJECTED</option>
-                    </select>
+                    {isAdminOrManager ? (
+                      <select 
+                        value={c.status || 'SUBMITTED'} 
+                        onChange={(e) => handleUpdateClaimStatus(c.id, e.target.value)}
+                        className={`px-2.5 py-1 rounded-xl text-[11px] font-extrabold border cursor-pointer outline-none ${
+                          c.status === 'SETTLED' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
+                          c.status === 'APPROVED' ? 'bg-blue-50 text-blue-800 border-blue-300' :
+                          c.status === 'REJECTED' ? 'bg-rose-50 text-rose-800 border-rose-300' :
+                          'bg-amber-50 text-amber-800 border-amber-300'
+                        }`}
+                      >
+                        <option value="SUBMITTED">SUBMITTED</option>
+                        <option value="IN_REVIEW">IN_REVIEW</option>
+                        <option value="APPROVED">APPROVED</option>
+                        <option value="SETTLED">SETTLED</option>
+                        <option value="REJECTED">REJECTED</option>
+                      </select>
+                    ) : (
+                      <span 
+                        className={`px-2.5 py-1 rounded-xl text-[11px] font-extrabold border inline-flex items-center space-x-1 ${
+                          c.status === 'SETTLED' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
+                          c.status === 'APPROVED' ? 'bg-blue-50 text-blue-800 border-blue-300' :
+                          c.status === 'REJECTED' ? 'bg-rose-50 text-rose-800 border-rose-300' :
+                          'bg-amber-50 text-amber-800 border-amber-300'
+                        }`}
+                        title="Status update restricted to Admin or Manager"
+                      >
+                        <span>{c.status || 'SUBMITTED'}</span>
+                        <span className="text-[9px] text-slate-500 ml-1">🔒</span>
+                      </span>
+                    )}
                   </td>
                   <td className="p-4 text-center">
                     <div className="flex items-center justify-center space-x-1.5">
