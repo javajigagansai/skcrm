@@ -36,7 +36,7 @@ export const Sidebar = () => {
     { label: 'Claims Desk', path: '/claims', icon: ShieldCheck, roles: ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'EMPLOYEE', 'USER'] },
     { label: 'Policy Renewals', path: '/renewals', icon: RefreshCw, roles: ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'EMPLOYEE', 'USER'] },
     { label: 'Income & Commission', path: '/income', icon: TrendingUp, roles: ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'EMPLOYEE'] },
-    { label: 'Expense Tracker', path: '/expenses', icon: TrendingDown, roles: ['SUPER_ADMIN', 'ADMIN', 'MANAGER'] },
+    { label: 'Company Expenditure', path: '/expenses', icon: TrendingDown, roles: ['SUPER_ADMIN', 'ADMIN', 'MANAGER'] },
     { label: 'Task Management', path: '/tasks', icon: CheckSquare, roles: ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'EMPLOYEE', 'USER'] },
     { label: 'User Management', path: '/users', icon: Award, roles: ['SUPER_ADMIN', 'ADMIN', 'MANAGER'] },
     { label: 'Staff Management', path: '/staff-management', icon: Users, roles: ['SUPER_ADMIN', 'ADMIN', 'MANAGER'] },

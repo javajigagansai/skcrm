@@ -122,7 +122,7 @@ export const Expenses = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center space-x-2">
-            <span>Expense Management Tracker</span>
+            <span>Company Expenditure Tracker</span>
             <span className="badge badge-brand text-[10px]">Direct Payroll Integrated</span>
           </h1>
           <p className="text-xs text-slate-500 font-medium mt-0.5">
