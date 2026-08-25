@@ -1347,7 +1347,7 @@ export const Dashboard = () => {
       );
     } else if (activeModal === 'COMPANY_EXPENDITURE') {
       title = "Company Operating Expenditure & Infrastructure Audit";
-      subtitle = `Detailed database audit of ${companyOperatingExpenses.items.length} live operational expense records totaling ₹${companyOperatingExpenses.totalAmount.toLocaleString()}.`;
+      subtitle = "Company Operating Expenses & Outflow Overview";
       
       const totalExp = companyOperatingExpenses.totalAmount;
       const rentAmount = companyOperatingExpenses.items.filter(e => (e.category || '').toLowerCase().includes('rent')).reduce((s, e) => s + Number(e.amount || 0), 0);
@@ -1437,7 +1437,7 @@ export const Dashboard = () => {
       );
     } else if (activeModal === 'EMPLOYEE_SALARY_SPEND') {
       title = "Staff Advisor Payroll & Employee Salary Outflow Audit";
-      subtitle = `Detailed database audit of monthly staff salaries across ${employeeSalarySpend.staffMembers.length} registered employee accounts totaling ₹${employeeSalarySpend.totalAmount.toLocaleString()}.`;
+      subtitle = "Staff Payroll & Monthly Salary Outflow Overview";
       
       const totalSal = employeeSalarySpend.totalAmount;
       const execAmount = (employeeSalarySpend.staffMembers || []).filter(s => s.role === 'SUPER_ADMIN' || s.role === 'ADMIN').reduce((s, st) => s + Number(st.fixedSalary || 680000), 0) || totalSal * 0.41;
