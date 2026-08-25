@@ -59,19 +59,10 @@ export const DataProvider = ({ children }) => {
   });
 
   const [rawPolicies, setPolicies] = useState(() => {
-    const saved = localStorage.getItem('crm_v2_policies');
-    if (saved) {
-      try { 
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          return parsed.filter(p => 
-            !['POL-1001', 'POL-1002', 'POL-1003'].includes(p.id) && 
-            !['Rahul Sharma', 'Priya Menon', 'Anand Kumar'].includes(p.customerName)
-          );
-        }
-      } catch (e) {}
-    }
-    return initialPoliciesSeed;
+    try {
+      localStorage.setItem('crm_v2_policies', JSON.stringify([]));
+    } catch (e) {}
+    return [];
   });
 
   const [rawInvestments, setInvestments] = useState(() => {
@@ -667,6 +658,21 @@ export const DataProvider = ({ children }) => {
     });
   };
 
+  const clearAllPolicies = async () => {
+    setPolicies([]);
+    try {
+      localStorage.setItem('crm_v2_policies', JSON.stringify([]));
+    } catch (e) {}
+    addAuditLog({
+      userName: user?.name || 'Admin User',
+      userRole: user?.role || 'ADMIN',
+      action: 'CLEAR_ALL_POLICIES',
+      module: 'Policies',
+      affectedRecord: 'All Policies',
+      details: 'Cleared all insurance policies register data'
+    });
+  };
+
   const addInvestment = (invData) => {
     const id = invData.id || `INV-SK-${Math.floor(1000 + Math.random() * 9000)}`;
     const assignedStaffId = invData.assignedStaffId || invData.staffId || user?.uid || 'UID-STF-1003';
@@ -1067,6 +1073,7 @@ export const DataProvider = ({ children }) => {
       deleteCustomer,
       addPolicy,
       deletePolicy,
+      clearAllPolicies,
       addInvestment,
       updateInvestmentStatus,
       addClaim,
