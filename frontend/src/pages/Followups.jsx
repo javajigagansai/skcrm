@@ -555,7 +555,7 @@ export const Followups = () => {
             title="Create New Client Follow-up Record"
           >
             <Plus className="h-4 w-4" />
-            <span>+ Add Follow-up</span>
+            <span>Add Follow-up</span>
           </button>
 
           {isAdminOrManager && (
@@ -665,7 +665,7 @@ export const Followups = () => {
                 className="px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs shadow transition cursor-pointer inline-flex items-center space-x-1.5 mt-2"
               >
                 <Plus className="h-4 w-4" />
-                <span>+ Add Follow-up</span>
+                <span>Add Follow-up</span>
               </button>
             </div>
           ) : (
@@ -716,7 +716,7 @@ export const Followups = () => {
                       className="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs shadow transition cursor-pointer flex items-center space-x-1.5"
                     >
                       <Plus className="h-4 w-4" />
-                      <span>+ Add Follow-up Stage</span>
+                      <span>Add Follow-up Stage</span>
                     </button>
                     <button 
                       type="button"
