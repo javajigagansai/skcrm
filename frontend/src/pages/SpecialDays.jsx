@@ -117,7 +117,7 @@ export const SpecialDays = () => {
             eventTitle: `🎂 Birthday of ${c.name}`,
             date: c.dob,
             isToday,
-            assignedAdvisor: c.assignedAdvisorName || 'Priya Sharma',
+            assignedAdvisor: c.assignedAdvisorName || c.assignedStaff || 'Unassigned',
             relation: 'Self'
           });
         }
@@ -132,12 +132,12 @@ export const SpecialDays = () => {
           list.push({
             id: `ANNI-${c.id}`,
             customerName: c.name,
-            phone: c.phone || '9876543210',
+            phone: c.phone || '',
             type: 'ANNIVERSARY',
             eventTitle: `💍 Wedding Anniversary of ${c.name}`,
             date: c.anniversaryDate,
             isToday,
-            assignedAdvisor: c.assignedAdvisorName || 'Priya Sharma',
+            assignedAdvisor: c.assignedAdvisorName || c.assignedStaff || 'Unassigned',
             relation: 'Self & Spouse'
           });
         }
@@ -154,12 +154,12 @@ export const SpecialDays = () => {
               list.push({
                 id: `FM-BDAY-${c.id}-${fIdx}`,
                 customerName: `${fm.name} (${fm.relation} of ${c.name})`,
-                phone: fm.phone || c.phone || '9876543210',
+                phone: fm.phone || c.phone || '',
                 type: 'BIRTHDAY',
                 eventTitle: `🎂 Birthday of ${fm.name} (${fm.relation})`,
                 date: fm.dob,
                 isToday,
-                assignedAdvisor: c.assignedAdvisorName || 'Priya Sharma',
+                assignedAdvisor: c.assignedAdvisorName || c.assignedStaff || 'Unassigned',
                 relation: fm.relation
               });
             }
@@ -172,12 +172,12 @@ export const SpecialDays = () => {
               list.push({
                 id: `FM-ANNI-${c.id}-${fIdx}`,
                 customerName: `${fm.name} (${fm.relation} of ${c.name})`,
-                phone: fm.phone || c.phone || '9876543210',
+                phone: fm.phone || c.phone || '',
                 type: 'ANNIVERSARY',
                 eventTitle: `💍 Wedding Anniversary of ${fm.name}`,
                 date: fm.anniversaryDate,
                 isToday,
-                assignedAdvisor: c.assignedAdvisorName || 'Priya Sharma',
+                assignedAdvisor: c.assignedAdvisorName || c.assignedStaff || 'Unassigned',
                 relation: fm.relation
               });
             }
@@ -192,22 +192,18 @@ export const SpecialDays = () => {
   // Real-time calculation of Staff Celebrations
   const staffCelebrations = useMemo(() => {
     const savedUsers = localStorage.getItem('crm_v2_users_list');
-    let usersList = [
-      { name: 'Priya Sharma', role: 'Senior Advisor', date: '1994-05-14', type: 'BIRTHDAY', phone: '9876543210' },
-      { name: 'Rahul Dravid', role: 'Relationship Manager', date: '1990-11-20', type: 'ANNIVERSARY', phone: '9876512345' },
-      { name: 'Kavita Menon', role: 'Greetings Officer', date: '1995-08-05', type: 'BIRTHDAY', phone: '9876599999' }
-    ];
+    let usersList = [];
 
     if (savedUsers) {
       try {
         const parsed = JSON.parse(savedUsers);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          usersList = parsed.map((u, idx) => ({
+          usersList = parsed.filter(u => u.dob || u.anniversaryDate).map((u) => ({
             name: u.name,
             role: u.role || 'Staff Advisor',
-            date: idx % 2 === 0 ? '1994-05-14' : '1990-11-20',
-            type: idx % 2 === 0 ? 'BIRTHDAY' : 'ANNIVERSARY',
-            phone: u.phone || '9876543210',
+            date: u.dob || u.anniversaryDate,
+            type: u.dob ? 'BIRTHDAY' : 'ANNIVERSARY',
+            phone: u.phone || '',
             avatar: u.avatar
           }));
         }
