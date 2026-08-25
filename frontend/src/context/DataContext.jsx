@@ -327,15 +327,38 @@ const initialTasksSeed = [
   }
 ];
 
+const getDeletedCustomerIds = () => {
+  try {
+    const saved = localStorage.getItem('crm_v2_deleted_customer_ids');
+    return saved ? JSON.parse(saved) : [];
+  } catch (e) {
+    return [];
+  }
+};
+
 export const DataProvider = ({ children }) => {
   const { user } = useAuth();
 
   const [rawCustomers, setCustomers] = useState(() => {
     const saved = localStorage.getItem('crm_v2_customers');
+    const deletedIds = getDeletedCustomerIds();
     if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
+      try { 
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(c => 
+            !deletedIds.includes(String(c.id)) && 
+            !deletedIds.includes(String(c.customerCode)) && 
+            !deletedIds.includes(String(c.name))
+          );
+        }
+      } catch (e) {}
     }
-    return initialCustomersSeed;
+    return initialCustomersSeed.filter(c => 
+      !deletedIds.includes(String(c.id)) && 
+      !deletedIds.includes(String(c.customerCode)) && 
+      !deletedIds.includes(String(c.name))
+    );
   });
 
   const [rawPolicies, setPolicies] = useState(() => {
@@ -503,7 +526,14 @@ export const DataProvider = ({ children }) => {
     // 1. Customers
     const unsubCustomers = onSnapshot(collection(db, 'customers'), (snap) => {
       if (!snap.empty) {
-        const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const deletedIds = getDeletedCustomerIds();
+        const items = snap.docs
+          .map(d => ({ id: d.id, ...d.data() }))
+          .filter(c => 
+            !deletedIds.includes(String(c.id)) && 
+            !deletedIds.includes(String(c.customerCode)) && 
+            !deletedIds.includes(String(c.name))
+          );
         setCustomers(items);
       }
     }, err => console.warn("Firestore customers snapshot error:", err));
@@ -799,15 +829,46 @@ export const DataProvider = ({ children }) => {
   };
 
   const deleteCustomer = async (id) => {
-    setCustomers(prev => prev.filter(c => c.id !== id && c.name !== id));
+    const deletedIds = getDeletedCustomerIds();
+    const targetCust = rawCustomers.find(c => String(c.id) === String(id) || String(c.customerCode) === String(id) || String(c.name) === String(id));
+    const idsToBlacklist = [String(id)];
+    if (targetCust) {
+      if (targetCust.id) idsToBlacklist.push(String(targetCust.id));
+      if (targetCust.customerCode) idsToBlacklist.push(String(targetCust.customerCode));
+      if (targetCust.name) idsToBlacklist.push(String(targetCust.name));
+    }
+
+    const updatedDeleted = Array.from(new Set([...deletedIds, ...idsToBlacklist]));
+    localStorage.setItem('crm_v2_deleted_customer_ids', JSON.stringify(updatedDeleted));
+
+    // Remove from rawCustomers state immediately
+    setCustomers(prev => prev.filter(c => 
+      !updatedDeleted.includes(String(c.id)) && 
+      !updatedDeleted.includes(String(c.customerCode)) && 
+      !updatedDeleted.includes(String(c.name))
+    ));
+
+    // Save clean list to localStorage immediately
+    try {
+      const current = JSON.parse(localStorage.getItem('crm_v2_customers') || '[]');
+      const cleaned = current.filter(c => 
+        !updatedDeleted.includes(String(c.id)) && 
+        !updatedDeleted.includes(String(c.customerCode)) && 
+        !updatedDeleted.includes(String(c.name))
+      );
+      localStorage.setItem('crm_v2_customers', JSON.stringify(cleaned));
+      window.dispatchEvent(new CustomEvent('crm_data_updated', { detail: { key: 'crm_v2_customers' } }));
+    } catch (e) {}
+
     try { await deleteCustomerBackend(id); } catch (e) {}
+
     addAuditLog({
       userName: user?.name || 'Admin User',
       userRole: user?.role || 'ADMIN',
       action: 'DELETE_CLIENT',
       module: 'Customers',
       affectedRecord: String(id),
-      details: 'Deleted customer record'
+      details: 'Permanently deleted customer record'
     });
   };
 

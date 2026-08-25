@@ -35,7 +35,25 @@ const firestoreFallbackHandler = async (endpoint, options) => {
       } else if (method === 'DELETE') {
         const id = docId || body.id;
         if (id) {
-          await deleteDoc(doc(db, colName, id));
+          try {
+            await deleteDoc(doc(db, colName, String(id)));
+          } catch (e) {}
+
+          // Also scan collection and delete any doc matching id, customerCode, or name
+          try {
+            const querySnap = await getDocs(collection(db, colName));
+            querySnap.docs.forEach(async (d) => {
+              const data = d.data();
+              if (
+                d.id === String(id) || 
+                String(data.id) === String(id) || 
+                String(data.customerCode) === String(id) || 
+                String(data.name) === String(id)
+              ) {
+                try { await deleteDoc(doc(db, colName, d.id)); } catch (e) {}
+              }
+            });
+          } catch (e) {}
         }
         return { message: `${colName} item deleted`, id };
       }
