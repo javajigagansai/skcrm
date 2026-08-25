@@ -310,7 +310,7 @@ export const exportDashboardAnalyticsPDF = (dateFilter, currentMetrics, productD
   const timestamp = new Date().toLocaleString('en-IN');
   const catData = categoryOverviewData?.chartData || [];
   const compData = categoryOverviewData?.companyChartData || [];
-  const totalPolicies = categoryOverviewData?.totalPoliciesCount || 1;
+  const totalPolicies = categoryOverviewData?.totalPolicies || categoryOverviewData?.totalPoliciesCount || 1;
 
   const html = `
     <!DOCTYPE html>
@@ -366,7 +366,7 @@ export const exportDashboardAnalyticsPDF = (dateFilter, currentMetrics, productD
         </div>
         <div class="kpi-card">
           <div class="kpi-label">Active Policies</div>
-          <div class="kpi-value">${categoryOverviewData?.totalPoliciesCount || currentMetrics?.policiesCount || 0}</div>
+          <div class="kpi-value">${categoryOverviewData?.totalPolicies || currentMetrics?.policiesCount || 0}</div>
           <div style="font-size: 10px; color: #2563eb; font-weight:700;">Underwritten</div>
         </div>
         <div class="kpi-card">
@@ -389,15 +389,20 @@ export const exportDashboardAnalyticsPDF = (dateFilter, currentMetrics, productD
           </tr>
         </thead>
         <tbody>
-          ${catData.map(cat => `
-            <tr>
-              <td><strong>${cat.category}</strong></td>
-              <td style="font-weight:900; color:#1E6091;">${cat.count}</td>
-              <td style="color:#2563eb; font-weight:800;">${((cat.count / totalPolicies) * 100).toFixed(1)}%</td>
-              <td style="color:#475569; font-weight:700;">${cat.topCompany || 'Star Health / Tata AIA'}</td>
-              <td><span style="background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 12px; font-weight: 800; font-size: 10px;">ACTIVE</span></td>
-            </tr>
-          `).join('')}
+          ${catData.map(cat => {
+            const count = cat.policyCount ?? cat.count ?? 0;
+            const share = totalPolicies > 0 ? ((count / totalPolicies) * 100).toFixed(1) : '0.0';
+            const topComp = cat.companies ? Object.keys(cat.companies)[0] : 'Star Health / Tata AIA';
+            return `
+              <tr>
+                <td><strong>${cat.category}</strong></td>
+                <td style="font-weight:900; color:#1E6091;">${count}</td>
+                <td style="color:#2563eb; font-weight:800;">${share}%</td>
+                <td style="color:#475569; font-weight:700;">${topComp}</td>
+                <td><span style="background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 12px; font-weight: 800; font-size: 10px;">ACTIVE</span></td>
+              </tr>
+            `;
+          }).join('')}
         </tbody>
       </table>
 
@@ -414,15 +419,21 @@ export const exportDashboardAnalyticsPDF = (dateFilter, currentMetrics, productD
           </tr>
         </thead>
         <tbody>
-          ${compData.map(comp => `
-            <tr>
-              <td><strong>${comp.name}</strong></td>
-              <td style="font-weight:900; color:#0f172a;">${comp.count}</td>
-              <td style="color:#16a34a; font-weight:800;">${((comp.count / totalPolicies) * 100).toFixed(1)}%</td>
-              <td style="color:#64748b; font-weight:700;">${comp.topCategory || 'Health / Life'}</td>
-              <td><span style="background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 12px; font-weight: 800; font-size: 10px;">EMPANELLED</span></td>
-            </tr>
-          `).join('')}
+          ${compData.map(comp => {
+            const compName = comp.company || comp.name || 'Empanelled Insurer';
+            const count = comp.policyCount ?? comp.count ?? 0;
+            const share = totalPolicies > 0 ? ((count / totalPolicies) * 100).toFixed(1) : '0.0';
+            const topCat = comp.categoryBreakdown ? Object.keys(comp.categoryBreakdown)[0] : 'Health / Life';
+            return `
+              <tr>
+                <td><strong>${compName}</strong></td>
+                <td style="font-weight:900; color:#0f172a;">${count}</td>
+                <td style="color:#16a34a; font-weight:800;">${share}%</td>
+                <td style="color:#64748b; font-weight:700;">${topCat}</td>
+                <td><span style="background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 12px; font-weight: 800; font-size: 10px;">EMPANELLED</span></td>
+              </tr>
+            `;
+          }).join('')}
         </tbody>
       </table>
 
@@ -473,7 +484,7 @@ export const exportDashboardCategoryAndCompanyExcel = (policyCategoryOverview = 
   const chartData = policyCategoryOverview.chartData || [];
   const companyChartData = policyCategoryOverview.companyChartData || [];
   const companyBreakdown = policyCategoryOverview.companyBreakdown || {};
-  const totalPolicies = policyCategoryOverview.totalPoliciesCount || 1;
+  const totalPolicies = policyCategoryOverview.totalPolicies || policyCategoryOverview.totalPoliciesCount || 1;
 
   const rows = [];
 
@@ -488,12 +499,14 @@ export const exportDashboardCategoryAndCompanyExcel = (policyCategoryOverview = 
   rows.push(['=== SECTION 1: BY POLICY CATEGORY BREAKDOWN ===']);
   rows.push(['Policy Category', 'Active Policy Contracts', 'Portfolio Share (%)', 'Leading Underwriter Partner', 'Status']);
   chartData.forEach(cat => {
-    const share = ((cat.count / totalPolicies) * 100).toFixed(1);
+    const count = cat.policyCount ?? cat.count ?? 0;
+    const share = totalPolicies > 0 ? ((count / totalPolicies) * 100).toFixed(1) : '0.0';
+    const topComp = cat.companies ? Object.keys(cat.companies)[0] : 'Star Health / Tata AIA';
     rows.push([
       cat.category || 'N/A',
-      cat.count || 0,
+      count,
       `${share}%`,
-      cat.topCompany || 'Star Health / Tata AIA',
+      topComp,
       'ACTIVE'
     ]);
   });
@@ -503,12 +516,15 @@ export const exportDashboardCategoryAndCompanyExcel = (policyCategoryOverview = 
   rows.push(['=== SECTION 2: BY INSURANCE COMPANY BREAKDOWN ===']);
   rows.push(['Insurance Company Name', 'Underwritten Policy Contracts', 'Market Share (%)', 'Primary Business Line', 'Status']);
   companyChartData.forEach(comp => {
-    const share = ((comp.count / totalPolicies) * 100).toFixed(1);
+    const compName = comp.company || comp.name || 'Empanelled Insurer';
+    const count = comp.policyCount ?? comp.count ?? 0;
+    const share = totalPolicies > 0 ? ((count / totalPolicies) * 100).toFixed(1) : '0.0';
+    const topCat = comp.categoryBreakdown ? Object.keys(comp.categoryBreakdown)[0] : 'Health / Life Insurance';
     rows.push([
-      comp.name || 'N/A',
-      comp.count || 0,
+      compName,
+      count,
       `${share}%`,
-      comp.topCategory || 'Health / Life Insurance',
+      topCat,
       'EMPANELLED'
     ]);
   });
