@@ -1,49 +1,22 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
-import { db } from '../config/firebaseClient';
-import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell 
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell
 } from 'recharts';
-import { 
-  Users, UserCheck, UserPlus, Award, TrendingUp, Search, Filter, Plus, Edit, Key, 
-  Trash2, X, Eye, EyeOff, ShieldCheck, CheckCircle2, ChevronRight, Phone, 
+import {
+  Users, UserCheck, UserPlus, Award, TrendingUp, Search, Filter, Plus, Edit, Key,
+  Trash2, X, Eye, EyeOff, ShieldCheck, CheckCircle2, ChevronRight, Phone,
   Mail, Building2, Briefcase, FileText, Target, Sparkles, AlertCircle, ArrowUpRight
 } from 'lucide-react';
 
-const INITIAL_STAFF_SEED = [
-  { uid: 'UID-STF-1001', name: 'Prakash Gajendiran', email: 'admin@sk-smart-investments.com', role: 'SUPER_ADMIN', title: 'Super Admin / Executive Director', phone: '9876543210', branch: 'Chennai Main HQ Desk', status: 'ACTIVE', fixedSalary: 680000, monthlyTarget: 0, achievedRevenue: 0, assignedClientsCount: 0, policiesIssuedCount: 0, commissionEarned: 0, password: 'Password@123', joinDate: '2023-01-01' },
-  { uid: 'UID-STF-1002', name: 'Branch Manager', email: 'manager@sk-smart-investments.com', role: 'MANAGER', title: 'Regional Operations Manager', phone: '9812345678', branch: 'Bangalore Regional Desk', status: 'ACTIVE', fixedSalary: 540000, monthlyTarget: 0, achievedRevenue: 0, assignedClientsCount: 0, policiesIssuedCount: 0, commissionEarned: 0, password: 'Password@123', joinDate: '2023-11-01' },
-];
-
 export const StaffManagement = () => {
   const { user: activeUser } = useAuth();
-  const { customers, policies, followups } = useData();
+  const { customers, policies, followups, users: liveUsers, saveUserToFirestore } = useData();
   const isAdminOrHigher = activeUser?.role === 'SUPER_ADMIN' || activeUser?.role === 'ADMIN' || activeUser?.role === 'MANAGER' || !activeUser?.role;
 
-  const [staffList, setStaffList] = useState(() => {
-    const saved = localStorage.getItem('crm_v2_users_list');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const cleaned = parsed.map(u => ({
-            ...u,
-            achievedRevenue: 0,
-            assignedClientsCount: 0,
-            policiesIssuedCount: 0,
-            commissionEarned: 0
-          })).filter(u => 
-            !['Rahul Dravid', 'Kavita Menon', 'Greetings Officer', 'Anitha Selvam', 'Karthik Subramanian'].includes(u.name) &&
-            !['rahul.d@sksmart.com', 'kavita.m@sksmart.com', 'wishes@sksmart.com', 'anitha.s@sksmart.com', 'karthik.s@sksmart.com'].includes(u.email)
-          );
-          if (cleaned.length > 0) return cleaned;
-        }
-      } catch (e) {}
-    }
-    return INITIAL_STAFF_SEED;
-  });
+  // staffList is driven entirely by Firestore via DataContext — no local seed needed
+  const staffList = liveUsers || [];
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBranchFilter, setSelectedBranchFilter] = useState('ALL');
@@ -64,8 +37,8 @@ export const StaffManagement = () => {
     title: 'Staff Advisor',
     phone: '',
     branch: 'Chennai Main Head Office',
-    fixedSalary: 270000,
-    monthlyTarget: 400000
+    fixedSalary: 0,
+    monthlyTarget: 0
   });
 
   const [newStaffForm, setNewStaffForm] = useState({
@@ -75,35 +48,11 @@ export const StaffManagement = () => {
     title: 'Staff Advisor',
     phone: '',
     branch: 'Chennai Main Head Office',
-    fixedSalary: 250000,
-    monthlyTarget: 400000,
+    fixedSalary: 0,
+    monthlyTarget: 0,
     password: 'Password@123'
   });
 
-  // Keep local storage synced
-  useEffect(() => {
-    try {
-      localStorage.setItem('crm_v2_users_list', JSON.stringify(staffList));
-      window.dispatchEvent(new Event('storage_users_updated'));
-    } catch (e) {}
-  }, [staffList]);
-
-  // Listen to storage_users_updated event for instant synchronization from User Management
-  useEffect(() => {
-    const handleStorageUpdate = () => {
-      try {
-        const saved = localStorage.getItem('crm_v2_users_list');
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setStaffList(parsed);
-          }
-        }
-      } catch (e) {}
-    };
-    window.addEventListener('storage_users_updated', handleStorageUpdate);
-    return () => window.removeEventListener('storage_users_updated', handleStorageUpdate);
-  }, []);
 
   const togglePasswordVisibility = (uid) => {
     setShowPasswords(prev => ({ ...prev, [uid]: !prev[uid] }));
@@ -117,8 +66,10 @@ export const StaffManagement = () => {
     }
 
     const createdMember = {
-      uid: 'UID-STF-' + Math.floor(1000 + Math.random() * 9000),
+      uid: 'UID-STF-' + Date.now() + '-' + Math.floor(1000 + Math.random() * 9000),
       ...newStaffForm,
+      fixedSalary: Number(newStaffForm.fixedSalary) || 0,
+      monthlyTarget: Number(newStaffForm.monthlyTarget) || 0,
       status: 'ACTIVE',
       achievedRevenue: 0,
       assignedClientsCount: 0,
@@ -127,15 +78,8 @@ export const StaffManagement = () => {
       joinDate: new Date().toISOString().split('T')[0]
     };
 
-    const updatedList = [createdMember, ...staffList];
-    setStaffList(updatedList);
-
-    // Save permanently to LocalStorage & Firestore users collection
-    try {
-      localStorage.setItem('crm_v2_users_list', JSON.stringify(updatedList));
-      window.dispatchEvent(new Event('storage_users_updated'));
-      setDoc(doc(db, 'users', createdMember.uid), createdMember, { merge: true }).catch(() => {});
-    } catch (e) {}
+    // Persist to Firestore — DataContext onSnapshot will update staffList everywhere
+    saveUserToFirestore(createdMember);
 
     setShowAddStaffModal(false);
     setNewStaffForm({
@@ -145,7 +89,8 @@ export const StaffManagement = () => {
       title: 'Staff Advisor',
       phone: '',
       branch: 'Chennai Main Head Office',
-      monthlyTarget: 400000,
+      fixedSalary: 0,
+      monthlyTarget: 0,
       password: 'Password@123'
     });
     alert(`Staff Member "${createdMember.name}" created successfully!`);
@@ -170,53 +115,24 @@ export const StaffManagement = () => {
     e.preventDefault();
     if (!editingStaff) return;
 
-    const updatedList = staffList.map(s => {
-      if (s.uid === editingStaff.uid) {
-        return {
-          ...s,
-          name: editStaffForm.name,
-          email: editStaffForm.email,
-          role: editStaffForm.role,
-          title: editStaffForm.title,
-          phone: editStaffForm.phone,
-          branch: editStaffForm.branch,
-          fixedSalary: Number(editStaffForm.fixedSalary) || 0,
-          monthlyTarget: Number(editStaffForm.monthlyTarget) || 0
-        };
-      }
-      return s;
-    });
+    const updatedStaff = {
+      ...editingStaff,
+      name: editStaffForm.name,
+      email: editStaffForm.email,
+      role: editStaffForm.role,
+      title: editStaffForm.title,
+      phone: editStaffForm.phone,
+      branch: editStaffForm.branch,
+      fixedSalary: Number(editStaffForm.fixedSalary) || 0,
+      monthlyTarget: Number(editStaffForm.monthlyTarget) || 0
+    };
 
-    setStaffList(updatedList);
+    // Persist to Firestore — DataContext onSnapshot propagates to all devices
+    saveUserToFirestore(updatedStaff);
 
     if (selectedStaff360 && selectedStaff360.uid === editingStaff.uid) {
-      setSelectedStaff360(prev => ({
-        ...prev,
-        name: editStaffForm.name,
-        email: editStaffForm.email,
-        role: editStaffForm.role,
-        title: editStaffForm.title,
-        phone: editStaffForm.phone,
-        branch: editStaffForm.branch,
-        fixedSalary: Number(editStaffForm.fixedSalary) || 0,
-        monthlyTarget: Number(editStaffForm.monthlyTarget) || 0
-      }));
+      setSelectedStaff360(updatedStaff);
     }
-
-    try {
-      localStorage.setItem('crm_v2_users_list', JSON.stringify(updatedList));
-      window.dispatchEvent(new Event('storage_users_updated'));
-      setDoc(doc(db, 'users', editingStaff.uid), {
-        name: editStaffForm.name,
-        email: editStaffForm.email,
-        role: editStaffForm.role,
-        title: editStaffForm.title,
-        phone: editStaffForm.phone,
-        branch: editStaffForm.branch,
-        fixedSalary: Number(editStaffForm.fixedSalary) || 0,
-        monthlyTarget: Number(editStaffForm.monthlyTarget) || 0
-      }, { merge: true }).catch(() => {});
-    } catch (err) {}
 
     setShowEditStaffModal(false);
     setEditingStaff(null);
@@ -227,7 +143,10 @@ export const StaffManagement = () => {
     e.preventDefault();
     if (!targetStaff || !newTargetAmount) return;
 
-    setStaffList(prev => prev.map(s => s.uid === targetStaff.uid ? { ...s, monthlyTarget: Number(newTargetAmount) } : s));
+    const targetObj = staffList.find(s => s.uid === targetStaff.uid);
+    if (targetObj) {
+      saveUserToFirestore({ ...targetObj, monthlyTarget: Number(newTargetAmount) });
+    }
     if (selectedStaff360 && selectedStaff360.uid === targetStaff.uid) {
       setSelectedStaff360(prev => ({ ...prev, monthlyTarget: Number(newTargetAmount) }));
     }
@@ -240,7 +159,10 @@ export const StaffManagement = () => {
 
   const handleStatusToggle = (uid, currentStatus) => {
     const nextStatus = currentStatus === 'ACTIVE' ? 'DISABLED' : 'ACTIVE';
-    setStaffList(prev => prev.map(s => s.uid === uid ? { ...s, status: nextStatus } : s));
+    const staffObj = staffList.find(s => s.uid === uid);
+    if (staffObj) {
+      saveUserToFirestore({ ...staffObj, status: nextStatus });
+    }
     if (selectedStaff360 && selectedStaff360.uid === uid) {
       setSelectedStaff360(prev => ({ ...prev, status: nextStatus }));
     }
@@ -253,7 +175,7 @@ export const StaffManagement = () => {
     const branch = st.branch || '';
     const role = st.role || '';
 
-    const matchesSearch = 
+    const matchesSearch =
       name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       branch.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -357,7 +279,7 @@ export const StaffManagement = () => {
           <p className="text-xs text-slate-500 font-semibold">Monitor individual staff performance, customer assignments, targets &amp; credentials.</p>
         </div>
 
-        <button 
+        <button
           onClick={() => setShowAddStaffModal(true)}
           className="flex items-center space-x-2 px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer self-start sm:self-auto"
         >
@@ -405,7 +327,7 @@ export const StaffManagement = () => {
       <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-card flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="relative max-w-md w-full">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <input 
+          <input
             type="text"
             placeholder="Search staff by Name, Email, Role or Branch..."
             value={searchTerm}
@@ -416,7 +338,7 @@ export const StaffManagement = () => {
 
         <div className="flex items-center space-x-2 w-full sm:w-auto">
           <Filter className="h-4 w-4 text-slate-400" />
-          <select 
+          <select
             value={selectedBranchFilter}
             onChange={(e) => setSelectedBranchFilter(e.target.value)}
             className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-extrabold bg-white outline-none focus:ring-2 focus:ring-blue-600"
@@ -438,7 +360,7 @@ export const StaffManagement = () => {
           const progressPct = Math.min(100, Math.round((achieved / target) * 100));
 
           return (
-            <div 
+            <div
               key={st.uid}
               className="bg-white rounded-3xl border border-slate-200 shadow-card hover:shadow-xl hover:border-blue-300 transition space-y-4 p-5 relative group"
             >
@@ -485,7 +407,7 @@ export const StaffManagement = () => {
                   <span className="text-blue-700 font-black">₹{(target / 100000).toFixed(1)} Lakhs</span>
                 </div>
                 <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
-                  <div 
+                  <div
                     className={`h-full rounded-full transition-all duration-500 ${progressPct >= 90 ? 'bg-emerald-500' : progressPct >= 60 ? 'bg-blue-600' : 'bg-amber-500'}`}
                     style={{ width: `${progressPct}%` }}
                   ></div>
@@ -555,7 +477,7 @@ export const StaffManagement = () => {
       {selectedStaff360 && (
         <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-4xl w-full p-6 space-y-5 shadow-2xl border border-slate-100 my-6 animate-fadeIn">
-            
+
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-4 gap-4">
               <div className="flex items-center space-x-3">
@@ -572,7 +494,7 @@ export const StaffManagement = () => {
               </div>
 
               <div className="flex items-center space-x-2">
-                <button 
+                <button
                   onClick={() => handleStatusToggle(selectedStaff360.uid, selectedStaff360.status)}
                   className={`px-3.5 py-2 rounded-xl text-xs font-black transition cursor-pointer ${selectedStaff360.status === 'ACTIVE' ? 'bg-slate-100 text-slate-700 hover:bg-slate-200' : 'bg-emerald-600 text-white'}`}
                 >
@@ -586,19 +508,19 @@ export const StaffManagement = () => {
 
             {/* Navigation Tabs */}
             <div className="flex items-center space-x-2 border-b pb-3 text-xs font-extrabold overflow-x-auto">
-              <button 
+              <button
                 onClick={() => setActive360Tab('OVERVIEW')}
                 className={`px-4 py-2 rounded-xl transition cursor-pointer ${active360Tab === 'OVERVIEW' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 hover:bg-slate-100'}`}
               >
                 1. Performance Overview
               </button>
-              <button 
+              <button
                 onClick={() => setActive360Tab('CLIENTS')}
                 className={`px-4 py-2 rounded-xl transition cursor-pointer ${active360Tab === 'CLIENTS' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 hover:bg-slate-100'}`}
               >
                 2. Assigned Clients
               </button>
-              <button 
+              <button
                 onClick={() => setActive360Tab('POLICIES')}
                 className={`px-4 py-2 rounded-xl transition cursor-pointer ${active360Tab === 'POLICIES' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 hover:bg-slate-100'}`}
               >
@@ -627,7 +549,7 @@ export const StaffManagement = () => {
                       <span className="font-mono font-black text-emerald-700 text-xs">
                         {showPasswords[selectedStaff360.uid] ? selectedStaff360.password : '••••••••'}
                       </span>
-                      <button 
+                      <button
                         onClick={() => togglePasswordVisibility(selectedStaff360.uid)}
                         className="text-slate-500 hover:text-blue-600 p-1"
                       >
@@ -684,12 +606,12 @@ export const StaffManagement = () => {
 
                   <div className="h-40 w-full">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart 
+                      <BarChart
                         data={[
-                          { 
-                            metric: 'Revenue (₹ Lakhs)', 
-                            Target: parseFloat(((selectedStaff360.monthlyTarget || 400000) / 100000).toFixed(2)), 
-                            Achieved: parseFloat((getStaffLiveMetrics(selectedStaff360).achievedRevenue / 100000).toFixed(2)) 
+                          {
+                            metric: 'Revenue (₹ Lakhs)',
+                            Target: parseFloat(((selectedStaff360.monthlyTarget || 400000) / 100000).toFixed(2)),
+                            Achieved: parseFloat((getStaffLiveMetrics(selectedStaff360).achievedRevenue / 100000).toFixed(2))
                           }
                         ]}
                         margin={{ top: 10, right: 30, left: 10, bottom: 5 }}
@@ -800,7 +722,7 @@ export const StaffManagement = () => {
               <p className="text-slate-600">Update monthly target for <strong>{targetStaff.name}</strong>:</p>
               <div>
                 <label className="block text-slate-700 mb-1 font-extrabold uppercase">Monthly Target Amount (₹)</label>
-                <input 
+                <input
                   type="number"
                   required
                   value={newTargetAmount}
@@ -834,8 +756,8 @@ export const StaffManagement = () => {
             <form onSubmit={handleUpdateStaff} className="space-y-3 text-xs font-semibold">
               <div>
                 <label className="block text-slate-700 mb-1 font-extrabold uppercase">Full Name</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   required
                   value={editStaffForm.name}
                   onChange={(e) => setEditStaffForm({ ...editStaffForm, name: e.target.value })}
@@ -845,8 +767,8 @@ export const StaffManagement = () => {
 
               <div>
                 <label className="block text-slate-700 mb-1 font-extrabold uppercase">Work Email Address</label>
-                <input 
-                  type="email" 
+                <input
+                  type="email"
                   required
                   value={editStaffForm.email}
                   onChange={(e) => setEditStaffForm({ ...editStaffForm, email: e.target.value })}
@@ -857,7 +779,7 @@ export const StaffManagement = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-700 mb-1 font-extrabold uppercase">Role Designation</label>
-                  <select 
+                  <select
                     value={editStaffForm.role}
                     onChange={(e) => setEditStaffForm({ ...editStaffForm, role: e.target.value })}
                     className="w-full p-2 rounded-xl border border-slate-200 font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white"
@@ -869,8 +791,8 @@ export const StaffManagement = () => {
                 </div>
                 <div>
                   <label className="block text-slate-700 mb-1 font-extrabold uppercase">Title / Designation</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={editStaffForm.title}
                     onChange={(e) => setEditStaffForm({ ...editStaffForm, title: e.target.value })}
                     className="w-full p-2 rounded-xl border border-slate-200 font-bold outline-none focus:ring-2 focus:ring-blue-600"
@@ -883,8 +805,8 @@ export const StaffManagement = () => {
                   <label className="block text-slate-700 mb-1 font-extrabold uppercase text-rose-600">
                     Fixed Monthly Salary (₹) {!isAdminOrHigher && <span className="text-[10px] text-slate-400 font-bold">🔒 (Admin Only)</span>}
                   </label>
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     required
                     disabled={!isAdminOrHigher}
                     value={editStaffForm.fixedSalary}
@@ -895,8 +817,8 @@ export const StaffManagement = () => {
                 </div>
                 <div>
                   <label className="block text-slate-700 mb-1 font-extrabold uppercase">Monthly Target (₹)</label>
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     value={editStaffForm.monthlyTarget}
                     onChange={(e) => setEditStaffForm({ ...editStaffForm, monthlyTarget: e.target.value })}
                     className="w-full p-2.5 rounded-xl border border-slate-200 font-mono font-bold outline-none focus:ring-2 focus:ring-blue-600"
@@ -908,8 +830,8 @@ export const StaffManagement = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-700 mb-1 font-extrabold uppercase">Phone Number</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={editStaffForm.phone}
                     onChange={(e) => setEditStaffForm({ ...editStaffForm, phone: e.target.value })}
                     className="w-full p-2 rounded-xl border border-slate-200 font-mono font-bold outline-none focus:ring-2 focus:ring-blue-600"
@@ -917,8 +839,8 @@ export const StaffManagement = () => {
                 </div>
                 <div>
                   <label className="block text-slate-700 mb-1 font-extrabold uppercase">Assigned Branch</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={editStaffForm.branch}
                     onChange={(e) => setEditStaffForm({ ...editStaffForm, branch: e.target.value })}
                     className="w-full p-2 rounded-xl border border-slate-200 font-bold outline-none focus:ring-2 focus:ring-blue-600"
@@ -950,8 +872,8 @@ export const StaffManagement = () => {
             <form onSubmit={handleCreateStaff} className="space-y-3 text-xs font-semibold">
               <div>
                 <label className="block text-slate-700 mb-1 font-extrabold uppercase">Full Name</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   required
                   value={newStaffForm.name}
                   onChange={(e) => setNewStaffForm({ ...newStaffForm, name: e.target.value })}
@@ -961,8 +883,8 @@ export const StaffManagement = () => {
 
               <div>
                 <label className="block text-slate-700 mb-1 font-extrabold uppercase">Work Email Address</label>
-                <input 
-                  type="email" 
+                <input
+                  type="email"
                   required
                   value={newStaffForm.email}
                   onChange={(e) => setNewStaffForm({ ...newStaffForm, email: e.target.value })}
@@ -973,7 +895,7 @@ export const StaffManagement = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-700 mb-1 font-extrabold uppercase">Role</label>
-                  <select 
+                  <select
                     value={newStaffForm.role}
                     onChange={(e) => setNewStaffForm({ ...newStaffForm, role: e.target.value })}
                     className="w-full p-2 rounded-xl border border-slate-200 font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white"
@@ -984,8 +906,8 @@ export const StaffManagement = () => {
                 </div>
                 <div>
                   <label className="block text-slate-700 mb-1 font-extrabold uppercase text-rose-600">Fixed Monthly Salary (₹)</label>
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     required
                     value={newStaffForm.fixedSalary}
                     onChange={(e) => setNewStaffForm({ ...newStaffForm, fixedSalary: e.target.value })}
@@ -998,8 +920,8 @@ export const StaffManagement = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-700 mb-1 font-extrabold uppercase">Phone Number</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={newStaffForm.phone}
                     onChange={(e) => setNewStaffForm({ ...newStaffForm, phone: e.target.value })}
                     className="w-full p-2 rounded-xl border border-slate-200 font-mono font-bold outline-none focus:ring-2 focus:ring-blue-600"
@@ -1008,8 +930,8 @@ export const StaffManagement = () => {
                 </div>
                 <div>
                   <label className="block text-slate-700 mb-1 font-extrabold uppercase">Assigned Branch</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={newStaffForm.branch}
                     onChange={(e) => setNewStaffForm({ ...newStaffForm, branch: e.target.value })}
                     className="w-full p-2 rounded-xl border border-slate-200 font-bold outline-none focus:ring-2 focus:ring-blue-600"

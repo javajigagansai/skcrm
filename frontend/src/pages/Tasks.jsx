@@ -5,46 +5,19 @@ import { useNotification } from '../context/NotificationContext';
 import { useCustomer360 } from '../context/Customer360Context';
 import { Plus, CheckSquare, Clock, AlertCircle, X, Sparkles, UserCheck, Trash2, Lock } from 'lucide-react';
 
-const DEFAULT_STAFF = ['Prakash Gajendiran', 'Branch Manager'];
+
 
 export const Tasks = () => {
   const { user } = useAuth();
-  const { tasks, addTask, updateTaskStatus, deleteTask } = useData();
+  const { tasks, addTask, updateTaskStatus, deleteTask, users: liveUsers } = useData();
   const { sendNotification } = useNotification();
   const { openCustomer360 } = useCustomer360();
   const [showAddModal, setShowAddModal] = useState(false);
 
   const isAdminOrManager = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER';
 
-  const [staffList, setStaffList] = useState(() => {
-    try {
-      const saved = localStorage.getItem('crm_v2_users_list');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const names = parsed.map(u => u.name).filter(Boolean);
-          if (names.length > 0) return names;
-        }
-      }
-    } catch (e) {}
-    return DEFAULT_STAFF;
-  });
-
-  useEffect(() => {
-    const handleUsersUpdate = () => {
-      try {
-        const saved = localStorage.getItem('crm_v2_users_list');
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setStaffList(parsed.map(u => u.name).filter(Boolean));
-          }
-        }
-      } catch (e) {}
-    };
-    window.addEventListener('storage_users_updated', handleUsersUpdate);
-    return () => window.removeEventListener('storage_users_updated', handleUsersUpdate);
-  }, []);
+  // staffList derived from Firestore liveUsers — no hardcoded seed or localStorage read
+  const staffList = (liveUsers || []).map(u => u.name).filter(Boolean);
 
   const [newTask, setNewTask] = useState({
     title: '',

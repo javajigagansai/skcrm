@@ -1,17 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useData } from '../context/DataContext';
 import { fetchExpensesBackend, createExpenseBackend } from '../services/apiService';
 import { Plus, TrendingDown, IndianRupee, X, Users, Fuel, Zap, Building2, Filter, Sparkles } from 'lucide-react';
 
-const INITIAL_STAFF_SEED = [
-  { uid: 'UID-STF-1001', name: 'Prakash Gajendiran', role: 'SUPER_ADMIN', title: 'Super Admin / Executive Director', status: 'ACTIVE', fixedSalary: 680000 },
-  { uid: 'UID-STF-1002', name: 'Branch Manager', role: 'MANAGER', title: 'Regional Operations Manager', status: 'ACTIVE', fixedSalary: 540000 },
-  { uid: 'UID-STF-1003', name: 'Priya Sharma', role: 'EMPLOYEE', title: 'Senior Wealth Advisor', status: 'ACTIVE', fixedSalary: 270000 },
-  { uid: 'UID-STF-1004', name: 'Anitha Selvam', role: 'EMPLOYEE', title: 'Greetings & Retention Officer', status: 'ACTIVE', fixedSalary: 150000 }
-];
-
 export const Expenses = () => {
   const { user } = useAuth();
+  const { users: liveUsers } = useData();
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -42,33 +37,23 @@ export const Expenses = () => {
     loadExpenses();
   }, []);
 
-  // Staff Salary Details automatically integrated directly from Staff Management
+  // Staff Salary Details from Firestore (via DataContext liveUsers) — no localStorage/seed
   const staffPayrollExpenses = useMemo(() => {
-    let staffMembers = INITIAL_STAFF_SEED;
-    const saved = localStorage.getItem('crm_v2_users_list');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          staffMembers = parsed;
-        }
-      } catch (e) {}
-    }
-
+    const staffMembers = (liveUsers || []);
     const currentDate = new Date().toISOString().split('T')[0];
 
     return staffMembers
-      .filter(st => st.status === 'ACTIVE')
+      .filter(st => st.status !== 'DISABLED')
       .map(st => ({
         id: `SALARY-AUTO-${st.uid || st.id || st.name}`,
         category: 'Staff Salary (Payroll)',
         description: `Monthly Fixed Salary Payout — ${st.name} (${st.title || st.role || 'Staff Advisor'})`,
-        amount: Number(st.fixedSalary !== undefined ? st.fixedSalary : (st.monthlyTarget ? Math.round(st.monthlyTarget * 0.5) : 250000)),
+        amount: Number(st.fixedSalary || 0),
         expenseDate: currentDate,
         isAutoSalary: true,
         staffName: st.name
       }));
-  }, []);
+  }, [liveUsers]);
 
   // Combined Expenses List (Manual Operational Expenses + Auto Staff Payroll)
   const combinedExpenses = useMemo(() => {

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { useAuth } from './AuthContext';
 import { filterScopedRecords, canAccessCustomer } from '../utils/rbac';
-import { 
+import {
   fetchCustomersBackend, createCustomerBackend, updateCustomerBackend, deleteCustomerBackend,
   fetchLeadsBackend, createLeadBackend, updateLeadBackend, deleteLeadBackend,
   fetchInvestmentsBackend, createInvestmentBackend,
@@ -40,20 +40,20 @@ export const DataProvider = ({ children }) => {
     const saved = localStorage.getItem('crm_v2_customers');
     const deletedIds = getDeletedCustomerIds();
     if (saved) {
-      try { 
+      try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
-          return parsed.filter(c => 
-            !deletedIds.includes(String(c.id)) && 
-            !deletedIds.includes(String(c.customerCode)) && 
+          return parsed.filter(c =>
+            !deletedIds.includes(String(c.id)) &&
+            !deletedIds.includes(String(c.customerCode)) &&
             !deletedIds.includes(String(c.name))
           );
         }
-      } catch (e) {}
+      } catch (e) { }
     }
-    return initialCustomersSeed.filter(c => 
-      !deletedIds.includes(String(c.id)) && 
-      !deletedIds.includes(String(c.customerCode)) && 
+    return initialCustomersSeed.filter(c =>
+      !deletedIds.includes(String(c.id)) &&
+      !deletedIds.includes(String(c.customerCode)) &&
       !deletedIds.includes(String(c.name))
     );
   });
@@ -61,7 +61,7 @@ export const DataProvider = ({ children }) => {
   const [rawPolicies, setPolicies] = useState(() => {
     try {
       localStorage.setItem('crm_v2_policies', JSON.stringify([]));
-    } catch (e) {}
+    } catch (e) { }
     return [];
   });
 
@@ -71,12 +71,12 @@ export const DataProvider = ({ children }) => {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
-          return parsed.filter(i => 
-            !['INV-2001', 'INV-2002', 'INV-2003'].includes(i.id) && 
+          return parsed.filter(i =>
+            !['INV-2001', 'INV-2002', 'INV-2003'].includes(i.id) &&
             !['Rahul Sharma', 'Priya Menon', 'Anand Kumar'].includes(i.customerName)
           );
         }
-      } catch (e) {}
+      } catch (e) { }
     }
     return [];
   });
@@ -87,12 +87,12 @@ export const DataProvider = ({ children }) => {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
-          return parsed.filter(c => 
-            !['CLM-3001', 'CLM-3002'].includes(c.id) && 
+          return parsed.filter(c =>
+            !['CLM-3001', 'CLM-3002'].includes(c.id) &&
             !['Rahul Sharma', 'Priya Menon', 'Anand Kumar'].includes(c.customerName)
           );
         }
-      } catch (e) {}
+      } catch (e) { }
     }
     return [];
   });
@@ -103,12 +103,12 @@ export const DataProvider = ({ children }) => {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
-          return parsed.filter(l => 
-            !['LD-4001', 'LD-4002'].includes(l.id) && 
+          return parsed.filter(l =>
+            !['LD-4001', 'LD-4002'].includes(l.id) &&
             !['Sanjay Gupta', 'Deepak Verma'].includes(l.customerName)
           );
         }
-      } catch (e) {}
+      } catch (e) { }
     }
     return [];
   });
@@ -119,12 +119,12 @@ export const DataProvider = ({ children }) => {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
-          return parsed.filter(f => 
-            !['FLW-5001', 'FLW-5002'].includes(f.id) && 
+          return parsed.filter(f =>
+            !['FLW-5001', 'FLW-5002'].includes(f.id) &&
             !['Rahul Sharma', 'Priya Menon', 'Anand Kumar'].includes(f.customerName)
           );
         }
-      } catch (e) {}
+      } catch (e) { }
     }
     return [];
   });
@@ -135,12 +135,12 @@ export const DataProvider = ({ children }) => {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
-          return parsed.filter(t => 
-            !['TSK-6001', 'TSK-6002'].includes(t.id) && 
+          return parsed.filter(t =>
+            !['TSK-6001', 'TSK-6002'].includes(t.id) &&
             !['Rahul Sharma', 'Priya Menon', 'Anand Kumar'].includes(t.customerName)
           );
         }
-      } catch (e) {}
+      } catch (e) { }
     }
     return [];
   });
@@ -148,7 +148,7 @@ export const DataProvider = ({ children }) => {
   const [rawIncome, setIncome] = useState(() => {
     const saved = localStorage.getItem('crm_v2_income');
     if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
+      try { return JSON.parse(saved); } catch (e) { }
     }
     return [];
   });
@@ -156,7 +156,7 @@ export const DataProvider = ({ children }) => {
   const [rawExpenses, setExpenses] = useState(() => {
     const saved = localStorage.getItem('crm_v2_expenses');
     if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
+      try { return JSON.parse(saved); } catch (e) { }
     }
     return [];
   });
@@ -164,7 +164,7 @@ export const DataProvider = ({ children }) => {
   const [rawAuditLogs, setAuditLogs] = useState(() => {
     const saved = localStorage.getItem('crm_v2_audit_logs');
     if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
+      try { return JSON.parse(saved); } catch (e) { }
     }
     return [];
   });
@@ -189,7 +189,7 @@ export const DataProvider = ({ children }) => {
   const auditLogs = useMemo(() => filterScopedRecords(user, rawAuditLogs), [user, rawAuditLogs]);
 
   // Sync state changes to LocalStorage + broadcast update event so other open sessions update
-  useEffect(() => { localStorage.setItem('crm_v2_audit_logs',   JSON.stringify(rawAuditLogs));   }, [rawAuditLogs]);
+  useEffect(() => { localStorage.setItem('crm_v2_audit_logs', JSON.stringify(rawAuditLogs)); }, [rawAuditLogs]);
   useEffect(() => {
     localStorage.setItem('crm_v2_customers', JSON.stringify(rawCustomers));
     window.dispatchEvent(new CustomEvent('crm_data_updated', { detail: { key: 'crm_v2_customers' } }));
@@ -199,14 +199,14 @@ export const DataProvider = ({ children }) => {
     window.dispatchEvent(new CustomEvent('crm_data_updated', { detail: { key: 'crm_v2_policies' } }));
   }, [rawPolicies]);
   useEffect(() => { localStorage.setItem('crm_v2_investments', JSON.stringify(rawInvestments)); }, [rawInvestments]);
-  useEffect(() => { localStorage.setItem('crm_v2_claims',      JSON.stringify(rawClaims));      }, [rawClaims]);
-  useEffect(() => { localStorage.setItem('crm_v2_leads',       JSON.stringify(rawLeads));       }, [rawLeads]);
-  useEffect(() => { localStorage.setItem('crm_v2_followups',   JSON.stringify(rawFollowups));   }, [rawFollowups]);
+  useEffect(() => { localStorage.setItem('crm_v2_claims', JSON.stringify(rawClaims)); }, [rawClaims]);
+  useEffect(() => { localStorage.setItem('crm_v2_leads', JSON.stringify(rawLeads)); }, [rawLeads]);
+  useEffect(() => { localStorage.setItem('crm_v2_followups', JSON.stringify(rawFollowups)); }, [rawFollowups]);
   useEffect(() => {
     localStorage.setItem('crm_v2_tasks', JSON.stringify(rawTasks));
     window.dispatchEvent(new CustomEvent('crm_data_updated', { detail: { key: 'crm_v2_tasks' } }));
   }, [rawTasks]);
-  useEffect(() => { localStorage.setItem('crm_v2_income',   JSON.stringify(rawIncome));   }, [rawIncome]);
+  useEffect(() => { localStorage.setItem('crm_v2_income', JSON.stringify(rawIncome)); }, [rawIncome]);
   useEffect(() => { localStorage.setItem('crm_v2_expenses', JSON.stringify(rawExpenses)); }, [rawExpenses]);
 
   // Real-time cross-session sync:
@@ -221,33 +221,33 @@ export const DataProvider = ({ children }) => {
           const parsed = JSON.parse(val);
           if (Array.isArray(parsed)) setter(parsed);
         }
-      } catch (e) {}
+      } catch (e) { }
     };
 
     // Native storage event fires across browser tabs (different-tab updates)
     const handleStorageEvent = (e) => {
-      if (e.key === 'crm_v2_customers')  reloadFromStorage('crm_v2_customers',  setCustomers);
-      if (e.key === 'crm_v2_policies')   reloadFromStorage('crm_v2_policies',   setPolicies);
-      if (e.key === 'crm_v2_tasks')      reloadFromStorage('crm_v2_tasks',      setTasks);
-      if (e.key === 'crm_v2_leads')      reloadFromStorage('crm_v2_leads',      setLeads);
-      if (e.key === 'crm_v2_followups')  reloadFromStorage('crm_v2_followups',  setFollowups);
-      if (e.key === 'crm_v2_investments')reloadFromStorage('crm_v2_investments',setInvestments);
-      if (e.key === 'crm_v2_claims')     reloadFromStorage('crm_v2_claims',     setClaims);
+      if (e.key === 'crm_v2_customers') reloadFromStorage('crm_v2_customers', setCustomers);
+      if (e.key === 'crm_v2_policies') reloadFromStorage('crm_v2_policies', setPolicies);
+      if (e.key === 'crm_v2_tasks') reloadFromStorage('crm_v2_tasks', setTasks);
+      if (e.key === 'crm_v2_leads') reloadFromStorage('crm_v2_leads', setLeads);
+      if (e.key === 'crm_v2_followups') reloadFromStorage('crm_v2_followups', setFollowups);
+      if (e.key === 'crm_v2_investments') reloadFromStorage('crm_v2_investments', setInvestments);
+      if (e.key === 'crm_v2_claims') reloadFromStorage('crm_v2_claims', setClaims);
     };
 
     // crm_data_updated fires within the same tab when WE write (storage event doesn't)
     // This covers the case where admin assigns while staff is on the same browser session
     const handleCrmUpdate = (e) => {
       const key = e?.detail?.key;
-      if (key === 'crm_v2_customers')  reloadFromStorage('crm_v2_customers',  setCustomers);
-      if (key === 'crm_v2_policies')   reloadFromStorage('crm_v2_policies',   setPolicies);
-      if (key === 'crm_v2_tasks')      reloadFromStorage('crm_v2_tasks',      setTasks);
+      if (key === 'crm_v2_customers') reloadFromStorage('crm_v2_customers', setCustomers);
+      if (key === 'crm_v2_policies') reloadFromStorage('crm_v2_policies', setPolicies);
+      if (key === 'crm_v2_tasks') reloadFromStorage('crm_v2_tasks', setTasks);
     };
 
-    window.addEventListener('storage',          handleStorageEvent);
+    window.addEventListener('storage', handleStorageEvent);
     window.addEventListener('crm_data_updated', handleCrmUpdate);
     return () => {
-      window.removeEventListener('storage',          handleStorageEvent);
+      window.removeEventListener('storage', handleStorageEvent);
       window.removeEventListener('crm_data_updated', handleCrmUpdate);
     };
   }, []);
@@ -282,10 +282,10 @@ export const DataProvider = ({ children }) => {
               });
               localStorage.setItem(key, JSON.stringify(cleaned));
             }
-          } catch (e) {}
+          } catch (e) { }
         }
       });
-    } catch (e) {}
+    } catch (e) { }
   }, []);
 
   // Real-time Firestore snapshot listeners for zero-latency cross-device database synchronization
@@ -296,9 +296,9 @@ export const DataProvider = ({ children }) => {
         const deletedIds = getDeletedCustomerIds();
         const items = snap.docs
           .map(d => ({ id: d.id, ...d.data() }))
-          .filter(c => 
-            !deletedIds.includes(String(c.id)) && 
-            !deletedIds.includes(String(c.customerCode)) && 
+          .filter(c =>
+            !deletedIds.includes(String(c.id)) &&
+            !deletedIds.includes(String(c.customerCode)) &&
             !deletedIds.includes(String(c.name))
           );
         setCustomers(items);
@@ -395,31 +395,31 @@ export const DataProvider = ({ children }) => {
     if (!staffInfo) return;
 
     // Accept both a full staff object and a legacy name string
-    const staffName  = typeof staffInfo === 'string' ? staffInfo : (staffInfo.name  || '');
-    const staffUid   = typeof staffInfo === 'string' ? ''        : (staffInfo.uid   || '');
-    const staffEmail = typeof staffInfo === 'string' ? ''        : (staffInfo.email || '');
+    const staffName = typeof staffInfo === 'string' ? staffInfo : (staffInfo.name || '');
+    const staffUid = typeof staffInfo === 'string' ? '' : (staffInfo.uid || '');
+    const staffEmail = typeof staffInfo === 'string' ? '' : (staffInfo.email || '');
 
     if (!staffName) return;
 
     const notifId = 'NOTIF-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
-    const byLine  = assignedByName ? ` by ${assignedByName}` : '';
+    const byLine = assignedByName ? ` by ${assignedByName}` : '';
 
     const notifObj = {
-      id:             notifId,
-      recipientId:    staffUid,
-      recipientName:  staffName,
+      id: notifId,
+      recipientId: staffUid,
+      recipientName: staffName,
       recipientEmail: staffEmail,
-      senderId:       user?.uid   || 'SYSTEM',
-      senderName:     user?.name  || 'System Administrator',
-      type:           'CUSTOMER_ASSIGNED',
-      title:          isReassignment
+      senderId: user?.uid || 'SYSTEM',
+      senderName: user?.name || 'System Administrator',
+      type: 'CUSTOMER_ASSIGNED',
+      title: isReassignment
         ? '👤 Customer Portfolio Reassigned to You'
         : '👤 New Customer Assigned to Your Portfolio!',
-      message:        isReassignment
+      message: isReassignment
         ? `Customer "${customerName}" has been reassigned to your portfolio${byLine}. Please reach out and introduce yourself.`
         : `New customer "${customerName}" has been added and assigned to your portfolio${byLine}. Schedule a welcome call within 24 hours.`,
-      isRead:    false,
-      read:      false,
+      isRead: false,
+      read: false,
       createdAt: new Date().toISOString()
     };
 
@@ -428,7 +428,7 @@ export const DataProvider = ({ children }) => {
       const stored = JSON.parse(localStorage.getItem('crm_v2_notifications') || '[]');
       localStorage.setItem('crm_v2_notifications', JSON.stringify([notifObj, ...stored]));
       window.dispatchEvent(new CustomEvent('storage_notifications_updated', { detail: notifObj }));
-    } catch (e) {}
+    } catch (e) { }
 
     // 2. Write to Firestore for cloud persistence & cross-device sync
     try {
@@ -436,14 +436,14 @@ export const DataProvider = ({ children }) => {
         ...notifObj,
         createdAt: serverTimestamp()
       });
-    } catch (e) {}
+    } catch (e) { }
 
     // 3. Legacy event for any other listeners
     try {
       window.dispatchEvent(new CustomEvent('storage_customer_assigned', {
         detail: { advisorName: staffName, customerName }
       }));
-    } catch (e) {}
+    } catch (e) { }
 
     // 4. Auto-create a Task for the assigned staff
     //    (setTasks is available via closure; it's initialized before this is ever called)
@@ -452,29 +452,29 @@ export const DataProvider = ({ children }) => {
       taskDue.setDate(taskDue.getDate() + 1); // Due tomorrow
 
       const autoTask = {
-        id:            'TASK-AUTO-' + Date.now(),
-        title:         isReassignment
+        id: 'TASK-AUTO-' + Date.now(),
+        title: isReassignment
           ? `📋 Follow up with reassigned customer: ${customerName}`
           : `📞 Welcome call – New customer: ${customerName}`,
-        description:   isReassignment
+        description: isReassignment
           ? `${customerName} has been reassigned to your portfolio${byLine}. Introduce yourself and confirm their policy details.`
           : `${customerName} is newly assigned to your portfolio${byLine}. Schedule an introductory call and collect any outstanding documents.`,
         customerName,
-        assignedStaff:   staffName,
+        assignedStaff: staffName,
         assignedStaffId: staffUid,
-        assignedTo:      staffName,
-        staffId:         staffUid,
-        dueDate:         taskDue.toISOString().split('T')[0],
-        priority:        'HIGH',
-        status:          'PENDING',
-        type:            'CUSTOMER_ASSIGNMENT',
-        autoGenerated:   true,
-        createdAt:       new Date().toISOString()
+        assignedTo: staffName,
+        staffId: staffUid,
+        dueDate: taskDue.toISOString().split('T')[0],
+        priority: 'HIGH',
+        status: 'PENDING',
+        type: 'CUSTOMER_ASSIGNMENT',
+        autoGenerated: true,
+        createdAt: new Date().toISOString()
       };
 
       setTasks(prev => [autoTask, ...prev]);
-      try { createTaskBackend(autoTask); } catch (_) {}
-    } catch (e) {}
+      try { createTaskBackend(autoTask); } catch (_) { }
+    } catch (e) { }
   };
 
   // CRUD Actions with Canonical Staff Identification
@@ -498,8 +498,8 @@ export const DataProvider = ({ children }) => {
     };
 
     setCustomers(prev => [newCust, ...prev]);
-    try { await createCustomerBackend(newCust); } catch (e) {}
-    
+    try { await createCustomerBackend(newCust); } catch (e) { }
+
     if (newCust.assignedStaffName || newCust.assignedAdvisorName) {
       notifyCustomerAssignment(
         { uid: newCust.assignedStaffId, name: newCust.assignedStaffName || newCust.assignedAdvisorName, email: newCust.assignedStaffEmail },
@@ -537,14 +537,14 @@ export const DataProvider = ({ children }) => {
     setCustomers(prev => prev.map(c => {
       if (c.id === targetId || c.customerCode === targetId || c.name === targetId) {
         const incomingStaffId = updateObj.assignedStaffId || updateObj.staffId;
-        const finalStaffId    = incomingStaffId ? incomingStaffId : c.assignedStaffId;
-        const finalStaffName  = updateObj.assignedStaffName || updateObj.assignedAdvisorName || updateObj.assignedStaff || c.assignedStaffName;
+        const finalStaffId = incomingStaffId ? incomingStaffId : c.assignedStaffId;
+        const finalStaffName = updateObj.assignedStaffName || updateObj.assignedAdvisorName || updateObj.assignedStaff || c.assignedStaffName;
 
         finalUpdatedRecord = {
           ...c,
           ...updateObj,
-          assignedStaffId:     finalStaffId,
-          assignedStaffName:   finalStaffName,
+          assignedStaffId: finalStaffId,
+          assignedStaffName: finalStaffName,
           assignedAdvisorName: finalStaffName,
         };
         return finalUpdatedRecord;
@@ -556,13 +556,13 @@ export const DataProvider = ({ children }) => {
       try {
         await updateCustomerBackend(targetId, finalUpdatedRecord);
       } catch (e) {
-        try { await setDoc(doc(db, 'customers', targetId), finalUpdatedRecord, { merge: true }); } catch (_) {}
+        try { await setDoc(doc(db, 'customers', targetId), finalUpdatedRecord, { merge: true }); } catch (_) { }
       }
     }
 
     // Notify on any staff name change (e.g. toast/bell notification)
-    const newName  = updateObj.assignedStaffName || updateObj.assignedAdvisorName || updateObj.assignedStaff;
-    const newUid   = updateObj.assignedStaffId   || updateObj.staffId || '';
+    const newName = updateObj.assignedStaffName || updateObj.assignedAdvisorName || updateObj.assignedStaff;
+    const newUid = updateObj.assignedStaffId || updateObj.staffId || '';
     const newEmail = updateObj.assignedStaffEmail || '';
     if (newName) {
       notifyCustomerAssignment(
@@ -576,21 +576,21 @@ export const DataProvider = ({ children }) => {
     // Write audit log — specialized entry for reassignments
     if (reassignmentMeta) {
       addAuditLog({
-        userName:  user?.name || 'Admin',
-        userRole:  user?.role || 'ADMIN',
-        action:    'REASSIGN_CUSTOMER',
-        module:    'Customers',
+        userName: user?.name || 'Admin',
+        userRole: user?.role || 'ADMIN',
+        action: 'REASSIGN_CUSTOMER',
+        module: 'Customers',
         affectedRecord: `${updateObj.name || String(targetId)} (${targetId})`,
-        details:   `Staff reassigned from "${reassignmentMeta.previousStaffName}" [${reassignmentMeta.previousStaffId}] → "${reassignmentMeta.newStaffName}" [${reassignmentMeta.newStaffId}]`
+        details: `Staff reassigned from "${reassignmentMeta.previousStaffName}" [${reassignmentMeta.previousStaffId}] → "${reassignmentMeta.newStaffName}" [${reassignmentMeta.newStaffId}]`
       });
     } else {
       addAuditLog({
-        userName:  user?.name || 'Staff Advisor',
-        userRole:  user?.role || 'STAFF',
-        action:    'UPDATE_CUSTOMER',
-        module:    'Customers',
+        userName: user?.name || 'Staff Advisor',
+        userRole: user?.role || 'STAFF',
+        action: 'UPDATE_CUSTOMER',
+        module: 'Customers',
         affectedRecord: String(targetId),
-        details:   'Updated customer profile details & relationships'
+        details: 'Updated customer profile details & relationships'
       });
     }
   };
@@ -609,25 +609,25 @@ export const DataProvider = ({ children }) => {
     localStorage.setItem('crm_v2_deleted_customer_ids', JSON.stringify(updatedDeleted));
 
     // Remove from rawCustomers state immediately
-    setCustomers(prev => prev.filter(c => 
-      !updatedDeleted.includes(String(c.id)) && 
-      !updatedDeleted.includes(String(c.customerCode)) && 
+    setCustomers(prev => prev.filter(c =>
+      !updatedDeleted.includes(String(c.id)) &&
+      !updatedDeleted.includes(String(c.customerCode)) &&
       !updatedDeleted.includes(String(c.name))
     ));
 
     // Save clean list to localStorage immediately
     try {
       const current = JSON.parse(localStorage.getItem('crm_v2_customers') || '[]');
-      const cleaned = current.filter(c => 
-        !updatedDeleted.includes(String(c.id)) && 
-        !updatedDeleted.includes(String(c.customerCode)) && 
+      const cleaned = current.filter(c =>
+        !updatedDeleted.includes(String(c.id)) &&
+        !updatedDeleted.includes(String(c.customerCode)) &&
         !updatedDeleted.includes(String(c.name))
       );
       localStorage.setItem('crm_v2_customers', JSON.stringify(cleaned));
       window.dispatchEvent(new CustomEvent('crm_data_updated', { detail: { key: 'crm_v2_customers' } }));
-    } catch (e) {}
+    } catch (e) { }
 
-    try { await deleteCustomerBackend(id); } catch (e) {}
+    try { await deleteCustomerBackend(id); } catch (e) { }
 
     addAuditLog({
       userName: user?.name || 'Admin User',
@@ -644,21 +644,21 @@ export const DataProvider = ({ children }) => {
     const assignedStaffId = polData.assignedStaffId || polData.staffId || user?.uid || 'UID-STF-1003';
     const assignedStaffName = polData.assignedStaffName || polData.assignedStaff || user?.name || 'Priya Sharma';
 
-    const newPol = { 
-      ...polData, 
-      id, 
+    const newPol = {
+      ...polData,
+      id,
       assignedStaffId,
       assignedStaffName,
       assignedStaff: assignedStaffName,
-      startDate: polData.startDate || new Date().toISOString().split('T')[0] 
+      startDate: polData.startDate || new Date().toISOString().split('T')[0]
     };
 
     setPolicies(prev => [newPol, ...prev]);
-    try { await setDoc(doc(db, 'policies', id), newPol, { merge: true }); } catch (e) {}
+    try { await setDoc(doc(db, 'policies', id), newPol, { merge: true }); } catch (e) { }
 
     // Directly update and link customer profile so Customer 360 immediately reflects all policies
     setCustomers(prev => {
-      const existingIdx = prev.findIndex(c => 
+      const existingIdx = prev.findIndex(c =>
         (c.name && c.name.toLowerCase().trim() === (newPol.customerName || '').toLowerCase().trim()) ||
         (newPol.customerId && (c.id === newPol.customerId || c.customerCode === newPol.customerId))
       );
@@ -720,8 +720,8 @@ export const DataProvider = ({ children }) => {
           localStorage.setItem('crm_v2_policies', JSON.stringify(parsed.filter(p => String(p.id) !== String(id) && String(p.policyNo) !== String(id))));
         }
       }
-    } catch (e) {}
-    try { await deleteDoc(doc(db, 'policies', String(id))); } catch (e) {}
+    } catch (e) { }
+    try { await deleteDoc(doc(db, 'policies', String(id))); } catch (e) { }
     addAuditLog({
       userName: user?.name || 'Admin User',
       userRole: user?.role || 'ADMIN',
@@ -736,7 +736,7 @@ export const DataProvider = ({ children }) => {
     setPolicies([]);
     try {
       localStorage.setItem('crm_v2_policies', JSON.stringify([]));
-    } catch (e) {}
+    } catch (e) { }
     addAuditLog({
       userName: user?.name || 'Admin User',
       userRole: user?.role || 'ADMIN',
@@ -762,13 +762,13 @@ export const DataProvider = ({ children }) => {
     };
 
     setInvestments(prev => [newInv, ...prev]);
-    try { createInvestmentBackend(newInv); } catch (e) {}
+    try { createInvestmentBackend(newInv); } catch (e) { }
     return newInv;
   };
 
   const updateInvestmentStatus = async (id, newStatus) => {
     setInvestments(prev => prev.map(inv => inv.id === id ? { ...inv, status: newStatus } : inv));
-    try { await setDoc(doc(db, 'investments', id), { status: newStatus }, { merge: true }); } catch (e) {}
+    try { await setDoc(doc(db, 'investments', id), { status: newStatus }, { merge: true }); } catch (e) { }
   };
 
   const deleteInvestment = async (id) => {
@@ -782,8 +782,8 @@ export const DataProvider = ({ children }) => {
           localStorage.setItem('crm_v2_investments', JSON.stringify(parsed.filter(i => String(i.id) !== String(id))));
         }
       }
-    } catch (e) {}
-    try { await deleteDoc(doc(db, 'investments', String(id))); } catch (e) {}
+    } catch (e) { }
+    try { await deleteDoc(doc(db, 'investments', String(id))); } catch (e) { }
     addAuditLog({
       userName: user?.name || 'Admin User',
       userRole: user?.role || 'ADMIN',
@@ -813,7 +813,7 @@ export const DataProvider = ({ children }) => {
     };
 
     setClaims(prev => [newClaim, ...prev]);
-    try { await setDoc(doc(db, 'claims', id), newClaim, { merge: true }); } catch (e) {}
+    try { await setDoc(doc(db, 'claims', id), newClaim, { merge: true }); } catch (e) { }
 
     addAuditLog({
       userName: user?.name || 'Staff Advisor',
@@ -836,7 +836,7 @@ export const DataProvider = ({ children }) => {
     };
 
     setClaims(prev => prev.map(clm => clm.id === cleanObj.id ? { ...clm, ...cleanObj } : clm));
-    try { await setDoc(doc(db, 'claims', cleanObj.id), cleanObj, { merge: true }); } catch (e) {}
+    try { await setDoc(doc(db, 'claims', cleanObj.id), cleanObj, { merge: true }); } catch (e) { }
 
     addAuditLog({
       userName: user?.name || 'Staff Advisor',
@@ -851,7 +851,7 @@ export const DataProvider = ({ children }) => {
 
   const updateClaimStatus = async (id, newStatus) => {
     setClaims(prev => prev.map(clm => clm.id === id ? { ...clm, status: newStatus, updatedAt: new Date().toISOString() } : clm));
-    try { await setDoc(doc(db, 'claims', id), { status: newStatus, updatedAt: new Date().toISOString() }, { merge: true }); } catch (e) {}
+    try { await setDoc(doc(db, 'claims', id), { status: newStatus, updatedAt: new Date().toISOString() }, { merge: true }); } catch (e) { }
     addAuditLog({
       userName: user?.name || 'Staff Advisor',
       userRole: user?.role || 'STAFF',
@@ -865,7 +865,7 @@ export const DataProvider = ({ children }) => {
   const deleteClaim = async (id) => {
     if (!id) return;
     setClaims(prev => prev.filter(c => c.id !== id));
-    try { await deleteDoc(doc(db, 'claims', id)); } catch (e) {}
+    try { await deleteDoc(doc(db, 'claims', id)); } catch (e) { }
     addAuditLog({
       userName: user?.name || 'Admin User',
       userRole: user?.role || 'ADMIN',
@@ -891,7 +891,7 @@ export const DataProvider = ({ children }) => {
     };
 
     setLeads(prev => [newLead, ...prev]);
-    try { createLeadBackend(newLead); } catch (e) {}
+    try { createLeadBackend(newLead); } catch (e) { }
     return newLead;
   };
 
@@ -910,7 +910,7 @@ export const DataProvider = ({ children }) => {
     });
 
     setLeads(prev => prev.map(l => l.id === leadId ? { ...l, leadStatus: 'CONVERTED' } : l));
-    try { await setDoc(doc(db, 'leads', leadId), { leadStatus: 'CONVERTED' }, { merge: true }); } catch (e) {}
+    try { await setDoc(doc(db, 'leads', leadId), { leadStatus: 'CONVERTED' }, { merge: true }); } catch (e) { }
   };
 
   const addFollowup = async (flwData) => {
@@ -929,7 +929,7 @@ export const DataProvider = ({ children }) => {
     };
 
     setFollowups(prev => [newFlw, ...prev]);
-    try { await setDoc(doc(db, 'followups', id), newFlw, { merge: true }); } catch (e) {}
+    try { await setDoc(doc(db, 'followups', id), newFlw, { merge: true }); } catch (e) { }
     return newFlw;
   };
 
@@ -948,13 +948,13 @@ export const DataProvider = ({ children }) => {
     };
 
     setTasks(prev => [newTask, ...prev]);
-    try { createTaskBackend(newTask); } catch (e) {}
+    try { createTaskBackend(newTask); } catch (e) { }
     return newTask;
   };
 
   const updateTaskStatus = async (id, newStatus) => {
     setTasks(prev => prev.map(t => t.id === id ? { ...t, status: newStatus } : t));
-    try { await setDoc(doc(db, 'tasks', id), { status: newStatus }, { merge: true }); } catch (e) {}
+    try { await setDoc(doc(db, 'tasks', id), { status: newStatus }, { merge: true }); } catch (e) { }
   };
 
   const deleteTask = async (id) => {
@@ -967,10 +967,10 @@ export const DataProvider = ({ children }) => {
           localStorage.setItem('crm_v2_tasks', JSON.stringify(parsed.filter(t => t.id !== id)));
         }
       }
-    } catch (e) {}
+    } catch (e) { }
     try {
       await deleteDoc(doc(db, 'tasks', String(id)));
-    } catch (e) {}
+    } catch (e) { }
     addAuditLog({
       action: 'DELETE_TASK',
       module: 'Tasks',
@@ -983,7 +983,7 @@ export const DataProvider = ({ children }) => {
     const id = incData.id || `INC-SK-${Math.floor(1000 + Math.random() * 9000)}`;
     const newInc = { ...incData, id, date: incData.date || new Date().toISOString().split('T')[0] };
     setIncome(prev => [newInc, ...prev]);
-    try { createIncomeBackend(newInc); } catch (e) {}
+    try { createIncomeBackend(newInc); } catch (e) { }
     return newInc;
   };
 
@@ -991,7 +991,7 @@ export const DataProvider = ({ children }) => {
     const id = expData.id || `EXP-SK-${Math.floor(1000 + Math.random() * 9000)}`;
     const newExp = { ...expData, id, date: expData.date || new Date().toISOString().split('T')[0] };
     setExpenses(prev => [newExp, ...prev]);
-    try { createExpenseBackend(newExp); } catch (e) {}
+    try { createExpenseBackend(newExp); } catch (e) { }
     return newExp;
   };
 
@@ -1008,7 +1008,7 @@ export const DataProvider = ({ children }) => {
       searchName = customerOrName.trim();
     }
 
-    const masterCustomer = rawCustomers.find(c => 
+    const masterCustomer = rawCustomers.find(c =>
       (searchId && (c.id?.toLowerCase().trim() === searchId.toLowerCase().trim() || c.customerCode?.toLowerCase().trim() === searchId.toLowerCase().trim())) ||
       (searchName && c.name?.toLowerCase().trim() === searchName.toLowerCase().trim())
     );
@@ -1025,7 +1025,7 @@ export const DataProvider = ({ children }) => {
     const effectiveCode = masterCustomer?.customerCode || masterCustomer?.id || searchId;
 
     const matchingName = (n) => n && effectiveName && n.toLowerCase().trim() === effectiveName.toLowerCase().trim();
-    
+
     const matchingRecord = (rec) => {
       if (!rec) return false;
       const recCode = rec.customerCode || rec.customerId || rec.customer_id;
@@ -1047,10 +1047,10 @@ export const DataProvider = ({ children }) => {
     try {
       localHubs = JSON.parse(localStorage.getItem('crm_v2_client_followup_hubs') || '[]');
       localSpreadsheet = JSON.parse(localStorage.getItem('crm_v2_spreadsheet_followups') || '[]');
-    } catch (e) {}
+    } catch (e) { }
 
-    const matchingHubs = localHubs.filter(h => 
-      matchingName(h.clientName) || 
+    const matchingHubs = localHubs.filter(h =>
+      matchingName(h.clientName) ||
       (h.clientId && effectiveCode && h.clientId.toLowerCase().trim() === effectiveCode.toLowerCase().trim()) ||
       (h.phone && masterCustomer?.phone && masterCustomer.phone.length > 5 && h.phone.replace(/\D/g, '').endsWith(masterCustomer.phone.replace(/\D/g, '').slice(-10)))
     );
@@ -1060,7 +1060,7 @@ export const DataProvider = ({ children }) => {
       (s.phone && masterCustomer?.phone && masterCustomer.phone.length > 5 && s.phone.replace(/\D/g, '').endsWith(masterCustomer.phone.replace(/\D/g, '').slice(-10)))
     );
 
-    const hubSteps = matchingHubs.flatMap(h => 
+    const hubSteps = matchingHubs.flatMap(h =>
       (h.history || []).map(step => ({
         id: step.stepId || `FLW-${step.stageName}`,
         stageName: step.stageName,
