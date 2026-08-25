@@ -5,7 +5,7 @@ import { useNotification } from '../context/NotificationContext';
 import { useCustomer360 } from '../context/Customer360Context';
 import { Plus, CheckSquare, Clock, AlertCircle, X, Sparkles, UserCheck, Trash2, Lock } from 'lucide-react';
 
-const DEFAULT_STAFF = ['Priya Sharma', 'Rahul Dravid', 'Kavita Menon', 'Anitha Selvam', 'Karthik Subramanian', 'Branch Manager'];
+const DEFAULT_STAFF = ['Prakash Gajendiran', 'Branch Manager'];
 
 export const Tasks = () => {
   const { user } = useAuth();
@@ -22,7 +22,8 @@ export const Tasks = () => {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map(u => u.name).filter(Boolean);
+          const names = parsed.map(u => u.name).filter(Boolean);
+          if (names.length > 0) return names;
         }
       }
     } catch (e) {}
@@ -49,7 +50,7 @@ export const Tasks = () => {
     title: '',
     customerName: '',
     description: '',
-    assignedStaff: 'Priya Sharma',
+    assignedStaff: user?.name || 'Branch Manager',
     dueDate: new Date().toISOString().split('T')[0],
     dueTime: '10:00',
     priority: 'MEDIUM',
@@ -110,7 +111,7 @@ export const Tasks = () => {
       title: '',
       customerName: '',
       description: '',
-      assignedStaff: 'Priya Sharma',
+      assignedStaff: user?.name || 'Branch Manager',
       dueDate: new Date().toISOString().split('T')[0],
       dueTime: '10:00',
       priority: 'MEDIUM',
