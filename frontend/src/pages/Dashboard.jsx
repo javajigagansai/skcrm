@@ -1100,18 +1100,18 @@ export const Dashboard = () => {
     let content = null;
 
     if (activeModal === 'TOTAL_CUSTOMERS') {
-      title = "Total Customers Breakdown & Segment Analysis";
-      subtitle = `Comprehensive audit of ${currentMetrics.customers} registered clients across retail, HNI, and corporate sectors.`;
+      title = "Total Customer Directory & Segment Analysis";
+      subtitle = "Customer Directory & Sector Segment Overview";
       content = (
         <div className="space-y-6">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="bg-blue-50 p-3.5 rounded-2xl border border-blue-100">
-              <span className="text-[10px] font-bold text-blue-600 uppercase">Retail Clients</span>
+              <span className="text-[10px] font-bold text-blue-600 uppercase">Retail Customers</span>
               <p className="text-xl font-black text-slate-900">{customers.length}</p>
               <span className="text-[10px] text-slate-500">Retail Portfolio</span>
             </div>
             <div className="bg-purple-50 p-3.5 rounded-2xl border border-purple-100">
-              <span className="text-[10px] font-bold text-purple-600 uppercase">HNI Clients</span>
+              <span className="text-[10px] font-bold text-purple-600 uppercase">HNI Customers</span>
               <p className="text-xl font-black text-slate-900">{Math.ceil(customers.length * 0.3)}</p>
               <span className="text-[10px] text-slate-500">HNI Portfolio</span>
             </div>
