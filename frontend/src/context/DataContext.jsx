@@ -643,9 +643,9 @@ export const DataProvider = ({ children }) => {
   };
 
   const addPolicy = async (polData) => {
-    const id = polData.id || `POL-SK-${Math.floor(1000 + Math.random() * 9000)}`;
-    const assignedStaffId = polData.assignedStaffId || polData.staffId || user?.uid || 'UID-STF-1003';
-    const assignedStaffName = polData.assignedStaffName || polData.assignedStaff || user?.name || 'Priya Sharma';
+    const id = polData.id || `POL-SK-${Date.now()}`;
+    const assignedStaffId = polData.assignedStaffId || polData.staffId || user?.uid || '';
+    const assignedStaffName = polData.assignedStaffName || polData.assignedStaff || user?.name || '';
 
     const newPol = {
       ...polData,
@@ -656,50 +656,31 @@ export const DataProvider = ({ children }) => {
       startDate: polData.startDate || new Date().toISOString().split('T')[0]
     };
 
-    setPolicies(prev => [newPol, ...prev]);
-    try { await setDoc(doc(db, 'policies', id), newPol, { merge: true }); } catch (e) { }
+    // Write to Firestore first — onSnapshot propagates to all devices
+    try {
+      await setDoc(doc(db, 'policies', id), newPol, { merge: true });
+    } catch (e) {
+      console.warn('Firestore addPolicy error:', e);
+      setPolicies(prev => [newPol, ...prev]);
+    }
 
-    // Directly update and link customer profile so Customer 360 immediately reflects all policies
-    setCustomers(prev => {
-      const existingIdx = prev.findIndex(c =>
-        (c.name && c.name.toLowerCase().trim() === (newPol.customerName || '').toLowerCase().trim()) ||
-        (newPol.customerId && (c.id === newPol.customerId || c.customerCode === newPol.customerId))
-      );
-      if (existingIdx >= 0) {
-        const updatedCust = {
-          ...prev[existingIdx],
-          insuranceCompany: newPol.insuranceCompany || prev[existingIdx].insuranceCompany,
-          insuranceType: newPol.type || prev[existingIdx].insuranceType,
-          policyName: newPol.policyName || newPol.planName || prev[existingIdx].policyName,
-          policyAmount: Number(newPol.grossPremium || prev[existingIdx].policyAmount || 0),
-          activePoliciesCount: (prev[existingIdx].activePoliciesCount || 1) + 1,
-          totalPortfolioValue: (Number(prev[existingIdx].totalPortfolioValue || 0) + Number(newPol.sumInsured || 0))
-        };
-        const next = [...prev];
-        next[existingIdx] = updatedCust;
-        return next;
-      } else {
-        const newCust = {
-          id: `SK-CUST-${Math.floor(100 + Math.random() * 900)}`,
-          customerCode: `SK-CUST-${Math.floor(100 + Math.random() * 900)}`,
-          name: newPol.customerName,
-          phone: newPol.phone || '9876543210',
-          email: `${newPol.customerName.toLowerCase().replace(/\s+/g, '')}@example.com`,
-          insuranceCompany: newPol.insuranceCompany,
-          insuranceType: newPol.type,
-          policyName: newPol.policyName || newPol.planName,
-          policyAmount: Number(newPol.grossPremium || 0),
-          assignedStaffId,
-          assignedStaffName,
-          assignedAdvisorName: assignedStaffName,
-          status: 'Active',
-          activePoliciesCount: 1,
-          familyMembers: [],
-          activePortfolios: []
-        };
-        return [newCust, ...prev];
-      }
-    });
+    // Update linked customer record in Firestore
+    const linkedCust = rawCustomers.find(c =>
+      (c.name && c.name.toLowerCase().trim() === (newPol.customerName || '').toLowerCase().trim()) ||
+      (newPol.customerId && (c.id === newPol.customerId || c.customerCode === newPol.customerId))
+    );
+    if (linkedCust) {
+      const updatedCust = {
+        ...linkedCust,
+        insuranceCompany: newPol.insuranceCompany || linkedCust.insuranceCompany,
+        insuranceType: newPol.type || linkedCust.insuranceType,
+        policyName: newPol.policyName || newPol.planName || linkedCust.policyName,
+        policyAmount: Number(newPol.grossPremium || linkedCust.policyAmount || 0),
+        activePoliciesCount: (linkedCust.activePoliciesCount || 0) + 1,
+        totalPortfolioValue: (Number(linkedCust.totalPortfolioValue || 0) + Number(newPol.sumInsured || 0))
+      };
+      try { await setDoc(doc(db, 'customers', String(linkedCust.id)), updatedCust, { merge: true }); } catch (_) {}
+    }
 
     addAuditLog({
       userName: user?.name || 'Staff Advisor',
@@ -750,10 +731,10 @@ export const DataProvider = ({ children }) => {
     });
   };
 
-  const addInvestment = (invData) => {
-    const id = invData.id || `INV-SK-${Math.floor(1000 + Math.random() * 9000)}`;
-    const assignedStaffId = invData.assignedStaffId || invData.staffId || user?.uid || 'UID-STF-1003';
-    const assignedStaffName = invData.assignedStaffName || invData.advisorName || user?.name || 'Priya Sharma';
+  const addInvestment = async (invData) => {
+    const id = invData.id || `INV-SK-${Date.now()}`;
+    const assignedStaffId = invData.assignedStaffId || invData.staffId || user?.uid || '';
+    const assignedStaffName = invData.assignedStaffName || invData.advisorName || user?.name || '';
 
     const newInv = {
       ...invData,
@@ -764,8 +745,13 @@ export const DataProvider = ({ children }) => {
       date: invData.date || new Date().toISOString().split('T')[0]
     };
 
-    setInvestments(prev => [newInv, ...prev]);
-    try { createInvestmentBackend(newInv); } catch (e) { }
+    // Write to Firestore first — onSnapshot propagates to all devices
+    try {
+      await setDoc(doc(db, 'investments', id), newInv, { merge: true });
+    } catch (e) {
+      console.warn('Firestore addInvestment error:', e);
+      setInvestments(prev => [newInv, ...prev]);
+    }
     return newInv;
   };
 
@@ -798,9 +784,9 @@ export const DataProvider = ({ children }) => {
   };
 
   const addClaim = async (claimData) => {
-    const id = claimData.id || `CLM-SK-${Math.floor(1000 + Math.random() * 9000)}`;
-    const assignedStaffId = claimData.assignedStaffId || claimData.staffId || user?.uid || 'UID-STF-1003';
-    const assignedStaffName = claimData.assignedStaffName || claimData.assignedStaff || user?.name || 'Priya Sharma';
+    const id = claimData.id || `CLM-SK-${Date.now()}`;
+    const assignedStaffId = claimData.assignedStaffId || claimData.staffId || user?.uid || '';
+    const assignedStaffName = claimData.assignedStaffName || claimData.assignedStaff || user?.name || '';
 
     const newClaim = {
       ...claimData,
@@ -879,10 +865,10 @@ export const DataProvider = ({ children }) => {
     });
   };
 
-  const addLead = (leadData) => {
-    const id = leadData.id || `LD-SK-${Math.floor(1000 + Math.random() * 9000)}`;
-    const assignedStaffId = leadData.assignedStaffId || leadData.staffId || user?.uid || 'UID-STF-1003';
-    const assignedStaffName = leadData.assignedStaffName || leadData.assignedStaff || user?.name || 'Priya Sharma';
+  const addLead = async (leadData) => {
+    const id = leadData.id || `LD-SK-${Date.now()}`;
+    const assignedStaffId = leadData.assignedStaffId || leadData.staffId || user?.uid || '';
+    const assignedStaffName = leadData.assignedStaffName || leadData.assignedStaff || user?.name || '';
 
     const newLead = {
       ...leadData,
@@ -893,8 +879,13 @@ export const DataProvider = ({ children }) => {
       createdDate: new Date().toISOString().split('T')[0]
     };
 
-    setLeads(prev => [newLead, ...prev]);
-    try { createLeadBackend(newLead); } catch (e) { }
+    // Write to Firestore first — onSnapshot propagates to all devices
+    try {
+      await setDoc(doc(db, 'leads', id), newLead, { merge: true });
+    } catch (e) {
+      console.warn('Firestore addLead error:', e);
+      setLeads(prev => [newLead, ...prev]);
+    }
     return newLead;
   };
 
@@ -917,9 +908,9 @@ export const DataProvider = ({ children }) => {
   };
 
   const addFollowup = async (flwData) => {
-    const id = flwData.id || `FLW-SK-${Math.floor(1000 + Math.random() * 9000)}`;
-    const assignedStaffId = flwData.assignedStaffId || flwData.staffId || user?.uid || 'UID-STF-1003';
-    const assignedStaffName = flwData.assignedStaffName || flwData.assignedTo || user?.name || 'Priya Sharma';
+    const id = flwData.id || `FLW-SK-${Date.now()}`;
+    const assignedStaffId = flwData.assignedStaffId || flwData.staffId || user?.uid || '';
+    const assignedStaffName = flwData.assignedStaffName || flwData.assignedTo || user?.name || '';
 
     const newFlw = {
       ...flwData,
@@ -931,15 +922,20 @@ export const DataProvider = ({ children }) => {
       status: 'PENDING'
     };
 
-    setFollowups(prev => [newFlw, ...prev]);
-    try { await setDoc(doc(db, 'followups', id), newFlw, { merge: true }); } catch (e) { }
+    // Write to Firestore first — onSnapshot propagates to all devices
+    try {
+      await setDoc(doc(db, 'followups', id), newFlw, { merge: true });
+    } catch (e) {
+      console.warn('Firestore addFollowup error:', e);
+      setFollowups(prev => [newFlw, ...prev]);
+    }
     return newFlw;
   };
 
-  const addTask = (taskData) => {
-    const id = taskData.id || `TSK-SK-${Math.floor(1000 + Math.random() * 9000)}`;
-    const assignedStaffId = taskData.assignedStaffId || taskData.staffId || user?.uid || 'UID-STF-1003';
-    const assignedStaffName = taskData.assignedStaffName || taskData.assignedStaff || user?.name || 'Priya Sharma';
+  const addTask = async (taskData) => {
+    const id = taskData.id || `TSK-SK-${Date.now()}`;
+    const assignedStaffId = taskData.assignedStaffId || taskData.staffId || user?.uid || '';
+    const assignedStaffName = taskData.assignedStaffName || taskData.assignedStaff || user?.name || '';
 
     const newTask = {
       ...taskData,
@@ -950,8 +946,13 @@ export const DataProvider = ({ children }) => {
       status: 'PENDING'
     };
 
-    setTasks(prev => [newTask, ...prev]);
-    try { createTaskBackend(newTask); } catch (e) { }
+    // Write to Firestore first — onSnapshot propagates to all devices
+    try {
+      await setDoc(doc(db, 'tasks', id), newTask, { merge: true });
+    } catch (e) {
+      console.warn('Firestore addTask error:', e);
+      setTasks(prev => [newTask, ...prev]);
+    }
     return newTask;
   };
 
@@ -982,19 +983,29 @@ export const DataProvider = ({ children }) => {
     });
   };
 
-  const addIncome = (incData) => {
-    const id = incData.id || `INC-SK-${Math.floor(1000 + Math.random() * 9000)}`;
+  const addIncome = async (incData) => {
+    const id = incData.id || `INC-SK-${Date.now()}`;
     const newInc = { ...incData, id, date: incData.date || new Date().toISOString().split('T')[0] };
-    setIncome(prev => [newInc, ...prev]);
-    try { createIncomeBackend(newInc); } catch (e) { }
+    // Write to Firestore first — onSnapshot propagates to all devices
+    try {
+      await setDoc(doc(db, 'income', id), newInc, { merge: true });
+    } catch (e) {
+      console.warn('Firestore addIncome error:', e);
+      setIncome(prev => [newInc, ...prev]);
+    }
     return newInc;
   };
 
-  const addExpense = (expData) => {
-    const id = expData.id || `EXP-SK-${Math.floor(1000 + Math.random() * 9000)}`;
+  const addExpense = async (expData) => {
+    const id = expData.id || `EXP-SK-${Date.now()}`;
     const newExp = { ...expData, id, date: expData.date || new Date().toISOString().split('T')[0] };
-    setExpenses(prev => [newExp, ...prev]);
-    try { createExpenseBackend(newExp); } catch (e) { }
+    // Write to Firestore first — onSnapshot propagates to all devices
+    try {
+      await setDoc(doc(db, 'expenses', id), newExp, { merge: true });
+    } catch (e) {
+      console.warn('Firestore addExpense error:', e);
+      setExpenses(prev => [newExp, ...prev]);
+    }
     return newExp;
   };
 
