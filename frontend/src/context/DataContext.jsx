@@ -636,6 +636,29 @@ export const DataProvider = ({ children }) => {
     return newPol;
   };
 
+  const deletePolicy = async (id) => {
+    if (!id) return;
+    setPolicies(prev => prev.filter(p => String(p.id) !== String(id) && String(p.policyNo) !== String(id)));
+    try {
+      const saved = localStorage.getItem('crm_v2_policies');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          localStorage.setItem('crm_v2_policies', JSON.stringify(parsed.filter(p => String(p.id) !== String(id) && String(p.policyNo) !== String(id))));
+        }
+      }
+    } catch (e) {}
+    try { await deleteDoc(doc(db, 'policies', String(id))); } catch (e) {}
+    addAuditLog({
+      userName: user?.name || 'Admin User',
+      userRole: user?.role || 'ADMIN',
+      action: 'DELETE_POLICY',
+      module: 'Policies',
+      affectedRecord: String(id),
+      details: `Deleted policy record ${id}`
+    });
+  };
+
   const addInvestment = (invData) => {
     const id = invData.id || `INV-SK-${Math.floor(1000 + Math.random() * 9000)}`;
     const assignedStaffId = invData.assignedStaffId || invData.staffId || user?.uid || 'UID-STF-1003';
@@ -1035,6 +1058,7 @@ export const DataProvider = ({ children }) => {
       updateCustomer,
       deleteCustomer,
       addPolicy,
+      deletePolicy,
       addInvestment,
       updateInvestmentStatus,
       addClaim,

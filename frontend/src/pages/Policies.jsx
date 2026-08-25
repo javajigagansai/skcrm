@@ -22,7 +22,7 @@ import {
 export const Policies = () => {
   const { user } = useAuth();
   const { openCustomer360 } = useCustomer360();
-  const { policies, addPolicy, setPolicies, customers } = useData();
+  const { policies, addPolicy, deletePolicy, customers } = useData();
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN' || user?.role === 'MANAGER';
 
   // Catalog Version State for reactive CRM-wide updates
@@ -380,10 +380,10 @@ export const Policies = () => {
     alert(`Policy ${updatedObj.id} updated successfully with Plan: "${planName}"!`);
   };
 
-  const handleDeletePolicy = (id) => {
+  const handleDeletePolicy = async (id) => {
     if (window.confirm(`Are you sure you want to delete policy ${id}?`)) {
-      if (setPolicies) {
-        setPolicies(prev => prev.filter(p => p.id !== id));
+      if (deletePolicy) {
+        await deletePolicy(id);
       }
     }
   };
