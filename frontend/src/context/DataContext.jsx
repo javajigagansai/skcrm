@@ -61,7 +61,15 @@ export const DataProvider = ({ children }) => {
   const [rawPolicies, setPolicies] = useState(() => {
     const saved = localStorage.getItem('crm_v2_policies');
     if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
+      try { 
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(p => 
+            !['POL-1001', 'POL-1002', 'POL-1003'].includes(p.id) && 
+            !['Rahul Sharma', 'Priya Menon', 'Anand Kumar'].includes(p.customerName)
+          );
+        }
+      } catch (e) {}
     }
     return initialPoliciesSeed;
   });
