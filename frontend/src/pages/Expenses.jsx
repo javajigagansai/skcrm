@@ -161,7 +161,7 @@ export const Expenses = () => {
             </div>
           </div>
           <p className="text-2xl font-black text-purple-900">₹{totalStaffPayroll.toLocaleString()}</p>
-          <p className="text-[11px] text-purple-600 font-medium">Auto-synced from Staff Management ({staffPayrollExpenses.length} Active Staff)</p>
+          <p className="text-[11px] text-purple-600 font-medium">Monthly Active Staff Payroll Outflow</p>
         </div>
 
         <div className="bg-white rounded-3xl p-5 border border-amber-200/80 shadow-xs space-y-2 bg-gradient-to-br from-white to-amber-50/30">
