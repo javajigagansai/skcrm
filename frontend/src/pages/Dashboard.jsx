@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCustomer360 } from '../context/Customer360Context';
 import { useData } from '../context/DataContext';
 import { fetchReportsSummaryBackend } from '../services/apiService';
-import { exportDashboardAnalyticsPDF } from '../utils/exportUtils';
+import { exportDashboardAnalyticsPDF, exportDashboardCategoryAndCompanyExcel } from '../utils/exportUtils';
 import { SpecialDays } from './SpecialDays';
 import { 
   Users, UserCheck, IndianRupee, TrendingUp, Plus, Download, Calendar as CalendarIcon, 
@@ -1263,7 +1263,7 @@ export const Dashboard = () => {
               <ExternalLink className="h-3.5 w-3.5" />
             </button>
             <button 
-              onClick={() => exportDashboardAnalyticsPDF(dateFilter, currentMetrics, currentMetrics.productDistributionChart, currentMetrics.conversionClaimsChart, currentMetrics.staffPerformanceChart)}
+              onClick={() => exportDashboardAnalyticsPDF(dateFilter, currentMetrics, currentMetrics.productDistributionChart, currentMetrics.conversionClaimsChart, currentMetrics.staffPerformanceChart, policyCategoryOverview)}
               className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer"
             >
               <Download className="h-3.5 w-3.5" />
@@ -1334,7 +1334,7 @@ export const Dashboard = () => {
               <ExternalLink className="h-3.5 w-3.5" />
             </button>
             <button 
-              onClick={() => exportDashboardAnalyticsPDF(dateFilter, currentMetrics, currentMetrics.productDistributionChart, currentMetrics.conversionClaimsChart, currentMetrics.staffPerformanceChart)}
+              onClick={() => exportDashboardAnalyticsPDF(dateFilter, currentMetrics, currentMetrics.productDistributionChart, currentMetrics.conversionClaimsChart, currentMetrics.staffPerformanceChart, policyCategoryOverview)}
               className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer"
             >
               <Download className="h-3.5 w-3.5" />
@@ -1405,7 +1405,7 @@ export const Dashboard = () => {
               <ExternalLink className="h-3.5 w-3.5" />
             </button>
             <button 
-              onClick={() => exportDashboardAnalyticsPDF(dateFilter, currentMetrics, currentMetrics.productDistributionChart, currentMetrics.conversionClaimsChart, currentMetrics.staffPerformanceChart)}
+              onClick={() => exportDashboardAnalyticsPDF(dateFilter, currentMetrics, currentMetrics.productDistributionChart, currentMetrics.conversionClaimsChart, currentMetrics.staffPerformanceChart, policyCategoryOverview)}
               className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer"
             >
               <Download className="h-3.5 w-3.5" />
@@ -1495,7 +1495,7 @@ export const Dashboard = () => {
               <ExternalLink className="h-3.5 w-3.5" />
             </button>
             <button 
-              onClick={() => exportDashboardAnalyticsPDF(dateFilter, currentMetrics, currentMetrics.productDistributionChart, currentMetrics.conversionClaimsChart, currentMetrics.staffPerformanceChart)}
+              onClick={() => exportDashboardAnalyticsPDF(dateFilter, currentMetrics, currentMetrics.productDistributionChart, currentMetrics.conversionClaimsChart, currentMetrics.staffPerformanceChart, policyCategoryOverview)}
               className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer"
             >
               <Download className="h-3.5 w-3.5" />
@@ -1582,7 +1582,7 @@ export const Dashboard = () => {
               <ExternalLink className="h-3.5 w-3.5" />
             </button>
             <button 
-              onClick={() => exportDashboardAnalyticsPDF(dateFilter, currentMetrics, currentMetrics.productDistributionChart, currentMetrics.conversionClaimsChart, currentMetrics.staffPerformanceChart)}
+              onClick={() => exportDashboardAnalyticsPDF(dateFilter, currentMetrics, currentMetrics.productDistributionChart, currentMetrics.conversionClaimsChart, currentMetrics.staffPerformanceChart, policyCategoryOverview)}
               className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer"
             >
               <Download className="h-3.5 w-3.5" />
@@ -2026,23 +2026,9 @@ export const Dashboard = () => {
               </select>
 
               <button
-                onClick={() => exportFollowupsExcel(
-                  filteredCompanies.flatMap(comp => 
-                    policyCategoryOverview.chartData.map(c => ({
-                      date: new Date().toISOString().slice(0, 10),
-                      clientCategory: c.category,
-                      prospectName: comp,
-                      phone: 'N/A',
-                      insuranceType: c.category,
-                      insuranceCompany: comp,
-                      salesPitch: `${(policyCategoryOverview.companyBreakdown[comp] && policyCategoryOverview.companyBreakdown[comp][c.category]) || 0} Active Policies`,
-                      clientStatus: 'ACTIVE',
-                      advisorNotes: 'Cross-company matrix export'
-                    }))
-                  )
-                )}
+                onClick={() => exportDashboardCategoryAndCompanyExcel(policyCategoryOverview, currentMetrics)}
                 className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow transition cursor-pointer flex items-center space-x-1 shrink-0"
-                title="Download Matrix Table Spreadsheet"
+                title="Download Category & Company Analytics Spreadsheet"
               >
                 <Download className="h-3.5 w-3.5" />
                 <span>Export Excel</span>
@@ -2267,7 +2253,7 @@ export const Dashboard = () => {
           <div className="flex items-center space-x-3">
             {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
               <button 
-                onClick={() => exportDashboardAnalyticsPDF(dateFilter, currentMetrics, currentMetrics.productDistributionChart, currentMetrics.conversionClaimsChart, currentMetrics.staffPerformanceChart)} 
+                onClick={() => exportDashboardAnalyticsPDF(dateFilter, currentMetrics, currentMetrics.productDistributionChart, currentMetrics.conversionClaimsChart, currentMetrics.staffPerformanceChart, policyCategoryOverview)} 
                 className="flex items-center space-x-2 px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow transition cursor-pointer"
                 title="Export Dashboard Analytics as PDF Report"
               >

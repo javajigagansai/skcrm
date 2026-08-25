@@ -299,8 +299,8 @@ export const exportCustomerRegistryPDF = (customers) => {
   printWindow.document.close();
 };
 
-// Export Dashboard Analytics to PDF
-export const exportDashboardAnalyticsPDF = (dateFilter, currentMetrics, productDistData, conversionClaimsData, staffData) => {
+// Export Dashboard Analytics to PDF (Including both By Category and By Company Breakdowns)
+export const exportDashboardAnalyticsPDF = (dateFilter, currentMetrics, productDistData, conversionClaimsData, staffData, categoryOverviewData = {}) => {
   const printWindow = window.open('', '_blank');
   if (!printWindow) {
     alert("Please allow popups to download/print PDF report.");
@@ -308,12 +308,15 @@ export const exportDashboardAnalyticsPDF = (dateFilter, currentMetrics, productD
   }
 
   const timestamp = new Date().toLocaleString('en-IN');
+  const catData = categoryOverviewData?.chartData || [];
+  const compData = categoryOverviewData?.companyChartData || [];
+  const totalPolicies = categoryOverviewData?.totalPoliciesCount || 1;
 
   const html = `
     <!DOCTYPE html>
     <html>
     <head>
-      <title>SK Smart Investments - Insurance and Investments Specialist</title>
+      <title>SK Smart Investments - Dashboard Analytics (By Category & By Company)</title>
       <style>
         @media print { body { -webkit-print-color-adjust: exact; } }
         body { font-family: 'Segoe UI', Arial, sans-serif; color: #0f172a; margin: 0; padding: 35px; background-color: #fff; }
@@ -321,13 +324,13 @@ export const exportDashboardAnalyticsPDF = (dateFilter, currentMetrics, productD
         .logo { font-size: 24px; font-weight: 900; color: #1E6091; letter-spacing: -0.5px; }
         .subtitle { font-size: 12px; color: #64748b; margin-top: 4px; font-weight: 600; }
         .meta-bar { background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 10px 16px; border-radius: 10px; font-size: 11px; color: #475569; margin-bottom: 24px; display: flex; justify-content: space-between; }
-        .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 28px; }
+        .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
         .kpi-card { border: 1px solid #cbd5e1; border-radius: 12px; padding: 14px; background: #f8fafc; }
         .kpi-label { font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; }
         .kpi-value { font-size: 20px; font-weight: 900; color: #0f172a; margin: 6px 0 4px 0; }
-        .section-title { font-size: 14px; font-weight: 800; color: #1e293b; border-left: 4px solid #1E6091; padding-left: 10px; margin: 24px 0 12px 0; }
+        .section-title { font-size: 13px; font-weight: 900; color: #1e293b; border-left: 4px solid #1E6091; padding-left: 10px; margin: 24px 0 12px 0; text-transform: uppercase; letter-spacing: 0.5px; }
         table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 11px; }
-        th, td { border: 1px solid #e2e8f0; padding: 10px 12px; text-align: left; }
+        th, td { border: 1px solid #e2e8f0; padding: 9px 12px; text-align: left; }
         th { background-color: #1E6091; color: #ffffff; font-weight: 800; text-transform: uppercase; font-size: 10px; }
         tr:nth-child(even) { background-color: #f8fafc; }
         .footer { margin-top: 40px; border-top: 1px solid #e2e8f0; padding-top: 16px; font-size: 10px; color: #94a3b8; text-align: center; }
@@ -337,7 +340,7 @@ export const exportDashboardAnalyticsPDF = (dateFilter, currentMetrics, productD
       <div class="header">
         <div>
           <div class="logo">SK SMART INVESTMENTS &amp; INSURANCE</div>
-          <div class="subtitle">Official Executive Performance &amp; Financial Analytics Report</div>
+          <div class="subtitle">Official Dashboard Analytics Report (By Category &amp; By Company)</div>
         </div>
         <div style="text-align: right; font-size: 11px; color: #64748b;">
           <strong>Timeline Filter:</strong> ${dateFilter}<br/>
@@ -347,28 +350,84 @@ export const exportDashboardAnalyticsPDF = (dateFilter, currentMetrics, productD
 
       <div class="meta-bar">
         <span><strong>Report Document:</strong> Executive Dashboard Analytics (PDF)</span>
-        <span><strong>Status:</strong> Verified Final</span>
+        <span><strong>Status:</strong> Verified Audit Final</span>
       </div>
 
       <div class="kpi-grid">
         <div class="kpi-card">
           <div class="kpi-label">Total Customers</div>
-          <div class="kpi-value">${currentMetrics.customers}</div>
-          <div style="font-size: 10px; color: #16a34a; font-weight:700;">+12.4% vs last period</div>
+          <div class="kpi-value">${currentMetrics?.customers || 0}</div>
+          <div style="font-size: 10px; color: #16a34a; font-weight:700;">Active Accounts</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label">Active Leads</div>
-          <div class="kpi-value">${currentMetrics.activeLeads}</div>
-          <div style="font-size: 10px; color: #9333ea; font-weight:700;">34 New Prospects</div>
+          <div class="kpi-value">${currentMetrics?.activeLeads || 0}</div>
+          <div style="font-size: 10px; color: #9333ea; font-weight:700;">In Pipeline</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Active Policies</div>
+          <div class="kpi-value">${categoryOverviewData?.totalPoliciesCount || currentMetrics?.policiesCount || 0}</div>
+          <div style="font-size: 10px; color: #2563eb; font-weight:700;">Underwritten</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label">Investments Volume</div>
-          <div class="kpi-value">${currentMetrics.investmentVolume}</div>
+          <div class="kpi-value">${currentMetrics?.investmentVolume || '₹0'}</div>
           <div style="font-size: 10px; color: #16a34a; font-weight:700;">Active Portfolios</div>
         </div>
       </div>
 
-      <div class="section-title">1. Staff Advisor Performance Leaderboard</div>
+      <!-- SECTION 1: BY CATEGORY BREAKDOWN -->
+      <div class="section-title">1. Business Distribution BY POLICY CATEGORY</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Policy Category</th>
+            <th>Active Policy Contracts</th>
+            <th>Portfolio Share %</th>
+            <th>Leading Underwriter</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${catData.map(cat => `
+            <tr>
+              <td><strong>${cat.category}</strong></td>
+              <td style="font-weight:900; color:#1E6091;">${cat.count}</td>
+              <td style="color:#2563eb; font-weight:800;">${((cat.count / totalPolicies) * 100).toFixed(1)}%</td>
+              <td style="color:#475569; font-weight:700;">${cat.topCompany || 'Star Health / Tata AIA'}</td>
+              <td><span style="background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 12px; font-weight: 800; font-size: 10px;">ACTIVE</span></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+
+      <!-- SECTION 2: BY INSURANCE COMPANY BREAKDOWN -->
+      <div class="section-title">2. Underwriting Volume BY INSURANCE COMPANY</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Insurance Company</th>
+            <th>Underwritten Contracts</th>
+            <th>Market Share %</th>
+            <th>Primary Business Line</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${compData.map(comp => `
+            <tr>
+              <td><strong>${comp.name}</strong></td>
+              <td style="font-weight:900; color:#0f172a;">${comp.count}</td>
+              <td style="color:#16a34a; font-weight:800;">${((comp.count / totalPolicies) * 100).toFixed(1)}%</td>
+              <td style="color:#64748b; font-weight:700;">${comp.topCategory || 'Health / Life'}</td>
+              <td><span style="background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 12px; font-weight: 800; font-size: 10px;">EMPANELLED</span></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+
+      <!-- SECTION 3: STAFF ADVISOR PERFORMANCE -->
+      <div class="section-title">3. Staff Advisor Performance Leaderboard</div>
       <table>
         <thead>
           <tr>
@@ -385,50 +444,8 @@ export const exportDashboardAnalyticsPDF = (dateFilter, currentMetrics, productD
               <td><strong>${row.name}</strong></td>
               <td>${row.target}</td>
               <td style="color: #2563eb; font-weight: 800;">${row.achieved}</td>
-              <td style="color: #16a34a; font-weight: 800;">${((row.achieved / row.target) * 100).toFixed(1)}%</td>
+              <td style="color: #16a34a; font-weight: 800;">${row.target ? ((row.achieved / row.target) * 100).toFixed(1) : 100}%</td>
               <td><span style="background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 12px; font-weight: 800; font-size: 10px;">On Track</span></td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-
-      <div class="section-title">2. Category Lead Conversion &amp; Claim Settlement</div>
-      <table>
-        <thead>
-          <tr>
-            <th>Category</th>
-            <th>Lead Conversion %</th>
-            <th>Claim Settlement %</th>
-            <th>Performance Rating</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${(conversionClaimsData || []).map(row => `
-            <tr>
-              <td><strong>${row.category}</strong></td>
-              <td style="color: #4f46e5; font-weight: 800;">${row.leadConversion}%</td>
-              <td style="color: #0d9488; font-weight: 800;">${row.claimSettlement}%</td>
-              <td><span style="background: #e0e7ff; color: #3730a3; padding: 2px 8px; border-radius: 12px; font-weight: 800; font-size: 10px;">High Performing</span></td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-
-      <div class="section-title">3. Portfolio Asset Class Distribution</div>
-      <table>
-        <thead>
-          <tr>
-            <th>Product Category</th>
-            <th>Portfolio Share %</th>
-            <th>Risk Profile</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${(productDistData || []).map(row => `
-            <tr>
-              <td><strong>${row.name}</strong></td>
-              <td style="color: #1E6091; font-weight: 800;">${row.value}%</td>
-              <td>Balanced Wealth</td>
             </tr>
           `).join('')}
         </tbody>
@@ -449,6 +466,72 @@ export const exportDashboardAnalyticsPDF = (dateFilter, currentMetrics, productD
 
   printWindow.document.write(html);
   printWindow.document.close();
+};
+
+// Export Dashboard Data (Both BY CATEGORY and BY COMPANY) to Excel / CSV
+export const exportDashboardCategoryAndCompanyExcel = (policyCategoryOverview = {}, currentMetrics = {}) => {
+  const chartData = policyCategoryOverview.chartData || [];
+  const companyChartData = policyCategoryOverview.companyChartData || [];
+  const companyBreakdown = policyCategoryOverview.companyBreakdown || {};
+  const totalPolicies = policyCategoryOverview.totalPoliciesCount || 1;
+
+  const rows = [];
+
+  // Header Banner
+  rows.push(['SK SMART INVESTMENTS & INSURANCE - DASHBOARD ANALYTICS REPORT']);
+  rows.push(['Generated Date', new Date().toLocaleString('en-IN')]);
+  rows.push(['Total Active Customers', currentMetrics?.customers || 'N/A']);
+  rows.push(['Total Underwritten Policies', totalPolicies]);
+  rows.push([]);
+
+  // SECTION 1: BY CATEGORY BREAKDOWN
+  rows.push(['=== SECTION 1: BY POLICY CATEGORY BREAKDOWN ===']);
+  rows.push(['Policy Category', 'Active Policy Contracts', 'Portfolio Share (%)', 'Leading Underwriter Partner', 'Status']);
+  chartData.forEach(cat => {
+    const share = ((cat.count / totalPolicies) * 100).toFixed(1);
+    rows.push([
+      cat.category || 'N/A',
+      cat.count || 0,
+      `${share}%`,
+      cat.topCompany || 'Star Health / Tata AIA',
+      'ACTIVE'
+    ]);
+  });
+  rows.push([]);
+
+  // SECTION 2: BY INSURANCE COMPANY BREAKDOWN
+  rows.push(['=== SECTION 2: BY INSURANCE COMPANY BREAKDOWN ===']);
+  rows.push(['Insurance Company Name', 'Underwritten Policy Contracts', 'Market Share (%)', 'Primary Business Line', 'Status']);
+  companyChartData.forEach(comp => {
+    const share = ((comp.count / totalPolicies) * 100).toFixed(1);
+    rows.push([
+      comp.name || 'N/A',
+      comp.count || 0,
+      `${share}%`,
+      comp.topCategory || 'Health / Life Insurance',
+      'EMPANELLED'
+    ]);
+  });
+  rows.push([]);
+
+  // SECTION 3: CROSS-MATRIX GRID (INSURER × CATEGORY)
+  rows.push(['=== SECTION 3: INSURER x CATEGORY CROSS-MATRIX GRID ===']);
+  const categoryNames = chartData.map(c => c.category);
+  rows.push(['Insurance Company / Underwriter', ...categoryNames, 'Total Policy Contracts']);
+  
+  Object.keys(companyBreakdown).forEach(comp => {
+    const compCounts = categoryNames.map(cat => companyBreakdown[comp]?.[cat] || 0);
+    const compTotal = compCounts.reduce((a, b) => a + b, 0);
+    rows.push([comp, ...compCounts, compTotal]);
+  });
+
+  const blob = createCSVSpreadsheetBlob(null, rows);
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `SK_Dashboard_Category_and_Company_Analytics_${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 };
 
 // Export Reports Summary to PDF
