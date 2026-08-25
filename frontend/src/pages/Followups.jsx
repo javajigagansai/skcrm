@@ -3,6 +3,8 @@ import { useAuth } from '../context/AuthContext';
 import { useCustomer360 } from '../context/Customer360Context';
 import { useData } from '../context/DataContext';
 import { exportFollowupsPDF, exportFollowupsExcel } from '../utils/exportUtils';
+import { db } from '../config/firebaseClient';
+import { collection, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { 
   Plus, Search, Calendar as CalendarIcon, CheckCircle2, Clock, X, Edit3, Trash2, 
   User, FileText, AlertCircle, ShieldCheck, Filter, UserCheck, MessageSquare, 
@@ -30,7 +32,7 @@ export const Followups = () => {
     insuranceCompany: 'Tata AIA / Star Health',
     stageName: 'Prospect Onboarded & Requirement Captured',
     type: 'Phone Call',
-    assignedTo: user?.name || 'Priya Sharma',
+    assignedTo: user?.name || '',
     date: 'Today, 05:00 PM',
     conversationNotes: '',
     status: 'PENDING'
@@ -65,7 +67,7 @@ export const Followups = () => {
         if (Array.isArray(parsed) && parsed.length > 0) return parsed.map(u => u.name);
       } catch (e) {}
     }
-    return ['Priya Sharma', 'Rahul Dravid', 'Kavita Menon', 'Branch Manager', 'Prakash Gajendiran'];
+    return ['Branch Manager', 'Prakash Gajendiran'];
   });
 
   // Real-time listener for User Management updates
@@ -92,48 +94,30 @@ export const Followups = () => {
     stageName: '',
     date: 'Today, 05:00 PM',
     type: 'Phone Call',
-    assignedTo: 'Priya Sharma',
+    assignedTo: user?.name || '',
     conversationNotes: '',
     status: 'PENDING'
   });
 
-  const [clientData, setClientData] = useState(() => {
-    const saved = localStorage.getItem('crm_v2_client_followup_hubs');
-    if (saved) {
-      try { 
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          return parsed.filter(c => !['Rahul Sharma', 'Priya Menon', 'Anand Kumar'].includes(c.clientName));
-        }
-      } catch (e) {}
-    }
-    return [];
-  });
+  const [clientData, setClientData] = useState([]);
+  const [spreadsheetData, setSpreadsheetData] = useState([]);
 
+  // Real-time Firestore listeners for followup_hubs and spreadsheet_followups
   useEffect(() => {
-    try {
-      localStorage.setItem('crm_v2_client_followup_hubs', JSON.stringify(clientData));
-    } catch (e) {}
-  }, [clientData]);
+    const unsubHubs = onSnapshot(collection(db, 'followup_hubs'), (snap) => {
+      const items = snap.docs.map(d => ({ ...d.data(), _docId: d.id }))
+        .filter(c => !['Rahul Sharma', 'Priya Menon', 'Anand Kumar'].includes(c.clientName));
+      setClientData(items);
+    }, err => console.warn('Firestore followup_hubs error:', err));
 
-  const [spreadsheetData, setSpreadsheetData] = useState(() => {
-    const saved = localStorage.getItem('crm_v2_spreadsheet_followups');
-    if (saved) {
-      try { 
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          return parsed.filter(c => !['Rahul Sharma', 'Priya Menon', 'Anand Kumar'].includes(c.clientName));
-        }
-      } catch (e) {}
-    }
-    return [];
-  });
+    const unsubSpreadsheet = onSnapshot(collection(db, 'spreadsheet_followups'), (snap) => {
+      const items = snap.docs.map(d => ({ ...d.data(), id: d.id }))
+        .filter(c => !['Rahul Sharma', 'Priya Menon', 'Anand Kumar'].includes(c.clientName));
+      setSpreadsheetData(items);
+    }, err => console.warn('Firestore spreadsheet_followups error:', err));
 
-  useEffect(() => {
-    try {
-      localStorage.setItem('crm_v2_spreadsheet_followups', JSON.stringify(spreadsheetData));
-    } catch (e) {}
-  }, [spreadsheetData]);
+    return () => { unsubHubs(); unsubSpreadsheet(); };
+  }, []);
 
   const dispatchFollowupNotifications = (clientName, stageName, assignedStaff, createdBy, status) => {
     try {
@@ -165,15 +149,15 @@ export const Followups = () => {
     } catch (e) {}
   };
 
-  const handleCreateNewClientFollowup = (e) => {
+  const handleCreateNewClientFollowup = async (e) => {
     e.preventDefault();
     if (!newClientForm.clientName || !newClientForm.phone || !newClientForm.stageName) {
       alert('Please fill in Client Name, Mobile Number, and Follow-up Stage Title!');
       return;
     }
 
-    const newClientId = `SK-CUST-${Math.floor(100 + Math.random() * 900)}`;
-    const stepId = `FLW-2026-${Math.floor(100 + Math.random() * 900)}`;
+    const newClientId = `SK-HUB-${Date.now()}`;
+    const stepId = `FLW-${Date.now()}`;
     const createdByStr = `${user?.name || 'Admin'} (${user?.roleDisplayName || 'Staff'})`;
 
     const newHubObj = {
@@ -215,8 +199,9 @@ export const Followups = () => {
       assignedTo: newClientForm.assignedTo
     };
 
-    setClientData(prev => [newHubObj, ...prev]);
-    setSpreadsheetData(prev => [newSpreadsheetObj, ...prev]);
+    // Write directly to Firestore — onSnapshot propagates to all devices
+    try { await setDoc(doc(db, 'followup_hubs', newClientId), newHubObj); } catch (e) { console.warn('Firestore followup_hubs write error:', e); }
+    try { await setDoc(doc(db, 'spreadsheet_followups', newSpreadsheetObj.id), newSpreadsheetObj); } catch (e) { console.warn('Firestore spreadsheet_followups write error:', e); }
 
     dispatchFollowupNotifications(
       newClientForm.clientName,
@@ -236,7 +221,7 @@ export const Followups = () => {
       insuranceCompany: 'Tata AIA / Star Health',
       stageName: 'Prospect Onboarded & Requirement Captured',
       type: 'Phone Call',
-      assignedTo: user?.name || 'Priya Sharma',
+      assignedTo: user?.name || '',
       date: 'Today, 05:00 PM',
       conversationNotes: '',
       status: 'PENDING'
@@ -245,11 +230,11 @@ export const Followups = () => {
     alert(`New Client Follow-up for "${newClientForm.clientName}" created successfully & notification sent to ${newClientForm.assignedTo}!`);
   };
 
-  const handleAddStage = (e) => {
+  const handleAddStage = async (e) => {
     e.preventDefault();
     if (!targetClientForNewStage || !newStageForm.stageName) return;
 
-    const formattedId = `FLW-2026-${Math.floor(100 + Math.random() * 900)}`;
+    const formattedId = `FLW-${Date.now()}`;
 
     const newStepObj = {
       stepId: formattedId,
@@ -263,22 +248,22 @@ export const Followups = () => {
       isCurrentActive: true
     };
 
-    const updated = clientData.map(client => {
-      if (client.clientId === targetClientForNewStage.clientId) {
-        const updatedHistory = client.history.map(h => ({ ...h, isCurrentActive: false }));
-        return {
-          ...client,
-          currentStage: newStepObj.stageName,
-          currentAssignedTo: newStepObj.assignedTo,
-          currentCreatedBy: newStepObj.createdBy,
-          overallStatus: newStepObj.status,
-          history: [...updatedHistory, newStepObj]
-        };
-      }
-      return client;
-    });
+    const targetClient = clientData.find(c => c.clientId === targetClientForNewStage.clientId);
+    if (!targetClient) return;
 
-    setClientData(updated);
+    const updatedHistory = targetClient.history.map(h => ({ ...h, isCurrentActive: false }));
+    const updatedClient = {
+      ...targetClient,
+      currentStage: newStepObj.stageName,
+      currentAssignedTo: newStepObj.assignedTo,
+      currentCreatedBy: newStepObj.createdBy,
+      overallStatus: newStepObj.status,
+      history: [...updatedHistory, newStepObj]
+    };
+
+    // Write directly to Firestore — onSnapshot propagates to all devices
+    try { await setDoc(doc(db, 'followup_hubs', targetClient.clientId), updatedClient); } catch (e) { console.warn('Firestore followup_hubs update error:', e); }
+
     dispatchFollowupNotifications(
       targetClientForNewStage.clientName,
       newStepObj.stageName,
@@ -293,34 +278,34 @@ export const Followups = () => {
       stageName: '',
       date: 'Today, 05:00 PM',
       type: 'Phone Call',
-      assignedTo: 'Priya Sharma',
+      assignedTo: user?.name || '',
       conversationNotes: '',
       status: 'PENDING'
     });
     alert(`New follow-up stage added for ${targetClientForNewStage.clientName} & notification sent to ${newStepObj.assignedTo}!`);
   };
 
-  const handleSaveEditStage = (e) => {
+  const handleSaveEditStage = async (e) => {
     e.preventDefault();
     if (!editingStage || !editingClientId) return;
 
-    const updated = clientData.map(client => {
-      if (client.clientId === editingClientId) {
-        const updatedHistory = client.history.map(h => h.stepId === editingStage.stepId ? editingStage : h);
-        const lastStep = updatedHistory[updatedHistory.length - 1];
-        return {
-          ...client,
-          currentStage: lastStep.stageName,
-          currentAssignedTo: lastStep.assignedTo,
-          currentCreatedBy: lastStep.createdBy,
-          overallStatus: lastStep.status,
-          history: updatedHistory
-        };
-      }
-      return client;
-    });
+    const targetClient = clientData.find(c => c.clientId === editingClientId);
+    if (!targetClient) return;
 
-    setClientData(updated);
+    const updatedHistory = targetClient.history.map(h => h.stepId === editingStage.stepId ? editingStage : h);
+    const lastStep = updatedHistory[updatedHistory.length - 1];
+    const updatedClient = {
+      ...targetClient,
+      currentStage: lastStep.stageName,
+      currentAssignedTo: lastStep.assignedTo,
+      currentCreatedBy: lastStep.createdBy,
+      overallStatus: lastStep.status,
+      history: updatedHistory
+    };
+
+    // Write directly to Firestore — onSnapshot propagates to all devices
+    try { await setDoc(doc(db, 'followup_hubs', editingClientId), updatedClient); } catch (e) { console.warn('Firestore followup_hubs edit error:', e); }
+
     dispatchFollowupNotifications(
       `Step ${editingStage.stepId}`,
       editingStage.stageName,
@@ -335,10 +320,15 @@ export const Followups = () => {
     alert(`Follow-up step ${editingStage.stepId} updated & notification sent to ${editingStage.assignedTo}!`);
   };
 
-  const handleDeleteClientFollowup = (clientId, clientName) => {
+  const handleDeleteClientFollowup = async (clientId, clientName) => {
     if (window.confirm(`Are you sure you want to completely delete the follow-up record for "${clientName}"? This will remove all associated stages and history.`)) {
-      setClientData(prev => prev.filter(c => c.clientId !== clientId));
-      setSpreadsheetData(prev => prev.filter(s => s.clientName !== clientName));
+      // Delete from Firestore — onSnapshot propagates to all devices
+      try { await deleteDoc(doc(db, 'followup_hubs', clientId)); } catch (e) { console.warn('Firestore followup_hubs delete error:', e); }
+      // Also delete matching spreadsheet entries
+      const toDelete = spreadsheetData.filter(s => s.clientName === clientName);
+      for (const s of toDelete) {
+        try { await deleteDoc(doc(db, 'spreadsheet_followups', String(s.id))); } catch (e) {}
+      }
       if (selectedClientHistoryModal?.clientId === clientId) {
         setSelectedClientHistoryModal(null);
       }
@@ -346,7 +336,7 @@ export const Followups = () => {
     }
   };
 
-  const handleDeleteStage = (clientId, stepId) => {
+  const handleDeleteStage = async (clientId, stepId) => {
     const client = clientData.find(c => c.clientId === clientId);
     if (!client) return;
 
@@ -358,34 +348,27 @@ export const Followups = () => {
     }
 
     if (window.confirm(`Are you sure you want to delete follow-up step ${stepId}?`)) {
-      const updated = clientData.map(c => {
-        if (c.clientId === clientId) {
-          const updatedHistory = c.history.filter(h => h.stepId !== stepId);
-          const lastIdx = updatedHistory.length - 1;
-          const finalHistory = updatedHistory.map((h, i) => ({
-            ...h,
-            isCurrentActive: i === lastIdx
-          }));
-          const lastStep = finalHistory[lastIdx];
-          return {
-            ...c,
-            currentStage: lastStep.stageName,
-            currentAssignedTo: lastStep.assignedTo,
-            currentCreatedBy: lastStep.createdBy,
-            overallStatus: lastStep.status,
-            history: finalHistory
-          };
-        }
-        return c;
-      });
-      setClientData(updated);
+      const updatedHistory = client.history.filter(h => h.stepId !== stepId);
+      const lastIdx = updatedHistory.length - 1;
+      const finalHistory = updatedHistory.map((h, i) => ({ ...h, isCurrentActive: i === lastIdx }));
+      const lastStep = finalHistory[lastIdx];
+      const updatedClient = {
+        ...client,
+        currentStage: lastStep.stageName,
+        currentAssignedTo: lastStep.assignedTo,
+        currentCreatedBy: lastStep.createdBy,
+        overallStatus: lastStep.status,
+        history: finalHistory
+      };
+      // Write directly to Firestore
+      try { await setDoc(doc(db, 'followup_hubs', clientId), updatedClient); } catch (e) { console.warn('Firestore followup_hubs stage delete error:', e); }
       alert(`Step ${stepId} deleted successfully!`);
     }
   };
 
-  const handleDeleteSpreadsheetFollowup = (id, clientName) => {
+  const handleDeleteSpreadsheetFollowup = async (id, clientName) => {
     if (window.confirm(`Are you sure you want to delete this follow-up entry for "${clientName}"?`)) {
-      setSpreadsheetData(prev => prev.filter(s => s.id !== id));
+      try { await deleteDoc(doc(db, 'spreadsheet_followups', String(id))); } catch (e) { console.warn('Firestore spreadsheet_followups delete error:', e); }
       alert(`Follow-up entry for "${clientName}" has been deleted!`);
     }
   };
