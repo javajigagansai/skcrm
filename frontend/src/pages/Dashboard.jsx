@@ -1276,7 +1276,7 @@ export const Dashboard = () => {
       );
     } else if (activeModal === 'INVESTMENTS_VOLUME') {
       title = "Investments & Assets Under Management (AUM)";
-      subtitle = `Detailed breakdown of ${currentMetrics.investmentVolume} total portfolio volume across asset classes.`;
+      subtitle = "Asset & Portfolio Volume Distribution Overview";
       content = (
         <div className="space-y-6">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
