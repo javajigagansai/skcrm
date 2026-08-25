@@ -14,94 +14,7 @@ import { collection, addDoc, doc, setDoc, deleteDoc, onSnapshot, serverTimestamp
 
 const DataContext = createContext();
 
-const initialCustomersSeed = [
-  {
-    id: 'CUST-101',
-    customerCode: 'SK-CUST-101',
-    name: 'Rahul Sharma',
-    email: 'rahul.sharma@example.com',
-    phone: '9876543210',
-    mobileNumber: '9876543210',
-    alternatePhone: '9876543299',
-    altPhone: '9876543299',
-    gender: 'Male',
-    dob: '1988-05-14',
-    maritalStatus: 'Married',
-    anniversaryDate: '2016-11-20',
-    city: 'Chennai',
-    address: '42 MG Road, Nungambakkam, Chennai',
-    pan: 'ABCDE1234F',
-    aadhaar: '9920-4819-1234',
-    occupation: 'Software Architect',
-    incomeBracket: '₹ 25L - ₹ 50L',
-    assignedStaffId: 'UID-STF-1003',
-    assignedStaffName: 'Priya Sharma',
-    assignedAdvisorName: 'Priya Sharma',
-    assignedStaffEmail: 'priya.sharma@sk-smart-investments.com',
-    branchId: 'BR-KNM-001',
-    status: 'Active',
-    familyMembers: [
-      { id: 'FM-1', name: 'Neha Sharma', relation: 'Spouse', gender: 'Female', dob: '1990-08-22', anniversaryDate: '2016-11-20', phone: '9876543211' },
-      { id: 'FM-2', name: 'Aarav Sharma', relation: 'Son', gender: 'Male', dob: '2018-03-10', anniversaryDate: '', phone: '' }
-    ]
-  },
-  {
-    id: 'CUST-102',
-    customerCode: 'SK-CUST-102',
-    name: 'Priya Menon',
-    email: 'priya.menon@example.com',
-    phone: '9812345678',
-    mobileNumber: '9812345678',
-    alternatePhone: '9812345699',
-    altPhone: '9812345699',
-    gender: 'Female',
-    dob: '1992-12-05',
-    maritalStatus: 'Single',
-    anniversaryDate: '',
-    city: 'Bangalore',
-    address: '12 Indiranagar 100ft Road, Bangalore',
-    pan: 'PQRSW9876K',
-    aadhaar: '8812-3341-9012',
-    occupation: 'Senior Product Manager',
-    incomeBracket: '₹ 15L - ₹ 25L',
-    assignedStaffId: 'UID-STF-1003',
-    assignedStaffName: 'Priya Sharma',
-    assignedAdvisorName: 'Priya Sharma',
-    assignedStaffEmail: 'priya.sharma@sk-smart-investments.com',
-    branchId: 'BR-KNM-001',
-    status: 'Active',
-    familyMembers: []
-  },
-  {
-    id: 'CUST-103',
-    customerCode: 'SK-CUST-103',
-    name: 'Anand Kumar',
-    email: 'anand.kumar@example.com',
-    phone: '9988776655',
-    mobileNumber: '9988776655',
-    alternatePhone: '9988776699',
-    altPhone: '9988776699',
-    gender: 'Male',
-    dob: '1982-03-18',
-    maritalStatus: 'Married',
-    anniversaryDate: '2010-04-15',
-    city: 'Hyderabad',
-    address: '88 Jubilee Hills, Hyderabad',
-    pan: 'KLMNO5678Z',
-    aadhaar: '7765-4432-1100',
-    occupation: 'Business Owner',
-    incomeBracket: '₹ 50L - ₹ 1Cr',
-    assignedStaffId: 'UID-STF-1003',
-    assignedStaffName: 'Priya Sharma',
-    assignedAdvisorName: 'Priya Sharma',
-    assignedStaffEmail: 'priya.sharma@sk-smart-investments.com',
-    branchId: 'BR-KNM-001',
-    status: 'Active',
-    familyMembers: [
-      { id: 'FM-3', name: 'Sunita Kumar', relation: 'Spouse', gender: 'Female', dob: '1984-07-11', anniversaryDate: '2010-04-15', phone: '9988776656' }
-    ]
-  }
-];
+const initialCustomersSeed = [];
 
 const initialPoliciesSeed = [
   {
@@ -330,9 +243,11 @@ const initialTasksSeed = [
 const getDeletedCustomerIds = () => {
   try {
     const saved = localStorage.getItem('crm_v2_deleted_customer_ids');
-    return saved ? JSON.parse(saved) : [];
+    const parsed = saved ? JSON.parse(saved) : [];
+    const seedIds = ['CUST-101', 'SK-CUST-101', 'Rahul Sharma', 'CUST-102', 'SK-CUST-102', 'Priya Menon', 'CUST-103', 'SK-CUST-103', 'Anand Kumar'];
+    return Array.from(new Set([...parsed, ...seedIds]));
   } catch (e) {
-    return [];
+    return ['CUST-101', 'SK-CUST-101', 'Rahul Sharma', 'CUST-102', 'SK-CUST-102', 'Priya Menon', 'CUST-103', 'SK-CUST-103', 'Anand Kumar'];
   }
 };
 
