@@ -172,7 +172,7 @@ export const Expenses = () => {
             </div>
           </div>
           <p className="text-2xl font-black text-amber-950">₹{totalOperationalExpenses.toLocaleString()}</p>
-          <p className="text-[11px] text-amber-700 font-medium">Generator, Fuel, Utilities &amp; Office Expenses</p>
+          <p className="text-[11px] text-amber-700 font-medium">Operational Overheads &amp; Office Spending</p>
         </div>
       </div>
 
