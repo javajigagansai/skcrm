@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { db } from '../config/firebaseClient';
-import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, onSnapshot } from 'firebase/firestore';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell
 } from 'recharts';
@@ -79,6 +79,33 @@ export const StaffManagement = () => {
     monthlyTarget: 400000,
     password: 'Password@123'
   });
+
+  // Real-time synchronization from Firestore users collection
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'users'), (snap) => {
+      const remote = [];
+      snap.forEach(docSnap => {
+        remote.push({ uid: docSnap.id, ...docSnap.data() });
+      });
+      if (remote.length > 0) {
+        setStaffList(prev => {
+          const map = new Map(INITIAL_STAFF_SEED.map(u => [u.email.toLowerCase().trim(), u]));
+          prev.forEach(u => u.email && map.set(u.email.toLowerCase().trim(), { ...map.get(u.email.toLowerCase().trim()), ...u }));
+          remote.forEach(u => u.email && map.set(u.email.toLowerCase().trim(), { ...map.get(u.email.toLowerCase().trim()), ...u }));
+          const merged = Array.from(map.values()).filter(u =>
+            !['Rahul Dravid', 'Kavita Menon', 'Greetings Officer', 'Anitha Selvam', 'Karthik Subramanian'].includes(u.name) &&
+            !['rahul.d@sksmart.com', 'kavita.m@sksmart.com', 'wishes@sksmart.com', 'anitha.s@sksmart.com', 'karthik.s@sksmart.com'].includes(u.email)
+          );
+          try {
+            localStorage.setItem('crm_v2_users_list', JSON.stringify(merged));
+          } catch (e) {}
+          return merged;
+        });
+      }
+    }, (err) => console.warn("Staff live sync warning:", err.message));
+
+    return () => unsub();
+  }, []);
 
   // Keep local storage synced
   useEffect(() => {

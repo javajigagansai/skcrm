@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { collection, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../config/firebaseClient';
 import { 
   Plus, Search, Shield, Trash2, UserPlus, X, Key, Eye, EyeOff, Edit, 
@@ -77,29 +77,31 @@ export const Users = () => {
     return () => window.removeEventListener('storage_users_updated', handleStorageUpdate);
   }, []);
 
-  // Dynamically load remote users from Firestore and merge real-time
+  // Dynamically load remote users from Firestore and merge real-time via onSnapshot
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const querySnap = await getDocs(collection(db, 'users'));
-        const list = [];
-        querySnap.forEach((docSnap) => {
-          list.push({ uid: docSnap.id, ...docSnap.data() });
-        });
-        if (list.length > 0) {
-          setUsers(prev => {
-            const map = new Map(prev.map(u => [u.email, u]));
-            list.forEach(u => map.set(u.email, { ...map.get(u.email), ...u }));
-            const merged = Array.from(map.values());
+    const unsub = onSnapshot(collection(db, 'users'), (snap) => {
+      const list = [];
+      snap.forEach((docSnap) => {
+        list.push({ uid: docSnap.id, ...docSnap.data() });
+      });
+      if (list.length > 0) {
+        setUsers(prev => {
+          const map = new Map(INITIAL_USERS_SEED.map(u => [u.email.toLowerCase().trim(), u]));
+          prev.forEach(u => u.email && map.set(u.email.toLowerCase().trim(), { ...map.get(u.email.toLowerCase().trim()), ...u }));
+          list.forEach(u => u.email && map.set(u.email.toLowerCase().trim(), { ...map.get(u.email.toLowerCase().trim()), ...u }));
+          const merged = Array.from(map.values()).filter(u => 
+            !['Rahul Dravid', 'Kavita Menon', 'Greetings Officer', 'Anitha Selvam', 'Priya Sharma', 'Karthik Subramanian'].includes(u.name) &&
+            !['rahul.d@sksmart.com', 'kavita.m@sksmart.com', 'wishes@sksmart.com', 'anitha.s@sksmart.com', 'priya.sharma@sk-smart-investments.com', 'karthik.s@sksmart.com'].includes(u.email)
+          );
+          try {
             localStorage.setItem('crm_v2_users_list', JSON.stringify(merged));
-            return merged;
-          });
-        }
-      } catch (err) {
-        console.warn("Firestore users load info:", err.message);
+          } catch (e) {}
+          return merged;
+        });
       }
-    };
-    fetchUsers();
+    }, (err) => console.warn("Firestore users live sync warning:", err.message));
+
+    return () => unsub();
   }, []);
 
   const syncUserToFirestore = async (userData) => {

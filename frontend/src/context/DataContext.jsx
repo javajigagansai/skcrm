@@ -87,7 +87,16 @@ export const DataProvider = ({ children }) => {
       (err) => console.warn('Firestore expenses error:', err));
 
     const unsubUsers = onSnapshot(collection(db, 'users'),
-      (snap) => setUsers(snap.docs.map(d => ({ ...d.data(), id: d.id, uid: d.id }))),
+      (snap) => {
+        const uList = snap.docs.map(d => ({ ...d.data(), id: d.id, uid: d.id }));
+        setUsers(uList);
+        if (uList.length > 0) {
+          try {
+            localStorage.setItem('crm_v2_users_list', JSON.stringify(uList));
+            window.dispatchEvent(new Event('storage_users_updated'));
+          } catch (e) {}
+        }
+      },
       (err) => console.warn('Firestore users error:', err));
 
     return () => {

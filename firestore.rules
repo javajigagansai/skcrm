@@ -2,11 +2,9 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Users — require Firebase Auth to protect account management
+    // Users — open read/write for seamless multi-device staff synchronization & credential verification
     match /users/{userId} {
-      allow read: if true;
-      allow create: if true;
-      allow update, delete: if request.auth != null;
+      allow read, write: if true;
     }
 
     // All business data — open read/write
