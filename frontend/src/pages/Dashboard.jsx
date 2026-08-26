@@ -206,19 +206,6 @@ export const Dashboard = () => {
   }, [expenses, staffListState]);
 
   const policyCategoryOverview = useMemo(() => {
-    if (!isAdminOnly) return { 
-      chartData: [], 
-      companyChartData: [], 
-      companies: [], 
-      categories: [],
-      categoryDrilldownData: [],
-      companyDrilldownData: [],
-      totalPolicies: 0, 
-      topCategory: null, 
-      topCompany: null, 
-      companyBreakdown: {} 
-    };
-
     const validPolicies = Array.isArray(policies) ? policies : [];
     const companiesSet = new Set();
     const categoriesSet = new Set();
@@ -845,10 +832,6 @@ export const Dashboard = () => {
   }, [dateFilter, customStartDate, customEndDate, customers, policies]);
 
   const dynamicProductDistributionChart = useMemo(() => {
-    if (reportSummary?.productDistributionChart && Array.isArray(reportSummary.productDistributionChart) && reportSummary.productDistributionChart.length > 0) {
-      return reportSummary.productDistributionChart;
-    }
-
     let healthVal = 0;
     let lifeVal = 0;
     let motorVal = 0;
@@ -900,10 +883,6 @@ export const Dashboard = () => {
   }, [policies, investments, reportSummary]);
 
   const dynamicConversionClaimsChart = useMemo(() => {
-    if (reportSummary?.conversionClaimsChart && Array.isArray(reportSummary.conversionClaimsChart) && reportSummary.conversionClaimsChart.length > 0) {
-      return reportSummary.conversionClaimsChart;
-    }
-
     const categories = ['Health Insurance', 'Life & ULIP', 'Mutual Funds', 'Motor & General', 'Real Estate / FD'];
 
     return categories.map((cat, idx) => {
@@ -1028,7 +1007,7 @@ export const Dashboard = () => {
 
     // 1. Compute real-time business totals from active policies
     (policies || []).forEach(p => {
-      const name = (p.assignedStaff || p.assignedTo || p.advisorName || 'Priya Sharma').trim();
+      const name = (p.assignedStaff || p.assignedTo || p.advisorName || 'Staff Advisor').trim();
       if (!staffMap[name]) staffMap[name] = { name, businessAmount: 0, policyCount: 0, activeCount: 0, completedCount: 0, totalCount: 0 };
       staffMap[name].businessAmount += Number(p.grossPremium || p.premiumAmount || 0);
       staffMap[name].policyCount += 1;
@@ -1036,7 +1015,7 @@ export const Dashboard = () => {
 
     // 2. Compute real-time business totals from active investments
     (investments || []).forEach(i => {
-      const name = (i.advisorName || i.assignedStaff || 'Priya Sharma').trim();
+      const name = (i.advisorName || i.assignedStaff || 'Staff Advisor').trim();
       if (!staffMap[name]) staffMap[name] = { name, businessAmount: 0, policyCount: 0, activeCount: 0, completedCount: 0, totalCount: 0 };
       staffMap[name].businessAmount += Number(i.amount || i.investmentAmount || 0);
       staffMap[name].policyCount += 1;
@@ -1044,7 +1023,7 @@ export const Dashboard = () => {
 
     // 3. Compute client counts from customers
     (customers || []).forEach(c => {
-      const name = (c.assignedAdvisorName || c.assignedStaff || c.assignedToName || c.advisorName || 'Priya Sharma').trim();
+      const name = (c.assignedAdvisorName || c.assignedStaff || c.assignedToName || c.advisorName || 'Staff Advisor').trim();
       if (!staffMap[name]) staffMap[name] = { name, businessAmount: 0, policyCount: 0, activeCount: 0, completedCount: 0, totalCount: 0 };
 
       const isCompleted = c.status === 'Completed' || c.status === 'INACTIVE' || c.isCompleted === true;
@@ -1066,10 +1045,6 @@ export const Dashboard = () => {
   }, [combinedStaffPerformance]);
 
   const dynamicStaffPerformanceChart = useMemo(() => {
-    if (reportSummary?.staffPerformanceChart && Array.isArray(reportSummary.staffPerformanceChart) && reportSummary.staffPerformanceChart.length > 0) {
-      return reportSummary.staffPerformanceChart;
-    }
-
     return staffBusinessLeaderboard.slice(0, 6).map(st => {
       const achievedLakhs = Number((st.businessAmount / 100000).toFixed(2));
       const targetLakhs = Math.max(10, Number((achievedLakhs * 1.25).toFixed(2)));
@@ -1082,7 +1057,7 @@ export const Dashboard = () => {
         policies: st.policyCount
       };
     });
-  }, [staffBusinessLeaderboard, reportSummary]);
+  }, [staffBusinessLeaderboard]);
 
   const currentMetrics = {
     customers: isStaffAdvisor ? myAssignedCustomers.length.toString() : (customers.length > 0 ? customers.length.toLocaleString() : '0'),
@@ -1208,6 +1183,26 @@ export const Dashboard = () => {
         </div>
       );
     } else if (activeModal === 'ACTIVE_POLICIES') {
+      const healthCount = (policies || []).filter(p => {
+        const t = String(p.type || p.policyType || p.category || '').toLowerCase();
+        return t.includes('health') || t.includes('medic');
+      }).length;
+
+      const lifeCount = (policies || []).filter(p => {
+        const t = String(p.type || p.policyType || p.category || '').toLowerCase();
+        return t.includes('life') || t.includes('term') || t.includes('ulip') || (!t.includes('health') && !t.includes('motor') && !t.includes('travel'));
+      }).length;
+
+      const sipCount = (investments || []).filter(i => {
+        const t = String(i.type || i.category || i.investmentType || '').toLowerCase();
+        return t.includes('sip') || t.includes('mutual') || t.includes('mf');
+      }).length;
+
+      const motorCount = (policies || []).filter(p => {
+        const t = String(p.type || p.policyType || p.category || '').toLowerCase();
+        return t.includes('motor') || t.includes('car') || t.includes('vehicle') || t.includes('travel') || t.includes('general');
+      }).length;
+
       title = "Active Policies & Portfolio Distribution";
       subtitle = "Active Policies & Portfolio Overview";
       content = (
@@ -1215,43 +1210,57 @@ export const Dashboard = () => {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="bg-sky-50 p-3.5 rounded-2xl border border-sky-100">
               <span className="text-[10px] font-bold text-sky-600 uppercase">Health Floaters</span>
-              <p className="text-xl font-black text-slate-900">{reportSummary?.healthPoliciesCount || 0} Policies</p>
+              <p className="text-xl font-black text-slate-900">{healthCount} Policies</p>
               <span className="text-[10px] text-slate-500">Star / Care / Neva</span>
             </div>
             <div className="bg-indigo-50 p-3.5 rounded-2xl border border-indigo-100">
               <span className="text-[10px] font-bold text-indigo-600 uppercase">Term Life Plans</span>
-              <p className="text-xl font-black text-slate-900">{reportSummary?.lifePoliciesCount || 0} Policies</p>
+              <p className="text-xl font-black text-slate-900">{lifeCount} Policies</p>
               <span className="text-[10px] text-slate-500">HDFC / ICICI / TATA</span>
             </div>
             <div className="bg-purple-50 p-3.5 rounded-2xl border border-purple-100">
               <span className="text-[10px] font-bold text-purple-600 uppercase">Mutual Fund SIPs</span>
-              <p className="text-xl font-black text-slate-900">{reportSummary?.sipFoliosCount || 0} Folios</p>
+              <p className="text-xl font-black text-slate-900">{sipCount} Folios</p>
               <span className="text-[10px] text-slate-500">Active Autopay SIPs</span>
             </div>
             <div className="bg-emerald-50 p-3.5 rounded-2xl border border-emerald-100">
               <span className="text-[10px] font-bold text-emerald-600 uppercase">Motor &amp; Others</span>
-              <p className="text-xl font-black text-slate-900">{reportSummary?.motorContractsCount || 0} Contracts</p>
+              <p className="text-xl font-black text-slate-900">{motorCount} Contracts</p>
               <span className="text-[10px] text-slate-500">Vehicle &amp; Property</span>
             </div>
           </div>
 
           <div>
-            <h4 className="text-xs font-black uppercase text-slate-700 tracking-wider mb-2">Recent Active Policy Contracts</h4>
-            <div className="overflow-x-auto rounded-2xl border border-slate-200">
+            <h4 className="text-xs font-black uppercase text-slate-700 tracking-wider mb-2">Recent Active Policy Contracts ({policies.length})</h4>
+            <div className="overflow-x-auto rounded-2xl border border-slate-200 max-h-72 overflow-y-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 text-slate-600 font-extrabold uppercase text-[10px]">
+                <thead className="bg-slate-50 text-slate-600 font-extrabold uppercase text-[10px] sticky top-0">
                   <tr>
                     <th className="p-3">Customer Name</th>
                     <th className="p-3">Insurance Company</th>
                     <th className="p-3">Sum Insured</th>
                     <th className="p-3">Status</th>
-                    <th className="p-3">Assigned Officer</th>
+                    <th className="p-3">Assigned Staff</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  <tr>
-                    <td colSpan="5" className="p-4 text-center text-slate-400 font-semibold">No active policy contracts registered yet.</td>
-                  </tr>
+                  {policies.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" className="p-4 text-center text-slate-400 font-semibold">No active policy contracts registered yet.</td>
+                    </tr>
+                  ) : (
+                    policies.slice(0, 20).map(pol => (
+                      <tr key={pol.id} className="hover:bg-slate-50 transition">
+                        <td className="p-3 font-bold text-slate-900">{pol.customerName || 'Customer'}</td>
+                        <td className="p-3 font-bold text-blue-900">{pol.insuranceCompany || 'Insurer'} ({pol.type || 'LIFE'})</td>
+                        <td className="p-3 font-mono font-bold text-emerald-700">₹{Number(pol.sumInsured || pol.coverageAmount || pol.grossPremium || 0).toLocaleString()}</td>
+                        <td className="p-3">
+                          <span className="badge bg-emerald-100 text-emerald-800 text-[10px] font-black">{pol.status || 'ACTIVE'}</span>
+                        </td>
+                        <td className="p-3 text-slate-700 font-bold">{pol.assignedStaff || pol.assignedAdvisorName || user?.name || 'Staff Advisor'}</td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -1279,6 +1288,23 @@ export const Dashboard = () => {
         </div>
       );
     } else if (activeModal === 'INVESTMENTS_VOLUME') {
+      const mfSum = (investments || []).filter(i => {
+        const t = String(i.type || i.category || i.investmentType || '').toLowerCase();
+        return t.includes('mf') || t.includes('sip') || t.includes('mutual');
+      }).reduce((s, i) => s + (Number(i.amount || i.investmentAmount) || 0), 0);
+
+      const fdSum = (investments || []).filter(i => {
+        const t = String(i.type || i.category || i.investmentType || '').toLowerCase();
+        return t.includes('fd') || t.includes('fixed') || t.includes('bond');
+      }).reduce((s, i) => s + (Number(i.amount || i.investmentAmount) || 0), 0);
+
+      const insSum = (policies || []).reduce((s, p) => s + (Number(p.grossPremium || p.sumInsured) || 0), 0);
+
+      const otherSum = (investments || []).filter(i => {
+        const t = String(i.type || i.category || i.investmentType || '').toLowerCase();
+        return !t.includes('mf') && !t.includes('sip') && !t.includes('mutual') && !t.includes('fd') && !t.includes('fixed') && !t.includes('bond');
+      }).reduce((s, i) => s + (Number(i.amount || i.investmentAmount) || 0), 0);
+
       title = "Investments & Assets Under Management (AUM)";
       subtitle = "Asset & Portfolio Volume Distribution Overview";
       content = (
@@ -1286,31 +1312,31 @@ export const Dashboard = () => {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="bg-emerald-50 p-3.5 rounded-2xl border border-emerald-100">
               <span className="text-[10px] font-bold text-emerald-600 uppercase">Mutual Funds &amp; SIP</span>
-              <p className="text-xl font-black text-slate-900">{reportSummary?.mutualFundsVolume ? `₹${(reportSummary.mutualFundsVolume / 10000000).toFixed(2)} Cr` : '₹0.00'}</p>
+              <p className="text-xl font-black text-slate-900">{mfSum ? `₹${(mfSum / 10000000).toFixed(2)} Cr` : '₹0.00'}</p>
               <span className="text-[10px] text-slate-500">Mutual Fund Portfolios</span>
             </div>
             <div className="bg-blue-50 p-3.5 rounded-2xl border border-blue-100">
               <span className="text-[10px] font-bold text-blue-600 uppercase">FDs &amp; Fixed Income</span>
-              <p className="text-xl font-black text-slate-900">{reportSummary?.fixedIncomeVolume ? `₹${(reportSummary.fixedIncomeVolume / 10000000).toFixed(2)} Cr` : '₹0.00'}</p>
+              <p className="text-xl font-black text-slate-900">{fdSum ? `₹${(fdSum / 10000000).toFixed(2)} Cr` : '₹0.00'}</p>
               <span className="text-[10px] text-slate-500">Fixed Income Assets</span>
             </div>
             <div className="bg-purple-50 p-3.5 rounded-2xl border border-purple-100">
               <span className="text-[10px] font-bold text-purple-600 uppercase">Insurance Policies AUM</span>
-              <p className="text-xl font-black text-slate-900">{reportSummary?.insuranceAumVolume ? `₹${(reportSummary.insuranceAumVolume / 10000000).toFixed(2)} Cr` : '₹0.00'}</p>
+              <p className="text-xl font-black text-slate-900">{insSum ? `₹${(insSum / 10000000).toFixed(2)} Cr` : '₹0.00'}</p>
               <span className="text-[10px] text-slate-500">Insurance Contracts AUM</span>
             </div>
             <div className="bg-amber-50 p-3.5 rounded-2xl border border-amber-100">
               <span className="text-[10px] font-bold text-amber-600 uppercase">Real Estate &amp; Bonds</span>
-              <p className="text-xl font-black text-slate-900">{reportSummary?.otherAssetsVolume ? `₹${(reportSummary.otherAssetsVolume / 10000000).toFixed(2)} Cr` : '₹0.00'}</p>
+              <p className="text-xl font-black text-slate-900">{otherSum ? `₹${(otherSum / 10000000).toFixed(2)} Cr` : '₹0.00'}</p>
               <span className="text-[10px] text-slate-500">Bonds &amp; Other Assets</span>
             </div>
           </div>
 
           <div>
-            <h4 className="text-xs font-black uppercase text-slate-700 tracking-wider mb-2">Recent Investment Registrations</h4>
-            <div className="overflow-x-auto rounded-2xl border border-slate-200">
+            <h4 className="text-xs font-black uppercase text-slate-700 tracking-wider mb-2">Recent Investment Registrations ({investments.length})</h4>
+            <div className="overflow-x-auto rounded-2xl border border-slate-200 max-h-72 overflow-y-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 text-slate-600 font-extrabold uppercase text-[10px]">
+                <thead className="bg-slate-50 text-slate-600 font-extrabold uppercase text-[10px] sticky top-0">
                   <tr>
                     <th className="p-3">Client Name</th>
                     <th className="p-3">Investment Type</th>
@@ -1320,9 +1346,23 @@ export const Dashboard = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  <tr>
-                    <td colSpan="5" className="p-4 text-center text-slate-400 font-semibold">No registered investment records available.</td>
-                  </tr>
+                  {investments.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" className="p-4 text-center text-slate-400 font-semibold">No investment records registered yet.</td>
+                    </tr>
+                  ) : (
+                    investments.slice(0, 20).map(inv => (
+                      <tr key={inv.id} className="hover:bg-slate-50 transition">
+                        <td className="p-3 font-bold text-slate-900">{inv.customerName || 'Client'}</td>
+                        <td className="p-3 font-bold text-blue-900">{inv.type || inv.category || 'Mutual Fund'}</td>
+                        <td className="p-3 font-mono font-bold text-emerald-700">₹{Number(inv.amount || 0).toLocaleString()}</td>
+                        <td className="p-3 font-mono text-slate-600">{inv.folioNumber || inv.id}</td>
+                        <td className="p-3">
+                          <span className="badge bg-emerald-100 text-emerald-800 text-[10px] font-black">{inv.status || 'ACTIVE'}</span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -1625,40 +1665,6 @@ export const Dashboard = () => {
                 <Bar dataKey="expense" fill="#EF4444" radius={[6, 6, 0, 0]} barSize={dynamicFinancialsChart.length > 15 ? 7 : (dynamicFinancialsChart.length > 7 ? 14 : 24)} name="Expense (Lakhs)" />
               </BarChart>
             </ResponsiveContainer>
-          </div>
-
-          <div>
-            <h4 className="text-xs font-black uppercase text-slate-700 tracking-wider mb-2">Variance &amp; Profit Table ({dateFilter})</h4>
-            <div className="overflow-x-auto rounded-2xl border border-slate-200">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 text-slate-600 font-extrabold uppercase text-[10px]">
-                  <tr>
-                    <th className="p-3">Period</th>
-                    <th className="p-3">Income (Lakhs)</th>
-                    <th className="p-3">Expense (Lakhs)</th>
-                    <th className="p-3">Net Profit</th>
-                    <th className="p-3">Profit Margin %</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {dynamicFinancialsChart.length === 0 ? (
-                    <tr>
-                      <td colSpan="5" className="p-4 text-center text-slate-400 font-semibold">No income vs expense data available.</td>
-                    </tr>
-                  ) : (
-                    dynamicFinancialsChart.map((row, idx) => (
-                      <tr key={idx}>
-                        <td className="p-3 font-bold text-slate-900">{row.label}</td>
-                        <td className="p-3 font-bold text-emerald-700">₹{row.revenue} L</td>
-                        <td className="p-3 font-bold text-rose-600">₹{row.totalExpenses} L</td>
-                        <td className="p-3 font-bold text-blue-700">₹{row.netProfit} L</td>
-                        <td className="p-3"><span className="badge badge-green text-[10px]">{(((row.netProfit)/(row.revenue || 1))*100).toFixed(1)}%</span></td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
           </div>
         </div>
       );

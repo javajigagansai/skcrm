@@ -238,7 +238,7 @@ export const SpecialDays = () => {
         : `💍 *HAPPY WEDDING ANNIVERSARY!* 💐💖\n\n` +
           `Wishing you and your family a lifetime of happiness, togetherness, and success!\n\n`) +
       `📌 *Greetings Desk:* SK Smart Investments\n` +
-      `📌 *Assigned Advisor:* ${evt.assignedAdvisor || 'Priya Sharma'}\n\n` +
+      `📌 *Assigned Advisor:* ${evt.assignedAdvisor || 'Senior Advisor'}\n\n` +
       `📞 *Help Desk:* +91 98765 43210\n` +
       `🌐 *Portal:* https://sk-crm-1.web.app\n\n` +
       `Thank you for trusting SK Smart Investments! 🙏✨`;
@@ -434,7 +434,7 @@ export const SpecialDays = () => {
                           Advisor
                         </span>
                         <span className="font-bold text-slate-800 truncate block" title={evt.assignedAdvisor}>
-                          {evt.assignedAdvisor || 'Priya Sharma'}
+                          {evt.assignedAdvisor || 'Senior Advisor'}
                         </span>
                       </div>
 

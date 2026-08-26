@@ -3,12 +3,10 @@ import { useAuth } from './AuthContext';
 import { db } from '../config/firebaseClient';
 import { 
   collection, 
-  addDoc, 
+  setDoc,
   updateDoc, 
   doc, 
   onSnapshot, 
-  query, 
-  orderBy, 
   serverTimestamp
 } from 'firebase/firestore';
 
@@ -25,6 +23,29 @@ export const NotificationProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const getUserReadKey = () => {
+    return 'crm_v2_read_notifs_' + (user?.uid || user?.email || 'default');
+  };
+
+  const getPersistedReadIds = () => {
+    try {
+      const key = getUserReadKey();
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return new Set(parsed);
+      }
+    } catch (e) {}
+    return new Set();
+  };
+
+  const persistReadIds = (idsSet) => {
+    try {
+      const key = getUserReadKey();
+      localStorage.setItem(key, JSON.stringify(Array.from(idsSet)));
+    } catch (e) {}
+  };
+
   // Helper to filter notifications targeted strictly to active user
   const filterNotificationsForUser = (notifList) => {
     if (!user) return [];
@@ -32,6 +53,7 @@ export const NotificationProvider = ({ children }) => {
     const activeEmail = (user.email || '').toLowerCase().trim();
     const activeUid = user.uid || '';
     const activeRole = user.role || '';
+    const readIds = getPersistedReadIds();
 
     return notifList.filter(item => {
       // 1. System-wide broadcast notifications
@@ -58,6 +80,19 @@ export const NotificationProvider = ({ children }) => {
       }
 
       return false;
+    }).map(item => {
+      const isAlreadyRead = 
+        item.isRead === true || 
+        item.read === true || 
+        readIds.has(item.id) || 
+        (item.firestoreDocId && readIds.has(item.firestoreDocId)) ||
+        (Array.isArray(item.readBy) && (item.readBy.includes(activeUid) || item.readBy.includes(activeEmail)));
+
+      return {
+        ...item,
+        isRead: isAlreadyRead,
+        read: isAlreadyRead
+      };
     });
   };
 
@@ -115,7 +150,12 @@ export const NotificationProvider = ({ children }) => {
         const firestoreList = [];
         snapshot.forEach((docSnap) => {
           const data = docSnap.data();
-          firestoreList.push({ id: docSnap.id, ...data });
+          const docId = docSnap.id;
+          firestoreList.push({ 
+            ...data, 
+            firestoreDocId: docId,
+            id: data.id || docId 
+          });
         });
 
         // Sort by date descending
@@ -127,7 +167,12 @@ export const NotificationProvider = ({ children }) => {
 
         // Deduplicate by ID
         const uniqueMap = new Map();
-        combined.forEach(n => uniqueMap.set(n.id || n.title, n));
+        combined.forEach(n => {
+          const uniqueKey = n.id || n.firestoreDocId || n.title;
+          if (!uniqueMap.has(uniqueKey) || n.firestoreDocId) {
+            uniqueMap.set(uniqueKey, n);
+          }
+        });
         const mergedList = Array.from(uniqueMap.values());
 
         const filtered = filterNotificationsForUser(mergedList);
@@ -149,8 +194,9 @@ export const NotificationProvider = ({ children }) => {
 
   // Send Notification Function (Local + Firestore dual dispatch)
   const sendNotification = async ({ recipientId, recipientName, recipientEmail, targetRoles, type, title, message, taskId, messageId }) => {
+    const notifId = 'NOTIF-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
     const notifObj = {
-      id: 'NOTIF-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+      id: notifId,
       recipientId: recipientId || '',
       recipientName: recipientName || '',
       recipientEmail: recipientEmail || '',
@@ -175,12 +221,12 @@ export const NotificationProvider = ({ children }) => {
       window.dispatchEvent(new CustomEvent('storage_notifications_updated', { detail: notifObj }));
     } catch (e) {}
 
-    // 2. Insert into Firestore for cloud persistence
+    // 2. Insert into Firestore for cloud persistence using explicit notifId
     try {
-      await addDoc(collection(db, 'notifications'), {
+      await setDoc(doc(db, 'notifications', notifId), {
         ...notifObj,
         createdAt: serverTimestamp()
-      });
+      }, { merge: true });
     } catch (err) {
       console.warn("Firestore notification insert fallback to local storage:", err.message);
     }
@@ -189,23 +235,61 @@ export const NotificationProvider = ({ children }) => {
   const markNotificationAsRead = async (notificationId) => {
     if (!notificationId) return;
 
-    // Local optimistic update
-    setNotifications(prev => prev.map(n => n.id === notificationId ? { ...n, isRead: true, read: true } : n));
+    // Find the target notification
+    const target = notifications.find(n => n.id === notificationId || n.firestoreDocId === notificationId);
+    const effectiveId = target?.id || notificationId;
+    const firestoreId = target?.firestoreDocId || notificationId;
+
+    // Persist read state in user-specific localStorage index
+    const readIds = getPersistedReadIds();
+    readIds.add(effectiveId);
+    readIds.add(firestoreId);
+    if (notificationId) readIds.add(notificationId);
+    persistReadIds(readIds);
+
+    // Local optimistic update in state
+    setNotifications(prev => prev.map(n => 
+      (n.id === notificationId || n.firestoreDocId === notificationId || n.id === effectiveId) 
+        ? { ...n, isRead: true, read: true } 
+        : n
+    ));
     setUnreadNotificationCount(prev => Math.max(0, prev - 1));
 
+    // Update crm_v2_notifications in localStorage
     try {
       const stored = JSON.parse(localStorage.getItem('crm_v2_notifications') || '[]');
-      const updated = stored.map(n => n.id === notificationId ? { ...n, isRead: true, read: true } : n);
+      const updated = stored.map(n => 
+        (n.id === notificationId || n.id === effectiveId) ? { ...n, isRead: true, read: true } : n
+      );
       localStorage.setItem('crm_v2_notifications', JSON.stringify(updated));
     } catch (e) {}
 
+    // Update Firestore
     try {
-      const notifRef = doc(db, 'notifications', notificationId);
-      await updateDoc(notifRef, { isRead: true, read: true, readAt: serverTimestamp() });
+      await setDoc(doc(db, 'notifications', firestoreId), { 
+        isRead: true, 
+        read: true, 
+        readAt: serverTimestamp() 
+      }, { merge: true });
+
+      if (effectiveId !== firestoreId) {
+        await setDoc(doc(db, 'notifications', effectiveId), { 
+          isRead: true, 
+          read: true, 
+          readAt: serverTimestamp() 
+        }, { merge: true });
+      }
     } catch (err) {}
   };
 
   const markAllNotificationsAsRead = async () => {
+    const readIds = getPersistedReadIds();
+    notifications.forEach(n => {
+      if (n.id) readIds.add(n.id);
+      if (n.firestoreDocId) readIds.add(n.firestoreDocId);
+    });
+    persistReadIds(readIds);
+
     setNotifications(prev => prev.map(n => ({ ...n, isRead: true, read: true })));
     setUnreadNotificationCount(0);
 
@@ -216,10 +300,13 @@ export const NotificationProvider = ({ children }) => {
     } catch (e) {}
 
     try {
-      const unreadList = notifications.filter(n => !n.isRead && !n.read);
-      await Promise.all(unreadList.map(n => {
-        const notifRef = doc(db, 'notifications', n.id);
-        return updateDoc(notifRef, { isRead: true, read: true, readAt: serverTimestamp() }).catch(() => {});
+      await Promise.all(notifications.map(n => {
+        const docId = n.firestoreDocId || n.id;
+        return setDoc(doc(db, 'notifications', docId), { 
+          isRead: true, 
+          read: true, 
+          readAt: serverTimestamp() 
+        }, { merge: true }).catch(() => {});
       }));
     } catch (err) {}
   };

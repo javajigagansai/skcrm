@@ -342,7 +342,7 @@ export const AuditLogs = () => {
                   value={newLogForm.affectedRecord}
                   onChange={(e) => setNewLogForm({ ...newLogForm, affectedRecord: e.target.value })}
                   className="w-full p-2.5 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-blue-600 font-bold"
-                  placeholder="e.g. System Settings, Priya Sharma"
+                  placeholder="e.g. System Settings, Client Profile"
                 />
               </div>
 

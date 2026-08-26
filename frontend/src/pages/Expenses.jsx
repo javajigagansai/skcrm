@@ -1,19 +1,16 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { fetchExpensesBackend, createExpenseBackend } from '../services/apiService';
-import { Plus, TrendingDown, IndianRupee, X, Users, Fuel, Zap, Building2, Filter, Sparkles } from 'lucide-react';
+import { useData } from '../context/DataContext';
+import { Plus, TrendingDown, IndianRupee, X, Users, Fuel, Zap, Building2, Filter, Sparkles, Trash2 } from 'lucide-react';
 
 const INITIAL_STAFF_SEED = [
-  { uid: 'UID-STF-1001', name: 'Prakash Gajendiran', role: 'SUPER_ADMIN', title: 'Super Admin / Executive Director', status: 'ACTIVE', fixedSalary: 680000 },
-  { uid: 'UID-STF-1002', name: 'Branch Manager', role: 'MANAGER', title: 'Regional Operations Manager', status: 'ACTIVE', fixedSalary: 540000 },
-  { uid: 'UID-STF-1003', name: 'Priya Sharma', role: 'EMPLOYEE', title: 'Senior Wealth Advisor', status: 'ACTIVE', fixedSalary: 270000 },
-  { uid: 'UID-STF-1004', name: 'Anitha Selvam', role: 'EMPLOYEE', title: 'Greetings & Retention Officer', status: 'ACTIVE', fixedSalary: 150000 }
+  { uid: 'UID-STF-1001', name: 'Prakash Gajendiran', role: 'SUPER_ADMIN', title: 'Super Admin / Executive Director', status: 'ACTIVE', fixedSalary: 0 },
+  { uid: 'UID-STF-1002', name: 'Branch Manager', role: 'MANAGER', title: 'Regional Operations Manager', status: 'ACTIVE', fixedSalary: 0 }
 ];
 
 export const Expenses = () => {
   const { user } = useAuth();
-  const [expenses, setExpenses] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { expenses = [], addExpense, deleteExpense, staffList = [] } = useData();
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('ALL');
 
@@ -26,54 +23,28 @@ export const Expenses = () => {
     expenseDate: new Date().toISOString().split('T')[0]
   });
 
-  const loadExpenses = async () => {
-    setLoading(true);
-    try {
-      const data = await fetchExpensesBackend();
-      setExpenses(Array.isArray(data) ? data : []);
-    } catch (err) {
-      setExpenses([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadExpenses();
-  }, []);
-
   // Staff Salary Details automatically integrated directly from Staff Management
   const staffPayrollExpenses = useMemo(() => {
-    let staffMembers = INITIAL_STAFF_SEED;
-    const saved = localStorage.getItem('crm_v2_users_list');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          staffMembers = parsed;
-        }
-      } catch (e) {}
-    }
-
+    const staffMembers = (staffList && staffList.length > 0) ? staffList : INITIAL_STAFF_SEED;
     const currentDate = new Date().toISOString().split('T')[0];
 
     return staffMembers
-      .filter(st => st.status === 'ACTIVE')
+      .filter(st => st.status === 'ACTIVE' || !st.status)
       .map(st => ({
         id: `SALARY-AUTO-${st.uid || st.id || st.name}`,
         category: 'Staff Salary (Payroll)',
         description: `Monthly Fixed Salary Payout — ${st.name} (${st.title || st.role || 'Staff Advisor'})`,
-        amount: Number(st.fixedSalary !== undefined ? st.fixedSalary : (st.monthlyTarget ? Math.round(st.monthlyTarget * 0.5) : 250000)),
+        amount: Number(st.fixedSalary !== undefined ? st.fixedSalary : (st.monthlyTarget ? Math.round(st.monthlyTarget * 0.5) : 0)),
         expenseDate: currentDate,
         isAutoSalary: true,
         staffName: st.name
       }));
-  }, []);
+  }, [staffList]);
 
   // Combined Expenses List (Manual Operational Expenses + Auto Staff Payroll)
   const combinedExpenses = useMemo(() => {
-    return [...staffPayrollExpenses, ...expenses];
-  }, [staffPayrollExpenses, expenses]);
+    return [...expenses, ...staffPayrollExpenses];
+  }, [expenses, staffPayrollExpenses]);
 
   // Filtered Expenses
   const filteredExpenses = useMemo(() => {
@@ -99,7 +70,7 @@ export const Expenses = () => {
         ...newExp,
         category: categoryOption === 'Other' ? (customCategory.trim() || 'Other') : categoryOption
       };
-      await createExpenseBackend(finalExpData);
+      await addExpense(finalExpData);
       setShowAddModal(false);
       setCategoryOption('Generator & Fuel / Gas');
       setCustomCategory('');
@@ -109,10 +80,23 @@ export const Expenses = () => {
         amount: 5000,
         expenseDate: new Date().toISOString().split('T')[0]
       });
-      loadExpenses();
       alert('Expense record saved successfully!');
     } catch (err) {
       alert('Error creating expense: ' + err.message);
+    }
+  };
+
+  const handleDeleteExpense = async (exp) => {
+    if (!exp || !exp.id) return;
+    if (window.confirm(`Are you sure you want to permanently delete expense:\n"${exp.description}" (₹${Number(exp.amount).toLocaleString()})?`)) {
+      try {
+        if (typeof deleteExpense === 'function') {
+          await deleteExpense(exp.id);
+        }
+        alert('Expense deleted successfully.');
+      } catch (err) {
+        alert('Error deleting expense: ' + err.message);
+      }
     }
   };
 
@@ -123,11 +107,7 @@ export const Expenses = () => {
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center space-x-2">
             <span>Company Expenditure Tracker</span>
-            <span className="badge badge-brand text-[10px]">Direct Payroll Integrated</span>
           </h1>
-          <p className="text-xs text-slate-500 font-medium mt-0.5">
-            Auto-linked Staff Salaries from Staff Management + Office Operational Spending
-          </p>
         </div>
         {user?.role !== 'VIEWER' && (
           <button 
@@ -155,7 +135,7 @@ export const Expenses = () => {
 
         <div className="bg-white rounded-3xl p-5 border border-purple-200/80 shadow-xs space-y-2 bg-gradient-to-br from-white to-purple-50/30">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-black uppercase tracking-wider text-purple-700">Staff Salary Payroll (Auto)</span>
+            <span className="text-[11px] font-black uppercase tracking-wider text-purple-700">Staff Salary Payroll</span>
             <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold">
               <Users className="h-5 w-5" />
             </div>
@@ -192,7 +172,7 @@ export const Expenses = () => {
             selectedCategoryFilter === 'Staff Salary (Payroll)' ? 'bg-purple-700 text-white shadow-xs' : 'bg-white text-purple-800 border border-purple-200 hover:bg-purple-50'
           }`}
         >
-          Staff Payroll (Auto) ({staffPayrollExpenses.length})
+          Staff Payroll
         </button>
         <button
           onClick={() => setSelectedCategoryFilter('Generator & Fuel / Gas')}
@@ -223,6 +203,7 @@ export const Expenses = () => {
                 <th className="p-4">Amount</th>
                 <th className="p-4">Expense Date</th>
                 <th className="p-4 text-center">Type / Source</th>
+                <th className="p-4 text-center">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-xs font-semibold text-slate-700">
@@ -259,6 +240,19 @@ export const Expenses = () => {
                       <span className="badge bg-slate-100 text-slate-700 border border-slate-200 text-[10px]">
                         Operational Direct
                       </span>
+                    )}
+                  </td>
+                  <td className="p-4 text-center">
+                    {!exp.isAutoSalary && (user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER' || !user?.role) ? (
+                      <button
+                        onClick={() => handleDeleteExpense(exp)}
+                        className="p-2 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 transition border border-rose-200 cursor-pointer"
+                        title="Delete Expense Record"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    ) : (
+                      <span className="text-[11px] text-slate-400 font-semibold">—</span>
                     )}
                   </td>
                 </tr>
@@ -303,11 +297,6 @@ export const Expenses = () => {
                   <option value="Miscellaneous">📦 Miscellaneous Operational</option>
                   <option value="Other">✏️ Other (Specify Custom)</option>
                 </select>
-
-                <p className="text-[10px] text-purple-700 font-bold mt-1 flex items-center space-x-1">
-                  <Sparkles className="h-3 w-3 shrink-0" />
-                  <span>Note: Staff Salaries automatically sync directly from Staff Management.</span>
-                </p>
 
                 {categoryOption === 'Other' && (
                   <div className="mt-2.5">

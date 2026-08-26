@@ -52,7 +52,7 @@ export const Renewals = () => {
         policyName: resolvedPolicyName,
         premium: Number(p.grossPremium) || 25000,
         dueDate: p.expiryDate || '2026-09-01',
-        assignedStaff: p.assignedStaff || 'Priya Sharma (Senior Advisor)',
+        assignedStaff: p.assignedStaff || 'Assigned Advisor',
         status: rawStatus,
         reminderSent: !!remindersMap[p.id]
       };

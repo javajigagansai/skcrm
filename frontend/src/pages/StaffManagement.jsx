@@ -13,8 +13,8 @@ import {
 } from 'lucide-react';
 
 const INITIAL_STAFF_SEED = [
-  { uid: 'UID-STF-1001', name: 'Prakash Gajendiran', email: 'admin@sk-smart-investments.com', role: 'SUPER_ADMIN', title: 'Super Admin / Executive Director', phone: '9876543210', branch: 'Chennai Main HQ Desk', status: 'ACTIVE', fixedSalary: 680000, monthlyTarget: 0, achievedRevenue: 0, assignedClientsCount: 0, policiesIssuedCount: 0, commissionEarned: 0, password: 'Password@123', joinDate: '2023-01-01' },
-  { uid: 'UID-STF-1002', name: 'Branch Manager', email: 'manager@sk-smart-investments.com', role: 'MANAGER', title: 'Regional Operations Manager', phone: '9812345678', branch: 'Bangalore Regional Desk', status: 'ACTIVE', fixedSalary: 540000, monthlyTarget: 0, achievedRevenue: 0, assignedClientsCount: 0, policiesIssuedCount: 0, commissionEarned: 0, password: 'Password@123', joinDate: '2023-11-01' },
+  { uid: 'UID-STF-1001', name: 'Prakash Gajendiran', email: 'admin@sk-smart-investments.com', role: 'SUPER_ADMIN', title: 'Super Admin / Executive Director', phone: '9876543210', branch: 'Chennai Main HQ Desk', status: 'ACTIVE', fixedSalary: 0, monthlyTarget: 0, achievedRevenue: 0, assignedClientsCount: 0, policiesIssuedCount: 0, commissionEarned: 0, password: 'Password@123', joinDate: '2023-01-01' },
+  { uid: 'UID-STF-1002', name: 'Branch Manager', email: 'manager@sk-smart-investments.com', role: 'MANAGER', title: 'Regional Operations Manager', phone: '9812345678', branch: 'Bangalore Regional Desk', status: 'ACTIVE', fixedSalary: 0, monthlyTarget: 0, achievedRevenue: 0, assignedClientsCount: 0, policiesIssuedCount: 0, commissionEarned: 0, password: 'Password@123', joinDate: '2023-11-01' },
 ];
 
 export const StaffManagement = () => {

@@ -3,12 +3,12 @@ import { useAuth } from '../context/AuthContext';
 import { useCustomer360 } from '../context/Customer360Context';
 import { useData } from '../context/DataContext';
 import { exportFollowupsPDF, exportClaimsExcel } from '../utils/exportUtils';
-import { Plus, Search, ShieldCheck, CheckCircle2, Clock, AlertCircle, X, UserCheck, Sparkles, Filter, RotateCcw, FileSpreadsheet, Download, Edit3, Trash2, User, Layers, Check } from 'lucide-react';
+import { Plus, Search, ShieldCheck, CheckCircle2, Clock, AlertCircle, X, UserCheck, Sparkles, Filter, RotateCcw, FileSpreadsheet, Download, Edit3, Trash2, User, Layers, Check, ChevronDown } from 'lucide-react';
 
 export const Claims = () => {
   const { user } = useAuth();
   const { openCustomer360 } = useCustomer360();
-  const { claims, addClaim, updateClaim, updateClaimStatus, deleteClaim, customers, policies, getCustomerAggregatedDetails } = useData();
+  const { claims, addClaim, updateClaim, updateClaimStatus, deleteClaim, customers, policies, getCustomerAggregatedDetails, staffList } = useData();
   const isAdmin = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN';
   const isAdminOrManager = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER';
 
@@ -54,6 +54,47 @@ export const Claims = () => {
     assignedStaff: '',
     status: 'SUBMITTED'
   });
+
+  const [showAddStaffSuggest, setShowAddStaffSuggest] = useState(false);
+  const [showEditStaffSuggest, setShowEditStaffSuggest] = useState(false);
+
+  const addStaffSearchResults = useMemo(() => {
+    const list = staffList && Array.isArray(staffList) ? staffList : [];
+    const query = String(newClaim.assignedStaff || '').toLowerCase().trim();
+    if (!query) return { startsWith: list, contains: [], total: list.length };
+    const startsWith = [];
+    const contains = [];
+    list.forEach(st => {
+      const name = String(st.name || '').toLowerCase();
+      const role = String(st.role || '').toLowerCase();
+      const title = String(st.title || '').toLowerCase();
+      if (name.startsWith(query) || role.startsWith(query) || title.startsWith(query)) {
+        startsWith.push(st);
+      } else if (name.includes(query) || role.includes(query) || title.includes(query)) {
+        contains.push(st);
+      }
+    });
+    return { startsWith, contains, total: startsWith.length + contains.length };
+  }, [newClaim.assignedStaff, staffList]);
+
+  const editStaffSearchResults = useMemo(() => {
+    const list = staffList && Array.isArray(staffList) ? staffList : [];
+    const query = String(editingClaim?.assignedStaff || '').toLowerCase().trim();
+    if (!query) return { startsWith: list, contains: [], total: list.length };
+    const startsWith = [];
+    const contains = [];
+    list.forEach(st => {
+      const name = String(st.name || '').toLowerCase();
+      const role = String(st.role || '').toLowerCase();
+      const title = String(st.title || '').toLowerCase();
+      if (name.startsWith(query) || role.startsWith(query) || title.startsWith(query)) {
+        startsWith.push(st);
+      } else if (name.includes(query) || role.includes(query) || title.includes(query)) {
+        contains.push(st);
+      }
+    });
+    return { startsWith, contains, total: startsWith.length + contains.length };
+  }, [editingClaim?.assignedStaff, staffList]);
 
   const handleOpenAddModal = () => {
     setNewClaim({
@@ -177,7 +218,7 @@ export const Claims = () => {
       customerCode: matchedCust?.customerCode || matchedCust?.id || newClaim.customerCode || '',
       claimAmount: parseFloat(newClaim.claimAmount || 0),
       settlementAmount: parseFloat(newClaim.settlementAmount || 0),
-      assignedStaff: newClaim.assignedStaff || user?.name || 'Priya Sharma'
+      assignedStaff: newClaim.assignedStaff || user?.name || 'Staff Advisor'
     });
     setShowAddModal(false);
     setNewClaim({ policyNo: '', customerName: '', insuranceCompany: '', claimType: '', claimAmount: '', settlementAmount: '', hospitalOrGarage: '', assignedStaff: '', status: 'SUBMITTED' });
@@ -430,7 +471,7 @@ export const Claims = () => {
                 <th className="p-4">Insurer &amp; Type</th>
                 <th className="p-4">Claim Amount</th>
                 <th className="p-4">Settled Amount</th>
-                <th className="p-4">Assigned Staff / Officer</th>
+                <th className="p-4">Assigned Staff</th>
                 <th className="p-4 text-center">Status</th>
                 <th className="p-4 text-center">Actions</th>
               </tr>
@@ -466,7 +507,7 @@ export const Claims = () => {
                   <td className="p-4">
                     <span className="badge bg-blue-50 text-blue-700 border border-blue-200 text-[11px] font-extrabold px-2.5 py-1 rounded-lg inline-flex items-center space-x-1">
                       <UserCheck className="h-3 w-3 text-blue-600 shrink-0" />
-                      <span>{c.assignedStaff || 'Priya Sharma'}</span>
+                      <span>{c.assignedStaff || user?.name || 'Staff Advisor'}</span>
                     </span>
                   </td>
                   <td className="p-4 text-center">
@@ -673,20 +714,88 @@ export const Claims = () => {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Assigned Staff / Claims Officer</label>
-                <select 
-                  value={newClaim.assignedStaff} 
-                  onChange={(e) => setNewClaim({...newClaim, assignedStaff: e.target.value})} 
-                  className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white"
-                >
-                  <option value="">Select Assigned Staff / Officer</option>
-                  <option value="Priya Sharma (Senior Advisor)">Priya Sharma (Senior Advisor)</option>
-                  <option value="Karthik Subramanian (Claims Head)">Karthik Subramanian (Claims Head)</option>
-                  <option value="Anitha S. (Claim Specialist)">Anitha S. (Claim Specialist)</option>
-                  <option value="Rajesh V. (Relationship Manager)">Rajesh V. (Relationship Manager)</option>
-                  <option value="Rahul Dravid (Staff Advisor)">Rahul Dravid (Staff Advisor)</option>
-                </select>
+              <div className="relative">
+                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Assigned Staff</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Select or Type Assigned Staff"
+                    value={newClaim.assignedStaff || ''}
+                    onFocus={() => setShowAddStaffSuggest(true)}
+                    onClick={() => setShowAddStaffSuggest(true)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setNewClaim({ ...newClaim, assignedStaff: val });
+                      setShowAddStaffSuggest(true);
+                    }}
+                    className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white cursor-pointer pr-8"
+                  />
+                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                </div>
+
+                {/* Floating Staff Suggestions Dropdown */}
+                {showAddStaffSuggest && addStaffSearchResults.total > 0 && (
+                  <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white rounded-2xl border border-slate-200 shadow-2xl max-h-52 overflow-y-auto divide-y divide-slate-100 animate-fadeIn">
+                    <div className="p-2 bg-slate-50 text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between sticky top-0 z-10 border-b">
+                      <span>Registered Staff ({addStaffSearchResults.total})</span>
+                      <button
+                        type="button"
+                        onClick={() => setShowAddStaffSuggest(false)}
+                        className="text-slate-400 hover:text-slate-700 cursor-pointer text-xs font-bold"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    {addStaffSearchResults.startsWith.map((stf, idx) => (
+                      <div
+                        key={`claim-add-stf-start-${idx}`}
+                        onClick={() => {
+                          setNewClaim({
+                            ...newClaim,
+                            assignedStaff: stf.name
+                          });
+                          setShowAddStaffSuggest(false);
+                        }}
+                        className="p-2.5 hover:bg-blue-50 cursor-pointer transition flex items-center justify-between text-xs"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 font-black text-[10px] flex items-center justify-center">
+                            {stf.name?.charAt(0)}
+                          </div>
+                          <div>
+                            <p className="font-extrabold text-slate-900">{stf.name}</p>
+                            <p className="text-[10px] text-slate-400 font-semibold">{stf.title || stf.role || 'Staff Advisor'}</p>
+                          </div>
+                        </div>
+                        <span className="badge bg-blue-50 text-blue-700 text-[9px] font-black">{stf.role || 'Advisor'}</span>
+                      </div>
+                    ))}
+                    {addStaffSearchResults.contains.map((stf, idx) => (
+                      <div
+                        key={`claim-add-stf-cont-${idx}`}
+                        onClick={() => {
+                          setNewClaim({
+                            ...newClaim,
+                            assignedStaff: stf.name
+                          });
+                          setShowAddStaffSuggest(false);
+                        }}
+                        className="p-2.5 hover:bg-slate-50 cursor-pointer transition flex items-center justify-between text-xs"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <div className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 font-black text-[10px] flex items-center justify-center">
+                            {stf.name?.charAt(0)}
+                          </div>
+                          <div>
+                            <p className="font-extrabold text-slate-900">{stf.name}</p>
+                            <p className="text-[10px] text-slate-400 font-semibold">{stf.title || stf.role || 'Staff Advisor'}</p>
+                          </div>
+                        </div>
+                        <span className="badge bg-slate-100 text-slate-700 text-[9px] font-black">{stf.role || 'Advisor'}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <button 
@@ -785,20 +894,88 @@ export const Claims = () => {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Assigned Claims Staff</label>
-                <select 
-                  value={editingClaim.assignedStaff || ''} 
-                  onChange={(e) => setEditingClaim({...editingClaim, assignedStaff: e.target.value})} 
-                  className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white"
-                >
-                  <option value="">Select Assigned Claims Staff</option>
-                  <option value="Priya Sharma">Priya Sharma</option>
-                  <option value="Karthik Subramanian (Claims Head)">Karthik Subramanian (Claims Head)</option>
-                  <option value="Anitha S. (Claim Specialist)">Anitha S. (Claim Specialist)</option>
-                  <option value="Rajesh V. (Relationship Manager)">Rajesh V. (Relationship Manager)</option>
-                  <option value="Rahul Dravid (Staff Advisor)">Rahul Dravid (Staff Advisor)</option>
-                </select>
+              <div className="relative">
+                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Assigned Staff</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Select or Type Assigned Staff"
+                    value={editingClaim.assignedStaff || ''}
+                    onFocus={() => setShowEditStaffSuggest(true)}
+                    onClick={() => setShowEditStaffSuggest(true)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setEditingClaim({ ...editingClaim, assignedStaff: val });
+                      setShowEditStaffSuggest(true);
+                    }}
+                    className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white cursor-pointer pr-8"
+                  />
+                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                </div>
+
+                {/* Floating Staff Suggestions Dropdown */}
+                {showEditStaffSuggest && editStaffSearchResults.total > 0 && (
+                  <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white rounded-2xl border border-slate-200 shadow-2xl max-h-52 overflow-y-auto divide-y divide-slate-100 animate-fadeIn">
+                    <div className="p-2 bg-slate-50 text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between sticky top-0 z-10 border-b">
+                      <span>Registered Staff ({editStaffSearchResults.total})</span>
+                      <button
+                        type="button"
+                        onClick={() => setShowEditStaffSuggest(false)}
+                        className="text-slate-400 hover:text-slate-700 cursor-pointer text-xs font-bold"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    {editStaffSearchResults.startsWith.map((stf, idx) => (
+                      <div
+                        key={`claim-edit-stf-start-${idx}`}
+                        onClick={() => {
+                          setEditingClaim({
+                            ...editingClaim,
+                            assignedStaff: stf.name
+                          });
+                          setShowEditStaffSuggest(false);
+                        }}
+                        className="p-2.5 hover:bg-blue-50 cursor-pointer transition flex items-center justify-between text-xs"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 font-black text-[10px] flex items-center justify-center">
+                            {stf.name?.charAt(0)}
+                          </div>
+                          <div>
+                            <p className="font-extrabold text-slate-900">{stf.name}</p>
+                            <p className="text-[10px] text-slate-400 font-semibold">{stf.title || stf.role || 'Staff Advisor'}</p>
+                          </div>
+                        </div>
+                        <span className="badge bg-blue-50 text-blue-700 text-[9px] font-black">{stf.role || 'Advisor'}</span>
+                      </div>
+                    ))}
+                    {editStaffSearchResults.contains.map((stf, idx) => (
+                      <div
+                        key={`claim-edit-stf-cont-${idx}`}
+                        onClick={() => {
+                          setEditingClaim({
+                            ...editingClaim,
+                            assignedStaff: stf.name
+                          });
+                          setShowEditStaffSuggest(false);
+                        }}
+                        className="p-2.5 hover:bg-slate-50 cursor-pointer transition flex items-center justify-between text-xs"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <div className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 font-black text-[10px] flex items-center justify-center">
+                            {stf.name?.charAt(0)}
+                          </div>
+                          <div>
+                            <p className="font-extrabold text-slate-900">{stf.name}</p>
+                            <p className="text-[10px] text-slate-400 font-semibold">{stf.title || stf.role || 'Staff Advisor'}</p>
+                          </div>
+                        </div>
+                        <span className="badge bg-slate-100 text-slate-700 text-[9px] font-black">{stf.role || 'Advisor'}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <button 

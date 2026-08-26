@@ -21,8 +21,7 @@ import {
 
 export const Policies = () => {
   const { user } = useAuth();
-  const { openCustomer360 } = useCustomer360();
-  const { policies, addPolicy, deletePolicy, customers } = useData();
+  const { policies, addPolicy, deletePolicy, customers, staffList: liveStaffList } = useData();
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN' || user?.role === 'MANAGER';
 
   // Catalog Version State for reactive CRM-wide updates
@@ -49,9 +48,8 @@ export const Policies = () => {
       } catch (e) {}
     }
     return [
-      { uid: 'UID-STF-1003', name: 'Priya Sharma', role: 'Senior Advisor' },
-      { uid: 'UID-STF-1004', name: 'Rahul Dravid', role: 'Staff Advisor' },
-      { uid: 'UID-STF-1005', name: 'Kavita Menon', role: 'Advisor' }
+      { uid: 'UID-STF-1001', name: 'Prakash Gajendiran', role: 'SUPER_ADMIN' },
+      { uid: 'UID-STF-1002', name: 'Branch Manager', role: 'MANAGER' }
     ];
   });
 
@@ -160,77 +158,82 @@ export const Policies = () => {
 
   // Autocomplete matching lists: STRICTLY returns results ONLY when user enters meaningful text (FOCUS != SEARCH)
   const filteredCustomers = useMemo(() => {
-    if (!newPolicy.customerName || !newPolicy.customerName.trim()) {
+    const q = String(newPolicy?.customerName || '').toLowerCase().trim();
+    if (!q) {
       return [];
     }
-    const q = newPolicy.customerName.toLowerCase().trim();
     return (customers || []).filter(c => 
-      (c.name && c.name.toLowerCase().includes(q)) || 
-      (c.phone && c.phone.includes(q)) ||
-      (c.customerCode && c.customerCode.toLowerCase().includes(q)) ||
-      (c.id && c.id.toLowerCase().includes(q))
+      (c?.name && String(c.name).toLowerCase().includes(q)) || 
+      (c?.phone && String(c.phone).includes(q)) ||
+      (c?.customerCode && String(c.customerCode).toLowerCase().includes(q)) ||
+      (c?.id && String(c.id).toLowerCase().includes(q))
     ).slice(0, 10);
-  }, [customers, newPolicy.customerName]);
+  }, [customers, newPolicy?.customerName]);
 
   // Ranked Company Matching: Starts-With matches prioritized, followed by Contains matches
   const companySearchResults = useMemo(() => {
-    const rawList = insuranceCompanies;
-    if (!newPolicy.insuranceCompany || !newPolicy.insuranceCompany.trim()) {
+    const rawList = insuranceCompanies || [];
+    const q = String(newPolicy?.insuranceCompany || '').toLowerCase().trim();
+    if (!q) {
       return { startsWith: rawList, contains: [], total: rawList.length };
     }
-    const q = newPolicy.insuranceCompany.toLowerCase().trim();
-    const startsWith = rawList.filter(c => c.toLowerCase().trim().startsWith(q));
-    const contains = rawList.filter(c => !c.toLowerCase().trim().startsWith(q) && c.toLowerCase().includes(q));
+    const startsWith = rawList.filter(c => String(c || '').toLowerCase().trim().startsWith(q));
+    const contains = rawList.filter(c => !String(c || '').toLowerCase().trim().startsWith(q) && String(c || '').toLowerCase().includes(q));
     return {
       startsWith,
       contains,
       total: startsWith.length + contains.length
     };
-  }, [insuranceCompanies, newPolicy.insuranceCompany]);
+  }, [insuranceCompanies, newPolicy?.insuranceCompany]);
 
   const allStaffOptions = useMemo(() => {
-    const defaultOptions = [
-      { name: 'Priya Sharma', role: 'Senior Advisor' },
-      { name: 'Anitha S.', role: 'Insurance Specialist' },
-      { name: 'Karthik Subramanian', role: 'Manager' },
-      { name: 'Rajesh V.', role: 'Relationship Manager' },
-      { name: 'Rahul Dravid', role: 'Staff Advisor' },
-      { name: 'Kavita Menon', role: 'Advisor' }
-    ];
-    const map = new Map();
-    defaultOptions.forEach(s => map.set(s.name, s));
-    (staffList || []).forEach(s => {
-      if (s.name) map.set(s.name, { name: s.name, role: s.role || 'Advisor', uid: s.uid });
-    });
-    return Array.from(map.values());
-  }, [staffList]);
+    const list = (liveStaffList && liveStaffList.length > 0) ? liveStaffList : ((staffList && staffList.length > 0) ? staffList : [
+      { uid: 'UID-STF-1001', name: 'Prakash Gajendiran', role: 'SUPER_ADMIN' },
+      { uid: 'UID-STF-1002', name: 'Branch Manager', role: 'MANAGER' }
+    ]);
+    return list
+      .filter(s => s && (s.name || s.email || s.displayName))
+      .map(s => ({
+        name: String(s.name || s.displayName || s.email || 'Staff Advisor'),
+        role: String(s.role || s.title || 'Advisor'),
+        uid: s.uid || s.id || ''
+      }));
+  }, [liveStaffList, staffList]);
 
   const staffSearchResults = useMemo(() => {
-    const rawList = allStaffOptions;
-    if (!newPolicy.assignedStaff || !newPolicy.assignedStaff.trim()) {
+    const rawList = allStaffOptions || [];
+    const q = String(newPolicy?.assignedStaff || '').toLowerCase().trim();
+    if (!q) {
       return { startsWith: rawList, contains: [], total: rawList.length };
     }
-    const q = newPolicy.assignedStaff.toLowerCase().trim();
-    const startsWith = rawList.filter(s => s.name.toLowerCase().trim().startsWith(q) || (s.role && s.role.toLowerCase().startsWith(q)));
-    const contains = rawList.filter(s => !s.name.toLowerCase().trim().startsWith(q) && !s.role?.toLowerCase().startsWith(q) && (s.name.toLowerCase().includes(q) || (s.role && s.role.toLowerCase().includes(q))));
+    const startsWith = rawList.filter(s => {
+      const sName = String(s?.name || '').toLowerCase().trim();
+      const sRole = String(s?.role || '').toLowerCase().trim();
+      return sName.startsWith(q) || sRole.startsWith(q);
+    });
+    const contains = rawList.filter(s => {
+      const sName = String(s?.name || '').toLowerCase().trim();
+      const sRole = String(s?.role || '').toLowerCase().trim();
+      return !sName.startsWith(q) && !sRole.startsWith(q) && (sName.includes(q) || sRole.includes(q));
+    });
     return {
       startsWith,
       contains,
       total: startsWith.length + contains.length
     };
-  }, [allStaffOptions, newPolicy.assignedStaff]);
+  }, [allStaffOptions, newPolicy?.assignedStaff]);
 
   const filteredCategories = useMemo(() => {
-    if (!newPolicy.type.trim()) return POLICY_CATEGORIES;
-    const q = newPolicy.type.toLowerCase().trim();
-    return POLICY_CATEGORIES.filter(cat => cat.toLowerCase().includes(q));
-  }, [newPolicy.type]);
+    const q = String(newPolicy?.type || '').toLowerCase().trim();
+    if (!q) return POLICY_CATEGORIES;
+    return (POLICY_CATEGORIES || []).filter(cat => String(cat || '').toLowerCase().includes(q));
+  }, [newPolicy?.type]);
 
   const filteredPlans = useMemo(() => {
-    if (!newPolicy.policyName.trim()) return newPolicyAvailablePlans;
-    const q = newPolicy.policyName.toLowerCase().trim();
-    return newPolicyAvailablePlans.filter(p => p.toLowerCase().includes(q));
-  }, [newPolicyAvailablePlans, newPolicy.policyName]);
+    const q = String(newPolicy?.policyName || '').toLowerCase().trim();
+    if (!q) return newPolicyAvailablePlans || [];
+    return (newPolicyAvailablePlans || []).filter(p => String(p || '').toLowerCase().includes(q));
+  }, [newPolicyAvailablePlans, newPolicy?.policyName]);
 
   // Plans listed inside the Admin Catalog Management Modal
   const currentManagePlansList = useMemo(() => {
@@ -283,16 +286,18 @@ export const Policies = () => {
 
   // Highlight Matching Substrings in Search Dropdowns
   const renderHighlight = (text, query) => {
-    if (!query || !query.trim()) return text;
-    const q = query.trim().toLowerCase();
-    const lower = text.toLowerCase();
+    if (!text) return '';
+    const str = String(text);
+    if (!query || !String(query).trim()) return str;
+    const q = String(query).trim().toLowerCase();
+    const lower = str.toLowerCase();
     const idx = lower.indexOf(q);
-    if (idx === -1) return text;
+    if (idx === -1) return str;
     return (
       <span>
-        {text.substring(0, idx)}
-        <span className="bg-purple-100 text-purple-950 font-black px-0.5 rounded">{text.substring(idx, idx + q.length)}</span>
-        {text.substring(idx + q.length)}
+        {str.substring(0, idx)}
+        <span className="bg-purple-100 text-purple-950 font-black px-0.5 rounded">{str.substring(idx, idx + q.length)}</span>
+        {str.substring(idx + q.length)}
       </span>
     );
   };
@@ -723,7 +728,7 @@ export const Policies = () => {
                   <td className="p-4">
                     <span className="badge bg-purple-50 text-purple-700 border border-purple-200 text-[11px] font-extrabold px-2.5 py-1 rounded-lg inline-flex items-center space-x-1">
                       <UserCheck className="h-3 w-3 text-purple-600 shrink-0" />
-                      <span>{pol.assignedStaff || 'Priya Sharma (Senior Advisor)'}</span>
+                      <span>{pol.assignedStaff || user?.name || 'Assigned Staff'}</span>
                     </span>
                   </td>
                   <td className="p-4 text-right space-x-2">
@@ -1081,7 +1086,79 @@ export const Policies = () => {
                 )}
               </div>
 
-              {/* FIELD 2: INSURANCE COMPANY PROVIDER (WITH LIVE PREFIX "STARTS WITH" & "CONTAINS" AUTOCOMPLETE) */}
+              {/* FIELD 2: POLICY CATEGORY / PLAN TYPE */}
+              <div ref={catWrapperRef} className="relative">
+                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">
+                  Policy Category / Plan Type *
+                </label>
+                <div className="relative">
+                  <input 
+                    type="text" 
+                    required 
+                    placeholder="Select or Type Policy Category" 
+                    value={newPolicy.type} 
+                    onFocus={() => {
+                      if (newPolicy.type && newPolicy.type.trim().length > 0) {
+                        setShowCatSuggest(true);
+                      }
+                    }}
+                    onChange={(e) => {
+                      const typed = e.target.value;
+                      const plans = getPredefinedPolicies(newPolicy.insuranceCompany, typed);
+                      setNewPolicy({
+                        ...newPolicy,
+                        type: typed,
+                        policyName: plans[0] || newPolicy.policyName
+                      });
+                      if (typed.trim().length > 0) {
+                        setShowCatSuggest(true);
+                      } else {
+                        setShowCatSuggest(false);
+                      }
+                    }} 
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white" 
+                  />
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                </div>
+
+                {/* Floating Categories Suggestions Dropdown */}
+                {showCatSuggest && newPolicy.type && newPolicy.type.trim().length > 0 && filteredCategories.length > 0 && (
+                  <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white rounded-2xl border border-slate-200 shadow-xl max-h-48 overflow-y-auto divide-y divide-slate-100 animate-fadeIn">
+                    <div className="p-2 bg-slate-50 text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between sticky top-0 z-10 border-b">
+                      <span>Categories ({filteredCategories.length})</span>
+                      <button 
+                        type="button"
+                        onClick={() => setShowCatSuggest(false)} 
+                        className="text-slate-400 hover:text-slate-700 cursor-pointer"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    {filteredCategories.map((cat, idx) => (
+                      <div 
+                        key={idx} 
+                        onClick={() => {
+                          const plans = getPredefinedPolicies(newPolicy.insuranceCompany, cat);
+                          setNewPolicy({
+                            ...newPolicy,
+                            type: cat,
+                            policyName: plans[0] || newPolicy.policyName
+                          });
+                          setShowCatSuggest(false);
+                        }}
+                        className="p-2.5 hover:bg-blue-50 cursor-pointer transition flex items-center justify-between text-xs font-bold text-slate-800"
+                      >
+                        <span>{renderHighlight(cat, newPolicy.type)}</span>
+                        {newPolicy.type === cat && (
+                          <Check className="h-3.5 w-3.5 text-blue-600" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* FIELD 3: INSURANCE COMPANY PROVIDER (WITH LIVE PREFIX "STARTS WITH" & "CONTAINS" AUTOCOMPLETE) */}
               <div ref={compWrapperRef} className="relative">
                 <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">
                   Insurance Company Provider *
@@ -1191,78 +1268,6 @@ export const Policies = () => {
                         ))}
                       </div>
                     )}
-                  </div>
-                )}
-              </div>
-
-              {/* FIELD 3: POLICY CATEGORY / PLAN TYPE */}
-              <div ref={catWrapperRef} className="relative">
-                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">
-                  Policy Category / Plan Type *
-                </label>
-                <div className="relative">
-                  <input 
-                    type="text" 
-                    required 
-                    placeholder="Select or Type Policy Category" 
-                    value={newPolicy.type} 
-                    onFocus={() => {
-                      if (newPolicy.type && newPolicy.type.trim().length > 0) {
-                        setShowCatSuggest(true);
-                      }
-                    }}
-                    onChange={(e) => {
-                      const typed = e.target.value;
-                      const plans = getPredefinedPolicies(newPolicy.insuranceCompany, typed);
-                      setNewPolicy({
-                        ...newPolicy,
-                        type: typed,
-                        policyName: plans[0] || newPolicy.policyName
-                      });
-                      if (typed.trim().length > 0) {
-                        setShowCatSuggest(true);
-                      } else {
-                        setShowCatSuggest(false);
-                      }
-                    }} 
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white" 
-                  />
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                </div>
-
-                {/* Floating Categories Suggestions Dropdown */}
-                {showCatSuggest && newPolicy.type && newPolicy.type.trim().length > 0 && filteredCategories.length > 0 && (
-                  <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white rounded-2xl border border-slate-200 shadow-xl max-h-48 overflow-y-auto divide-y divide-slate-100 animate-fadeIn">
-                    <div className="p-2 bg-slate-50 text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between sticky top-0 z-10 border-b">
-                      <span>Categories ({filteredCategories.length})</span>
-                      <button 
-                        type="button"
-                        onClick={() => setShowCatSuggest(false)} 
-                        className="text-slate-400 hover:text-slate-700 cursor-pointer"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                    {filteredCategories.map((cat, idx) => (
-                      <div 
-                        key={idx}
-                        onClick={() => {
-                          const plans = getPredefinedPolicies(newPolicy.insuranceCompany, cat);
-                          setNewPolicy({
-                            ...newPolicy,
-                            type: cat,
-                            policyName: plans[0] || newPolicy.policyName
-                          });
-                          setShowCatSuggest(false);
-                        }}
-                        className="p-2.5 hover:bg-blue-50 cursor-pointer transition flex items-center justify-between text-xs font-bold text-slate-800"
-                      >
-                        <span>{renderHighlight(cat, newPolicy.type)}</span>
-                        {newPolicy.type === cat && (
-                          <Check className="h-3.5 w-3.5 text-blue-600" />
-                        )}
-                      </div>
-                    ))}
                   </div>
                 )}
               </div>
@@ -1378,41 +1383,34 @@ export const Policies = () => {
                 </div>
               </div>
 
-              {/* FIELD 5: ASSIGNED STAFF / OFFICER (WITH LIVE PREFIX "STARTS WITH" & "CONTAINS" AUTOCOMPLETE) */}
+              {/* FIELD 5: ASSIGNED STAFF (WITH LIVE PREFIX "STARTS WITH" & "CONTAINS" AUTOCOMPLETE) */}
               <div ref={staffWrapperRef} className="relative">
                 <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">
-                  Assigned Staff / Officer *
+                  Assigned Staff *
                 </label>
                 <div className="relative">
                   <input 
                     type="text" 
                     required 
-                    placeholder="Select or Type Assigned Staff / Officer" 
+                    placeholder="Select or Type Assigned Staff" 
                     value={newPolicy.assignedStaff} 
-                    onFocus={() => {
-                      if (newPolicy.assignedStaff && newPolicy.assignedStaff.trim().length > 0) {
-                        setShowStaffSuggest(true);
-                      }
-                    }}
+                    onFocus={() => setShowStaffSuggest(true)}
+                    onClick={() => setShowStaffSuggest(true)}
                     onChange={(e) => {
                       const val = e.target.value;
                       setNewPolicy({...newPolicy, assignedStaff: val});
-                      if (val.trim().length > 0) {
-                        setShowStaffSuggest(true);
-                      } else {
-                        setShowStaffSuggest(false);
-                      }
+                      setShowStaffSuggest(true);
                     }} 
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold outline-none focus:ring-2 focus:ring-purple-600 bg-white" 
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold outline-none focus:ring-2 focus:ring-purple-600 bg-white cursor-pointer" 
                   />
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
                 </div>
 
-                {/* Floating Staff Suggestions Dropdown - ONLY appears when user types meaningful search text */}
-                {showStaffSuggest && newPolicy.assignedStaff && newPolicy.assignedStaff.trim().length > 0 && staffSearchResults.total > 0 && (
+                {/* Floating Staff Suggestions Dropdown */}
+                {showStaffSuggest && staffSearchResults.total > 0 && (
                   <div className="absolute left-0 right-0 bottom-full mb-1 z-30 bg-white rounded-2xl border border-slate-200 shadow-2xl max-h-56 overflow-y-auto divide-y divide-slate-100 animate-fadeIn">
                     <div className="p-2 bg-slate-50 text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between sticky top-0 z-10 border-b">
-                      <span>Assigned Staff Officers ({staffSearchResults.total})</span>
+                      <span>Assigned Staff ({staffSearchResults.total})</span>
                       <button 
                         type="button"
                         onClick={() => setShowStaffSuggest(false)} 
@@ -1529,28 +1527,6 @@ export const Policies = () => {
                 />
               </div>
 
-              {/* Insurance Provider Selector */}
-              <div>
-                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Insurance Company Provider</label>
-                <select 
-                  value={insuranceCompanies.includes(editingPolicy.insuranceCompany) ? editingPolicy.insuranceCompany : insuranceCompanies[0]} 
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    const plans = getPredefinedPolicies(val, editingPolicy.type);
-                    setEditingPolicy({
-                      ...editingPolicy, 
-                      insuranceCompany: val, 
-                      policyName: plans[0] || editingPolicy.policyName
-                    });
-                  }} 
-                  className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-amber-500 bg-white"
-                >
-                  {insuranceCompanies.map((comp, idx) => (
-                    <option key={idx} value={comp}>{comp}</option>
-                  ))}
-                </select>
-              </div>
-
               {/* Insurance Category Selector */}
               <div>
                 <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Policy Category / Plan Type</label>
@@ -1569,6 +1545,28 @@ export const Policies = () => {
                 >
                   {POLICY_CATEGORIES.map((cat, idx) => (
                     <option key={idx} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Insurance Provider Selector */}
+              <div>
+                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Insurance Company Provider</label>
+                <select 
+                  value={insuranceCompanies.includes(editingPolicy.insuranceCompany) ? editingPolicy.insuranceCompany : insuranceCompanies[0]} 
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const plans = getPredefinedPolicies(val, editingPolicy.type);
+                    setEditingPolicy({
+                      ...editingPolicy, 
+                      insuranceCompany: val, 
+                      policyName: plans[0] || editingPolicy.policyName
+                    });
+                  }} 
+                  className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-amber-500 bg-white"
+                >
+                  {insuranceCompanies.map((comp, idx) => (
+                    <option key={idx} value={comp}>{comp}</option>
                   ))}
                 </select>
               </div>
@@ -1648,16 +1646,18 @@ export const Policies = () => {
               </div>
 
               <div>
-                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Assigned Staff / Officer</label>
+                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Assigned Staff</label>
                 <select 
-                  value={editingPolicy.assignedStaff || 'Priya Sharma (Senior Advisor)'} 
+                  value={editingPolicy.assignedStaff || ''} 
                   onChange={(e) => setEditingPolicy({...editingPolicy, assignedStaff: e.target.value})} 
                   className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-amber-500 bg-white"
                 >
-                  <option value="Priya Sharma (Senior Advisor)">Priya Sharma (Senior Advisor)</option>
-                  <option value="Anitha S. (Insurance Specialist)">Anitha S. (Insurance Specialist)</option>
-                  <option value="Karthik Subramanian (Manager)">Karthik Subramanian (Manager)</option>
-                  <option value="Rajesh V. (Relationship Manager)">Rajesh V. (Relationship Manager)</option>
+                  <option value="">Select Assigned Staff</option>
+                  {allStaffOptions.map((s, idx) => (
+                    <option key={s.uid || idx} value={s.name}>
+                      {s.name} ({s.role})
+                    </option>
+                  ))}
                 </select>
               </div>
 

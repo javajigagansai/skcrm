@@ -24,7 +24,7 @@ export const Leads = () => {
     leadSource: 'Website Inquiry',
     leadStatus: 'HOT',
     city: 'Chennai',
-    assignedStaff: user?.name || 'Priya Sharma',
+    assignedStaff: user?.name || 'Assigned Staff',
     estimatedValue: 50000
   });
 
@@ -45,7 +45,7 @@ export const Leads = () => {
       leadSource: 'Website Inquiry',
       leadStatus: 'HOT',
       city: 'Chennai',
-      assignedStaff: user?.name || 'Priya Sharma',
+      assignedStaff: user?.name || 'Assigned Staff',
       estimatedValue: 50000
     });
     alert(`Lead "${newLead.customerName}" registered successfully!`);

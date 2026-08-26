@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { 
   X, UserCheck, Users, ShieldCheck, ShieldAlert, Award, Sparkles, IndianRupee, 
-  FileText, Heart, Phone, Mail, MapPin, CreditCard, ChevronRight, 
+  FileText, Heart, Phone, Mail, MapPin, CreditCard, ChevronRight, ChevronDown,
   Edit3, Download, Plus, CheckCircle2, Trash2, Clock, AlertCircle, Building2
 } from 'lucide-react';
 import { exportCustomer360PDF } from '../utils/exportUtils';
@@ -13,6 +13,30 @@ const Customer360Context = createContext();
 
 export const initialMockCustomersList = [];
 
+const COUNTRY_DIAL_CODES = [
+  { code: '+91', label: 'India (+91)', short: '🇮🇳 +91' },
+  { code: '+1', label: 'USA / Canada (+1)', short: '🇺🇸 +1' },
+  { code: '+44', label: 'UK (+44)', short: '🇬🇧 +44' },
+  { code: '+971', label: 'UAE (+971)', short: '🇦🇪 +971' },
+  { code: '+65', label: 'Singapore (+65)', short: '🇸🇬 +65' },
+  { code: '+966', label: 'Saudi Arabia (+966)', short: '🇸🇦 +966' },
+  { code: '+61', label: 'Australia (+61)', short: '🇦🇺 +61' },
+  { code: '+974', label: 'Qatar (+974)', short: '🇶🇦 +974' },
+  { code: '+968', label: 'Oman (+968)', short: '🇴🇲 +968' },
+  { code: '+965', label: 'Kuwait (+965)', short: '🇰🇼 +965' },
+  { code: '+973', label: 'Bahrain (+973)', short: '🇧🇭 +973' },
+  { code: '+60', label: 'Malaysia (+60)', short: '🇲🇾 +60' },
+  { code: '+49', label: 'Germany (+49)', short: '🇩🇪 +49' },
+  { code: '+33', label: 'France (+33)', short: '🇫🇷 +33' },
+  { code: '+41', label: 'Switzerland (+41)', short: '🇨🇭 +41' },
+  { code: '+81', label: 'Japan (+81)', short: '🇯🇵 +81' },
+  { code: '+64', label: 'New Zealand (+64)', short: '🇳🇿 +64' },
+  { code: '+94', label: 'Sri Lanka (+94)', short: '🇱🇰 +94' },
+  { code: '+977', label: 'Nepal (+977)', short: '🇳🇵 +977' },
+  { code: '+880', label: 'Bangladesh (+880)', short: '🇧🇩 +880' },
+  { code: '+27', label: 'South Africa (+27)', short: '🇿🇦 +27' }
+];
+
 /** Load staff list from localStorage (kept in sync by StaffManagement) */
 const loadStaffListFromStorage = () => {
   try {
@@ -23,9 +47,8 @@ const loadStaffListFromStorage = () => {
     }
   } catch (e) {}
   return [
-    { uid: 'UID-STF-1003', name: 'Priya Sharma', role: 'EMPLOYEE' },
-    { uid: 'UID-STF-1004', name: 'Rahul Dravid', role: 'EMPLOYEE' },
-    { uid: 'UID-STF-1005', name: 'Kavita Menon', role: 'EMPLOYEE' }
+    { uid: 'UID-STF-1001', name: 'Prakash Gajendiran', role: 'SUPER_ADMIN' },
+    { uid: 'UID-STF-1002', name: 'Branch Manager', role: 'MANAGER' }
   ];
 };
 
@@ -39,21 +62,11 @@ export const Customer360Provider = ({ children }) => {
     addClaim,
     updateClaim,
     updateClaimStatus,
-    deleteClaim
+    deleteClaim,
+    staffList: liveStaffList
   } = useData();
 
-  // Staff list — required so the edit modal can write the UID, not just the name
   const [staffList360, setStaffList360] = useState(loadStaffListFromStorage);
-
-  useEffect(() => {
-    const sync = () => setStaffList360(loadStaffListFromStorage());
-    window.addEventListener('storage_users_updated', sync);
-    window.addEventListener('storage', sync);
-    return () => {
-      window.removeEventListener('storage_users_updated', sync);
-      window.removeEventListener('storage', sync);
-    };
-  }, []);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [active360Tab, setActive360Tab] = useState('OVERVIEW');
   const [showEditModal, setShowEditModal] = useState(false);
@@ -61,8 +74,22 @@ export const Customer360Provider = ({ children }) => {
   const [showAddFamilyModal, setShowAddFamilyModal] = useState(false);
   const [newFamilyMember, setNewFamilyMember] = useState({
     name: '',
-    relation: 'Spouse',
-    gender: 'Female',
+    relation: '',
+    relationshipName: '',
+    gender: '',
+    dob: '',
+    anniversaryDate: '',
+    phone: ''
+  });
+
+  const [showEditFamilyModal, setShowEditFamilyModal] = useState(false);
+  const [editingFamilyMember, setEditingFamilyMember] = useState({
+    index: -1,
+    id: '',
+    name: '',
+    relation: '',
+    relationshipName: '',
+    gender: '',
     dob: '',
     anniversaryDate: '',
     phone: ''
@@ -83,6 +110,47 @@ export const Customer360Provider = ({ children }) => {
     status: 'SUBMITTED'
   });
   const [editClaimData, setEditClaimData] = useState(null);
+  const [showEditStaffSuggest, setShowEditStaffSuggest] = useState(false);
+
+  const effectiveStaffList = useMemo(() => {
+    if (liveStaffList && Array.isArray(liveStaffList) && liveStaffList.length > 0) return liveStaffList;
+    if (staffList360 && Array.isArray(staffList360) && staffList360.length > 0) return staffList360;
+    return [
+      { uid: 'UID-STF-1001', name: 'Prakash Gajendiran', role: 'SUPER_ADMIN', title: 'Super Admin' },
+      { uid: 'UID-STF-1002', name: 'Branch Manager', role: 'MANAGER', title: 'Branch Manager' }
+    ];
+  }, [liveStaffList, staffList360]);
+
+  const editStaffSearchResults = useMemo(() => {
+    const query = String(editCustomerData?.assignedAdvisorName || editCustomerData?.assignedStaffName || '').toLowerCase().trim();
+    if (!query) {
+      return { startsWith: effectiveStaffList, contains: [], total: effectiveStaffList.length };
+    }
+    const startsWith = [];
+    const contains = [];
+    effectiveStaffList.forEach(st => {
+      const name = String(st.name || '').toLowerCase();
+      const role = String(st.role || '').toLowerCase();
+      const title = String(st.title || '').toLowerCase();
+      const email = String(st.email || '').toLowerCase();
+      if (name.startsWith(query) || role.startsWith(query) || title.startsWith(query)) {
+        startsWith.push(st);
+      } else if (name.includes(query) || role.includes(query) || title.includes(query) || email.includes(query)) {
+        contains.push(st);
+      }
+    });
+    return { startsWith, contains, total: startsWith.length + contains.length };
+  }, [editCustomerData?.assignedAdvisorName, editCustomerData?.assignedStaffName, effectiveStaffList]);
+
+  useEffect(() => {
+    const sync = () => setStaffList360(loadStaffListFromStorage());
+    window.addEventListener('storage_users_updated', sync);
+    window.addEventListener('storage', sync);
+    return () => {
+      window.removeEventListener('storage_users_updated', sync);
+      window.removeEventListener('storage', sync);
+    };
+  }, []);
 
   const openCustomer360 = (customerOrName, initialTab = 'OVERVIEW') => {
     if (!customerOrName) return;
@@ -97,6 +165,7 @@ export const Customer360Provider = ({ children }) => {
     setSelectedCustomer(null);
     setShowEditModal(false);
     setShowAddFamilyModal(false);
+    setShowEditFamilyModal(false);
     setShowAddClaimModal(false);
     setShowEditClaimModal(false);
   };
@@ -112,10 +181,15 @@ export const Customer360Provider = ({ children }) => {
       s => s.uid === editCustomerData.assignedStaffId || s.name === editCustomerData.assignedStaffName || s.name === editCustomerData.assignedAdvisorName
     );
     const finalAssignedStaffId   = resolvedStaff?.uid  || editCustomerData.assignedStaffId  || selectedCustomer.assignedStaffId;
-    const finalAssignedStaffName = resolvedStaff?.name || editCustomerData.assignedStaffName || editCustomerData.assignedAdvisorName || selectedCustomer.assignedStaffName;
+    const cleanEmails = Array.isArray(editCustomerData.emails)
+      ? editCustomerData.emails.map(e => (e || '').trim()).filter(e => e !== '')
+      : (editCustomerData.email ? [editCustomerData.email.trim()] : []);
+    const primaryEmail = cleanEmails[0] || (editCustomerData.email || '').trim();
 
     const finalData = {
       ...editCustomerData,
+      email: primaryEmail,
+      emails: cleanEmails.length > 0 ? cleanEmails : (primaryEmail ? [primaryEmail] : []),
       assignedStaffId:   finalAssignedStaffId,
       assignedStaffName: finalAssignedStaffName,
       assignedAdvisorName: finalAssignedStaffName,
@@ -157,13 +231,19 @@ export const Customer360Provider = ({ children }) => {
     e.preventDefault();
     if (!newFamilyMember.name.trim() || !selectedCustomer) return;
 
+    const isCustomerMarried = selectedCustomer.maritalStatus === 'Married';
+    if (newFamilyMember.relation === 'Spouse' && !isCustomerMarried) {
+      alert('Customer is Single / Unmarried. Wife / Husband (Spouse) details can only be added for Married customers. Please update marital status to Married first in Overview & KYC.');
+      return;
+    }
+
     const createdMember = {
       id: `FM-${Date.now()}`,
       name: newFamilyMember.name.trim(),
       relation: newFamilyMember.relation,
       gender: newFamilyMember.gender || (newFamilyMember.relation === 'Spouse' || newFamilyMember.relation === 'Mother' || newFamilyMember.relation === 'Daughter' || newFamilyMember.relation === 'Sister' ? 'Female' : 'Male'),
       dob: newFamilyMember.dob,
-      anniversaryDate: newFamilyMember.relation === 'Spouse' ? newFamilyMember.anniversaryDate : '',
+      anniversaryDate: (newFamilyMember.relation === 'Spouse' && isCustomerMarried) ? newFamilyMember.anniversaryDate : '',
       phone: newFamilyMember.phone
     };
 
@@ -179,13 +259,87 @@ export const Customer360Provider = ({ children }) => {
     setShowAddFamilyModal(false);
     setNewFamilyMember({
       name: '',
-      relation: 'Spouse',
+      relation: isCustomerMarried ? 'Spouse' : 'Mother',
       gender: 'Female',
       dob: '',
       anniversaryDate: '',
       phone: ''
     });
     alert(`Family Member "${createdMember.name}" added successfully!`);
+  };
+
+  const handleOpenEditFamily = (fm, idx) => {
+    const isCustomerMarried = selectedCustomer?.maritalStatus === 'Married';
+    const safeRelation = (!isCustomerMarried && fm.relation === 'Spouse') ? 'Mother' : (fm.relation || (isCustomerMarried ? 'Spouse' : 'Mother'));
+    setEditingFamilyMember({
+      index: idx,
+      id: fm.id || `FM-${Date.now()}`,
+      name: fm.name || '',
+      relation: safeRelation,
+      relationshipName: fm.relationshipName || '',
+      gender: fm.gender || (safeRelation === 'Spouse' || safeRelation === 'Mother' || safeRelation === 'Daughter' || safeRelation === 'Sister' ? 'Female' : 'Male'),
+      dob: fm.dob || '',
+      anniversaryDate: fm.anniversaryDate || '',
+      phone: fm.phone || ''
+    });
+    setShowEditFamilyModal(true);
+  };
+
+  const handleSaveEditFamilyMember = (e) => {
+    e.preventDefault();
+    if (!editingFamilyMember.name.trim() || !selectedCustomer) return;
+
+    const isCustomerMarried = selectedCustomer.maritalStatus === 'Married';
+    if (editingFamilyMember.relation === 'Spouse' && !isCustomerMarried) {
+      alert('Customer is Single / Unmarried. Wife / Husband (Spouse) details can only be added for Married customers. Please update marital status to Married first in Overview & KYC.');
+      return;
+    }
+
+    const updatedList = [...(selectedCustomer.familyMembers || [])];
+    const updatedMember = {
+      id: editingFamilyMember.id || `FM-${Date.now()}`,
+      name: editingFamilyMember.name.trim(),
+      relation: editingFamilyMember.relation,
+      relationshipName: editingFamilyMember.relation === 'Other' ? editingFamilyMember.relationshipName : '',
+      gender: editingFamilyMember.gender || (editingFamilyMember.relation === 'Spouse' || editingFamilyMember.relation === 'Mother' || editingFamilyMember.relation === 'Daughter' || editingFamilyMember.relation === 'Sister' ? 'Female' : 'Male'),
+      dob: editingFamilyMember.dob,
+      anniversaryDate: (editingFamilyMember.relation === 'Spouse' && isCustomerMarried) ? editingFamilyMember.anniversaryDate : '',
+      phone: editingFamilyMember.phone
+    };
+
+    if (editingFamilyMember.index >= 0 && editingFamilyMember.index < updatedList.length) {
+      updatedList[editingFamilyMember.index] = updatedMember;
+    } else {
+      updatedList.push(updatedMember);
+    }
+
+    const updatedCust = {
+      ...selectedCustomer,
+      familyMembers: updatedList
+    };
+
+    setSelectedCustomer(updatedCust);
+    if (typeof updateCustomer === 'function') {
+      updateCustomer(updatedCust);
+    }
+    setShowEditFamilyModal(false);
+    alert(`Family Member "${updatedMember.name}" updated successfully!`);
+  };
+
+  const handleDeleteFamilyMember = (idx) => {
+    if (!selectedCustomer) return;
+    if (!window.confirm('Are you sure you want to remove this family member?')) return;
+
+    const updatedList = (selectedCustomer.familyMembers || []).filter((_, i) => i !== idx);
+    const updatedCust = {
+      ...selectedCustomer,
+      familyMembers: updatedList
+    };
+
+    setSelectedCustomer(updatedCust);
+    if (typeof updateCustomer === 'function') {
+      updateCustomer(updatedCust);
+    }
   };
 
   const activePoliciesList = selectedCustomer?.policiesList || (selectedCustomer?.insuranceCompany ? [{
@@ -610,9 +764,15 @@ export const Customer360Provider = ({ children }) => {
                           </div>
                         )}
                         <div className="flex items-center space-x-2 text-slate-600 font-bold text-xs">
-                          <Mail className="h-4 w-4 text-blue-600" />
-                          <span>Email: {selectedCustomer.email || `${selectedCustomer.name?.toLowerCase().replace(/\s+/g, '')}@example.com`}</span>
+                          <Mail className="h-4 w-4 text-blue-600 shrink-0" />
+                          <span>Email: <strong className="text-slate-900">{selectedCustomer.email || `${selectedCustomer.name?.toLowerCase().replace(/\s+/g, '')}@example.com`}</strong> <span className="badge bg-blue-100 text-blue-800 text-[9px] font-black">Primary</span></span>
                         </div>
+                        {Array.isArray(selectedCustomer.emails) && selectedCustomer.emails.filter(e => e && e.trim() !== '' && e.trim() !== selectedCustomer.email).map((em, idx) => (
+                          <div key={`c360-disp-em-${idx}`} className="flex items-center space-x-2 text-slate-600 font-bold text-xs pl-0.5">
+                            <Mail className="h-3.5 w-3.5 text-indigo-600 shrink-0" />
+                            <span>Alternate Email {idx + 1}: <strong className="text-slate-800 font-mono text-[11px]">{em}</strong></span>
+                          </div>
+                        ))}
                         <div className="flex items-start space-x-2 text-slate-600 font-bold text-xs">
                           <MapPin className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
                           <span>Address: {selectedCustomer.address || `${selectedCustomer.city || 'Chennai'}`}</span>
@@ -647,7 +807,19 @@ export const Customer360Provider = ({ children }) => {
                       <p className="text-xs text-slate-500">Registered spouse, children, and dependent relatives for festival greetings.</p>
                     </div>
                     <button 
-                      onClick={() => setShowAddFamilyModal(true)}
+                      onClick={() => {
+                        const isMarried = selectedCustomer?.maritalStatus === 'Married';
+                        setNewFamilyMember({
+                          name: '',
+                          relation: isMarried ? 'Spouse' : 'Mother',
+                          relationshipName: '',
+                          gender: 'Female',
+                          dob: '',
+                          anniversaryDate: '',
+                          phone: ''
+                        });
+                        setShowAddFamilyModal(true);
+                      }}
                       className="px-3 py-1.5 rounded-xl bg-pink-600 hover:bg-pink-700 text-white font-extrabold text-xs transition cursor-pointer flex items-center space-x-1"
                     >
                       <Plus className="h-3.5 w-3.5" />
@@ -667,6 +839,7 @@ export const Customer360Provider = ({ children }) => {
                           <th className="p-3 border-r border-pink-500">Contact Number</th>
                           <th className="p-3 border-r border-pink-500">Wedding Anniversary</th>
                           <th className="p-3 text-center">Status</th>
+                          <th className="p-3 text-right">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-200 text-xs font-semibold text-slate-800">
@@ -679,17 +852,33 @@ export const Customer360Provider = ({ children }) => {
                                 <span className="badge bg-pink-100 text-pink-800 font-extrabold text-[10px]">{fm.relation === 'Other' ? (fm.relationshipName || 'Other Relative') : fm.relation}</span>
                               </td>
                               <td className="p-3 border-r border-slate-100">{fm.gender || (fm.relation === 'Spouse' || fm.relation === 'Mother' || fm.relation === 'Daughter' || fm.relation === 'Sister' ? 'Female' : 'Male')}</td>
-                              <td className="p-3 border-r border-slate-100">{fm.dob || '1985-04-12'}</td>
-                              <td className="p-3 border-r border-slate-100 font-mono">{fm.phone || selectedCustomer.phone}</td>
+                              <td className="p-3 border-r border-slate-100">{fm.dob || 'N/A'}</td>
+                              <td className="p-3 border-r border-slate-100 font-mono">{fm.phone || selectedCustomer.phone || 'N/A'}</td>
                               <td className="p-3 border-r border-slate-100 font-bold text-pink-700">{fm.anniversaryDate || '-'}</td>
                               <td className="p-3 text-center">
                                 <span className="badge badge-green text-[9px]">Active</span>
+                              </td>
+                              <td className="p-3 text-right space-x-1">
+                                <button
+                                  onClick={() => handleOpenEditFamily(fm, idx)}
+                                  className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition inline-flex items-center"
+                                  title="Edit Family Member"
+                                >
+                                  <Edit3 className="h-3.5 w-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteFamilyMember(idx)}
+                                  className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition inline-flex items-center"
+                                  title="Remove Member"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
                               </td>
                             </tr>
                           ))
                         ) : (
                           <tr>
-                            <td colSpan="8" className="p-6 text-center text-xs text-slate-400">
+                            <td colSpan="9" className="p-6 text-center text-xs text-slate-400">
                               No family members registered for this customer yet. Click "Add Family Member" above.
                             </td>
                           </tr>
@@ -1076,11 +1265,10 @@ export const Customer360Provider = ({ children }) => {
                 {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
                   <button 
                     onClick={() => {
-                      if (window.confirm(`Are you sure you want to PERMANENTLY DELETE customer profile "${selectedCustomer.name}" (${selectedCustomer.id})?`)) {
+                      if (window.confirm(`Are you sure you want to PERMANENTLY DELETE customer "${selectedCustomer.name}" (${selectedCustomer.id})?\n\nThis will also permanently DELETE all their linked Policies, Investments, Claims, and Follow-up records.`)) {
                         deleteCustomer(selectedCustomer.id);
-                        deleteCustomerBackend(selectedCustomer.id).catch(() => {});
                         closeCustomer360();
-                        alert(`Customer "${selectedCustomer.name}" deleted successfully.`);
+                        alert(`Customer "${selectedCustomer.name}" and all associated policies have been permanently deleted.`);
                       }
                     }}
                     className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs transition cursor-pointer flex items-center space-x-1.5"
@@ -1216,24 +1404,107 @@ export const Customer360Provider = ({ children }) => {
                   </div>
                   <div>
                     <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Alternate Mobile Number</label>
-                    <input 
-                      type="text"
-                      placeholder="+91 98765 00000 (Optional)"
-                      value={editCustomerData.alternatePhone || editCustomerData.altPhone || ''}
-                      onChange={(e) => setEditCustomerData({...editCustomerData, alternatePhone: e.target.value, altPhone: e.target.value})}
-                      className="w-full px-3 py-2 rounded-xl border text-xs font-mono outline-none focus:ring-2 focus:ring-blue-600 bg-white"
-                    />
+                    <div className="flex items-center space-x-1.5">
+                      <select
+                        value={editCustomerData.altCountryCode || '+91'}
+                        onChange={(e) => setEditCustomerData({ ...editCustomerData, altCountryCode: e.target.value })}
+                        className="px-2 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-slate-50 outline-none focus:ring-2 focus:ring-blue-600 shrink-0 cursor-pointer"
+                        title="Select Country Code"
+                      >
+                        {COUNTRY_DIAL_CODES.map(c => (
+                          <option key={c.code} value={c.code}>{c.short}</option>
+                        ))}
+                      </select>
+                      <input 
+                        type="text"
+                        placeholder="98765 00000 (Optional)"
+                        value={editCustomerData.alternatePhone || editCustomerData.altPhone || ''}
+                        onChange={(e) => setEditCustomerData({...editCustomerData, alternatePhone: e.target.value, altPhone: e.target.value})}
+                        className="flex-1 px-3 py-2 rounded-xl border text-xs font-mono outline-none focus:ring-2 focus:ring-blue-600 bg-white"
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Email Address</label>
-                  <input 
-                    type="email"
-                    value={editCustomerData.email || ''}
-                    onChange={(e) => setEditCustomerData({...editCustomerData, email: e.target.value})}
-                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600 bg-white"
-                  />
+                {/* MULTI-EMAIL SECTION IN SECTION 2: CONTACT & RESIDENTIAL ADDRESS */}
+                <div className="space-y-2 pt-1">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-[11px] font-black uppercase text-slate-600 flex items-center space-x-1.5">
+                      <Mail className="h-3.5 w-3.5 text-blue-600" />
+                      <span>Email Address(es)</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const cur = Array.isArray(editCustomerData.emails) ? [...editCustomerData.emails] : (editCustomerData.email ? [editCustomerData.email] : ['']);
+                        setEditCustomerData({
+                          ...editCustomerData,
+                          emails: [...cur, '']
+                        });
+                      }}
+                      className="text-[10px] font-extrabold text-blue-700 hover:text-blue-900 flex items-center space-x-1 cursor-pointer bg-blue-100/70 hover:bg-blue-200/80 px-2.5 py-1 rounded-xl border border-blue-300/60 transition"
+                    >
+                      <Plus className="h-3 w-3" />
+                      <span>Add Another Email</span>
+                    </button>
+                  </div>
+
+                  {/* Primary Email */}
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="email"
+                      placeholder="primary.email@example.com (Primary)"
+                      value={(Array.isArray(editCustomerData.emails) && editCustomerData.emails[0] !== undefined) ? editCustomerData.emails[0] : (editCustomerData.email || '')}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const cur = Array.isArray(editCustomerData.emails) && editCustomerData.emails.length > 0 ? [...editCustomerData.emails] : [editCustomerData.email || ''];
+                        cur[0] = val;
+                        setEditCustomerData({
+                          ...editCustomerData,
+                          email: val,
+                          emails: cur
+                        });
+                      }}
+                      className="flex-1 px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600 bg-white font-semibold"
+                    />
+                    <span className="badge bg-blue-100 text-blue-800 text-[10px] font-black shrink-0 px-2.5 py-1">Primary</span>
+                  </div>
+
+                  {/* Additional Emails */}
+                  {Array.isArray(editCustomerData.emails) && editCustomerData.emails.slice(1).map((em, idx) => (
+                    <div key={`c360-edit-em-${idx + 1}`} className="flex items-center space-x-2 animate-fadeIn">
+                      <input
+                        type="email"
+                        placeholder={`Additional Email #${idx + 2}`}
+                        value={em || ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const cur = [...editCustomerData.emails];
+                          cur[idx + 1] = val;
+                          setEditCustomerData({
+                            ...editCustomerData,
+                            emails: cur
+                          });
+                        }}
+                        className="flex-1 px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600 bg-white"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const cur = editCustomerData.emails.filter((_, i) => i !== idx + 1);
+                          setEditCustomerData({
+                            ...editCustomerData,
+                            email: cur[0] || '',
+                            emails: cur
+                          });
+                        }}
+                        className="p-2 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 transition cursor-pointer border border-rose-200"
+                        title="Remove Email"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
 
                 <div>
@@ -1343,29 +1614,96 @@ export const Customer360Provider = ({ children }) => {
                 </h4>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
+                  <div className="relative">
                     <label className="block text-[11px] font-black uppercase text-purple-800 mb-1">Present Handling Staff Officer</label>
-                    {/* PERMANENT FIX: select by uid so assignedStaffId is atomically updated */}
-                    <select
-                      value={editCustomerData.assignedStaffId || ''}
-                      onChange={(e) => {
-                        const selectedSt = staffList360.find(s => s.uid === e.target.value);
-                        setEditCustomerData({
-                          ...editCustomerData,
-                          assignedStaffId:   selectedSt?.uid  || e.target.value,
-                          assignedStaffName: selectedSt?.name || editCustomerData.assignedStaffName,
-                          assignedAdvisorName: selectedSt?.name || editCustomerData.assignedAdvisorName
-                        });
-                      }}
-                      className="w-full px-3 py-2 rounded-xl border border-purple-200 text-xs font-extrabold bg-white text-purple-900 outline-none focus:ring-2 focus:ring-purple-600 cursor-pointer"
-                    >
-                      <option value="">-- Select Staff Officer --</option>
-                      {staffList360.map((st, idx) => (
-                        <option key={st.uid || idx} value={st.uid || st.name}>
-                          {st.name} ({st.role || 'Staff'})
-                        </option>
-                      ))}
-                    </select>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Select or Type Assigned Staff"
+                        value={editCustomerData.assignedAdvisorName || editCustomerData.assignedStaffName || ''}
+                        onFocus={() => setShowEditStaffSuggest(true)}
+                        onClick={() => setShowEditStaffSuggest(true)}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setEditCustomerData({
+                            ...editCustomerData,
+                            assignedAdvisorName: val,
+                            assignedStaffName: val
+                          });
+                          setShowEditStaffSuggest(true);
+                        }}
+                        className="w-full px-3 py-2 rounded-xl border border-purple-200 text-xs font-extrabold bg-white text-purple-900 outline-none focus:ring-2 focus:ring-purple-600 cursor-pointer pr-8"
+                      />
+                      <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-purple-400 pointer-events-none" />
+                    </div>
+
+                    {/* Floating Staff Suggestions Dropdown */}
+                    {showEditStaffSuggest && editStaffSearchResults.total > 0 && (
+                      <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white rounded-2xl border border-purple-200 shadow-2xl max-h-52 overflow-y-auto divide-y divide-slate-100 animate-fadeIn">
+                        <div className="p-2 bg-purple-50 text-[10px] font-black uppercase text-purple-900 tracking-wider flex items-center justify-between sticky top-0 z-10 border-b">
+                          <span>Registered Staff ({editStaffSearchResults.total})</span>
+                          <button
+                            type="button"
+                            onClick={() => setShowEditStaffSuggest(false)}
+                            className="text-purple-400 hover:text-purple-700 cursor-pointer text-xs font-bold"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        {editStaffSearchResults.startsWith.map((stf, idx) => (
+                          <div
+                            key={`c360-stf-start-${idx}`}
+                            onClick={() => {
+                              setEditCustomerData({
+                                ...editCustomerData,
+                                assignedStaffId: stf.uid || stf.id || `UID-STF-${idx}`,
+                                assignedStaffName: stf.name,
+                                assignedAdvisorName: stf.name
+                              });
+                              setShowEditStaffSuggest(false);
+                            }}
+                            className="p-2.5 hover:bg-purple-50 cursor-pointer transition flex items-center justify-between text-xs"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <div className="w-6 h-6 rounded-full bg-purple-100 text-purple-700 font-black text-[10px] flex items-center justify-center">
+                                {stf.name?.charAt(0)}
+                              </div>
+                              <div>
+                                <p className="font-extrabold text-slate-900">{stf.name}</p>
+                                <p className="text-[10px] text-slate-400 font-semibold">{stf.title || stf.role || 'Staff Advisor'}</p>
+                              </div>
+                            </div>
+                            <span className="badge bg-purple-100 text-purple-800 text-[9px] font-black">{stf.role || 'Advisor'}</span>
+                          </div>
+                        ))}
+                        {editStaffSearchResults.contains.map((stf, idx) => (
+                          <div
+                            key={`c360-stf-cont-${idx}`}
+                            onClick={() => {
+                              setEditCustomerData({
+                                ...editCustomerData,
+                                assignedStaffId: stf.uid || stf.id || `UID-STF-${idx}`,
+                                assignedStaffName: stf.name,
+                                assignedAdvisorName: stf.name
+                              });
+                              setShowEditStaffSuggest(false);
+                            }}
+                            className="p-2.5 hover:bg-slate-50 cursor-pointer transition flex items-center justify-between text-xs"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <div className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 font-black text-[10px] flex items-center justify-center">
+                                {stf.name?.charAt(0)}
+                              </div>
+                              <div>
+                                <p className="font-extrabold text-slate-900">{stf.name}</p>
+                                <p className="text-[10px] text-slate-400 font-semibold">{stf.title || stf.role || 'Staff Advisor'}</p>
+                              </div>
+                            </div>
+                            <span className="badge bg-slate-100 text-slate-700 text-[9px] font-black">{stf.role || 'Advisor'}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div>
                     <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Insurance Type</label>
@@ -1588,7 +1926,10 @@ export const Customer360Provider = ({ children }) => {
                     onChange={(e) => setNewFamilyMember({...newFamilyMember, relation: e.target.value})}
                     className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-pink-500"
                   >
-                    <option value="Spouse">Spouse 💍</option>
+                    <option value="">-- Select Relationship --</option>
+                    {(selectedCustomer?.maritalStatus === 'Married') && (
+                      <option value="Spouse">Spouse 💍 (Wife / Husband)</option>
+                    )}
                     <option value="Son">Son 👦</option>
                     <option value="Daughter">Daughter 👧</option>
                     <option value="Father">Father 👨</option>
@@ -1597,6 +1938,11 @@ export const Customer360Provider = ({ children }) => {
                     <option value="Sister">Sister</option>
                     <option value="Other">Other Relative</option>
                   </select>
+                  {(selectedCustomer?.maritalStatus !== 'Married') && (
+                    <p className="text-[10px] text-amber-800 font-bold bg-amber-50 p-2 rounded-xl border border-amber-200 mt-1.5">
+                      🔒 Single Customer: Wife/Husband (Spouse) can only be added for Married customers.
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -1640,6 +1986,130 @@ export const Customer360Provider = ({ children }) => {
                 className="w-full py-2.5 rounded-xl bg-pink-600 hover:bg-pink-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer"
               >
                 Add Family Member Record
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================= GLOBAL EDIT FAMILY MEMBER MODAL ================= */}
+      {showEditFamilyModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-100 animate-fadeIn">
+            <div className="flex items-center justify-between border-b pb-3">
+              <h3 className="text-base font-black text-slate-900 flex items-center space-x-2">
+                <Edit3 className="h-4 w-4 text-pink-600" />
+                <span>Edit Family Member</span>
+              </h3>
+              <button onClick={() => setShowEditFamilyModal(false)} className="text-slate-400 hover:text-slate-600"><X className="h-5 w-5" /></button>
+            </div>
+
+            <form onSubmit={handleSaveEditFamilyMember} className="space-y-3">
+              <div>
+                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Family Member Name *</label>
+                <input 
+                  type="text" 
+                  required 
+                  placeholder="e.g. Vijeta Dravid"
+                  value={editingFamilyMember.name} 
+                  onChange={(e) => setEditingFamilyMember({...editingFamilyMember, name: e.target.value})} 
+                  className="w-full px-3 py-2 rounded-xl border text-xs font-semibold outline-none focus:ring-2 focus:ring-pink-500" 
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Relationship</label>
+                  <select 
+                    value={editingFamilyMember.relation} 
+                    onChange={(e) => setEditingFamilyMember({...editingFamilyMember, relation: e.target.value})} 
+                    className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-pink-500"
+                  >
+                    <option value="">-- Select Relationship --</option>
+                    {(selectedCustomer?.maritalStatus === 'Married') && (
+                      <option value="Spouse">Spouse 💍 (Wife / Husband)</option>
+                    )}
+                    <option value="Son">Son 👦</option>
+                    <option value="Daughter">Daughter 👧</option>
+                    <option value="Father">Father 👨</option>
+                    <option value="Mother">Mother 👩</option>
+                    <option value="Brother">Brother</option>
+                    <option value="Sister">Sister</option>
+                    <option value="Other">Other Relative</option>
+                  </select>
+                  {(selectedCustomer?.maritalStatus !== 'Married') && (
+                    <p className="text-[10px] text-amber-800 font-bold bg-amber-50 p-2 rounded-xl border border-amber-200 mt-1.5">
+                      🔒 Single Customer: Wife/Husband (Spouse) can only be added for Married customers.
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Gender</label>
+                  <select 
+                    value={editingFamilyMember.gender} 
+                    onChange={(e) => setEditingFamilyMember({...editingFamilyMember, gender: e.target.value})} 
+                    className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-pink-500"
+                  >
+                    <option value="Female">Female</option>
+                    <option value="Male">Male</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              {editingFamilyMember.relation === 'Other' && (
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-purple-700 mb-1">Relationship Name (Required)</label>
+                  <input 
+                    type="text" 
+                    required 
+                    placeholder="e.g. Business Partner, Guardian, Dependent Friend"
+                    value={editingFamilyMember.relationshipName || ''} 
+                    onChange={(e) => setEditingFamilyMember({...editingFamilyMember, relationshipName: e.target.value})} 
+                    className="w-full px-3 py-2 rounded-xl border border-purple-200 text-xs font-bold outline-none focus:ring-2 focus:ring-purple-500" 
+                  />
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Date of Birth</label>
+                  <input 
+                    type="date" 
+                    value={editingFamilyMember.dob || ''} 
+                    onChange={(e) => setEditingFamilyMember({...editingFamilyMember, dob: e.target.value})} 
+                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-pink-500" 
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Wedding Anniversary</label>
+                  <input 
+                    type="date" 
+                    value={editingFamilyMember.anniversaryDate || ''} 
+                    onChange={(e) => setEditingFamilyMember({...editingFamilyMember, anniversaryDate: e.target.value})} 
+                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-pink-500" 
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Mobile Phone (Optional)</label>
+                <input 
+                  type="text" 
+                  placeholder="+91 98765 43210"
+                  value={editingFamilyMember.phone || ''} 
+                  onChange={(e) => setEditingFamilyMember({...editingFamilyMember, phone: e.target.value})} 
+                  className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-pink-500" 
+                />
+              </div>
+
+              <button 
+                type="submit" 
+                className="w-full py-2.5 rounded-xl bg-pink-600 hover:bg-pink-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer"
+              >
+                Update Family Member Details
               </button>
             </form>
           </div>
@@ -1778,11 +2248,11 @@ export const Customer360Provider = ({ children }) => {
                   className="w-full px-3 py-2 rounded-xl border text-xs font-bold bg-white outline-none focus:ring-2 focus:ring-purple-600"
                 >
                   <option value="">Select Assigned Assistance Officer</option>
-                  <option value="Priya Sharma (Senior Advisor)">Priya Sharma (Senior Advisor)</option>
-                  <option value="Anitha S. (Insurance Specialist)">Anitha S. (Insurance Specialist)</option>
-                  <option value="Karthik Subramanian (Manager)">Karthik Subramanian (Manager)</option>
-                  <option value="Rajesh V. (Relationship Manager)">Rajesh V. (Relationship Manager)</option>
-                  <option value="Rahul Dravid (Staff Advisor)">Rahul Dravid (Staff Advisor)</option>
+                  {(liveStaffList || staffList || []).map((s, idx) => (
+                    <option key={s.uid || s.id || idx} value={s.name}>
+                      {s.name} ({s.role === 'SUPER_ADMIN' ? 'Admin' : s.role === 'MANAGER' ? 'Manager' : s.title || s.role || 'Staff'})
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -1890,11 +2360,11 @@ export const Customer360Provider = ({ children }) => {
                   className="w-full px-3 py-2 rounded-xl border text-xs font-bold bg-white outline-none focus:ring-2 focus:ring-purple-600"
                 >
                   <option value="">Select Assigned Followup Staff</option>
-                  <option value="Priya Sharma">Priya Sharma</option>
-                  <option value="Anitha S.">Anitha S.</option>
-                  <option value="Karthik Subramanian">Karthik Subramanian</option>
-                  <option value="Rajesh V.">Rajesh V.</option>
-                  <option value="Rahul Dravid">Rahul Dravid</option>
+                  {(liveStaffList || staffList || []).map((s, idx) => (
+                    <option key={s.uid || s.id || idx} value={s.name}>
+                      {s.name} ({s.role === 'SUPER_ADMIN' ? 'Admin' : s.role === 'MANAGER' ? 'Manager' : s.title || s.role || 'Staff'})
+                    </option>
+                  ))}
                 </select>
               </div>
 

@@ -1,180 +1,29 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { useAuth } from './AuthContext';
 import { filterScopedRecords, canAccessCustomer } from '../utils/rbac';
-import {
-  fetchCustomersBackend, createCustomerBackend, updateCustomerBackend, deleteCustomerBackend,
-  fetchLeadsBackend, createLeadBackend, updateLeadBackend, deleteLeadBackend,
-  fetchInvestmentsBackend, createInvestmentBackend,
-  fetchIncomeBackend, createIncomeBackend,
-  fetchExpensesBackend, createExpenseBackend,
-  fetchTasksBackend, createTaskBackend
-} from '../services/apiService';
 import { db } from '../config/firebaseClient';
-import { collection, addDoc, doc, setDoc, deleteDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, setDoc, deleteDoc, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const DataContext = createContext();
 
-const initialCustomersSeed = [];
-const initialPoliciesSeed = [];
-const initialInvestmentsSeed = [];
-const initialClaimsSeed = [];
-const initialLeadsSeed = [];
-const initialFollowupsSeed = [];
-const initialTasksSeed = [];
-
-const getDeletedCustomerIds = () => {
-  try {
-    const saved = localStorage.getItem('crm_v2_deleted_customer_ids');
-    const parsed = saved ? JSON.parse(saved) : [];
-    const seedIds = ['CUST-101', 'SK-CUST-101', 'Rahul Sharma', 'CUST-102', 'SK-CUST-102', 'Priya Menon', 'CUST-103', 'SK-CUST-103', 'Anand Kumar'];
-    return Array.from(new Set([...parsed, ...seedIds]));
-  } catch (e) {
-    return ['CUST-101', 'SK-CUST-101', 'Rahul Sharma', 'CUST-102', 'SK-CUST-102', 'Priya Menon', 'CUST-103', 'SK-CUST-103', 'Anand Kumar'];
-  }
-};
 
 export const DataProvider = ({ children }) => {
   const { user } = useAuth();
 
-  const [rawCustomers, setCustomers] = useState(() => {
-    const saved = localStorage.getItem('crm_v2_customers');
-    const deletedIds = getDeletedCustomerIds();
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          return parsed.filter(c =>
-            !deletedIds.includes(String(c.id)) &&
-            !deletedIds.includes(String(c.customerCode)) &&
-            !deletedIds.includes(String(c.name))
-          );
-        }
-      } catch (e) { }
-    }
-    return initialCustomersSeed.filter(c =>
-      !deletedIds.includes(String(c.id)) &&
-      !deletedIds.includes(String(c.customerCode)) &&
-      !deletedIds.includes(String(c.name))
-    );
-  });
-
-  const [rawPolicies, setPolicies] = useState(() => {
-    try {
-      localStorage.setItem('crm_v2_policies', JSON.stringify([]));
-    } catch (e) { }
-    return [];
-  });
-
-  const [rawInvestments, setInvestments] = useState(() => {
-    const saved = localStorage.getItem('crm_v2_investments');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          return parsed.filter(i =>
-            !['INV-2001', 'INV-2002', 'INV-2003'].includes(i.id) &&
-            !['Rahul Sharma', 'Priya Menon', 'Anand Kumar'].includes(i.customerName)
-          );
-        }
-      } catch (e) { }
-    }
-    return [];
-  });
-
-  const [rawClaims, setClaims] = useState(() => {
-    const saved = localStorage.getItem('crm_v2_claims');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          return parsed.filter(c =>
-            !['CLM-3001', 'CLM-3002'].includes(c.id) &&
-            !['Rahul Sharma', 'Priya Menon', 'Anand Kumar'].includes(c.customerName)
-          );
-        }
-      } catch (e) { }
-    }
-    return [];
-  });
-
-  const [rawLeads, setLeads] = useState(() => {
-    const saved = localStorage.getItem('crm_v2_leads');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          return parsed.filter(l =>
-            !['LD-4001', 'LD-4002'].includes(l.id) &&
-            !['Sanjay Gupta', 'Deepak Verma'].includes(l.customerName)
-          );
-        }
-      } catch (e) { }
-    }
-    return [];
-  });
-
-  const [rawFollowups, setFollowups] = useState(() => {
-    const saved = localStorage.getItem('crm_v2_followups');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          return parsed.filter(f =>
-            !['FLW-5001', 'FLW-5002'].includes(f.id) &&
-            !['Rahul Sharma', 'Priya Menon', 'Anand Kumar'].includes(f.customerName)
-          );
-        }
-      } catch (e) { }
-    }
-    return [];
-  });
-
-  const [rawTasks, setTasks] = useState(() => {
-    const saved = localStorage.getItem('crm_v2_tasks');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          return parsed.filter(t =>
-            !['TSK-6001', 'TSK-6002'].includes(t.id) &&
-            !['Rahul Sharma', 'Priya Menon', 'Anand Kumar'].includes(t.customerName)
-          );
-        }
-      } catch (e) { }
-    }
-    return [];
-  });
-
-  const [rawIncome, setIncome] = useState(() => {
-    const saved = localStorage.getItem('crm_v2_income');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) { }
-    }
-    return [];
-  });
-
-  const [rawExpenses, setExpenses] = useState(() => {
-    const saved = localStorage.getItem('crm_v2_expenses');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) { }
-    }
-    return [];
-  });
-
-  const [rawAuditLogs, setAuditLogs] = useState(() => {
-    const saved = localStorage.getItem('crm_v2_audit_logs');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) { }
-    }
-    return [];
-  });
-
-  // NOTE: We intentionally do NOT reset business data (customers, policies, etc.) on logout.
-  // Data isolation is enforced by filterScopedRecords() inside each useMemo below.
-  // When `user` changes (login/logout), useMemo recomputes the scoped views automatically.
-  // Resetting to seed data on logout would permanently destroy real assignments.
-
-
+  // ─── FIRESTORE IS THE SINGLE SOURCE OF TRUTH ───────────────────────────────
+  // All state initializes empty. onSnapshot listeners below fill them from
+  // Firestore in real time. No localStorage reads for business data.
+  const [rawCustomers, setCustomers] = useState([]);
+  const [rawPolicies, setPolicies] = useState([]);
+  const [rawInvestments, setInvestments] = useState([]);
+  const [rawClaims, setClaims] = useState([]);
+  const [rawLeads, setLeads] = useState([]);
+  const [rawFollowups, setFollowups] = useState([]);
+  const [rawTasks, setTasks] = useState([]);
+  const [rawIncome, setIncome] = useState([]);
+  const [rawExpenses, setExpenses] = useState([]);
+  const [rawAuditLogs, setAuditLogs] = useState([]);
+  const [rawUsers, setUsers] = useState([]);
 
   // Dynamically scoped data views based on active user's authorized role & staff ID
   const customers = useMemo(() => filterScopedRecords(user, rawCustomers), [user, rawCustomers]);
@@ -187,198 +36,64 @@ export const DataProvider = ({ children }) => {
   const income = useMemo(() => (user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER' ? rawIncome : []), [user, rawIncome]);
   const expenses = useMemo(() => (user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER' ? rawExpenses : []), [user, rawExpenses]);
   const auditLogs = useMemo(() => filterScopedRecords(user, rawAuditLogs), [user, rawAuditLogs]);
+  const staffList = useMemo(() => {
+    if (rawUsers.length > 0) return rawUsers;
+    return [
+      { uid: 'UID-STF-1001', name: 'Prakash Gajendiran', role: 'SUPER_ADMIN', title: 'Super Admin' },
+      { uid: 'UID-STF-1002', name: 'Branch Manager', role: 'MANAGER', title: 'Branch Manager' }
+    ];
+  }, [rawUsers]);
 
-  // Sync state changes to LocalStorage + broadcast update event so other open sessions update
-  useEffect(() => { localStorage.setItem('crm_v2_audit_logs', JSON.stringify(rawAuditLogs)); }, [rawAuditLogs]);
+  // ─── NO localStorage write-backs. Firestore onSnapshot is the only sync mechanism. ───
+
+  // ─── FIRESTORE onSnapshot LISTENERS ────────────────────────────────────────
+  // These are the ONLY way business data enters React state.
+  // They update state on every Firestore change — including empty collections.
   useEffect(() => {
-    localStorage.setItem('crm_v2_customers', JSON.stringify(rawCustomers));
-    window.dispatchEvent(new CustomEvent('crm_data_updated', { detail: { key: 'crm_v2_customers' } }));
-  }, [rawCustomers]);
-  useEffect(() => {
-    localStorage.setItem('crm_v2_policies', JSON.stringify(rawPolicies));
-    window.dispatchEvent(new CustomEvent('crm_data_updated', { detail: { key: 'crm_v2_policies' } }));
-  }, [rawPolicies]);
-  useEffect(() => { localStorage.setItem('crm_v2_investments', JSON.stringify(rawInvestments)); }, [rawInvestments]);
-  useEffect(() => { localStorage.setItem('crm_v2_claims', JSON.stringify(rawClaims)); }, [rawClaims]);
-  useEffect(() => { localStorage.setItem('crm_v2_leads', JSON.stringify(rawLeads)); }, [rawLeads]);
-  useEffect(() => { localStorage.setItem('crm_v2_followups', JSON.stringify(rawFollowups)); }, [rawFollowups]);
-  useEffect(() => {
-    localStorage.setItem('crm_v2_tasks', JSON.stringify(rawTasks));
-    window.dispatchEvent(new CustomEvent('crm_data_updated', { detail: { key: 'crm_v2_tasks' } }));
-  }, [rawTasks]);
-  useEffect(() => { localStorage.setItem('crm_v2_income', JSON.stringify(rawIncome)); }, [rawIncome]);
-  useEffect(() => { localStorage.setItem('crm_v2_expenses', JSON.stringify(rawExpenses)); }, [rawExpenses]);
+    const unsubCustomers = onSnapshot(collection(db, 'customers'),
+      (snap) => setCustomers(snap.docs.map(d => ({ ...d.data(), id: d.id }))),
+      (err) => console.warn('Firestore customers error:', err));
 
-  // Real-time cross-session sync:
-  // When another session (e.g. admin tab) writes to localStorage, the native 'storage'
-  // event fires in THIS session (e.g. staff tab). Reload the changed collection so
-  // the staff's dashboard and Customer 360 update immediately without a page refresh.
-  useEffect(() => {
-    const reloadFromStorage = (key, setter) => {
-      try {
-        const val = localStorage.getItem(key);
-        if (val) {
-          const parsed = JSON.parse(val);
-          if (Array.isArray(parsed)) setter(parsed);
-        }
-      } catch (e) { }
-    };
+    const unsubPolicies = onSnapshot(collection(db, 'policies'),
+      (snap) => setPolicies(snap.docs.map(d => ({ ...d.data(), id: d.id }))),
+      (err) => console.warn('Firestore policies error:', err));
 
-    // Native storage event fires across browser tabs (different-tab updates)
-    const handleStorageEvent = (e) => {
-      if (e.key === 'crm_v2_customers') reloadFromStorage('crm_v2_customers', setCustomers);
-      if (e.key === 'crm_v2_policies') reloadFromStorage('crm_v2_policies', setPolicies);
-      if (e.key === 'crm_v2_tasks') reloadFromStorage('crm_v2_tasks', setTasks);
-      if (e.key === 'crm_v2_leads') reloadFromStorage('crm_v2_leads', setLeads);
-      if (e.key === 'crm_v2_followups') reloadFromStorage('crm_v2_followups', setFollowups);
-      if (e.key === 'crm_v2_investments') reloadFromStorage('crm_v2_investments', setInvestments);
-      if (e.key === 'crm_v2_claims') reloadFromStorage('crm_v2_claims', setClaims);
-    };
+    const unsubInvestments = onSnapshot(collection(db, 'investments'),
+      (snap) => setInvestments(snap.docs.map(d => ({ ...d.data(), id: d.id }))),
+      (err) => console.warn('Firestore investments error:', err));
 
-    // crm_data_updated fires within the same tab when WE write (storage event doesn't)
-    // This covers the case where admin assigns while staff is on the same browser session
-    const handleCrmUpdate = (e) => {
-      const key = e?.detail?.key;
-      if (key === 'crm_v2_customers') reloadFromStorage('crm_v2_customers', setCustomers);
-      if (key === 'crm_v2_policies') reloadFromStorage('crm_v2_policies', setPolicies);
-      if (key === 'crm_v2_tasks') reloadFromStorage('crm_v2_tasks', setTasks);
-    };
+    const unsubClaims = onSnapshot(collection(db, 'claims'),
+      (snap) => setClaims(snap.docs.map(d => ({ ...d.data(), id: d.id }))),
+      (err) => console.warn('Firestore claims error:', err));
 
-    window.addEventListener('storage', handleStorageEvent);
-    window.addEventListener('crm_data_updated', handleCrmUpdate);
-    return () => {
-      window.removeEventListener('storage', handleStorageEvent);
-      window.removeEventListener('crm_data_updated', handleCrmUpdate);
-    };
-  }, []);
+    const unsubLeads = onSnapshot(collection(db, 'leads'),
+      (snap) => setLeads(snap.docs.map(d => ({ ...d.data(), id: d.id }))),
+      (err) => console.warn('Firestore leads error:', err));
 
-  useEffect(() => {
-    try {
-      const sampleNames = ['Rahul Sharma', 'Priya Menon', 'Anand Kumar', 'Sanjay Gupta', 'Deepak Verma'];
-      const sampleIds = ['CUST-101', 'CUST-102', 'CUST-103', 'POL-1001', 'POL-1002', 'POL-1003', 'INV-2001', 'INV-2002', 'INV-2003', 'CLM-3001', 'CLM-3002', 'LD-4001', 'LD-4002', 'FLW-5001', 'FLW-5002', 'TSK-6001', 'TSK-6002'];
-      const keysToClean = [
-        'crm_v2_customers',
-        'crm_v2_policies',
-        'crm_v2_investments',
-        'crm_v2_claims',
-        'crm_v2_leads',
-        'crm_v2_followups',
-        'crm_v2_tasks',
-        'crm_v2_income',
-        'crm_v2_audit_logs',
-        'crm_v2_client_followup_hubs',
-        'crm_v2_spreadsheet_followups'
-      ];
-      keysToClean.forEach(key => {
-        const saved = localStorage.getItem(key);
-        if (saved) {
-          try {
-            const parsed = JSON.parse(saved);
-            if (Array.isArray(parsed)) {
-              const cleaned = parsed.filter(item => {
-                const name = item.name || item.customerName || item.clientName || '';
-                const id = item.id || item.clientId || item.policyNo || '';
-                return !sampleNames.includes(name) && !sampleIds.includes(id);
-              });
-              localStorage.setItem(key, JSON.stringify(cleaned));
-            }
-          } catch (e) { }
-        }
-      });
-    } catch (e) { }
-  }, []);
+    const unsubFollowups = onSnapshot(collection(db, 'followups'),
+      (snap) => setFollowups(snap.docs.map(d => ({ ...d.data(), id: d.id }))),
+      (err) => console.warn('Firestore followups error:', err));
 
-  // Real-time Firestore snapshot listeners for zero-latency cross-device database synchronization
-  useEffect(() => {
-    // 1. Customers
-    const unsubCustomers = onSnapshot(collection(db, 'customers'), (snap) => {
-      if (!snap.empty) {
-        const deletedIds = getDeletedCustomerIds();
-        const items = snap.docs
-          .map(d => ({ id: d.id, ...d.data() }))
-          .filter(c =>
-            !deletedIds.includes(String(c.id)) &&
-            !deletedIds.includes(String(c.customerCode)) &&
-            !deletedIds.includes(String(c.name))
-          );
-        setCustomers(items);
-      }
-    }, err => console.warn("Firestore customers snapshot error:", err));
+    const unsubTasks = onSnapshot(collection(db, 'tasks'),
+      (snap) => setTasks(snap.docs.map(d => ({ ...d.data(), id: d.id }))),
+      (err) => console.warn('Firestore tasks error:', err));
 
-    // 2. Policies
-    const unsubPolicies = onSnapshot(collection(db, 'policies'), (snap) => {
-      if (!snap.empty) {
-        const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        setPolicies(items);
-      }
-    }, err => console.warn("Firestore policies snapshot error:", err));
+    const unsubIncome = onSnapshot(collection(db, 'income'),
+      (snap) => setIncome(snap.docs.map(d => ({ ...d.data(), id: d.id }))),
+      (err) => console.warn('Firestore income error:', err));
 
-    // 3. Investments
-    const unsubInvestments = onSnapshot(collection(db, 'investments'), (snap) => {
-      if (!snap.empty) {
-        const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        setInvestments(items);
-      }
-    }, err => console.warn("Firestore investments snapshot error:", err));
+    const unsubExpenses = onSnapshot(collection(db, 'expenses'),
+      (snap) => setExpenses(snap.docs.map(d => ({ ...d.data(), id: d.id }))),
+      (err) => console.warn('Firestore expenses error:', err));
 
-    // 4. Claims
-    const unsubClaims = onSnapshot(collection(db, 'claims'), (snap) => {
-      if (!snap.empty) {
-        const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        setClaims(items);
-      }
-    }, err => console.warn("Firestore claims snapshot error:", err));
-
-    // 5. Leads
-    const unsubLeads = onSnapshot(collection(db, 'leads'), (snap) => {
-      if (!snap.empty) {
-        const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        setLeads(items);
-      }
-    }, err => console.warn("Firestore leads snapshot error:", err));
-
-    // 6. Followups
-    const unsubFollowups = onSnapshot(collection(db, 'followups'), (snap) => {
-      if (!snap.empty) {
-        const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        setFollowups(items);
-      }
-    }, err => console.warn("Firestore followups snapshot error:", err));
-
-    // 7. Tasks
-    const unsubTasks = onSnapshot(collection(db, 'tasks'), (snap) => {
-      if (!snap.empty) {
-        const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        setTasks(items);
-      }
-    }, err => console.warn("Firestore tasks snapshot error:", err));
-
-    // 8. Income
-    const unsubIncome = onSnapshot(collection(db, 'income'), (snap) => {
-      if (!snap.empty) {
-        const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        setIncome(items);
-      }
-    }, err => console.warn("Firestore income snapshot error:", err));
-
-    // 9. Expenses
-    const unsubExpenses = onSnapshot(collection(db, 'expenses'), (snap) => {
-      if (!snap.empty) {
-        const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        setExpenses(items);
-      }
-    }, err => console.warn("Firestore expenses snapshot error:", err));
+    const unsubUsers = onSnapshot(collection(db, 'users'),
+      (snap) => setUsers(snap.docs.map(d => ({ ...d.data(), id: d.id, uid: d.id }))),
+      (err) => console.warn('Firestore users error:', err));
 
     return () => {
-      unsubCustomers();
-      unsubPolicies();
-      unsubInvestments();
-      unsubClaims();
-      unsubLeads();
-      unsubFollowups();
-      unsubTasks();
-      unsubIncome();
-      unsubExpenses();
+      unsubCustomers(); unsubPolicies(); unsubInvestments(); unsubClaims();
+      unsubLeads(); unsubFollowups(); unsubTasks(); unsubIncome(); unsubExpenses();
+      unsubUsers();
     };
   }, []);
 
@@ -432,10 +147,10 @@ export const DataProvider = ({ children }) => {
 
     // 2. Write to Firestore for cloud persistence & cross-device sync
     try {
-      await addDoc(collection(db, 'notifications'), {
+      await setDoc(doc(db, 'notifications', notifObj.id), {
         ...notifObj,
         createdAt: serverTimestamp()
-      });
+      }, { merge: true });
     } catch (e) { }
 
     // 3. Legacy event for any other listeners
@@ -477,7 +192,10 @@ export const DataProvider = ({ children }) => {
     } catch (e) { }
   };
 
-  // CRUD Actions with Canonical Staff Identification
+  // ─── CRUD ACTIONS ───────────────────────────────────────────────────────────
+  // Every mutation writes to Firestore first. onSnapshot propagates the change
+  // to all devices automatically. No localStorage fallbacks for business data.
+
   const addCustomer = async (custData) => {
     const id = custData.id || `SK-CUST-${Date.now()}`;
     const assignedStaffId = custData.assignedStaffId || custData.staffId || user?.uid || '';
@@ -494,29 +212,24 @@ export const DataProvider = ({ children }) => {
       assignedAdvisorName: assignedStaffName,
       assignedStaffEmail,
       branchId,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      createdBy: user?.name || '',
+      createdByUid: user?.uid || ''
     };
 
-    // 1. Write to Firestore first — onSnapshot will push update to all devices
-    try {
-      await setDoc(doc(db, 'customers', id), newCust, { merge: true });
-    } catch (e) {
-      console.warn('Firestore addCustomer error:', e);
-      // Fallback: update local state only if Firestore write fails
-      setCustomers(prev => [newCust, ...prev]);
-    }
+    // Write to Firestore — throws on failure so the UI can show an error
+    await setDoc(doc(db, 'customers', id), newCust, { merge: true });
+    // onSnapshot listener will update rawCustomers automatically
 
     if (newCust.assignedStaffName || newCust.assignedAdvisorName) {
       notifyCustomerAssignment(
         { uid: newCust.assignedStaffId, name: newCust.assignedStaffName || newCust.assignedAdvisorName, email: newCust.assignedStaffEmail },
-        newCust.name,
-        false,
-        user?.name
+        newCust.name, false, user?.name
       );
     }
 
     addAuditLog({
-      userName: user?.name || newCust.assignedAdvisorName || 'Staff Advisor',
+      userName: user?.name || 'Staff Advisor',
       userRole: user?.role || 'STAFF',
       action: 'CREATE_CLIENT',
       module: 'Customers',
@@ -603,31 +316,91 @@ export const DataProvider = ({ children }) => {
   };
 
   const deleteCustomer = async (id) => {
-    const deletedIds = getDeletedCustomerIds();
-    const targetCust = rawCustomers.find(c => String(c.id) === String(id) || String(c.customerCode) === String(id) || String(c.name) === String(id));
-    const idsToBlacklist = [String(id)];
-    if (targetCust) {
-      if (targetCust.id) idsToBlacklist.push(String(targetCust.id));
-      if (targetCust.customerCode) idsToBlacklist.push(String(targetCust.customerCode));
-      if (targetCust.name) idsToBlacklist.push(String(targetCust.name));
+    if (!id) return;
+
+    // Find the customer to get identifiers (name, customerCode, phone, id)
+    const targetCust = rawCustomers.find(c => String(c.id) === String(id) || String(c.customerCode) === String(id));
+    const targetName = (targetCust?.name || '').trim().toLowerCase();
+    const targetCode = String(targetCust?.customerCode || targetCust?.id || id).trim().toLowerCase();
+    const targetPhone = String(targetCust?.phone || targetCust?.mobileNumber || '').replace(/\D/g, '');
+
+    const isRecordMatched = (rec) => {
+      if (!rec) return false;
+      const recCustId = String(rec.customerId || rec.customer_id || rec.customerCode || '').trim().toLowerCase();
+      if (recCustId && (recCustId === targetCode || recCustId === String(id).trim().toLowerCase())) {
+        return true;
+      }
+      const recCustName = String(rec.customerName || rec.clientName || rec.name || '').trim().toLowerCase();
+      if (targetName && recCustName && recCustName === targetName) {
+        return true;
+      }
+      const recPhone = String(rec.phone || rec.mobileNumber || rec.customerPhone || '').replace(/\D/g, '');
+      if (targetPhone && targetPhone.length >= 7 && recPhone && recPhone === targetPhone) {
+        return true;
+      }
+      return false;
+    };
+
+    // 1. Delete all linked policies from Firestore
+    const linkedPolicies = rawPolicies.filter(isRecordMatched);
+    const linkedPolicyIds = new Set(linkedPolicies.map(p => String(p.id)));
+    for (const pol of linkedPolicies) {
+      try {
+        await deleteDoc(doc(db, 'policies', String(pol.id)));
+      } catch (e) {
+        console.warn('Firestore delete policy error:', pol.id, e);
+      }
     }
 
-    const updatedDeleted = Array.from(new Set([...deletedIds, ...idsToBlacklist]));
-    localStorage.setItem('crm_v2_deleted_customer_ids', JSON.stringify(updatedDeleted));
-
-    // Remove from local state immediately
-    setCustomers(prev => prev.filter(c =>
-      !updatedDeleted.includes(String(c.id)) &&
-      !updatedDeleted.includes(String(c.customerCode)) &&
-      !updatedDeleted.includes(String(c.name))
-    ));
-
-    // Delete from Firestore directly — onSnapshot propagates deletion to all devices
-    try {
-      // Delete by known doc ID variants
-      for (const delId of idsToBlacklist) {
-        try { await deleteDoc(doc(db, 'customers', delId)); } catch (_) {}
+    // 2. Delete all linked investments from Firestore
+    const linkedInvestments = rawInvestments.filter(isRecordMatched);
+    for (const inv of linkedInvestments) {
+      try {
+        await deleteDoc(doc(db, 'investments', String(inv.id)));
+      } catch (e) {
+        console.warn('Firestore delete investment error:', inv.id, e);
       }
+    }
+
+    // 3. Delete all linked claims from Firestore
+    const linkedClaims = rawClaims.filter(c => {
+      if (isRecordMatched(c)) return true;
+      if (c.policyNo && (linkedPolicyIds.has(String(c.policyNo)) || linkedPolicies.some(p => p.policyNo === c.policyNo))) {
+        return true;
+      }
+      return false;
+    });
+    for (const clm of linkedClaims) {
+      try {
+        await deleteDoc(doc(db, 'claims', String(clm.id)));
+      } catch (e) {
+        console.warn('Firestore delete claim error:', clm.id, e);
+      }
+    }
+
+    // 4. Delete all linked followups from Firestore
+    const linkedFollowups = rawFollowups.filter(isRecordMatched);
+    for (const flw of linkedFollowups) {
+      try {
+        await deleteDoc(doc(db, 'followups', String(flw.id)));
+      } catch (e) {
+        console.warn('Firestore delete followup error:', flw.id, e);
+      }
+    }
+
+    // 5. Delete all linked tasks from Firestore
+    const linkedTasks = rawTasks.filter(isRecordMatched);
+    for (const tsk of linkedTasks) {
+      try {
+        await deleteDoc(doc(db, 'tasks', String(tsk.id)));
+      } catch (e) {
+        console.warn('Firestore delete task error:', tsk.id, e);
+      }
+    }
+
+    // 6. Delete the customer document from Firestore — onSnapshot propagates deletion to all devices
+    try {
+      await deleteDoc(doc(db, 'customers', String(id)));
     } catch (e) {
       console.warn('Firestore deleteCustomer error:', e);
     }
@@ -635,12 +408,13 @@ export const DataProvider = ({ children }) => {
     addAuditLog({
       userName: user?.name || 'Admin User',
       userRole: user?.role || 'ADMIN',
-      action: 'DELETE_CLIENT',
+      action: 'DELETE_CLIENT_CASCADE',
       module: 'Customers',
-      affectedRecord: String(id),
-      details: 'Permanently deleted customer record'
+      affectedRecord: `${targetCust?.name || id} (Purged ${linkedPolicies.length} policies, ${linkedInvestments.length} investments, ${linkedClaims.length} claims)`,
+      details: `Permanently purged customer profile and all linked records (${linkedPolicies.length} policies, ${linkedInvestments.length} investments, ${linkedClaims.length} claims, ${linkedFollowups.length} follow-ups, ${linkedTasks.length} tasks).`
     });
   };
+
 
   const addPolicy = async (polData) => {
     const id = polData.id || `POL-SK-${Date.now()}`;
@@ -653,16 +427,14 @@ export const DataProvider = ({ children }) => {
       assignedStaffId,
       assignedStaffName,
       assignedStaff: assignedStaffName,
-      startDate: polData.startDate || new Date().toISOString().split('T')[0]
+      startDate: polData.startDate || new Date().toISOString().split('T')[0],
+      createdAt: new Date().toISOString(),
+      createdBy: user?.name || '',
+      createdByUid: user?.uid || ''
     };
 
-    // Write to Firestore first — onSnapshot propagates to all devices
-    try {
-      await setDoc(doc(db, 'policies', id), newPol, { merge: true });
-    } catch (e) {
-      console.warn('Firestore addPolicy error:', e);
-      setPolicies(prev => [newPol, ...prev]);
-    }
+    // Write to Firestore — onSnapshot propagates to all devices
+    await setDoc(doc(db, 'policies', id), newPol, { merge: true });
 
     // Update linked customer record in Firestore
     const linkedCust = rawCustomers.find(c =>
@@ -695,17 +467,8 @@ export const DataProvider = ({ children }) => {
 
   const deletePolicy = async (id) => {
     if (!id) return;
-    setPolicies(prev => prev.filter(p => String(p.id) !== String(id) && String(p.policyNo) !== String(id)));
-    try {
-      const saved = localStorage.getItem('crm_v2_policies');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          localStorage.setItem('crm_v2_policies', JSON.stringify(parsed.filter(p => String(p.id) !== String(id) && String(p.policyNo) !== String(id))));
-        }
-      }
-    } catch (e) { }
-    try { await deleteDoc(doc(db, 'policies', String(id))); } catch (e) { }
+    await deleteDoc(doc(db, 'policies', String(id)));
+    // onSnapshot will remove it from state on all devices
     addAuditLog({
       userName: user?.name || 'Admin User',
       userRole: user?.role || 'ADMIN',
@@ -717,17 +480,14 @@ export const DataProvider = ({ children }) => {
   };
 
   const clearAllPolicies = async () => {
-    setPolicies([]);
-    try {
-      localStorage.setItem('crm_v2_policies', JSON.stringify([]));
-    } catch (e) { }
+    // Note: does not bulk-delete Firestore docs. Used for UI reset only.
     addAuditLog({
       userName: user?.name || 'Admin User',
       userRole: user?.role || 'ADMIN',
       action: 'CLEAR_ALL_POLICIES',
       module: 'Policies',
       affectedRecord: 'All Policies',
-      details: 'Cleared all insurance policies register data'
+      details: 'Initiated policy register clear'
     });
   };
 
@@ -745,13 +505,8 @@ export const DataProvider = ({ children }) => {
       date: invData.date || new Date().toISOString().split('T')[0]
     };
 
-    // Write to Firestore first — onSnapshot propagates to all devices
-    try {
-      await setDoc(doc(db, 'investments', id), newInv, { merge: true });
-    } catch (e) {
-      console.warn('Firestore addInvestment error:', e);
-      setInvestments(prev => [newInv, ...prev]);
-    }
+    // Write to Firestore — onSnapshot propagates to all devices
+    await setDoc(doc(db, 'investments', id), newInv, { merge: true });
     return newInv;
   };
 
@@ -762,17 +517,8 @@ export const DataProvider = ({ children }) => {
 
   const deleteInvestment = async (id) => {
     if (!id) return;
-    setInvestments(prev => prev.filter(i => String(i.id) !== String(id)));
-    try {
-      const saved = localStorage.getItem('crm_v2_investments');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          localStorage.setItem('crm_v2_investments', JSON.stringify(parsed.filter(i => String(i.id) !== String(id))));
-        }
-      }
-    } catch (e) { }
-    try { await deleteDoc(doc(db, 'investments', String(id))); } catch (e) { }
+    await deleteDoc(doc(db, 'investments', String(id)));
+    // onSnapshot removes it from state on all devices
     addAuditLog({
       userName: user?.name || 'Admin User',
       userRole: user?.role || 'ADMIN',
@@ -879,13 +625,7 @@ export const DataProvider = ({ children }) => {
       createdDate: new Date().toISOString().split('T')[0]
     };
 
-    // Write to Firestore first — onSnapshot propagates to all devices
-    try {
-      await setDoc(doc(db, 'leads', id), newLead, { merge: true });
-    } catch (e) {
-      console.warn('Firestore addLead error:', e);
-      setLeads(prev => [newLead, ...prev]);
-    }
+    await setDoc(doc(db, 'leads', id), newLead, { merge: true });
     return newLead;
   };
 
@@ -922,13 +662,7 @@ export const DataProvider = ({ children }) => {
       status: 'PENDING'
     };
 
-    // Write to Firestore first — onSnapshot propagates to all devices
-    try {
-      await setDoc(doc(db, 'followups', id), newFlw, { merge: true });
-    } catch (e) {
-      console.warn('Firestore addFollowup error:', e);
-      setFollowups(prev => [newFlw, ...prev]);
-    }
+    await setDoc(doc(db, 'followups', id), newFlw, { merge: true });
     return newFlw;
   };
 
@@ -946,13 +680,7 @@ export const DataProvider = ({ children }) => {
       status: 'PENDING'
     };
 
-    // Write to Firestore first — onSnapshot propagates to all devices
-    try {
-      await setDoc(doc(db, 'tasks', id), newTask, { merge: true });
-    } catch (e) {
-      console.warn('Firestore addTask error:', e);
-      setTasks(prev => [newTask, ...prev]);
-    }
+    await setDoc(doc(db, 'tasks', id), newTask, { merge: true });
     return newTask;
   };
 
@@ -962,19 +690,8 @@ export const DataProvider = ({ children }) => {
   };
 
   const deleteTask = async (id) => {
-    setTasks(prev => prev.filter(t => t.id !== id));
-    try {
-      const saved = localStorage.getItem('crm_v2_tasks');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          localStorage.setItem('crm_v2_tasks', JSON.stringify(parsed.filter(t => t.id !== id)));
-        }
-      }
-    } catch (e) { }
-    try {
-      await deleteDoc(doc(db, 'tasks', String(id)));
-    } catch (e) { }
+    await deleteDoc(doc(db, 'tasks', String(id)));
+    // onSnapshot removes it from state on all devices
     addAuditLog({
       action: 'DELETE_TASK',
       module: 'Tasks',
@@ -986,27 +703,32 @@ export const DataProvider = ({ children }) => {
   const addIncome = async (incData) => {
     const id = incData.id || `INC-SK-${Date.now()}`;
     const newInc = { ...incData, id, date: incData.date || new Date().toISOString().split('T')[0] };
-    // Write to Firestore first — onSnapshot propagates to all devices
-    try {
-      await setDoc(doc(db, 'income', id), newInc, { merge: true });
-    } catch (e) {
-      console.warn('Firestore addIncome error:', e);
-      setIncome(prev => [newInc, ...prev]);
-    }
+    await setDoc(doc(db, 'income', id), newInc, { merge: true });
     return newInc;
   };
 
   const addExpense = async (expData) => {
     const id = expData.id || `EXP-SK-${Date.now()}`;
     const newExp = { ...expData, id, date: expData.date || new Date().toISOString().split('T')[0] };
-    // Write to Firestore first — onSnapshot propagates to all devices
-    try {
-      await setDoc(doc(db, 'expenses', id), newExp, { merge: true });
-    } catch (e) {
-      console.warn('Firestore addExpense error:', e);
-      setExpenses(prev => [newExp, ...prev]);
-    }
+    await setDoc(doc(db, 'expenses', id), newExp, { merge: true });
     return newExp;
+  };
+
+  const deleteExpense = async (id) => {
+    if (!id) return;
+    try {
+      await deleteDoc(doc(db, 'expenses', String(id)));
+    } catch (e) {
+      console.warn('Firestore deleteExpense error:', e);
+    }
+    addAuditLog({
+      userName: user?.name || 'Admin User',
+      userRole: user?.role || 'ADMIN',
+      action: 'DELETE_EXPENSE',
+      module: 'Expenses',
+      affectedRecord: String(id),
+      details: `Permanently deleted expense record ${id}`
+    });
   };
 
   const getCustomerAggregatedDetails = (customerOrName) => {
@@ -1055,24 +777,10 @@ export const DataProvider = ({ children }) => {
     const userTasks = rawTasks.filter(matchingRecord);
     const userLeads = rawLeads.filter(matchingRecord);
 
-    // Pull LocalStorage Customer Follow-up Progression Hubs & Spreadsheet Records for complete Customer 360 Linking
-    let localHubs = [];
-    let localSpreadsheet = [];
-    try {
-      localHubs = JSON.parse(localStorage.getItem('crm_v2_client_followup_hubs') || '[]');
-      localSpreadsheet = JSON.parse(localStorage.getItem('crm_v2_spreadsheet_followups') || '[]');
-    } catch (e) { }
-
-    const matchingHubs = localHubs.filter(h =>
-      matchingName(h.clientName) ||
-      (h.clientId && effectiveCode && h.clientId.toLowerCase().trim() === effectiveCode.toLowerCase().trim()) ||
-      (h.phone && masterCustomer?.phone && masterCustomer.phone.length > 5 && h.phone.replace(/\D/g, '').endsWith(masterCustomer.phone.replace(/\D/g, '').slice(-10)))
-    );
-
-    const matchingSpreadsheet = localSpreadsheet.filter(s =>
-      matchingName(s.clientName) ||
-      (s.phone && masterCustomer?.phone && masterCustomer.phone.length > 5 && s.phone.replace(/\D/g, '').endsWith(masterCustomer.phone.replace(/\D/g, '').slice(-10)))
-    );
+    // followup_hubs and spreadsheet_followups are now in Firestore (via Followups.jsx onSnapshot)
+    // We use rawFollowups from Firestore state for Customer 360 linking
+    const matchingHubs = [];
+    const matchingSpreadsheet = [];
 
     const hubSteps = matchingHubs.flatMap(h =>
       (h.history || []).map(step => ({
@@ -1200,8 +908,11 @@ export const DataProvider = ({ children }) => {
       deleteTask,
       addIncome,
       addExpense,
+      deleteExpense,
       addAuditLog,
-      getCustomerAggregatedDetails
+      getCustomerAggregatedDetails,
+      staffList,
+      users: staffList
     }}>
       {children}
     </DataContext.Provider>
