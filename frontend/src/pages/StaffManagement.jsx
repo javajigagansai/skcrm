@@ -88,19 +88,10 @@ export const StaffManagement = () => {
         remote.push({ uid: docSnap.id, ...docSnap.data() });
       });
       if (remote.length > 0) {
-        setStaffList(prev => {
-          const map = new Map(INITIAL_STAFF_SEED.map(u => [u.email.toLowerCase().trim(), u]));
-          prev.forEach(u => u.email && map.set(u.email.toLowerCase().trim(), { ...map.get(u.email.toLowerCase().trim()), ...u }));
-          remote.forEach(u => u.email && map.set(u.email.toLowerCase().trim(), { ...map.get(u.email.toLowerCase().trim()), ...u }));
-          const merged = Array.from(map.values()).filter(u =>
-            !['Rahul Dravid', 'Kavita Menon', 'Greetings Officer', 'Anitha Selvam', 'Karthik Subramanian'].includes(u.name) &&
-            !['rahul.d@sksmart.com', 'kavita.m@sksmart.com', 'wishes@sksmart.com', 'anitha.s@sksmart.com', 'karthik.s@sksmart.com'].includes(u.email)
-          );
-          try {
-            localStorage.setItem('crm_v2_users_list', JSON.stringify(merged));
-          } catch (e) {}
-          return merged;
-        });
+        setStaffList(remote);
+        try {
+          localStorage.setItem('crm_v2_users_list', JSON.stringify(remote));
+        } catch (e) {}
       }
     }, (err) => console.warn("Staff live sync warning:", err.message));
 

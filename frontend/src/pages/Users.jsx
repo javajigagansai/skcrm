@@ -77,7 +77,7 @@ export const Users = () => {
     return () => window.removeEventListener('storage_users_updated', handleStorageUpdate);
   }, []);
 
-  // Dynamically load remote users from Firestore and merge real-time via onSnapshot
+  // Dynamically load remote users from Firestore in real-time via onSnapshot
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'users'), (snap) => {
       const list = [];
@@ -85,19 +85,10 @@ export const Users = () => {
         list.push({ uid: docSnap.id, ...docSnap.data() });
       });
       if (list.length > 0) {
-        setUsers(prev => {
-          const map = new Map(INITIAL_USERS_SEED.map(u => [u.email.toLowerCase().trim(), u]));
-          prev.forEach(u => u.email && map.set(u.email.toLowerCase().trim(), { ...map.get(u.email.toLowerCase().trim()), ...u }));
-          list.forEach(u => u.email && map.set(u.email.toLowerCase().trim(), { ...map.get(u.email.toLowerCase().trim()), ...u }));
-          const merged = Array.from(map.values()).filter(u => 
-            !['Rahul Dravid', 'Kavita Menon', 'Greetings Officer', 'Anitha Selvam', 'Priya Sharma', 'Karthik Subramanian'].includes(u.name) &&
-            !['rahul.d@sksmart.com', 'kavita.m@sksmart.com', 'wishes@sksmart.com', 'anitha.s@sksmart.com', 'priya.sharma@sk-smart-investments.com', 'karthik.s@sksmart.com'].includes(u.email)
-          );
-          try {
-            localStorage.setItem('crm_v2_users_list', JSON.stringify(merged));
-          } catch (e) {}
-          return merged;
-        });
+        setUsers(list);
+        try {
+          localStorage.setItem('crm_v2_users_list', JSON.stringify(list));
+        } catch (e) {}
       }
     }, (err) => console.warn("Firestore users live sync warning:", err.message));
 

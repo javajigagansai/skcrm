@@ -5,9 +5,8 @@ import {
   sendPasswordResetEmail,
   onAuthStateChanged
 } from 'firebase/auth';
-import { doc, getDoc, getDocs, collection } from 'firebase/firestore';
+import { doc, getDoc, getDocs, collection, query, where } from 'firebase/firestore';
 import { auth, db } from '../config/firebaseClient';
-import { registerUserBackend, checkFirstLoginBackend } from '../services/apiService';
 
 const AuthContext = createContext(null);
 
@@ -21,26 +20,52 @@ export const AuthProvider = ({ children }) => {
   });
   const [loading, setLoading] = useState(false);
 
-  // Dynamically fetch user role from existing Firestore users/{firebaseUser.uid} document
+  // Fetch user profile directly from Firestore users collection
   const fetchFirestoreUserProfile = async (firebaseUser) => {
     if (!firebaseUser) return null;
     const uid = firebaseUser.uid;
-    
-    let role = 'EMPLOYEE';
-    let name = firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User';
-    let email = firebaseUser.email || '';
-    let branchId = 'BR-KNM-001';
+    const email = (firebaseUser.email || '').toLowerCase().trim();
 
     try {
+      // 1. Check by UID in Firestore
       const userDocRef = doc(db, 'users', uid);
       const userDocSnap = await getDoc(userDocRef);
 
       if (userDocSnap.exists()) {
         const data = userDocSnap.data();
-        if (data.role) role = data.role;
-        if (data.name) name = data.name;
-        if (data.email) email = data.email;
-        if (data.branchId || data.branch) branchId = data.branchId || data.branch;
+        const role = data.role || 'EMPLOYEE';
+        return {
+          uid,
+          email: data.email || email,
+          name: data.name || firebaseUser.displayName || email.split('@')[0] || 'User',
+          role,
+          roleDisplayName: role === 'SUPER_ADMIN' ? 'Super Admin' :
+                           role === 'MANAGER' ? 'Manager' :
+                           role === 'ADMIN' ? 'Admin' :
+                           role === 'GREETINGS_OFFICER' ? 'Greetings Officer' : 'Staff Advisor',
+          branchId: data.branch || data.branchId || ''
+        };
+      }
+
+      // 2. Check by email in Firestore if document ID is custom
+      if (email) {
+        const q = query(collection(db, 'users'), where('email', '==', email));
+        const qSnap = await getDocs(q);
+        if (!qSnap.empty) {
+          const docData = qSnap.docs[0].data();
+          const role = docData.role || 'EMPLOYEE';
+          return {
+            uid: qSnap.docs[0].id,
+            email: docData.email || email,
+            name: docData.name || firebaseUser.displayName || email.split('@')[0] || 'User',
+            role,
+            roleDisplayName: role === 'SUPER_ADMIN' ? 'Super Admin' :
+                             role === 'MANAGER' ? 'Manager' :
+                             role === 'ADMIN' ? 'Admin' :
+                             role === 'GREETINGS_OFFICER' ? 'Greetings Officer' : 'Staff Advisor',
+            branchId: docData.branch || docData.branchId || ''
+          };
+        }
       }
     } catch (err) {
       console.warn("Firestore user profile fetch warning:", err.message);
@@ -49,10 +74,10 @@ export const AuthProvider = ({ children }) => {
     return {
       uid,
       email,
-      name,
-      role,
-      roleDisplayName: role === 'SUPER_ADMIN' ? 'Super Admin' : role === 'MANAGER' ? 'Manager' : 'Staff Advisor',
-      branchId
+      name: firebaseUser.displayName || (email ? email.split('@')[0] : 'User'),
+      role: 'EMPLOYEE',
+      roleDisplayName: 'Staff Advisor',
+      branchId: ''
     };
   };
 
@@ -62,8 +87,8 @@ export const AuthProvider = ({ children }) => {
       if (firebaseUser) {
         try {
           const profile = await fetchFirestoreUserProfile(firebaseUser);
-          setUser(profile);
           if (profile) {
+            setUser(profile);
             localStorage.setItem('crm_v2_active_user', JSON.stringify(profile));
           }
         } catch (err) {
@@ -90,162 +115,90 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     setLoading(true);
     try {
-      const formattedEmail = (email || '').toLowerCase().trim();
-      const inputPass = (password || '').trim();
-
-      // 1. Super Admin (Prakash Gajendiran) Instant Login Bypass
-      if (
-        formattedEmail === 'admin@sk-smart-investments.com' ||
-        formattedEmail === 'prakash@sk-smart-investments.com' ||
-        (formattedEmail.includes('admin') && (inputPass === 'Password@123' || inputPass === 'admin' || !inputPass)) ||
-        !formattedEmail
-      ) {
-        const superAdminUser = {
-          uid: 'UID-STF-1001',
-          email: 'admin@sk-smart-investments.com',
-          name: 'Prakash Gajendiran',
-          role: 'SUPER_ADMIN',
-          roleDisplayName: 'Super Admin',
-          branchId: 'BR-KNM-001'
-        };
-        setUser(superAdminUser);
-        localStorage.setItem('crm_v2_active_user', JSON.stringify(superAdminUser));
-        window.dispatchEvent(new CustomEvent('auth_user_changed', { detail: superAdminUser }));
-        return superAdminUser;
+      if (!email || !password) {
+        throw new Error('Please enter your email and password.');
       }
 
-      // 2. Query live Firestore 'users' collection across all devices & laptops
-      let matchedStaff = null;
+      const formattedEmail = email.toLowerCase().trim();
+      const inputPassword = password.trim();
+
+      // Step 1: Query Firestore 'users' collection directly for the user account
+      let matchedUser = null;
+      let matchedDocId = null;
+
       try {
         const querySnap = await getDocs(collection(db, 'users'));
-        const remoteUsers = [];
         querySnap.forEach((docSnap) => {
-          const d = docSnap.data();
-          const userObj = { uid: docSnap.id, ...d };
-          remoteUsers.push(userObj);
-          if (d.email && d.email.toLowerCase().trim() === formattedEmail) {
-            matchedStaff = userObj;
+          const data = docSnap.data();
+          if (data && data.email && data.email.toLowerCase().trim() === formattedEmail) {
+            matchedUser = data;
+            matchedDocId = docSnap.id;
           }
         });
-
-        if (remoteUsers.length > 0) {
-          try {
-            localStorage.setItem('crm_v2_users_list', JSON.stringify(remoteUsers));
-            window.dispatchEvent(new Event('storage_users_updated'));
-          } catch (e) {}
-        }
       } catch (firestoreErr) {
-        console.warn("Firestore users query during login:", firestoreErr.message);
+        console.warn("Firestore user lookup warning:", firestoreErr.message);
       }
 
-      // 3. Fallback to LocalStorage if offline or Firestore query failed
-      if (!matchedStaff) {
-        try {
-          const savedUsers = localStorage.getItem('crm_v2_users_list');
-          if (savedUsers) {
-            const parsed = JSON.parse(savedUsers);
-            if (Array.isArray(parsed)) {
-              matchedStaff = parsed.find(u => u.email?.toLowerCase().trim() === formattedEmail);
-            }
-          }
-        } catch (e) {}
-      }
-
-      // Helper to generate a deterministic stable UID from email if missing
-      const getStableUid = (staffObj) => {
-        if (staffObj.uid) return staffObj.uid;
-        const e = (staffObj.email || '').toLowerCase().trim();
-        if (e === 'admin@sk-smart-investments.com') return 'UID-STF-1001';
-        if (e === 'manager@sk-smart-investments.com') return 'UID-STF-1002';
-        if (e === 'priya.sharma@sk-smart-investments.com') return 'UID-STF-1003';
-        return 'UID-STF-' + e.replace(/[^a-z0-9]/g, '-');
-      };
-
-      // 4. If staff account exists in Firestore / System list
-      if (matchedStaff) {
-        // Check account active status
-        if (matchedStaff.status === 'DISABLED') {
-          throw new Error('This staff account has been deactivated. Please contact the Super Admin.');
+      // Step 2: Validate against Firestore user account
+      if (matchedUser) {
+        // Check if user is deactivated
+        if (matchedUser.status === 'DISABLED') {
+          throw new Error('This user account is deactivated. Please contact your administrator.');
         }
 
-        // Verify password
-        const expectedPassword = (matchedStaff.password || '').trim() || 'Password@123';
-        if (inputPass && inputPass !== expectedPassword && inputPass !== 'Password@123' && inputPass !== 'admin123') {
-          throw new Error('Invalid password. Please verify your credentials or contact Super Admin.');
+        // Validate password from Firestore
+        if (matchedUser.password && matchedUser.password !== inputPassword) {
+          throw new Error('Invalid email address or password.');
         }
 
+        const role = matchedUser.role || 'EMPLOYEE';
         const activeUser = {
-          uid: getStableUid(matchedStaff),
-          email: matchedStaff.email,
-          name: matchedStaff.name,
-          role: matchedStaff.role || 'EMPLOYEE',
-          roleDisplayName: matchedStaff.role === 'SUPER_ADMIN' ? 'Super Admin' : matchedStaff.role === 'MANAGER' ? 'Manager' : 'Staff Advisor',
-          branchId: matchedStaff.branch || matchedStaff.branchId || 'BR-KNM-001'
+          uid: matchedDocId || matchedUser.uid || `UID-STF-${Date.now()}`,
+          email: matchedUser.email || formattedEmail,
+          name: matchedUser.name || formattedEmail.split('@')[0],
+          role: role,
+          roleDisplayName: role === 'SUPER_ADMIN' ? 'Super Admin' :
+                           role === 'MANAGER' ? 'Manager' :
+                           role === 'ADMIN' ? 'Admin' :
+                           role === 'GREETINGS_OFFICER' ? 'Greetings Officer' : 'Staff Advisor',
+          branchId: matchedUser.branch || matchedUser.branchId || ''
         };
+
+        // Try authenticating with Firebase Auth in parallel if available
+        try {
+          await signInWithEmailAndPassword(auth, formattedEmail, inputPassword);
+        } catch (e) {
+          // Firestore account is the authoritative source of truth
+        }
+
         setUser(activeUser);
         localStorage.setItem('crm_v2_active_user', JSON.stringify(activeUser));
         window.dispatchEvent(new CustomEvent('auth_user_changed', { detail: activeUser }));
         return activeUser;
       }
 
-      // 5. Authenticate with Firebase Authentication
+      // Step 3: Attempt Firebase Authentication (Identity service) if not in Firestore users list
       try {
-        const userCred = await signInWithEmailAndPassword(auth, formattedEmail, password);
+        const userCred = await signInWithEmailAndPassword(auth, formattedEmail, inputPassword);
         const activeUser = await fetchFirestoreUserProfile(userCred.user);
         setUser(activeUser);
         localStorage.setItem('crm_v2_active_user', JSON.stringify(activeUser));
         window.dispatchEvent(new CustomEvent('auth_user_changed', { detail: activeUser }));
         return activeUser;
       } catch (firebaseErr) {
-        if (formattedEmail.includes('manager') && (inputPass === 'Password@123' || inputPass === 'manager' || !inputPass)) {
-          const managerUser = {
-            uid: 'UID-STF-1002',
-            email: formattedEmail || 'manager@sk-smart-investments.com',
-            name: 'Branch Manager',
-            role: 'MANAGER',
-            roleDisplayName: 'Manager',
-            branchId: 'BR-KNM-001'
-          };
-          setUser(managerUser);
-          localStorage.setItem('crm_v2_active_user', JSON.stringify(managerUser));
-          window.dispatchEvent(new CustomEvent('auth_user_changed', { detail: managerUser }));
-          return managerUser;
+        if (
+          firebaseErr.code === 'auth/invalid-credential' || 
+          firebaseErr.code === 'auth/wrong-password' || 
+          firebaseErr.code === 'auth/user-not-found'
+        ) {
+          throw new Error('Invalid email address or password.');
+        } else if (firebaseErr.code === 'auth/invalid-email') {
+          throw new Error('Please enter a valid email address.');
+        } else if (firebaseErr.code === 'auth/too-many-requests') {
+          throw new Error('Too many failed attempts. Please try again later.');
         }
-        throw firebaseErr;
+        throw new Error(firebaseErr.message || 'Authentication failed. Please check credentials.');
       }
-    } catch (err) {
-      if (err.code === 'auth/network-request-failed' || err.message?.includes('network-request-failed')) {
-        const formattedEmail = (email || '').toLowerCase().trim();
-        const role = formattedEmail.includes('admin') ? 'SUPER_ADMIN' :
-                     formattedEmail.includes('manager') ? 'MANAGER' :
-                     formattedEmail.includes('wishes') ? 'GREETINGS_OFFICER' : 'EMPLOYEE';
-        
-        const fallbackUid = formattedEmail.includes('admin') ? 'UID-STF-1001' :
-                            formattedEmail.includes('manager') ? 'UID-STF-1002' :
-                            formattedEmail.includes('priya') ? 'UID-STF-1003' : 'UID-STF-' + formattedEmail.replace(/[^a-z0-9]/g, '-');
-
-        const fallbackUser = {
-          uid: fallbackUid,
-          email: formattedEmail || 'admin@sk-smart-investments.com',
-          name: (formattedEmail.split('@')[0] || 'User').toUpperCase(),
-          role: role,
-          roleDisplayName: role === 'SUPER_ADMIN' ? 'Super Admin' : role === 'MANAGER' ? 'Manager' : 'Staff Advisor',
-          branchId: 'BR-KNM-001'
-        };
-        setUser(fallbackUser);
-        localStorage.setItem('crm_v2_active_user', JSON.stringify(fallbackUser));
-        window.dispatchEvent(new CustomEvent('auth_user_changed', { detail: fallbackUser }));
-        return fallbackUser;
-      }
-
-      if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
-        throw new Error('Invalid email address or password.');
-      } else if (err.code === 'auth/invalid-email') {
-        throw new Error('Please enter a valid email address.');
-      } else if (err.code === 'auth/too-many-requests') {
-        throw new Error('Too many failed attempts. Please try again later.');
-      }
-      throw new Error(err.message || 'Authentication failed. Please check credentials.');
     } finally {
       setLoading(false);
     }
@@ -255,19 +208,15 @@ export const AuthProvider = ({ children }) => {
     try {
       await firebaseSignOut(auth).catch(() => {});
     } finally {
-      // Only purge the ACTIVE USER SESSION token.
-      // Business data (customers, policies, etc.) must NOT be deleted here —
-      // it is the shared CRM database. Role-based visibility is handled by
-      // filterScopedRecords() inside DataContext's useMemo, not by wiping data.
       localStorage.removeItem('crm_v2_active_user');
-
       setUser(null);
       window.dispatchEvent(new CustomEvent('auth_user_logged_out'));
     }
   };
 
   const resetPassword = async (email) => {
-    return sendPasswordResetEmail(auth, email);
+    if (!email) throw new Error('Please enter an email address.');
+    return sendPasswordResetEmail(auth, email.trim());
   };
 
   return (
