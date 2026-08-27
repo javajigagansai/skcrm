@@ -51,14 +51,14 @@ export const Sidebar = () => {
   return (
     <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col h-screen sticky top-0 border-r border-slate-800 shadow-xl shrink-0 select-none">
       {/* Brand Header */}
-      <div className="p-3.5 border-b border-slate-800 flex items-center space-x-3 bg-white">
+      <div className="p-3.5 border-b border-slate-800 flex items-center space-x-2.5 bg-white">
         <GoldenSKLogo className="h-10 w-10 shrink-0" />
-        <div className="flex flex-col space-y-0.5">
-          <h1 className="font-black text-red-600 text-xs tracking-tight leading-snug uppercase whitespace-nowrap">
+        <div className="flex flex-col justify-center min-w-0">
+          <h1 className="font-black text-red-600 text-[13px] tracking-tight leading-none uppercase whitespace-nowrap">
             SK SMART INVESTMENTS
           </h1>
-          <p className="text-[10px] font-black text-black leading-tight whitespace-nowrap">
-            Insurance and Investments Specialist
+          <p className="text-[7.5px] font-black text-slate-900 leading-tight uppercase tracking-[0.065em] whitespace-nowrap pt-1">
+            Insurance &amp; Investments Specialist
           </p>
         </div>
       </div>
