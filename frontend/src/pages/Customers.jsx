@@ -7,7 +7,7 @@ import {
   Plus, Search, UserCheck, X, Heart, Cake, Calendar, Users,
   Briefcase, ShieldCheck, FileText, Phone, Mail, MapPin, CreditCard,
   ChevronRight, ChevronDown, Edit3, Trash2, Sparkles, Download, CheckCircle2,
-  Gift, Award, IndianRupee, ExternalLink, FileSpreadsheet
+  Gift, Award, IndianRupee, ExternalLink, FileSpreadsheet, Building2
 } from 'lucide-react';
 
 const COUNTRY_DIAL_CODES = [
