@@ -35,3 +35,61 @@
 .badge-purple {
   @apply bg-purple-50 text-purple-700 border border-purple-200/60;
 }
+
+/* ── Notification Bell Shaking & Badge/Number Movement (Every 2 Seconds) ── */
+@keyframes bell-ring-2s {
+  0% { transform: rotate(0deg); }
+  3% { transform: rotate(18deg); }
+  6% { transform: rotate(-18deg); }
+  9% { transform: rotate(15deg); }
+  12% { transform: rotate(-15deg); }
+  15% { transform: rotate(10deg); }
+  18% { transform: rotate(-10deg); }
+  21% { transform: rotate(6deg); }
+  24% { transform: rotate(-6deg); }
+  27% { transform: rotate(2deg); }
+  30% { transform: rotate(0deg); }
+  100% { transform: rotate(0deg); }
+}
+
+@keyframes badge-jump-move {
+  0% { transform: translate(0, 0) scale(1); }
+  3% { transform: translate(-4px, -6px) scale(1.25) rotate(-15deg); }
+  6% { transform: translate(4px, -6px) scale(1.25) rotate(15deg); }
+  9% { transform: translate(-3px, -4px) scale(1.2) rotate(-10deg); }
+  12% { transform: translate(3px, -4px) scale(1.2) rotate(10deg); }
+  15% { transform: translate(-2px, -3px) scale(1.15) rotate(-5deg); }
+  18% { transform: translate(2px, -2px) scale(1.1) rotate(5deg); }
+  21% { transform: translate(-1px, -1px) scale(1.05) rotate(-2deg); }
+  24% { transform: translate(1px, 0px) scale(1.02); }
+  27% { transform: translate(0, 0) scale(1) rotate(0deg); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+@keyframes number-jiggle {
+  0% { transform: scale(1) rotate(0deg); }
+  3% { transform: scale(1.25) rotate(-10deg); }
+  6% { transform: scale(1.25) rotate(10deg); }
+  9% { transform: scale(1.15) rotate(-8deg); }
+  12% { transform: scale(1.15) rotate(8deg); }
+  15% { transform: scale(1.1) rotate(-4deg); }
+  18% { transform: scale(1.05) rotate(4deg); }
+  21% { transform: scale(1) rotate(0deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+.animate-bell-shake {
+  animation: bell-ring-2s 2s ease-in-out infinite;
+  transform-origin: top center;
+  display: inline-block;
+}
+
+.animate-badge-move {
+  animation: badge-jump-move 2s ease-in-out infinite;
+  transform-origin: center center;
+}
+
+.animate-number-jiggle {
+  animation: number-jiggle 2s ease-in-out infinite;
+  display: inline-block;
+}

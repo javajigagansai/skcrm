@@ -54,13 +54,13 @@ export const Header = () => {
         <div className="relative" ref={notifRef}>
           <button 
             onClick={() => setShowNotifications(!showNotifications)}
-            className="p-2 rounded-xl text-slate-600 hover:bg-slate-100 relative transition cursor-pointer" 
+            className="p-2.5 rounded-2xl text-slate-700 hover:bg-slate-100 hover:text-blue-600 relative transition cursor-pointer flex items-center justify-center" 
             title="Real-Time Notifications"
           >
-            <Bell className="h-5 w-5" />
+            <Bell className={`h-5 w-5 ${unreadNotificationCount > 0 ? 'animate-bell-shake text-blue-600' : 'animate-bell-shake text-slate-600'}`} />
             {unreadNotificationCount > 0 && (
-              <span className="absolute top-1 right-1 h-4 w-4 rounded-full bg-rose-500 text-white font-black text-[9px] flex items-center justify-center ring-2 ring-white animate-pulse">
-                {unreadNotificationCount}
+              <span className="absolute -top-0.5 -right-0.5 min-w-[19px] h-[19px] px-1 rounded-full bg-gradient-to-r from-rose-500 to-pink-600 text-white font-black text-[10px] flex items-center justify-center ring-2 ring-white shadow-md animate-badge-move">
+                <span className="animate-number-jiggle">{unreadNotificationCount}</span>
               </span>
             )}
           </button>
