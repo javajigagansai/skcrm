@@ -14,27 +14,41 @@ const Customer360Context = createContext();
 export const initialMockCustomersList = [];
 
 const COUNTRY_DIAL_CODES = [
-  { code: '+91', label: 'India (+91)', short: '🇮🇳 +91' },
-  { code: '+1', label: 'USA / Canada (+1)', short: '🇺🇸 +1' },
-  { code: '+44', label: 'UK (+44)', short: '🇬🇧 +44' },
-  { code: '+971', label: 'UAE (+971)', short: '🇦🇪 +971' },
-  { code: '+65', label: 'Singapore (+65)', short: '🇸🇬 +65' },
-  { code: '+966', label: 'Saudi Arabia (+966)', short: '🇸🇦 +966' },
-  { code: '+61', label: 'Australia (+61)', short: '🇦🇺 +61' },
-  { code: '+974', label: 'Qatar (+974)', short: '🇶🇦 +974' },
-  { code: '+968', label: 'Oman (+968)', short: '🇴🇲 +968' },
-  { code: '+965', label: 'Kuwait (+965)', short: '🇰🇼 +965' },
-  { code: '+973', label: 'Bahrain (+973)', short: '🇧🇭 +973' },
-  { code: '+60', label: 'Malaysia (+60)', short: '🇲🇾 +60' },
-  { code: '+49', label: 'Germany (+49)', short: '🇩🇪 +49' },
-  { code: '+33', label: 'France (+33)', short: '🇫🇷 +33' },
-  { code: '+41', label: 'Switzerland (+41)', short: '🇨🇭 +41' },
-  { code: '+81', label: 'Japan (+81)', short: '🇯🇵 +81' },
-  { code: '+64', label: 'New Zealand (+64)', short: '🇳🇿 +64' },
-  { code: '+94', label: 'Sri Lanka (+94)', short: '🇱🇰 +94' },
-  { code: '+977', label: 'Nepal (+977)', short: '🇳🇵 +977' },
-  { code: '+880', label: 'Bangladesh (+880)', short: '🇧🇩 +880' },
-  { code: '+27', label: 'South Africa (+27)', short: '🇿🇦 +27' }
+  { code: '+91', name: 'India', flag: '🇮🇳', display: '🇮🇳 India (+91)' },
+  { code: '+1', name: 'USA / Canada', flag: '🇺🇸', display: '🇺🇸 USA / Canada (+1)' },
+  { code: '+44', name: 'United Kingdom', flag: '🇬🇧', display: '🇬🇧 UK (+44)' },
+  { code: '+971', name: 'United Arab Emirates', flag: '🇦🇪', display: '🇦🇪 UAE (+971)' },
+  { code: '+65', name: 'Singapore', flag: '🇸🇬', display: '🇸🇬 Singapore (+65)' },
+  { code: '+966', name: 'Saudi Arabia', flag: '🇸🇦', display: '🇸🇦 Saudi Arabia (+966)' },
+  { code: '+61', name: 'Australia', flag: '🇦🇺', display: '🇦🇺 Australia (+61)' },
+  { code: '+974', name: 'Qatar', flag: '🇶🇦', display: '🇶🇦 Qatar (+974)' },
+  { code: '+968', name: 'Oman', flag: '🇴🇲', display: '🇴🇲 Oman (+968)' },
+  { code: '+965', name: 'Kuwait', flag: '🇰🇼', display: '🇰🇼 Kuwait (+965)' },
+  { code: '+973', name: 'Bahrain', flag: '🇧🇭', display: '🇧🇭 Bahrain (+973)' },
+  { code: '+60', name: 'Malaysia', flag: '🇲🇾', display: '🇲🇾 Malaysia (+60)' },
+  { code: '+49', name: 'Germany', flag: '🇩🇪', display: '🇩🇪 Germany (+49)' },
+  { code: '+33', name: 'France', flag: '🇫🇷', display: '🇫🇷 France (+33)' },
+  { code: '+41', name: 'Switzerland', flag: '🇨🇭', display: '🇨🇭 Switzerland (+41)' },
+  { code: '+81', name: 'Japan', flag: '🇯🇵', display: '🇯🇵 Japan (+81)' },
+  { code: '+64', name: 'New Zealand', flag: '🇳🇿', display: '🇳🇿 New Zealand (+64)' },
+  { code: '+94', name: 'Sri Lanka', flag: '🇱🇰', display: '🇱🇰 Sri Lanka (+94)' },
+  { code: '+977', name: 'Nepal', flag: '🇳🇵', display: '🇳🇵 Nepal (+977)' },
+  { code: '+880', name: 'Bangladesh', flag: '🇧🇩', display: '🇧🇩 Bangladesh (+880)' },
+  { code: '+27', name: 'South Africa', flag: '🇿🇦', display: '🇿🇦 South Africa (+27)' },
+  { code: '+62', name: 'Indonesia', flag: '🇮🇩', display: '🇮🇩 Indonesia (+62)' },
+  { code: '+63', name: 'Philippines', flag: '🇵🇭', display: '🇵🇭 Philippines (+63)' },
+  { code: '+66', name: 'Thailand', flag: '🇹🇭', display: '🇹🇭 Thailand (+66)' },
+  { code: '+84', name: 'Vietnam', flag: '🇻🇳', display: '🇻🇳 Vietnam (+84)' },
+  { code: '+39', name: 'Italy', flag: '🇮🇹', display: '🇮🇹 Italy (+39)' },
+  { code: '+34', name: 'Spain', flag: '🇪🇸', display: '🇪🇸 Spain (+34)' },
+  { code: '+31', name: 'Netherlands', flag: '🇳🇱', display: '🇳🇱 Netherlands (+31)' },
+  { code: '+46', name: 'Sweden', flag: '🇸🇪', display: '🇸🇪 Sweden (+46)' },
+  { code: '+47', name: 'Norway', flag: '🇳🇴', display: '🇳🇴 Norway (+47)' },
+  { code: '+45', name: 'Denmark', flag: '🇩🇰', display: '🇩🇰 Denmark (+45)' },
+  { code: '+353', name: 'Ireland', flag: '🇮🇪', display: '🇮🇪 Ireland (+353)' },
+  { code: '+852', name: 'Hong Kong', flag: '🇭🇰', display: '🇭🇰 Hong Kong (+852)' },
+  { code: '+82', name: 'South Korea', flag: '🇰🇷', display: '🇰🇷 South Korea (+82)' },
+  { code: '+86', name: 'China', flag: '🇨🇳', display: '🇨🇳 China (+86)' }
 ];
 
 /** Load staff list from localStorage (kept in sync by StaffManagement) */
@@ -1433,15 +1447,15 @@ export const Customer360Provider = ({ children }) => {
                   </div>
                   <div>
                     <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Alternate Mobile Number</label>
-                    <div className="flex items-center space-x-1.5">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                       <select
                         value={editCustomerData.altCountryCode || '+91'}
                         onChange={(e) => setEditCustomerData({ ...editCustomerData, altCountryCode: e.target.value })}
-                        className="px-2 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-slate-50 outline-none focus:ring-2 focus:ring-blue-600 shrink-0 cursor-pointer"
-                        title="Select Country Code"
+                        className="w-full sm:w-[210px] px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-slate-50 outline-none focus:ring-2 focus:ring-blue-600 shrink-0 cursor-pointer"
+                        title="Select Country & Dial Code"
                       >
                         {COUNTRY_DIAL_CODES.map(c => (
-                          <option key={c.code} value={c.code}>{c.short}</option>
+                          <option key={`${c.name}-${c.code}`} value={c.code}>{c.display}</option>
                         ))}
                       </select>
                       <input 
@@ -1449,7 +1463,7 @@ export const Customer360Provider = ({ children }) => {
                         placeholder="98765 00000 (Optional)"
                         value={editCustomerData.alternatePhone || editCustomerData.altPhone || ''}
                         onChange={(e) => setEditCustomerData({...editCustomerData, alternatePhone: e.target.value, altPhone: e.target.value})}
-                        className="flex-1 px-3 py-2 rounded-xl border text-xs font-mono outline-none focus:ring-2 focus:ring-blue-600 bg-white"
+                        className="flex-1 px-3 py-2 rounded-xl border text-xs font-mono font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white"
                       />
                     </div>
                   </div>
