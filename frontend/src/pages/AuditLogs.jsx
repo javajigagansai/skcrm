@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
-import { 
-  ShieldCheck, Clock, User, FileText, Search, Filter, Plus, Download, 
+import {
+  ShieldCheck, Clock, User, FileText, Search, Filter, Plus, Download,
   Sparkles, CheckCircle2, Lock, X, Activity, UserCheck, Calendar
 } from 'lucide-react';
 
@@ -35,7 +35,7 @@ export const AuditLogs = () => {
     const details = log.details || '';
     const module = log.module || '';
 
-    const matchesSearch = 
+    const matchesSearch =
       action.toLowerCase().includes(searchTerm.toLowerCase()) ||
       userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       affected.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -126,7 +126,7 @@ export const AuditLogs = () => {
 
         <div className="flex items-center space-x-3">
           {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
-            <button 
+            <button
               onClick={handleExportCSV}
               className="flex items-center space-x-2 px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer"
             >
@@ -135,7 +135,7 @@ export const AuditLogs = () => {
             </button>
           )}
 
-          <button 
+          <button
             onClick={() => setShowAddModal(true)}
             className="flex items-center space-x-2 px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer"
           >
@@ -176,7 +176,7 @@ export const AuditLogs = () => {
       <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-card flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="relative max-w-md w-full">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <input 
+          <input
             type="text"
             placeholder="Search logs by action, user, client or details..."
             value={searchTerm}
@@ -209,24 +209,24 @@ export const AuditLogs = () => {
               <Calendar className="h-3.5 w-3.5 text-slate-500" />
               <span>Date:</span>
             </div>
-            <input 
-              type="date" 
-              value={filterStartDate} 
+            <input
+              type="date"
+              value={filterStartDate}
               onChange={(e) => setFilterStartDate(e.target.value)}
               className="px-2 py-1 text-xs font-medium rounded-lg border border-slate-300 bg-white text-slate-800 shadow-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="dd-mm-yyyy"
             />
             <span className="text-slate-400 font-bold">-</span>
-            <input 
-              type="date" 
-              value={filterEndDate} 
+            <input
+              type="date"
+              value={filterEndDate}
               onChange={(e) => setFilterEndDate(e.target.value)}
               className="px-2 py-1 text-xs font-medium rounded-lg border border-slate-300 bg-white text-slate-800 shadow-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="dd-mm-yyyy"
             />
             <button
               type="button"
-              onClick={() => {}}
+              onClick={() => { }}
               className="px-3 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition cursor-pointer flex items-center justify-center"
             >
               Filter
@@ -264,11 +264,10 @@ export const AuditLogs = () => {
               {sortedLogs.map(log => (
                 <tr key={log.id || Math.random()} className="hover:bg-slate-50/80 transition">
                   <td className="p-4">
-                    <span className={`badge ${
-                      log.action?.includes('CREATE') ? 'badge-green' : 
-                      log.action?.includes('CLAIM') ? 'badge-amber' : 
-                      log.action?.includes('LOGIN') ? 'badge-blue' : 'badge-purple'
-                    }`}>
+                    <span className={`badge ${log.action?.includes('CREATE') ? 'badge-green' :
+                        log.action?.includes('CLAIM') ? 'badge-amber' :
+                          log.action?.includes('LOGIN') ? 'badge-blue' : 'badge-purple'
+                      }`}>
                       {log.action || 'MUTATION'}
                     </span>
                     <span className="text-[10px] text-slate-400 block font-bold mt-1">Module: {log.module || 'General'}</span>
@@ -289,7 +288,7 @@ export const AuditLogs = () => {
               {sortedLogs.length === 0 && (
                 <tr>
                   <td colSpan="5" className="p-8 text-center text-xs text-slate-400 font-semibold">
-                    No matching audit log records found for "{searchTerm}".
+                    {searchTerm ? `No matching audit log records found for "${searchTerm}".` : 'No audit log records found.'}
                   </td>
                 </tr>
               )}
@@ -315,7 +314,7 @@ export const AuditLogs = () => {
             <form onSubmit={handleAddLogSubmit} className="space-y-4 text-xs font-semibold">
               <div>
                 <label className="block text-slate-700 mb-1 font-extrabold uppercase">Audit Action Type</label>
-                <input 
+                <input
                   type="text"
                   required
                   value={newLogForm.action}
@@ -327,7 +326,7 @@ export const AuditLogs = () => {
 
               <div>
                 <label className="block text-slate-700 mb-1 font-extrabold uppercase">Module Category</label>
-                <select 
+                <select
                   value={newLogForm.module}
                   onChange={(e) => setNewLogForm({ ...newLogForm, module: e.target.value })}
                   className="w-full p-2.5 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-blue-600 font-bold bg-white"
@@ -342,7 +341,7 @@ export const AuditLogs = () => {
 
               <div>
                 <label className="block text-slate-700 mb-1 font-extrabold uppercase">Affected Record / Target</label>
-                <input 
+                <input
                   type="text"
                   required
                   value={newLogForm.affectedRecord}
@@ -354,7 +353,7 @@ export const AuditLogs = () => {
 
               <div>
                 <label className="block text-slate-700 mb-1 font-extrabold uppercase">Audit Details &amp; Notes</label>
-                <textarea 
+                <textarea
                   required
                   rows="3"
                   value={newLogForm.details}
@@ -365,14 +364,14 @@ export const AuditLogs = () => {
               </div>
 
               <div className="pt-2 flex items-center justify-end space-x-2">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setShowAddModal(false)}
                   className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   type="submit"
                   className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black transition shadow-md"
                 >

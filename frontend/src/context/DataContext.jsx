@@ -103,7 +103,7 @@ export const DataProvider = ({ children }) => {
           try {
             localStorage.setItem('crm_v2_users_list', JSON.stringify(uList));
             window.dispatchEvent(new Event('storage_users_updated'));
-          } catch (e) {}
+          } catch (e) { }
         }
       },
       (err) => console.warn('Firestore users error:', err));
@@ -287,7 +287,7 @@ export const DataProvider = ({ children }) => {
           newCust.name, false, user?.name
         );
       }
-    } catch (e) {}
+    } catch (e) { }
 
     try {
       addAuditLog({
@@ -298,7 +298,7 @@ export const DataProvider = ({ children }) => {
         affectedRecord: `${newCust.name} (${newCust.customerCode})`,
         details: `Created customer profile assigned to ${assignedStaffName}`
       });
-    } catch (e) {}
+    } catch (e) { }
 
     return newCust;
   };
@@ -515,7 +515,7 @@ export const DataProvider = ({ children }) => {
         activePoliciesCount: (linkedCust.activePoliciesCount || 0) + 1,
         totalPortfolioValue: (Number(linkedCust.totalPortfolioValue || 0) + Number(newPol.sumInsured || 0))
       };
-      try { await setDoc(doc(db, 'customers', String(linkedCust.id)), updatedCust, { merge: true }); } catch (_) {}
+      try { await setDoc(doc(db, 'customers', String(linkedCust.id)), updatedCust, { merge: true }); } catch (_) { }
     }
 
     addAuditLog({
