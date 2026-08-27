@@ -22,15 +22,6 @@ if (typeof window !== 'undefined') {
   };
 }
 
-// Sanitize residual demo keys from browser localStorage
-try {
-  const sanitizeKeys = ['crm_v2_staff_celebrations', 'crm_v2_client_followup_hubs', 'crm_v2_spreadsheet_followups', 'crm_v2_admin_manager_notifications', 'crm_v2_team_chat_messages', 'crm_v2_daily_greetings_status'];
-  sanitizeKeys.forEach(k => {
-    const raw = localStorage.getItem(k);
-    if (raw && (raw.includes('Rahul Dravid') || raw.includes('Priya Sharma') || raw.includes('Kavita Menon') || raw.includes('STF-001'))) {
-    }
-  });
-} catch (e) {}
 
 // Catch Vite dynamic import chunk loading failures (e.g. after deployment updates)
 window.addEventListener('vite:preloadError', () => {
