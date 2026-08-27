@@ -10,6 +10,7 @@ import {
   Gift, Award, IndianRupee, ExternalLink, FileSpreadsheet, Building2
 } from 'lucide-react';
 import { COUNTRY_DIAL_CODES } from '../utils/countryCodes';
+import { INSURANCE_COMPANIES } from '../data/insuranceCatalog';
 
 export const Customers = () => {
   const { user } = useAuth();
@@ -17,6 +18,18 @@ export const Customers = () => {
   const { openCustomer360 } = useCustomer360();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMarital, setFilterMarital] = useState('ALL');
+
+  // Dynamic list of 30 Insurance Companies matching Policies Register
+  const [insuranceCompanies] = useState(() => {
+    const saved = localStorage.getItem('crm_v2_insurance_companies');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {}
+    }
+    return INSURANCE_COMPANIES;
+  });
 
   const [colFilters, setColFilters] = useState({
     date: '',
@@ -2417,18 +2430,12 @@ export const Customers = () => {
                     <select
                       value={newCustomer.insuranceCompany}
                       onChange={(e) => setNewCustomer({ ...newCustomer, insuranceCompany: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-extrabold text-slate-900 bg-slate-50/50 outline-none focus:ring-2 focus:ring-blue-600"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-extrabold text-slate-900 bg-slate-50/50 outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer"
                     >
-                      <option value="">-- Select Insurance Company --</option>
-                      <option value="Tata AIA Life">Tata AIA Life 🛡️</option>
-                      <option value="Star Health Insurance">Star Health Insurance 🏥</option>
-                      <option value="HDFC ERGO Health">HDFC ERGO Health 💙</option>
-                      <option value="Niva Bupa Health">Niva Bupa Health 🧡</option>
-                      <option value="ICICI Prudential Life">ICICI Prudential Life 🏢</option>
-                      <option value="LIC of India">LIC of India 🏦</option>
-                      <option value="SBI Life Insurance">SBI Life Insurance 💚</option>
-                      <option value="Max Life Insurance">Max Life Insurance ⭐</option>
-                      <option value="Bajaj Allianz">Bajaj Allianz 🚗</option>
+                      <option value="">-- Select Insurance Company ({insuranceCompanies.length}) --</option>
+                      {insuranceCompanies.map(comp => (
+                        <option key={comp} value={comp}>{comp}</option>
+                      ))}
                     </select>
                   </div>
 
@@ -3383,19 +3390,14 @@ export const Customers = () => {
                   <div>
                     <label className="block text-[11px] font-black uppercase text-blue-900 mb-1">Insurance Company</label>
                     <select
-                      value={editCustomerData.insuranceCompany || 'Tata AIA Life'}
+                      value={editCustomerData.insuranceCompany || ''}
                       onChange={(e) => setEditCustomerData({ ...editCustomerData, insuranceCompany: e.target.value })}
                       className="w-full px-3 py-2 rounded-xl border border-blue-200 text-xs font-extrabold text-blue-950 bg-white outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer shadow-xs"
                     >
-                      <option value="Tata AIA Life">Tata AIA Life 🛡️</option>
-                      <option value="Star Health Insurance">Star Health Insurance 🏥</option>
-                      <option value="HDFC ERGO Health">HDFC ERGO Health 💙</option>
-                      <option value="Niva Bupa Health">Niva Bupa Health 🧡</option>
-                      <option value="ICICI Prudential Life">ICICI Prudential Life 🏢</option>
-                      <option value="LIC of India">LIC of India 🏦</option>
-                      <option value="SBI Life Insurance">SBI Life Insurance 💚</option>
-                      <option value="Max Life Insurance">Max Life Insurance ⭐</option>
-                      <option value="Bajaj Allianz">Bajaj Allianz 🚗</option>
+                      <option value="">-- Select Insurance Company ({insuranceCompanies.length}) --</option>
+                      {insuranceCompanies.map(comp => (
+                        <option key={comp} value={comp}>{comp}</option>
+                      ))}
                     </select>
                   </div>
 
