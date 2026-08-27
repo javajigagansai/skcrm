@@ -252,7 +252,6 @@ export const Users = () => {
                 <p className="text-[11px] text-blue-200 font-medium">Real-time active staff accounts. Click copy icon to duplicate login credentials.</p>
               </div>
             </div>
-            <span className="badge bg-emerald-500 text-slate-950 text-[10px] font-black uppercase">Real-Time Sync Active ⚡</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
