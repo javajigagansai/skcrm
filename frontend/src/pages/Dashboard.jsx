@@ -134,7 +134,7 @@ export const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { openCustomer360 } = useCustomer360();
-  const { customers, leads, policies, investments, income, expenses, claims, followups, tasks, users: liveUsers } = useData();
+  const { customers, leads, policies, investments, income, expenses, claims, followups, tasks, users: liveUsers, staffList = [] } = useData();
 
   const [dateFilter, setDateFilter] = useState('THIS_MONTH');
   const [customStartDate, setCustomStartDate] = useState(() => {
@@ -168,19 +168,18 @@ export const Dashboard = () => {
   const [staffListState, setStaffListState] = useState(() => {
     try {
       const saved = localStorage.getItem('crm_v2_users_list');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
+      if (saved) return JSON.parse(saved);
     } catch (e) {}
     return [];
   });
 
   useEffect(() => {
-    if (liveUsers && Array.isArray(liveUsers) && liveUsers.length > 0) {
+    if (staffList && Array.isArray(staffList) && staffList.length > 0) {
+      setStaffListState(staffList);
+    } else if (liveUsers && Array.isArray(liveUsers) && liveUsers.length > 0) {
       setStaffListState(liveUsers);
     }
-  }, [liveUsers]);
+  }, [staffList, liveUsers]);
 
   useEffect(() => {
     const handleUsersUpdate = () => {
@@ -202,46 +201,81 @@ export const Dashboard = () => {
     };
   }, []);
 
-  const companyOperatingExpenses = useMemo(() => {
-    const opItems = (expenses || []).filter(e => {
+  // 1. Staff Payroll Expenses (auto computed from staffList identical to /expenses tracker)
+  const staffPayrollExpenses = useMemo(() => {
+    const staffMembers = Array.isArray(staffList) && staffList.length > 0 
+      ? staffList 
+      : (Array.isArray(liveUsers) && liveUsers.length > 0 ? liveUsers : (Array.isArray(staffListState) ? staffListState : []));
+    const currentDate = new Date().toISOString().split('T')[0];
+
+    return staffMembers
+      .filter(st => st.status === 'ACTIVE' || !st.status || st.status !== 'DISABLED')
+      .map(st => ({
+        id: `SALARY-AUTO-${st.uid || st.id || st.name}`,
+        category: 'Staff Salary (Payroll)',
+        description: `Monthly Fixed Salary Payout — ${st.name} (${st.title || st.role || 'Staff Advisor'})`,
+        amount: Number(st.fixedSalary !== undefined ? st.fixedSalary : (st.monthlyTarget ? Math.round(st.monthlyTarget * 0.5) : 0)),
+        expenseDate: currentDate,
+        date: currentDate,
+        isAutoSalary: true,
+        staffName: st.name
+      }));
+  }, [staffList, liveUsers, staffListState]);
+
+  // 2. Total Staff Salary Payroll Outflow
+  const totalStaffPayroll = useMemo(() => {
+    return staffPayrollExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+  }, [staffPayrollExpenses]);
+
+  // 3. Operational Expenses (manual expenses excluding payroll)
+  const operationalExpensesList = useMemo(() => {
+    return (expenses || []).filter(e => {
       const cat = (e.category || e.title || '').toLowerCase();
       return !cat.includes('salary') && !cat.includes('payroll');
     });
+  }, [expenses]);
 
-    const filteredItems = opItems.filter(e => {
-      const d = e.expenseDate || e.date || e.createdAt;
-      return isDateInSelectedFilter(d, dateFilter, customStartDate, customEndDate);
-    });
+  const totalOperationalExpenses = useMemo(() => {
+    return operationalExpensesList.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+  }, [operationalExpensesList]);
 
-    const activeList = filteredItems.length > 0 ? filteredItems : opItems;
-    const periodTotal = filteredItems.reduce((s, e) => s + (Number(e.amount) || 0), 0);
-    const allTimeTotal = opItems.reduce((s, e) => s + (Number(e.amount) || 0), 0);
-    const displayTotal = filteredItems.length > 0 ? periodTotal : allTimeTotal;
+  // 4. Combined All Company Expenses List (Manual Operational + Auto Staff Payroll)
+  const combinedCompanyExpenses = useMemo(() => {
+    return [...staffPayrollExpenses, ...operationalExpensesList];
+  }, [operationalExpensesList, staffPayrollExpenses]);
 
-    // Category aggregations for the breakdown modal
-    const rentAmount = activeList.filter(e => (e.category || '').toLowerCase().includes('rent')).reduce((s, e) => s + Number(e.amount || 0), 0);
-    const fuelGenAmount = activeList.filter(e => (e.category || '').toLowerCase().includes('generator') || (e.category || '').toLowerCase().includes('fuel') || (e.category || '').toLowerCase().includes('gas')).reduce((s, e) => s + Number(e.amount || 0), 0);
-    const electricityAmount = activeList.filter(e => (e.category || '').toLowerCase().includes('electric') || (e.category || '').toLowerCase().includes('power') || (e.category || '').toLowerCase().includes('util')).reduce((s, e) => s + Number(e.amount || 0), 0);
-    const telecomAmount = activeList.filter(e => (e.category || '').toLowerCase().includes('internet') || (e.category || '').toLowerCase().includes('telecom') || (e.category || '').toLowerCase().includes('software') || (e.category || '').toLowerCase().includes('saas') || (e.category || '').toLowerCase().includes('cloud')).reduce((s, e) => s + Number(e.amount || 0), 0);
-    const marketingAmount = activeList.filter(e => (e.category || '').toLowerCase().includes('market') || (e.category || '').toLowerCase().includes('ad') || (e.category || '').toLowerCase().includes('campaign')).reduce((s, e) => s + Number(e.amount || 0), 0);
-    const suppliesAmount = activeList.filter(e => (e.category || '').toLowerCase().includes('supplies') || (e.category || '').toLowerCase().includes('maintenance') || (e.category || '').toLowerCase().includes('travel') || (e.category || '').toLowerCase().includes('misc') || (e.category || '').toLowerCase().includes('other')).reduce((s, e) => s + Number(e.amount || 0), 0);
+  // 5. Grand Total Company Expenditure Outflow
+  const grandTotalCompanyExpenditure = totalStaffPayroll + totalOperationalExpenses;
+
+  // 6. Company Expenditure Metrics with Breakdown by Categories
+  const companyOperatingExpenses = useMemo(() => {
+    // Category aggregations for the breakdown cards
+    const rentAmount = operationalExpensesList.filter(e => (e.category || '').toLowerCase().includes('rent')).reduce((s, e) => s + Number(e.amount || 0), 0);
+    const fuelGenAmount = operationalExpensesList.filter(e => (e.category || '').toLowerCase().includes('generator') || (e.category || '').toLowerCase().includes('fuel') || (e.category || '').toLowerCase().includes('gas')).reduce((s, e) => s + Number(e.amount || 0), 0);
+    const electricityAmount = operationalExpensesList.filter(e => (e.category || '').toLowerCase().includes('electric') || (e.category || '').toLowerCase().includes('power') || (e.category || '').toLowerCase().includes('util')).reduce((s, e) => s + Number(e.amount || 0), 0);
+    const telecomAmount = operationalExpensesList.filter(e => (e.category || '').toLowerCase().includes('internet') || (e.category || '').toLowerCase().includes('telecom') || (e.category || '').toLowerCase().includes('software') || (e.category || '').toLowerCase().includes('saas') || (e.category || '').toLowerCase().includes('cloud')).reduce((s, e) => s + Number(e.amount || 0), 0);
+    const marketingAmount = operationalExpensesList.filter(e => (e.category || '').toLowerCase().includes('market') || (e.category || '').toLowerCase().includes('ad') || (e.category || '').toLowerCase().includes('campaign')).reduce((s, e) => s + Number(e.amount || 0), 0);
+    const suppliesAmount = operationalExpensesList.filter(e => (e.category || '').toLowerCase().includes('supplies') || (e.category || '').toLowerCase().includes('maintenance') || (e.category || '').toLowerCase().includes('travel') || (e.category || '').toLowerCase().includes('misc') || (e.category || '').toLowerCase().includes('other')).reduce((s, e) => s + Number(e.amount || 0), 0);
 
     return {
-      totalAmount: displayTotal,
-      periodTotal,
-      allTimeAmount: allTimeTotal,
-      items: activeList,
-      hasFilteredResults: filteredItems.length > 0,
+      totalAmount: grandTotalCompanyExpenditure,
+      grandTotal: grandTotalCompanyExpenditure,
+      operationalTotal: totalOperationalExpenses,
+      payrollTotal: totalStaffPayroll,
+      items: combinedCompanyExpenses,
+      operationalItems: operationalExpensesList,
+      payrollItems: staffPayrollExpenses,
       categories: {
         rentAmount,
         fuelGenAmount,
         electricityAmount,
         telecomAmount,
         marketingAmount,
-        suppliesAmount
+        suppliesAmount,
+        payrollAmount: totalStaffPayroll
       }
     };
-  }, [expenses, dateFilter, customStartDate, customEndDate]);
+  }, [operationalExpensesList, staffPayrollExpenses, grandTotalCompanyExpenditure, totalOperationalExpenses, totalStaffPayroll, combinedCompanyExpenses]);
 
   const employeeSalarySpend = useMemo(() => {
     const salaryItems = (expenses || []).filter(e => {
@@ -681,7 +715,7 @@ export const Dashboard = () => {
       incomeByMonth[mKey] = (incomeByMonth[mKey] || 0) + amt;
     });
 
-    const allExpenses = [...(expenses && expenses.length > 0 ? expenses : fallbackExpensesData)];
+    const allExpenses = combinedCompanyExpenses;
     allExpenses.forEach(item => {
       const dStr = item.expenseDate || item.date || item.createdAt || item.timestamp;
       if (!dStr) return;
@@ -721,7 +755,7 @@ export const Dashboard = () => {
         netProfit: netProfitLakhs
       };
     });
-  }, [dateFilter, customStartDate, customEndDate, policies, income, expenses]);
+  }, [dateFilter, customStartDate, customEndDate, policies, income, combinedCompanyExpenses]);
 
   const dynamicAcquisitionsChart = useMemo(() => {
     const now = new Date();
@@ -1439,77 +1473,106 @@ export const Dashboard = () => {
         </div>
       );
     } else if (activeModal === 'COMPANY_EXPENDITURE') {
-      title = "Company Operating Expenditure & Infrastructure Audit";
+      title = "Company Expenditure Tracker & Infrastructure Audit";
       subtitle = `Live Company Expenses & Outflow Overview (${dateFilter})`;
       
-      const totalExp = companyOperatingExpenses.totalAmount;
-      const { rentAmount, fuelGenAmount, electricityAmount, telecomAmount, marketingAmount, suppliesAmount } = companyOperatingExpenses.categories;
+      const { grandTotal, operationalTotal, payrollTotal, items, categories } = companyOperatingExpenses;
 
       content = (
         <div className="space-y-6">
+          {/* Top 3 Summary Cards matching Company Expenditure Tracker */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="bg-gradient-to-br from-rose-50 to-rose-100/60 p-4 rounded-2xl border border-rose-200 shadow-xs">
+              <span className="text-[11px] font-black text-rose-800 uppercase tracking-wider">Grand Total Monthly Spend</span>
+              <p className="text-2xl font-black text-slate-900 mt-1">₹{Number(grandTotal).toLocaleString('en-IN')}</p>
+              <span className="text-[10px] text-rose-700 font-semibold">Total Monthly Expense Outflow</span>
+            </div>
+            <div className="bg-gradient-to-br from-purple-50 to-purple-100/60 p-4 rounded-2xl border border-purple-200 shadow-xs">
+              <span className="text-[11px] font-black text-purple-800 uppercase tracking-wider">Staff Salary Payroll</span>
+              <p className="text-2xl font-black text-slate-900 mt-1">₹{Number(payrollTotal).toLocaleString('en-IN')}</p>
+              <span className="text-[10px] text-purple-700 font-semibold">Monthly Active Staff Payroll Outflow</span>
+            </div>
+            <div className="bg-gradient-to-br from-amber-50 to-amber-100/60 p-4 rounded-2xl border border-amber-200 shadow-xs">
+              <span className="text-[11px] font-black text-amber-800 uppercase tracking-wider">Operational &amp; Fuel Spending</span>
+              <p className="text-2xl font-black text-slate-900 mt-1">₹{Number(operationalTotal).toLocaleString('en-IN')}</p>
+              <span className="text-[10px] text-amber-700 font-semibold">Operational Overheads &amp; Office Spending</span>
+            </div>
+          </div>
+
+          {/* Operational Breakdown Categories */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="bg-purple-50/70 p-3.5 rounded-2xl border border-purple-200">
+              <span className="text-[10px] font-bold text-purple-700 uppercase">Staff Salary &amp; Payroll</span>
+              <p className="text-lg font-black text-slate-900">₹{Number(payrollTotal).toLocaleString('en-IN')}</p>
+              <span className="text-[10px] text-slate-500">Active Staff Payouts</span>
+            </div>
             <div className="bg-amber-50 p-3.5 rounded-2xl border border-amber-100">
               <span className="text-[10px] font-bold text-amber-700 uppercase">Office Rent &amp; Premises</span>
-              <p className="text-xl font-black text-slate-900">₹{Number(rentAmount).toLocaleString('en-IN')}</p>
+              <p className="text-lg font-black text-slate-900">₹{Number(categories.rentAmount).toLocaleString('en-IN')}</p>
               <span className="text-[10px] text-slate-500">Commercial Lease Outflow</span>
             </div>
             <div className="bg-orange-50 p-3.5 rounded-2xl border border-orange-100">
               <span className="text-[10px] font-bold text-orange-600 uppercase">Generator, Fuel &amp; Gas</span>
-              <p className="text-xl font-black text-slate-900">₹{Number(fuelGenAmount).toLocaleString('en-IN')}</p>
+              <p className="text-lg font-black text-slate-900">₹{Number(categories.fuelGenAmount).toLocaleString('en-IN')}</p>
               <span className="text-[10px] text-slate-500">Power Backup &amp; Fuel</span>
             </div>
             <div className="bg-emerald-50 p-3.5 rounded-2xl border border-emerald-100">
               <span className="text-[10px] font-bold text-emerald-600 uppercase">Electricity &amp; Utilities</span>
-              <p className="text-xl font-black text-slate-900">₹{Number(electricityAmount).toLocaleString('en-IN')}</p>
+              <p className="text-lg font-black text-slate-900">₹{Number(categories.electricityAmount).toLocaleString('en-IN')}</p>
               <span className="text-[10px] text-slate-500">Power &amp; Utilities</span>
             </div>
             <div className="bg-blue-50 p-3.5 rounded-2xl border border-blue-100">
               <span className="text-[10px] font-bold text-blue-600 uppercase">Software, SaaS &amp; Telecom</span>
-              <p className="text-xl font-black text-slate-900">₹{Number(telecomAmount).toLocaleString('en-IN')}</p>
+              <p className="text-lg font-black text-slate-900">₹{Number(categories.telecomAmount).toLocaleString('en-IN')}</p>
               <span className="text-[10px] text-slate-500">Cloud DB, CRM &amp; Internet</span>
             </div>
             <div className="bg-purple-50 p-3.5 rounded-2xl border border-purple-100">
               <span className="text-[10px] font-bold text-purple-600 uppercase">Marketing &amp; Campaigns</span>
-              <p className="text-xl font-black text-slate-900">₹{Number(marketingAmount).toLocaleString('en-IN')}</p>
+              <p className="text-lg font-black text-slate-900">₹{Number(categories.marketingAmount).toLocaleString('en-IN')}</p>
               <span className="text-[10px] text-slate-500">Digital Ads &amp; Campaigns</span>
-            </div>
-            <div className="bg-slate-100 p-3.5 rounded-2xl border border-slate-200">
-              <span className="text-[10px] font-bold text-slate-700 uppercase">Maintenance &amp; Supplies</span>
-              <p className="text-xl font-black text-slate-900">₹{Number(suppliesAmount).toLocaleString('en-IN')}</p>
-              <span className="text-[10px] text-slate-500">Office Admin &amp; Misc</span>
             </div>
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <h4 className="text-xs font-black uppercase text-slate-700 tracking-wider">Live Operating Expense Database Ledger</h4>
-              <span className="text-[10px] font-bold text-slate-500">Total: ₹{Number(totalExp).toLocaleString('en-IN')}</span>
+              <h4 className="text-xs font-black uppercase text-slate-700 tracking-wider">Live Company Expenditure Database Ledger</h4>
+              <span className="text-[10px] font-bold text-slate-500">Total Outflow: ₹{Number(grandTotal).toLocaleString('en-IN')}</span>
             </div>
             <div className="overflow-x-auto rounded-2xl border border-slate-200">
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50 text-slate-600 font-extrabold uppercase text-[10px]">
                   <tr>
                     <th className="p-3">Expense Category</th>
-                    <th className="p-3">Description / Vendor</th>
+                    <th className="p-3">Description / Staff Member</th>
                     <th className="p-3">Amount (₹)</th>
                     <th className="p-3">Expense Date</th>
-                    <th className="p-3">Database Status</th>
+                    <th className="p-3">Source &amp; Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {companyOperatingExpenses.items.length > 0 ? (
-                    companyOperatingExpenses.items.map((e, idx) => (
+                  {items.length > 0 ? (
+                    items.map((e, idx) => (
                       <tr key={e.id || idx} className="hover:bg-slate-50 transition font-semibold">
-                        <td className="p-3 font-bold text-slate-900"><span className="badge badge-amber text-[10px]">{e.category || 'Operations'}</span></td>
+                        <td className="p-3 font-bold text-slate-900">
+                          <span className={`badge text-[10px] ${e.isAutoSalary ? 'bg-purple-100 text-purple-800 border border-purple-300' : 'badge-amber'}`}>
+                            {e.category || 'Operations'}
+                          </span>
+                        </td>
                         <td className="p-3 text-slate-700 font-extrabold">{e.description || e.vendor || e.title || 'Operating Overhead'}</td>
                         <td className="p-3 font-black text-rose-700">₹{Number(e.amount || 0).toLocaleString('en-IN')}</td>
                         <td className="p-3 text-slate-600 font-mono">{e.expenseDate || e.date || '—'}</td>
-                        <td className="p-3"><span className="badge badge-green text-[10px]">Synced Database Record ⚡</span></td>
+                        <td className="p-3">
+                          {e.isAutoSalary ? (
+                            <span className="badge bg-purple-50 text-purple-700 text-[10px] font-bold">Auto Salary Payout</span>
+                          ) : (
+                            <span className="badge badge-green text-[10px]">Synced Database Record ⚡</span>
+                          )}
+                        </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="5" className="p-4 text-center text-slate-400 font-semibold">No operating expense records found in database for the selected timeframe.</td>
+                      <td colSpan="5" className="p-4 text-center text-slate-400 font-semibold">No expenditure records found in database.</td>
                     </tr>
                   )}
                 </tbody>
@@ -2542,13 +2605,11 @@ export const Dashboard = () => {
               <div className="p-2 rounded-xl bg-amber-50 text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition"><Building2 className="h-4 w-4" /></div>
             </div>
             <p className="text-2xl font-black text-slate-900">
-              {companyOperatingExpenses.totalAmount >= 100000
-                ? `₹${(companyOperatingExpenses.totalAmount / 100000).toFixed(2)} L`
-                : `₹${Number(companyOperatingExpenses.totalAmount || 0).toLocaleString('en-IN')}`}
+              ₹{Number(companyOperatingExpenses.totalAmount || 0).toLocaleString('en-IN')}
             </p>
             <div className="flex items-center justify-between pt-1">
               <span className="badge bg-amber-100 text-amber-800 text-[10px]">
-                {companyOperatingExpenses.items.length} {companyOperatingExpenses.items.length === 1 ? 'Record' : 'Records'} ({dateFilter})
+                Payroll: ₹{Number(companyOperatingExpenses.payrollTotal || 0).toLocaleString('en-IN')} | Ops: ₹{Number(companyOperatingExpenses.operationalTotal || 0).toLocaleString('en-IN')}
               </span>
               <span className="text-[10px] font-extrabold text-amber-600 hover:underline flex items-center space-x-0.5">
                 <span>View Details</span>
