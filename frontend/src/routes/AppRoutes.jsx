@@ -110,7 +110,7 @@ export const AppRoutes = () => {
       <Route path="/investments" element={<RoleProtectedRoute allowedRoles={WORKER_ROLES}><Investments /></RoleProtectedRoute>} />
       <Route path="/claims" element={<RoleProtectedRoute allowedRoles={WORKER_ROLES}><Claims /></RoleProtectedRoute>} />
       <Route path="/renewals" element={<RoleProtectedRoute allowedRoles={WORKER_ROLES}><Renewals /></RoleProtectedRoute>} />
-      <Route path="/income" element={<RoleProtectedRoute allowedRoles={WORKER_ROLES}><Income /></RoleProtectedRoute>} />
+      <Route path="/income" element={<RoleProtectedRoute allowedRoles={MID_MANAGEMENT_ROLES}><Income /></RoleProtectedRoute>} />
       <Route path="/expenses" element={<RoleProtectedRoute allowedRoles={MID_MANAGEMENT_ROLES}><Expenses /></RoleProtectedRoute>} />
       <Route path="/tasks" element={<RoleProtectedRoute allowedRoles={WORKER_ROLES}><Tasks /></RoleProtectedRoute>} />
       <Route path="/reports" element={<RoleProtectedRoute allowedRoles={MID_MANAGEMENT_ROLES}><Reports /></RoleProtectedRoute>} />
