@@ -106,6 +106,37 @@ export const DataProvider = ({ children }) => {
     };
   }, []);
 
+  const sanitizeForFirestore = (data) => {
+    if (data === undefined) return null;
+    if (data === null || typeof data !== 'object') return data;
+    if (data instanceof Date) return data.toISOString();
+    if (Array.isArray(data)) {
+      return data.map(item => sanitizeForFirestore(item));
+    }
+    const result = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (value !== undefined) {
+        result[key] = sanitizeForFirestore(value);
+      }
+    }
+    return result;
+  };
+
+  const addAuditLog = (logData) => {
+    const newLog = {
+      id: `LOG-${Math.floor(1000 + Math.random() * 9000)}`,
+      userName: logData?.userName || user?.name || 'System User',
+      userRole: logData?.userRole || user?.role || 'STAFF',
+      action: logData?.action || 'MUTATION',
+      module: logData?.module || 'General',
+      affectedRecord: logData?.affectedRecord || '-',
+      timestamp: logData?.timestamp || new Date().toLocaleString('en-IN'),
+      details: logData?.details || 'Action completed successfully'
+    };
+    setAuditLogs(prev => [newLog, ...(prev || [])]);
+    return newLog;
+  };
+
   /**
    * notifyCustomerAssignment
    * Fires a notification to the assigned staff AND auto-creates a follow-up Task.
@@ -196,7 +227,7 @@ export const DataProvider = ({ children }) => {
         createdAt: new Date().toISOString()
       };
 
-      setTasks(prev => [autoTask, ...prev]);
+      setTasks(prev => [autoTask, ...(prev || [])]);
       try { createTaskBackend(autoTask); } catch (_) { }
     } catch (e) { }
   };
@@ -226,25 +257,33 @@ export const DataProvider = ({ children }) => {
       createdByUid: user?.uid || ''
     };
 
-    // Write to Firestore — throws on failure so the UI can show an error
-    await setDoc(doc(db, 'customers', id), newCust, { merge: true });
-    // onSnapshot listener will update rawCustomers automatically
+    // Optimistically update state so customer appears immediately in UI
+    setCustomers(prev => [newCust, ...(prev || []).filter(c => c.id !== id)]);
 
-    if (newCust.assignedStaffName || newCust.assignedAdvisorName) {
-      notifyCustomerAssignment(
-        { uid: newCust.assignedStaffId, name: newCust.assignedStaffName || newCust.assignedAdvisorName, email: newCust.assignedStaffEmail },
-        newCust.name, false, user?.name
-      );
-    }
+    // Write to Firestore with sanitized fields
+    const payload = sanitizeForFirestore(newCust);
+    await setDoc(doc(db, 'customers', id), payload, { merge: true });
 
-    addAuditLog({
-      userName: user?.name || 'Staff Advisor',
-      userRole: user?.role || 'STAFF',
-      action: 'CREATE_CLIENT',
-      module: 'Customers',
-      affectedRecord: `${newCust.name} (${newCust.customerCode})`,
-      details: `Created customer profile assigned to ${assignedStaffName}`
-    });
+    try {
+      if (newCust.assignedStaffName || newCust.assignedAdvisorName) {
+        notifyCustomerAssignment(
+          { uid: newCust.assignedStaffId, name: newCust.assignedStaffName || newCust.assignedAdvisorName, email: newCust.assignedStaffEmail },
+          newCust.name, false, user?.name
+        );
+      }
+    } catch (e) {}
+
+    try {
+      addAuditLog({
+        userName: user?.name || 'Staff Advisor',
+        userRole: user?.role || 'STAFF',
+        action: 'CREATE_CLIENT',
+        module: 'Customers',
+        affectedRecord: `${newCust.name} (${newCust.customerCode})`,
+        details: `Created customer profile assigned to ${assignedStaffName}`
+      });
+    } catch (e) {}
+
     return newCust;
   };
 
@@ -864,20 +903,7 @@ export const DataProvider = ({ children }) => {
     };
   };
 
-  const addAuditLog = (logData) => {
-    const newLog = {
-      id: `LOG-${Math.floor(1000 + Math.random() * 9000)}`,
-      userName: logData.userName || user?.name || 'System User',
-      userRole: logData.userRole || user?.role || 'STAFF',
-      action: logData.action || 'MUTATION',
-      module: logData.module || 'General',
-      affectedRecord: logData.affectedRecord || '-',
-      timestamp: logData.timestamp || new Date().toLocaleString('en-IN'),
-      details: logData.details || 'Action completed successfully'
-    };
-    setAuditLogs(prev => [newLog, ...prev]);
-    return newLog;
-  };
+
 
   return (
     <DataContext.Provider value={{
