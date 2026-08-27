@@ -339,8 +339,16 @@ export const exportCustomerRegistryPDF = (customers) => {
   printWindow.document.close();
 };
 
-// Export Dashboard Analytics to PDF (Including both By Category and By Company Breakdowns)
-export const exportDashboardAnalyticsPDF = (dateFilter, currentMetrics, productDistData, conversionClaimsData, staffData, categoryOverviewData = {}) => {
+// Export Complete Dashboard Analytics to PDF (Including All Dashboard Data, KPIs, Categories, Insurers, Staff, Financials, Conversions, Renewals & Expenses)
+export const exportDashboardAnalyticsPDF = (
+  dateFilter,
+  currentMetrics = {},
+  productDistData = [],
+  conversionClaimsData = [],
+  staffData = [],
+  categoryOverviewData = {},
+  extraDashboardData = {}
+) => {
   const printWindow = window.open('', '_blank');
   if (!printWindow) {
     alert("Please allow popups to download/print PDF report.");
@@ -348,88 +356,95 @@ export const exportDashboardAnalyticsPDF = (dateFilter, currentMetrics, productD
   }
 
   const timestamp = new Date().toLocaleString('en-IN');
-  const catData = categoryOverviewData?.chartData || [];
+  const catData = categoryOverviewData?.chartData || productDistData || [];
   const compData = categoryOverviewData?.companyChartData || [];
-  const totalPolicies = categoryOverviewData?.totalPolicies || categoryOverviewData?.totalPoliciesCount || 1;
+  const totalPolicies = categoryOverviewData?.totalPolicies || categoryOverviewData?.totalPoliciesCount || (currentMetrics?.activePolicies || 1);
+
+  const financialChart = extraDashboardData?.financialChart || [];
+  const renewalsList = extraDashboardData?.renewalsList || [];
+  const specialDaysList = extraDashboardData?.specialDaysList || [];
+  const expensesList = extraDashboardData?.expensesList || [];
 
   const html = `
     <!DOCTYPE html>
     <html>
     <head>
-      <title>SK Smart Investments - Dashboard Analytics (By Category & By Company)</title>
+      <title>SK Smart Investments - Complete Master Dashboard Report</title>
       <style>
         @media print { body { -webkit-print-color-adjust: exact; } }
-        body { font-family: 'Segoe UI', Arial, sans-serif; color: #0f172a; margin: 0; padding: 35px; background-color: #fff; }
-        .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #1E6091; padding-bottom: 16px; margin-bottom: 24px; }
-        .logo { font-size: 24px; font-weight: 900; color: #1E6091; letter-spacing: -0.5px; }
-        .subtitle { font-size: 12px; color: #64748b; margin-top: 4px; font-weight: 600; }
-        .meta-bar { background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 10px 16px; border-radius: 10px; font-size: 11px; color: #475569; margin-bottom: 24px; display: flex; justify-content: space-between; }
-        .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
-        .kpi-card { border: 1px solid #cbd5e1; border-radius: 12px; padding: 14px; background: #f8fafc; }
-        .kpi-label { font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; }
-        .kpi-value { font-size: 20px; font-weight: 900; color: #0f172a; margin: 6px 0 4px 0; }
-        .section-title { font-size: 13px; font-weight: 900; color: #1e293b; border-left: 4px solid #1E6091; padding-left: 10px; margin: 24px 0 12px 0; text-transform: uppercase; letter-spacing: 0.5px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 11px; }
-        th, td { border: 1px solid #e2e8f0; padding: 9px 12px; text-align: left; }
-        th { background-color: #1E6091; color: #ffffff; font-weight: 800; text-transform: uppercase; font-size: 10px; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; color: #0f172a; margin: 0; padding: 32px; background-color: #fff; line-height: 1.4; }
+        .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #1E6091; padding-bottom: 14px; margin-bottom: 20px; }
+        .logo { font-size: 22px; font-weight: 900; color: #1E6091; letter-spacing: -0.5px; }
+        .subtitle { font-size: 11px; color: #64748b; margin-top: 3px; font-weight: 600; }
+        .meta-bar { background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 9px 14px; border-radius: 10px; font-size: 11px; color: #475569; margin-bottom: 20px; display: flex; justify-content: space-between; }
+        .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 22px; }
+        .kpi-card { border: 1px solid #cbd5e1; border-radius: 12px; padding: 12px 14px; background: #f8fafc; }
+        .kpi-label { font-size: 9px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+        .kpi-value { font-size: 19px; font-weight: 900; color: #0f172a; margin: 4px 0 2px 0; }
+        .section-title { font-size: 12px; font-weight: 900; color: #1e293b; border-left: 4px solid #1E6091; padding-left: 10px; margin: 24px 0 10px 0; text-transform: uppercase; letter-spacing: 0.5px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 18px; font-size: 10.5px; }
+        th, td { border: 1px solid #e2e8f0; padding: 7px 10px; text-align: left; }
+        th { background-color: #1E6091; color: #ffffff; font-weight: 800; text-transform: uppercase; font-size: 9.5px; }
         tr:nth-child(even) { background-color: #f8fafc; }
-        .footer { margin-top: 40px; border-top: 1px solid #e2e8f0; padding-top: 16px; font-size: 10px; color: #94a3b8; text-align: center; }
+        .badge { display: inline-block; padding: 2px 6px; border-radius: 8px; font-size: 9px; font-weight: 800; }
+        .footer { margin-top: 36px; border-top: 1px solid #e2e8f0; padding-top: 14px; font-size: 9.5px; color: #94a3b8; text-align: center; }
       </style>
     </head>
     <body>
       <div class="header">
         <div>
           <div class="logo">SK SMART INVESTMENTS &amp; INSURANCE</div>
-          <div class="subtitle">Official Dashboard Analytics Report (By Category &amp; By Company)</div>
+          <div class="subtitle">Complete Executive Master Dashboard &amp; Operational Analytics Report</div>
         </div>
-        <div style="text-align: right; font-size: 11px; color: #64748b;">
-          <strong>Timeline Filter:</strong> ${dateFilter}<br/>
+        <div style="text-align: right; font-size: 10.5px; color: #64748b;">
+          <strong>Timeline Range:</strong> ${dateFilter || 'THIS_MONTH'}<br/>
           <strong>Generated:</strong> ${timestamp}
         </div>
       </div>
 
       <div class="meta-bar">
-        <span><strong>Report Document:</strong> Executive Dashboard Analytics (PDF)</span>
-        <span><strong>Status:</strong> Verified Audit Final</span>
+        <span><strong>Report Type:</strong> Complete Comprehensive Dashboard Export (PDF)</span>
+        <span><strong>Data Coverage:</strong> Customers, Policies, Investments, Financials, Conversions, Staff, Renewals &amp; Outflows</span>
       </div>
 
+      <!-- SECTION: EXECUTIVE KPI METRICS -->
       <div class="kpi-grid">
         <div class="kpi-card">
           <div class="kpi-label">Total Customers</div>
           <div class="kpi-value">${currentMetrics?.customers || 0}</div>
-          <div style="font-size: 10px; color: #16a34a; font-weight:700;">Active Accounts</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Active Leads</div>
-          <div class="kpi-value">${currentMetrics?.activeLeads || 0}</div>
-          <div style="font-size: 10px; color: #9333ea; font-weight:700;">In Pipeline</div>
+          <div style="font-size: 9.5px; color: #16a34a; font-weight:700;">Active Client Profiles</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label">Active Policies</div>
-          <div class="kpi-value">${categoryOverviewData?.totalPolicies || currentMetrics?.policiesCount || 0}</div>
-          <div style="font-size: 10px; color: #2563eb; font-weight:700;">Underwritten</div>
+          <div class="kpi-value">${categoryOverviewData?.totalPolicies || currentMetrics?.activePolicies || currentMetrics?.policiesCount || 0}</div>
+          <div style="font-size: 9.5px; color: #2563eb; font-weight:700;">Underwritten Contracts</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label">Investments Volume</div>
           <div class="kpi-value">${currentMetrics?.investmentVolume || '₹0'}</div>
-          <div style="font-size: 10px; color: #16a34a; font-weight:700;">Active Portfolios</div>
+          <div style="font-size: 9.5px; color: #16a34a; font-weight:700;">Mutual Funds &amp; SIP AUM</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Company Outflow</div>
+          <div class="kpi-value">₹${Number(currentMetrics?.companyExpenditure || extraDashboardData?.totalExpenses || 0).toLocaleString('en-IN')}</div>
+          <div style="font-size: 9.5px; color: #e11d48; font-weight:700;">Operating &amp; Staff Spend</div>
         </div>
       </div>
 
-      <!-- SECTION 1: BY CATEGORY BREAKDOWN -->
-      <div class="section-title">1. Business Distribution BY POLICY CATEGORY</div>
+      <!-- SECTION 1: POLICY CATEGORIES BREAKDOWN -->
+      <div class="section-title">1. Portfolio Distribution by Policy Category</div>
       <table>
         <thead>
           <tr>
             <th>Policy Category</th>
-            <th>Active Policy Contracts</th>
+            <th>Active Policies</th>
             <th>Portfolio Share %</th>
             <th>Leading Underwriter</th>
-            <th>Status</th>
+            <th>Category Status</th>
           </tr>
         </thead>
         <tbody>
-          ${catData.map(cat => {
+          ${catData.length > 0 ? catData.map(cat => {
             const count = cat.policyCount ?? cat.count ?? 0;
             const share = totalPolicies > 0 ? ((count / totalPolicies) * 100).toFixed(1) : '0.0';
             const topComp = cat.companies ? Object.keys(cat.companies)[0] : 'Star Health / Tata AIA';
@@ -439,19 +454,19 @@ export const exportDashboardAnalyticsPDF = (dateFilter, currentMetrics, productD
                 <td style="font-weight:900; color:#1E6091;">${count}</td>
                 <td style="color:#2563eb; font-weight:800;">${share}%</td>
                 <td style="color:#475569; font-weight:700;">${topComp}</td>
-                <td><span style="background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 12px; font-weight: 800; font-size: 10px;">ACTIVE</span></td>
+                <td><span class="badge" style="background:#dcfce7; color:#15803d;">ACTIVE</span></td>
               </tr>
             `;
-          }).join('')}
+          }).join('') : `<tr><td colSpan="5" style="text-align:center; color:#94a3b8;">No category records found.</td></tr>`}
         </tbody>
       </table>
 
-      <!-- SECTION 2: BY INSURANCE COMPANY BREAKDOWN -->
-      <div class="section-title">2. Underwriting Volume BY INSURANCE COMPANY</div>
+      <!-- SECTION 2: INSURANCE COMPANY BREAKDOWN -->
+      <div class="section-title">2. Underwriting Volume by Insurance Company</div>
       <table>
         <thead>
           <tr>
-            <th>Insurance Company</th>
+            <th>Insurance Company Partner</th>
             <th>Underwritten Contracts</th>
             <th>Market Share %</th>
             <th>Primary Business Line</th>
@@ -459,7 +474,7 @@ export const exportDashboardAnalyticsPDF = (dateFilter, currentMetrics, productD
           </tr>
         </thead>
         <tbody>
-          ${compData.map(comp => {
+          ${compData.length > 0 ? compData.map(comp => {
             const compName = comp.company || comp.name || 'Empanelled Insurer';
             const count = comp.policyCount ?? comp.count ?? 0;
             const share = totalPolicies > 0 ? ((count / totalPolicies) * 100).toFixed(1) : '0.0';
@@ -470,40 +485,156 @@ export const exportDashboardAnalyticsPDF = (dateFilter, currentMetrics, productD
                 <td style="font-weight:900; color:#0f172a;">${count}</td>
                 <td style="color:#16a34a; font-weight:800;">${share}%</td>
                 <td style="color:#64748b; font-weight:700;">${topCat}</td>
-                <td><span style="background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 12px; font-weight: 800; font-size: 10px;">EMPANELLED</span></td>
+                <td><span class="badge" style="background:#e0f2fe; color:#0369a1;">EMPANELLED</span></td>
               </tr>
             `;
-          }).join('')}
+          }).join('') : `<tr><td colSpan="5" style="text-align:center; color:#94a3b8;">No company records found.</td></tr>`}
         </tbody>
       </table>
 
       <!-- SECTION 3: STAFF ADVISOR PERFORMANCE -->
-      <div class="section-title">3. Staff Advisor Performance Leaderboard</div>
+      <div class="section-title">3. Staff Advisor Performance &amp; Production Leaderboard</div>
       <table>
         <thead>
           <tr>
-            <th>Advisor Name</th>
-            <th>Target</th>
-            <th>Achieved</th>
-            <th>Completion Rate</th>
-            <th>Status</th>
+            <th>Advisor / Staff Name</th>
+            <th>Assigned Monthly Target</th>
+            <th>Achieved Business Value</th>
+            <th>Completion Rate %</th>
+            <th>Production Status</th>
           </tr>
         </thead>
         <tbody>
-          ${(staffData || []).map(row => `
-            <tr>
-              <td><strong>${row.name}</strong></td>
-              <td>${row.target}</td>
-              <td style="color: #2563eb; font-weight: 800;">${row.achieved}</td>
-              <td style="color: #16a34a; font-weight: 800;">${row.target ? ((row.achieved / row.target) * 100).toFixed(1) : 100}%</td>
-              <td><span style="background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 12px; font-weight: 800; font-size: 10px;">On Track</span></td>
-            </tr>
-          `).join('')}
+          ${(staffData || []).length > 0 ? (staffData || []).map(row => {
+            const targetVal = Number(row.target || 0);
+            const achievedVal = Number(row.achieved || 0);
+            const rate = targetVal > 0 ? ((achievedVal / targetVal) * 100).toFixed(1) : (achievedVal > 0 ? '100.0' : '0.0');
+            return `
+              <tr>
+                <td><strong>${row.name}</strong></td>
+                <td>₹${targetVal.toLocaleString('en-IN')}</td>
+                <td style="color: #2563eb; font-weight: 800;">₹${achievedVal.toLocaleString('en-IN')}</td>
+                <td style="color: #16a34a; font-weight: 800;">${rate}%</td>
+                <td><span class="badge" style="background:#dcfce7; color:#15803d;">${Number(rate) >= 100 ? 'Top Performer' : 'On Track'}</span></td>
+              </tr>
+            `;
+          }).join('') : `<tr><td colSpan="5" style="text-align:center; color:#94a3b8;">No staff performance records available.</td></tr>`}
         </tbody>
       </table>
 
+      <!-- SECTION 4: FINANCIAL CASH FLOW & REVENUE TIMELINE -->
+      ${financialChart.length > 0 ? `
+        <div class="section-title">4. Financial Cash Flow &amp; Revenue Timeline</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Timeline Period</th>
+              <th>Gross Revenue / Premium (₹)</th>
+              <th>Expenses / Company Outflow (₹)</th>
+              <th>Net Operating Margin (₹)</th>
+              <th>Health</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${financialChart.map(f => {
+              const inc = Number(f.rawIncome || (f.income ? f.income * 100000 : 0));
+              const exp = Number(f.rawExpense || (f.expense ? f.expense * 100000 : 0));
+              const profit = inc - exp;
+              return `
+                <tr>
+                  <td><strong>${f.fullLabel || f.label || f.month || 'Period'}</strong></td>
+                  <td style="color:#16a34a; font-weight:800;">₹${inc.toLocaleString('en-IN')}</td>
+                  <td style="color:#e11d48; font-weight:800;">₹${exp.toLocaleString('en-IN')}</td>
+                  <td style="color:${profit >= 0 ? '#16a34a' : '#e11d48'}; font-weight:900;">₹${profit.toLocaleString('en-IN')}</td>
+                  <td><span class="badge" style="background:${profit >= 0 ? '#dcfce7' : '#fee2e2'}; color:${profit >= 0 ? '#15803d' : '#991b1b'};">${profit >= 0 ? 'Surplus' : 'Deficit'}</span></td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      ` : ''}
+
+      <!-- SECTION 5: UPCOMING HIGH-PRIORITY POLICY RENEWALS -->
+      ${renewalsList.length > 0 ? `
+        <div class="section-title">5. Upcoming Policy Renewals Schedule</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Customer Name</th>
+              <th>Policy Number</th>
+              <th>Insurer</th>
+              <th>Renewal Date</th>
+              <th>Gross Premium (₹)</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${renewalsList.slice(0, 15).map(r => `
+              <tr>
+                <td><strong>${r.customerName || r.clientName || 'N/A'}</strong></td>
+                <td style="font-family:monospace;">${r.policyNumber || r.id || 'N/A'}</td>
+                <td>${r.insuranceCompany || r.provider || 'N/A'}</td>
+                <td style="font-family:monospace; color:#2563eb; font-weight:700;">${r.expiryDate || r.renewalDate || '—'}</td>
+                <td style="font-weight:800; color:#16a34a;">₹${Number(r.grossPremium || r.premiumAmount || 0).toLocaleString('en-IN')}</td>
+                <td><span class="badge" style="background:#fef3c7; color:#92400e;">PENDING RENEWAL</span></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      ` : ''}
+
+      <!-- SECTION 6: COMPANY EXPENDITURE LEDGER -->
+      ${expensesList.length > 0 ? `
+        <div class="section-title">6. Live Company Operating Expenditure Ledger</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Description / Staff Member</th>
+              <th>Expense Date</th>
+              <th>Amount (₹)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${expensesList.slice(0, 15).map(e => `
+              <tr>
+                <td><strong>${e.category || 'Operations'}</strong></td>
+                <td>${e.description || e.vendor || 'Operational Outflow'}</td>
+                <td style="font-family:monospace;">${e.expenseDate || e.date || '—'}</td>
+                <td style="color:#e11d48; font-weight:800;">₹${Number(e.amount || 0).toLocaleString('en-IN')}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      ` : ''}
+
+      <!-- SECTION 7: SPECIAL DAYS & UPCOMING CELEBRATIONS -->
+      ${specialDaysList.length > 0 ? `
+        <div class="section-title">7. Upcoming Client Special Days &amp; Greetings</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Customer Name</th>
+              <th>Celebration Occasion</th>
+              <th>Date</th>
+              <th>Contact Number</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${specialDaysList.slice(0, 15).map(s => `
+              <tr>
+                <td><strong>${s.customerName || s.name || 'Client'}</strong></td>
+                <td><span class="badge" style="background:#f3e8ff; color:#7e22ce;">${s.type || s.occasion || 'Birthday'}</span></td>
+                <td style="font-family:monospace; font-weight:700;">${s.date || '—'}</td>
+                <td style="font-family:monospace;">${s.phone || s.mobile || '—'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      ` : ''}
+
       <div class="footer">
-        Confidential Document • SK Smart Investments &amp; Insurance • Computer Generated PDF Report
+        Confidential Master Executive Report • SK Smart Investments &amp; Insurance • Complete Live Database Snapshot
       </div>
 
       <script>
@@ -519,24 +650,43 @@ export const exportDashboardAnalyticsPDF = (dateFilter, currentMetrics, productD
   printWindow.document.close();
 };
 
-// Export Dashboard Data (Both BY CATEGORY and BY COMPANY) to Excel / CSV
-export const exportDashboardCategoryAndCompanyExcel = (policyCategoryOverview = {}, currentMetrics = {}) => {
+// Export Complete Dashboard Data to Excel / CSV (Including All 10 Data Dimensions)
+export const exportDashboardCategoryAndCompanyExcel = (
+  policyCategoryOverview = {},
+  currentMetrics = {},
+  extraDashboardData = {}
+) => {
   const chartData = policyCategoryOverview.chartData || [];
   const companyChartData = policyCategoryOverview.companyChartData || [];
   const companyBreakdown = policyCategoryOverview.companyBreakdown || {};
   const totalPolicies = policyCategoryOverview.totalPolicies || policyCategoryOverview.totalPoliciesCount || 1;
 
+  const staffData = extraDashboardData?.staffData || [];
+  const financialChart = extraDashboardData?.financialChart || [];
+  const renewalsList = extraDashboardData?.renewalsList || [];
+  const expensesList = extraDashboardData?.expensesList || [];
+  const specialDaysList = extraDashboardData?.specialDaysList || [];
+
   const rows = [];
 
   // Header Banner
-  rows.push(['SK SMART INVESTMENTS & INSURANCE - DASHBOARD ANALYTICS REPORT']);
-  rows.push(['Generated Date', new Date().toLocaleString('en-IN')]);
-  rows.push(['Total Active Customers', currentMetrics?.customers || 'N/A']);
-  rows.push(['Total Underwritten Policies', totalPolicies]);
+  rows.push(['SK SMART INVESTMENTS & INSURANCE - COMPLETE MASTER DASHBOARD EXPORT']);
+  rows.push(['Generated Date & Time', new Date().toLocaleString('en-IN')]);
+  rows.push(['Timeline Filter Applied', extraDashboardData?.dateFilter || 'THIS_MONTH']);
   rows.push([]);
 
-  // SECTION 1: BY CATEGORY BREAKDOWN
-  rows.push(['=== SECTION 1: BY POLICY CATEGORY BREAKDOWN ===']);
+  // SECTION 1: EXECUTIVE KEY PERFORMANCE INDICATORS
+  rows.push(['=== 1. EXECUTIVE KPI SUMMARY METRICS ===']);
+  rows.push(['Metric Name', 'Recorded Metric Value', 'Description']);
+  rows.push(['Total Active Customers', currentMetrics?.customers || 0, 'Registered Active Client Accounts']);
+  rows.push(['Active Underwritten Policies', totalPolicies, 'Active Policies in Force']);
+  rows.push(['Investments Volume (AUM)', currentMetrics?.investmentVolume || '₹0', 'Mutual Funds & SIP Holdings']);
+  rows.push(['Total Company Outflow', `₹${Number(currentMetrics?.companyExpenditure || extraDashboardData?.totalExpenses || 0).toLocaleString('en-IN')}`, 'Operating & Staff Salary Outflow']);
+  rows.push(['Active Leads Pipeline', currentMetrics?.activeLeads || 0, 'Active Inquiries in Sales Pipeline']);
+  rows.push([]);
+
+  // SECTION 2: BY CATEGORY BREAKDOWN
+  rows.push(['=== 2. BUSINESS DISTRIBUTION BY POLICY CATEGORY ===']);
   rows.push(['Policy Category', 'Active Policy Contracts', 'Portfolio Share (%)', 'Leading Underwriter Partner', 'Status']);
   chartData.forEach(cat => {
     const count = cat.policyCount ?? cat.count ?? 0;
@@ -552,8 +702,8 @@ export const exportDashboardCategoryAndCompanyExcel = (policyCategoryOverview = 
   });
   rows.push([]);
 
-  // SECTION 2: BY INSURANCE COMPANY BREAKDOWN
-  rows.push(['=== SECTION 2: BY INSURANCE COMPANY BREAKDOWN ===']);
+  // SECTION 3: BY INSURANCE COMPANY BREAKDOWN
+  rows.push(['=== 3. UNDERWRITING VOLUME BY INSURANCE COMPANY ===']);
   rows.push(['Insurance Company Name', 'Underwritten Policy Contracts', 'Market Share (%)', 'Primary Business Line', 'Status']);
   companyChartData.forEach(comp => {
     const compName = comp.company || comp.name || 'Empanelled Insurer';
@@ -570,21 +720,106 @@ export const exportDashboardCategoryAndCompanyExcel = (policyCategoryOverview = 
   });
   rows.push([]);
 
-  // SECTION 3: CROSS-MATRIX GRID (INSURER × CATEGORY)
-  rows.push(['=== SECTION 3: INSURER x CATEGORY CROSS-MATRIX GRID ===']);
+  // SECTION 4: CROSS-MATRIX GRID (INSURER × CATEGORY)
+  rows.push(['=== 4. INSURER x CATEGORY CROSS-MATRIX GRID ===']);
   const categoryNames = chartData.map(c => c.category);
   rows.push(['Insurance Company / Underwriter', ...categoryNames, 'Total Policy Contracts']);
-  
   Object.keys(companyBreakdown).forEach(comp => {
     const compCounts = categoryNames.map(cat => companyBreakdown[comp]?.[cat] || 0);
     const compTotal = compCounts.reduce((a, b) => a + b, 0);
     rows.push([comp, ...compCounts, compTotal]);
   });
+  rows.push([]);
+
+  // SECTION 5: STAFF ADVISOR PERFORMANCE
+  if (staffData.length > 0) {
+    rows.push(['=== 5. STAFF ADVISOR PRODUCTION & TARGETS ===']);
+    rows.push(['Advisor Name', 'Assigned Target (₹)', 'Achieved Value (₹)', 'Completion Rate (%)', 'Status']);
+    staffData.forEach(st => {
+      const targetVal = Number(st.target || 0);
+      const achievedVal = Number(st.achieved || 0);
+      const rate = targetVal > 0 ? ((achievedVal / targetVal) * 100).toFixed(1) : (achievedVal > 0 ? '100.0' : '0.0');
+      rows.push([
+        st.name || 'Staff Advisor',
+        targetVal,
+        achievedVal,
+        `${rate}%`,
+        Number(rate) >= 100 ? 'Top Performer' : 'On Track'
+      ]);
+    });
+    rows.push([]);
+  }
+
+  // SECTION 6: FINANCIAL CASH FLOW TIMELINE
+  if (financialChart.length > 0) {
+    rows.push(['=== 6. FINANCIAL REVENUE & EXPENSES TIMELINE ===']);
+    rows.push(['Timeline Period', 'Gross Revenue / Premium (₹)', 'Operating Expenses (₹)', 'Net Operating Margin (₹)', 'Health Status']);
+    financialChart.forEach(f => {
+      const inc = Number(f.rawIncome || (f.income ? f.income * 100000 : 0));
+      const exp = Number(f.rawExpense || (f.expense ? f.expense * 100000 : 0));
+      const profit = inc - exp;
+      rows.push([
+        f.fullLabel || f.label || f.month || 'Period',
+        inc,
+        exp,
+        profit,
+        profit >= 0 ? 'Surplus' : 'Deficit'
+      ]);
+    });
+    rows.push([]);
+  }
+
+  // SECTION 7: UPCOMING POLICY RENEWALS
+  if (renewalsList.length > 0) {
+    rows.push(['=== 7. UPCOMING POLICY RENEWALS ===']);
+    rows.push(['Customer Name', 'Policy Number', 'Insurance Company', 'Expiry Date', 'Gross Premium (₹)', 'Status']);
+    renewalsList.forEach(r => {
+      rows.push([
+        r.customerName || r.clientName || 'N/A',
+        r.policyNumber || r.id || 'N/A',
+        r.insuranceCompany || r.provider || 'N/A',
+        r.expiryDate || r.renewalDate || '—',
+        Number(r.grossPremium || r.premiumAmount || 0),
+        'PENDING RENEWAL'
+      ]);
+    });
+    rows.push([]);
+  }
+
+  // SECTION 8: COMPANY EXPENDITURE RECORDS
+  if (expensesList.length > 0) {
+    rows.push(['=== 8. LIVE COMPANY EXPENDITURE DATABASE ===']);
+    rows.push(['Category', 'Description / Staff', 'Expense Date', 'Amount (₹)']);
+    expensesList.forEach(e => {
+      rows.push([
+        e.category || 'Operations',
+        e.description || e.vendor || 'Operational Outflow',
+        e.expenseDate || e.date || '—',
+        Number(e.amount || 0)
+      ]);
+    });
+    rows.push([]);
+  }
+
+  // SECTION 9: SPECIAL DAYS & CELEBRATIONS
+  if (specialDaysList.length > 0) {
+    rows.push(['=== 9. SPECIAL DAYS & CELEBRATIONS ===']);
+    rows.push(['Customer Name', 'Occasion', 'Date', 'Contact Number']);
+    specialDaysList.forEach(s => {
+      rows.push([
+        s.customerName || s.name || 'Client',
+        s.type || s.occasion || 'Birthday',
+        s.date || '—',
+        s.phone || s.mobile || '—'
+      ]);
+    });
+    rows.push([]);
+  }
 
   const blob = createCSVSpreadsheetBlob(null, rows);
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
-  link.download = `SK_Dashboard_Category_and_Company_Analytics_${new Date().toISOString().slice(0, 10)}.csv`;
+  link.download = `SK_Complete_Dashboard_Export_${new Date().toISOString().slice(0, 10)}.csv`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

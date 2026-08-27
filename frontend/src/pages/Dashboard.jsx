@@ -2282,6 +2282,51 @@ export const Dashboard = () => {
     );
   };
 
+  const handleExportDashboardPDF = () => {
+    exportDashboardAnalyticsPDF(
+      dateFilter,
+      currentMetrics,
+      currentMetrics.productDistributionChart,
+      currentMetrics.conversionClaimsChart,
+      currentMetrics.staffPerformanceChart,
+      policyCategoryOverview,
+      {
+        financialChart: dynamicFinancialsChart,
+        renewalsList: (policies || []).filter(p => p.status === 'ACTIVE' || !p.status),
+        specialDaysList: (customers || []).flatMap(c => {
+          const events = [];
+          if (c.dob) events.push({ customerName: c.name, type: 'Birthday 🎂', date: c.dob, phone: c.phone });
+          if (c.anniversaryDate) events.push({ customerName: c.name, type: 'Anniversary 💍', date: c.anniversaryDate, phone: c.phone });
+          return events;
+        }),
+        expensesList: expenses,
+        totalExpenses: companyOperatingExpenses.totalAmount,
+        dateFilter
+      }
+    );
+  };
+
+  const handleExportDashboardExcel = () => {
+    exportDashboardCategoryAndCompanyExcel(
+      policyCategoryOverview,
+      currentMetrics,
+      {
+        staffData: currentMetrics.staffPerformanceChart,
+        financialChart: dynamicFinancialsChart,
+        renewalsList: (policies || []).filter(p => p.status === 'ACTIVE' || !p.status),
+        expensesList: expenses,
+        specialDaysList: (customers || []).flatMap(c => {
+          const events = [];
+          if (c.dob) events.push({ customerName: c.name, type: 'Birthday', date: c.dob, phone: c.phone });
+          if (c.anniversaryDate) events.push({ customerName: c.name, type: 'Anniversary', date: c.anniversaryDate, phone: c.phone });
+          return events;
+        }),
+        totalExpenses: companyOperatingExpenses.totalAmount,
+        dateFilter
+      }
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Modal Overlay */}
@@ -2294,18 +2339,29 @@ export const Dashboard = () => {
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
               Welcome, {user?.name || 'Admin'}!
             </h1>
+            <p className="text-xs text-blue-100 font-medium">Real-time Performance, Portfolio &amp; Financial Overview</p>
           </div>
 
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2.5 flex-wrap gap-2">
             {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
-              <button 
-                onClick={() => exportDashboardAnalyticsPDF(dateFilter, currentMetrics, currentMetrics.productDistributionChart, currentMetrics.conversionClaimsChart, currentMetrics.staffPerformanceChart, policyCategoryOverview)} 
-                className="flex items-center space-x-2 px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow transition cursor-pointer"
-                title="Export Dashboard Analytics as PDF Report"
-              >
-                <Download className="h-4 w-4" />
-                <span>Export</span>
-              </button>
+              <>
+                <button 
+                  onClick={handleExportDashboardPDF} 
+                  className="flex items-center space-x-1.5 px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition cursor-pointer"
+                  title="Download All Dashboard Data as Master PDF Report"
+                >
+                  <Download className="h-4 w-4" />
+                  <span>Export PDF</span>
+                </button>
+                <button 
+                  onClick={handleExportDashboardExcel} 
+                  className="flex items-center space-x-1.5 px-4 py-2.5 rounded-2xl bg-white/15 hover:bg-white/25 text-white font-bold text-xs shadow-md border border-white/20 transition cursor-pointer"
+                  title="Download All Dashboard Data as Master Excel / CSV Spreadsheet"
+                >
+                  <FileText className="h-4 w-4" />
+                  <span>Export Excel</span>
+                </button>
+              </>
             )}
           </div>
         </div>
