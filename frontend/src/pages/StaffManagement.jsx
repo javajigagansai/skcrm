@@ -46,7 +46,6 @@ export const StaffManagement = () => {
   });
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedBranchFilter, setSelectedBranchFilter] = useState('ALL');
   const [selectedStaff360, setSelectedStaff360] = useState(null);
   const [active360Tab, setActive360Tab] = useState('OVERVIEW');
   const [showAddStaffModal, setShowAddStaffModal] = useState(false);
@@ -268,18 +267,14 @@ export const StaffManagement = () => {
     if (!st) return false;
     const name = st.name || '';
     const email = st.email || '';
-    const branch = st.branch || '';
     const role = st.role || '';
 
     const matchesSearch =
       name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      branch.toLowerCase().includes(searchTerm.toLowerCase()) ||
       role.toLowerCase().includes(searchTerm.toLowerCase());
 
-    if (!matchesSearch) return false;
-    if (selectedBranchFilter !== 'ALL' && branch !== selectedBranchFilter) return false;
-    return true;
+    return matchesSearch;
   });
 
   const getStaffAssignedClients = (staffObj) => {
@@ -424,25 +419,11 @@ export const StaffManagement = () => {
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <input
             type="text"
-            placeholder="Search staff by Name, Email, Role or Branch..."
+            placeholder="Search staff by Name, Email, or Role..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold focus:ring-2 focus:ring-blue-600 outline-none"
           />
-        </div>
-
-        <div className="flex items-center space-x-2 w-full sm:w-auto">
-          <Filter className="h-4 w-4 text-slate-400" />
-          <select
-            value={selectedBranchFilter}
-            onChange={(e) => setSelectedBranchFilter(e.target.value)}
-            className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-extrabold bg-white outline-none focus:ring-2 focus:ring-blue-600"
-          >
-            <option value="ALL">All Branches</option>
-            <option value="Chennai Main Head Office">Chennai Main Head Office</option>
-            <option value="Bangalore Regional Desk">Bangalore Regional Desk</option>
-            <option value="Hyderabad Branch Office">Hyderabad Branch Office</option>
-          </select>
         </div>
       </div>
 
@@ -484,10 +465,6 @@ export const StaffManagement = () => {
                 <p className="flex items-center space-x-2">
                   <Phone className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                   <span>{st.phone || '9876543210'}</span>
-                </p>
-                <p className="flex items-center space-x-2">
-                  <Building2 className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
-                  <span className="text-purple-700 font-bold">{st.branch || 'Chennai Head Office'}</span>
                 </p>
               </div>
 
@@ -627,12 +604,11 @@ export const StaffManagement = () => {
             {active360Tab === 'OVERVIEW' && (
               <div className="space-y-4 text-xs font-semibold">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Contact & Branch Desk */}
+                  {/* Contact */}
                   <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2">
-                    <h4 className="font-extrabold uppercase text-slate-800 text-[11px] border-b pb-1.5">Employee Contact &amp; Location</h4>
+                    <h4 className="font-extrabold uppercase text-slate-800 text-[11px] border-b pb-1.5">Employee Contact Information</h4>
                     <p className="text-slate-700">📧 Email: <strong className="font-mono text-slate-900">{selectedStaff360.email}</strong></p>
                     <p className="text-slate-700">📞 Mobile: <strong>{selectedStaff360.phone || '9876543210'}</strong></p>
-                    <p className="text-slate-700">📍 Branch: <strong className="text-purple-700">{selectedStaff360.branch || 'Head Office'}</strong></p>
                     <p className="text-slate-700">🆔 System UID: <span className="font-mono text-slate-500">{selectedStaff360.uid}</span></p>
                   </div>
 
@@ -922,25 +898,14 @@ export const StaffManagement = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-700 mb-1 font-extrabold uppercase">Phone Number</label>
-                  <input
-                    type="text"
-                    value={editStaffForm.phone}
-                    onChange={(e) => setEditStaffForm({ ...editStaffForm, phone: e.target.value })}
-                    className="w-full p-2 rounded-xl border border-slate-200 font-mono font-bold outline-none focus:ring-2 focus:ring-blue-600"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-700 mb-1 font-extrabold uppercase">Assigned Branch</label>
-                  <input
-                    type="text"
-                    value={editStaffForm.branch}
-                    onChange={(e) => setEditStaffForm({ ...editStaffForm, branch: e.target.value })}
-                    className="w-full p-2 rounded-xl border border-slate-200 font-bold outline-none focus:ring-2 focus:ring-blue-600"
-                  />
-                </div>
+              <div>
+                <label className="block text-slate-700 mb-1 font-extrabold uppercase">Phone Number</label>
+                <input
+                  type="text"
+                  value={editStaffForm.phone}
+                  onChange={(e) => setEditStaffForm({ ...editStaffForm, phone: e.target.value })}
+                  className="w-full p-2 rounded-xl border border-slate-200 font-mono font-bold outline-none focus:ring-2 focus:ring-blue-600"
+                />
               </div>
 
               <div className="pt-2 flex justify-end space-x-2">
@@ -1012,26 +977,15 @@ export const StaffManagement = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-700 mb-1 font-extrabold uppercase">Phone Number</label>
-                  <input
-                    type="text"
-                    value={newStaffForm.phone}
-                    onChange={(e) => setNewStaffForm({ ...newStaffForm, phone: e.target.value })}
-                    className="w-full p-2 rounded-xl border border-slate-200 font-mono font-bold outline-none focus:ring-2 focus:ring-blue-600"
-                    placeholder="9876543210"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-700 mb-1 font-extrabold uppercase">Assigned Branch</label>
-                  <input
-                    type="text"
-                    value={newStaffForm.branch}
-                    onChange={(e) => setNewStaffForm({ ...newStaffForm, branch: e.target.value })}
-                    className="w-full p-2 rounded-xl border border-slate-200 font-bold outline-none focus:ring-2 focus:ring-blue-600"
-                  />
-                </div>
+              <div>
+                <label className="block text-slate-700 mb-1 font-extrabold uppercase">Phone Number</label>
+                <input
+                  type="text"
+                  value={newStaffForm.phone}
+                  onChange={(e) => setNewStaffForm({ ...newStaffForm, phone: e.target.value })}
+                  className="w-full p-2 rounded-xl border border-slate-200 font-mono font-bold outline-none focus:ring-2 focus:ring-blue-600"
+                  placeholder="9876543210"
+                />
               </div>
 
               <div className="pt-2 flex justify-end space-x-2">

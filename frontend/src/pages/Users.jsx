@@ -315,7 +315,7 @@ export const Users = () => {
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <input 
             type="text"
-            placeholder="Search staff by Name, Email, Role or Branch..."
+            placeholder="Search staff by Name, Email, or Role..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold focus:ring-2 focus:ring-blue-600 outline-none"
@@ -331,7 +331,7 @@ export const Users = () => {
             <option value="ALL">All Staff Roles ({users.length})</option>
             <option value="SUPER_ADMIN">Super Admin</option>
             <option value="ADMIN">Admin</option>
-            <option value="MANAGER">Branch Manager</option>
+            <option value="MANAGER">Manager</option>
             <option value="EMPLOYEE">Staff Advisor</option>
             <option value="GREETINGS_OFFICER">Greetings Officer</option>
           </select>
@@ -345,7 +345,7 @@ export const Users = () => {
             <thead>
               <tr className="bg-slate-900 text-white text-[11px] font-black uppercase tracking-wider">
                 <th className="p-4">Staff Member &amp; ID</th>
-                <th className="p-4">Email &amp; Branch Desk</th>
+                <th className="p-4">Email Address</th>
                 <th className="p-4">Password Credentials</th>
                 <th className="p-4">Assigned Role</th>
                 <th className="p-4">Status</th>
@@ -365,10 +365,6 @@ export const Users = () => {
                     </td>
                     <td className="p-4">
                       <p className="font-mono text-slate-900 font-bold">{u.email}</p>
-                      <p className="text-[10px] text-slate-500 font-semibold flex items-center space-x-1 mt-0.5">
-                        <Building2 className="h-3 w-3 text-indigo-500" />
-                        <span>{u.branch || 'Head Office'}</span>
-                      </p>
                     </td>
                     <td className="p-4">
                       <div className="flex items-center space-x-2 bg-slate-100 px-3 py-1.5 rounded-xl max-w-fit font-mono font-bold text-slate-900 border border-slate-200">
@@ -512,17 +508,6 @@ export const Users = () => {
                 />
               </div>
 
-              <div>
-                <label className="block text-slate-700 mb-1 font-extrabold uppercase">Assigned Branch / Location</label>
-                <input 
-                  type="text"
-                  value={staffForm.branch}
-                  onChange={(e) => setStaffForm({ ...staffForm, branch: e.target.value })}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-blue-600 font-bold"
-                  placeholder="e.g. Chennai Main Head Office"
-                />
-              </div>
-
               {isAdminOrHigher && (
                 <div>
                   <label className="block text-slate-700 mb-1 font-extrabold uppercase text-rose-600">Fixed Monthly Salary (₹) (Admin Only)</label>
@@ -598,7 +583,7 @@ export const Users = () => {
                 >
                   <option value="SUPER_ADMIN">Super Admin (Full Unrestricted)</option>
                   <option value="ADMIN">System Admin</option>
-                  <option value="MANAGER">Branch Manager</option>
+                  <option value="MANAGER">Manager</option>
                   <option value="EMPLOYEE">Staff Advisor</option>
                   <option value="GREETINGS_OFFICER">Greetings Officer</option>
                 </select>
@@ -611,16 +596,6 @@ export const Users = () => {
                   value={editingStaff.password} 
                   onChange={(e) => setEditingStaff({ ...editingStaff, password: e.target.value })}
                   className="w-full p-2.5 rounded-xl border border-slate-200 font-mono font-bold outline-none focus:ring-2 focus:ring-blue-600"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-700 mb-1 font-extrabold uppercase">Branch / Location Desk</label>
-                <input 
-                  type="text" 
-                  value={editingStaff.branch || ''} 
-                  onChange={(e) => setEditingStaff({ ...editingStaff, branch: e.target.value })}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 font-bold outline-none focus:ring-2 focus:ring-blue-600"
                 />
               </div>
 

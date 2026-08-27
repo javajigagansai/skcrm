@@ -74,8 +74,8 @@ export const getCanonicalStaffEmail = (user) => {
 export const isRecordOwnedByUser = (user, record) => {
   if (!user || !record) return false;
 
-  // Super Admin can see all records
-  if (isSuperAdmin(user)) return true;
+  // Single office: Super Admin, Admin, and Manager can see all records
+  if (isSuperAdmin(user) || isManager(user)) return true;
 
   const activeUid = getCanonicalStaffUid(user);
   const activeEmail = getCanonicalStaffEmail(user);
@@ -86,16 +86,6 @@ export const isRecordOwnedByUser = (user, record) => {
   const recStaffId = record.assignedStaffId || record.staffId || record.assignedUserId || '';
   const recStaffEmail = (record.assignedStaffEmail || record.advisorEmail || record.staffEmail || '').toLowerCase().trim();
   const recStaffName = (record.assignedStaff || record.assignedAdvisorName || record.assignedToName || record.advisorName || record.assignedTo || record.staffName || '').toLowerCase().trim();
-  const recBranchId = record.branchId || record.branch || '';
-
-  // Branch Manager Scope
-  if (isManager(user)) {
-    const userBranch = user.branchId || user.branch || '';
-    if (userBranch && recBranchId && (userBranch.toLowerCase() === recBranchId.toLowerCase() || recBranchId.toLowerCase().includes(userBranch.toLowerCase()))) {
-      return true;
-    }
-    // Also match manager's own direct assignments
-  }
 
   // Exact Canonical UID Match (Primary Security Mechanism)
   if (activeUid && recStaffId && activeUid === recStaffId) return true;
