@@ -25,11 +25,190 @@ export const DataProvider = ({ children }) => {
   const [rawAuditLogs, setAuditLogs] = useState([]);
   const [rawUsers, setUsers] = useState([]);
 
+  // ─── UNIFIED DATA LAYERS ───────────────────────────────────────────────────
+  // Synthesizes policies from rawPolicies + customer profiles so that policies
+  // defined on customers always appear in Policies Register & Policy Renewals
+  const effectivePolicies = useMemo(() => {
+    const list = [...rawPolicies];
+    const existingCustIdsWithPolicies = new Set();
+    const existingPolicyKeys = new Set();
+
+    rawPolicies.forEach(p => {
+      if (p.customerId) existingCustIdsWithPolicies.add(String(p.customerId).toLowerCase().trim());
+      if (p.customerCode) existingCustIdsWithPolicies.add(String(p.customerCode).toLowerCase().trim());
+      const key = `${String(p.customerName || '').toLowerCase().trim()}___${String(p.insuranceCompany || '').toLowerCase().trim()}`;
+      existingPolicyKeys.add(key);
+    });
+
+    (rawCustomers || []).forEach((c, idx) => {
+      const cId = String(c.id || c.customerCode || '').toLowerCase().trim();
+      const cCode = String(c.customerCode || c.id || '').toLowerCase().trim();
+      const cName = String(c.name || '').trim();
+      
+      const custPoliciesList = Array.isArray(c.policiesList) && c.policiesList.length > 0 ? c.policiesList : [];
+      
+      if (custPoliciesList.length > 0) {
+        custPoliciesList.forEach((pol, pIdx) => {
+          const polId = pol.id || pol.policyNo || `POL-${c.customerCode || c.id}-${pIdx + 1}`;
+          if (!list.some(p => p.id === polId)) {
+            list.push({
+              ...pol,
+              id: polId,
+              policyNo: polId,
+              customerId: c.id || c.customerCode,
+              customerCode: c.customerCode || c.id,
+              customerName: pol.customerName || cName,
+              phone: pol.phone || c.phone || c.mobileNumber || '',
+              insuranceCompany: pol.insuranceCompany || c.insuranceCompany || 'Tata AIA Life',
+              type: pol.type || pol.category || c.insuranceType || 'Life Insurance',
+              category: pol.type || pol.category || c.insuranceType || 'Life Insurance',
+              policyName: pol.policyName || pol.planName || pol.salesPitch || c.policyName || c.salesPitch || 'Comprehensive Policy Plan',
+              planName: pol.policyName || pol.planName || pol.salesPitch || c.policyName || c.salesPitch || 'Comprehensive Policy Plan',
+              sumInsured: Number(pol.sumInsured || pol.sumAssured || c.sumInsured || c.policyAmount || 500000),
+              grossPremium: Number(pol.grossPremium || pol.premium || c.policyAmount || 25000),
+              premium: Number(pol.grossPremium || pol.premium || c.policyAmount || 25000),
+              startDate: pol.startDate || c.policyStartDate || c.date || new Date().toISOString().split('T')[0],
+              expiryDate: pol.expiryDate || pol.endDate || c.policyExpiryDate || c.expiryDate || new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
+              assignedStaff: pol.assignedStaff || pol.assignedStaffName || c.assignedAdvisorName || c.assignedStaffName || c.assignedStaff || 'Advisor',
+              assignedStaffName: pol.assignedStaffName || pol.assignedStaff || c.assignedStaffName || c.assignedAdvisorName || 'Advisor',
+              assignedStaffId: pol.assignedStaffId || c.assignedStaffId || '',
+              status: pol.status || c.policyStatus || 'ACTIVE',
+              _fromCustomer: true
+            });
+          }
+        });
+      } else if (c.insuranceCompany || c.insuranceType || c.policyName || c.salesPitch || c.policyAmount) {
+        const key = `${String(c.name || '').toLowerCase().trim()}___${String(c.insuranceCompany || '').toLowerCase().trim()}`;
+        
+        const alreadyInList = list.some(p => 
+          (p.customerId && (String(p.customerId).toLowerCase().trim() === cId || String(p.customerId).toLowerCase().trim() === cCode)) ||
+          (p.id && (p.id === c.policyNo || p.id === `POL-${c.id || c.customerCode}`)) ||
+          (existingPolicyKeys.has(key) && key !== '___')
+        );
+
+        if (!alreadyInList) {
+          const polId = c.policyNo || c.policyNumber || `POL-${c.customerCode || c.id || ('00' + (idx + 1))}`;
+          list.push({
+            id: polId,
+            policyNo: polId,
+            customerId: c.id || c.customerCode,
+            customerCode: c.customerCode || c.id,
+            customerName: cName,
+            phone: c.phone || c.mobileNumber || '',
+            insuranceCompany: c.insuranceCompany || 'Tata AIA Life',
+            type: c.insuranceType || c.category || 'Life Insurance',
+            category: c.insuranceType || c.category || 'Life Insurance',
+            policyName: c.policyName || c.planName || c.salesPitch || 'Comprehensive Protection Plan',
+            planName: c.policyName || c.planName || c.salesPitch || 'Comprehensive Protection Plan',
+            salesPitch: c.salesPitch || '',
+            sumInsured: Number(c.sumInsured || c.sumAssured || 500000),
+            grossPremium: Number(c.policyAmount || c.grossPremium || c.premium || 25000),
+            premium: Number(c.policyAmount || c.grossPremium || c.premium || 25000),
+            startDate: c.policyStartDate || c.date || new Date().toISOString().split('T')[0],
+            expiryDate: c.policyExpiryDate || c.expiryDate || c.renewalDate || new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
+            assignedStaff: c.assignedAdvisorName || c.assignedStaffName || c.assignedStaff || 'Advisor',
+            assignedStaffName: c.assignedStaffName || c.assignedAdvisorName || c.assignedStaff || 'Advisor',
+            assignedStaffId: c.assignedStaffId || '',
+            status: c.policyStatus || 'ACTIVE',
+            clientStatus: c.clientStatus || 'Active',
+            advisorNotes: c.advisorNotes || '',
+            _fromCustomer: true
+          });
+        }
+      }
+    });
+
+    return list;
+  }, [rawPolicies, rawCustomers]);
+
+  // Synthesizes investments from rawInvestments + customer portfolios
+  const effectiveInvestments = useMemo(() => {
+    const list = [...rawInvestments];
+    (rawCustomers || []).forEach((c, idx) => {
+      const cId = String(c.id || c.customerCode || '').toLowerCase().trim();
+      const custInvestmentsList = Array.isArray(c.investmentsList) && c.investmentsList.length > 0 ? c.investmentsList : [];
+      if (custInvestmentsList.length > 0) {
+        custInvestmentsList.forEach((inv, iIdx) => {
+          const invId = inv.id || `INV-${c.customerCode || c.id}-${iIdx + 1}`;
+          if (!list.some(i => i.id === invId)) {
+            list.push({
+              ...inv,
+              id: invId,
+              customerId: c.id || c.customerCode,
+              customerCode: c.customerCode || c.id,
+              customerName: inv.customerName || c.name,
+              provider: inv.provider || inv.amcName || 'HDFC Mutual Fund & AMC',
+              type: inv.type || inv.category || 'SIP Mutual Fund',
+              amount: Number(inv.amount || inv.sipAmount || 10000),
+              folioNumber: inv.folioNumber || `FOL-${Math.floor(100000 + Math.random() * 900000)}`,
+              status: inv.status || 'ACTIVE',
+              advisorName: inv.advisorName || c.assignedAdvisorName || c.assignedStaffName || 'Advisor',
+              date: inv.date || c.date || new Date().toISOString().split('T')[0],
+              _fromCustomer: true
+            });
+          }
+        });
+      } else if (c.investmentProvider || c.amcName || c.mutualFunds || c.sipAmount || c.fdAmount || c.investmentAmount || (c.activePortfolios && c.activePortfolios.length > 0)) {
+        const invId = c.investmentId || `INV-${c.customerCode || c.id || ('00' + (idx + 1))}`;
+        if (!list.some(i => i.id === invId || (i.customerId && String(i.customerId).toLowerCase().trim() === cId))) {
+          list.push({
+            id: invId,
+            customerId: c.id || c.customerCode,
+            customerCode: c.customerCode || c.id,
+            customerName: c.name,
+            provider: c.investmentProvider || c.amcName || 'HDFC Mutual Fund & AMC',
+            type: c.investmentType || (c.sipAmount ? 'SIP Mutual Fund' : (c.fdAmount ? 'Fixed Deposit' : 'Mutual Fund')),
+            amount: Number(c.investmentAmount || c.sipAmount || c.fdAmount || c.totalPortfolioValue || 100000),
+            folioNumber: c.folioNumber || `FOL-${Math.floor(100000 + Math.random() * 900000)}`,
+            status: c.investmentStatus || 'ACTIVE',
+            advisorName: c.assignedAdvisorName || c.assignedStaffName || 'Advisor',
+            date: c.date || new Date().toISOString().split('T')[0],
+            _fromCustomer: true
+          });
+        }
+      }
+    });
+    return list;
+  }, [rawInvestments, rawCustomers]);
+
+  // Synthesizes claims from rawClaims + customer claims
+  const effectiveClaims = useMemo(() => {
+    const list = [...rawClaims];
+    (rawCustomers || []).forEach((c, idx) => {
+      const custClaimsList = Array.isArray(c.claimsList) && c.claimsList.length > 0 ? c.claimsList : [];
+      if (custClaimsList.length > 0) {
+        custClaimsList.forEach((clm, cIdx) => {
+          const clmId = clm.id || `CLM-${c.customerCode || c.id}-${cIdx + 1}`;
+          if (!list.some(x => x.id === clmId)) {
+            list.push({
+              ...clm,
+              id: clmId,
+              customerId: c.id || c.customerCode,
+              customerCode: c.customerCode || c.id,
+              customerName: clm.customerName || c.name,
+              insuranceCompany: clm.insuranceCompany || c.insuranceCompany || 'Tata AIA Life',
+              policyNo: clm.policyNo || c.policyNo || `POL-${c.customerCode || c.id}`,
+              claimType: clm.claimType || 'Hospitalization Claim',
+              claimAmount: Number(clm.claimAmount || 50000),
+              settlementAmount: Number(clm.settlementAmount || 0),
+              hospitalOrGarage: clm.hospitalOrGarage || 'City Hospital',
+              assignedStaff: clm.assignedStaff || c.assignedAdvisorName || c.assignedStaffName || 'Advisor',
+              status: clm.status || 'SUBMITTED',
+              claimDate: clm.claimDate || c.date || new Date().toISOString().split('T')[0],
+              _fromCustomer: true
+            });
+          }
+        });
+      }
+    });
+    return list;
+  }, [rawClaims, rawCustomers]);
+
   // Dynamically scoped data views based on active user's authorized role & staff ID
   const customers = useMemo(() => filterScopedRecords(user, rawCustomers), [user, rawCustomers]);
-  const policies = useMemo(() => filterScopedRecords(user, rawPolicies), [user, rawPolicies]);
-  const investments = useMemo(() => filterScopedRecords(user, rawInvestments), [user, rawInvestments]);
-  const claims = useMemo(() => filterScopedRecords(user, rawClaims), [user, rawClaims]);
+  const policies = useMemo(() => filterScopedRecords(user, effectivePolicies), [user, effectivePolicies]);
+  const investments = useMemo(() => filterScopedRecords(user, effectiveInvestments), [user, effectiveInvestments]);
+  const claims = useMemo(() => filterScopedRecords(user, effectiveClaims), [user, effectiveClaims]);
   const leads = useMemo(() => filterScopedRecords(user, rawLeads), [user, rawLeads]);
   const followups = useMemo(() => filterScopedRecords(user, rawFollowups), [user, rawFollowups]);
   const tasks = useMemo(() => filterScopedRecords(user, rawTasks), [user, rawTasks]);
@@ -44,6 +223,7 @@ export const DataProvider = ({ children }) => {
   const staffList = useMemo(() => {
     return rawUsers;
   }, [rawUsers]);
+
 
   // ─── NO localStorage write-backs. Firestore onSnapshot is the only sync mechanism. ───
 
@@ -275,6 +455,40 @@ export const DataProvider = ({ children }) => {
     // Write to Firestore with sanitized fields
     const payload = sanitizeForFirestore(newCust);
     await setDoc(doc(db, 'customers', id), payload, { merge: true });
+
+    // Auto-create linked policy in Firestore 'policies' collection if insurance company is provided
+    if (newCust.insuranceCompany) {
+      const polId = newCust.policyNo || `POL-${id}`;
+      const polObj = {
+        id: polId,
+        policyNo: polId,
+        customerId: id,
+        customerCode: id,
+        customerName: newCust.name,
+        phone: newCust.phone || newCust.mobileNumber || '',
+        insuranceCompany: newCust.insuranceCompany,
+        type: newCust.insuranceType || 'Life Insurance',
+        category: newCust.insuranceType || 'Life Insurance',
+        policyName: newCust.policyName || newCust.planName || newCust.salesPitch || 'Comprehensive Protection Plan',
+        planName: newCust.policyName || newCust.planName || newCust.salesPitch || 'Comprehensive Protection Plan',
+        salesPitch: newCust.salesPitch || '',
+        sumInsured: Number(newCust.sumInsured || newCust.sumAssured || 500000),
+        grossPremium: Number(newCust.policyAmount || newCust.grossPremium || 25000),
+        premium: Number(newCust.policyAmount || newCust.grossPremium || 25000),
+        startDate: newCust.date || new Date().toISOString().split('T')[0],
+        expiryDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
+        assignedStaffId,
+        assignedStaffName,
+        assignedStaff: assignedStaffName,
+        status: 'ACTIVE',
+        createdAt: new Date().toISOString()
+      };
+      try {
+        await setDoc(doc(db, 'policies', polId), sanitizeForFirestore(polObj), { merge: true });
+      } catch (e) {
+        console.warn('Auto policy write error:', e);
+      }
+    }
 
     try {
       if (newCust.assignedStaffName || newCust.assignedAdvisorName) {
