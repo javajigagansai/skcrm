@@ -295,7 +295,20 @@ export const DataProvider = ({ children }) => {
       (err) => console.warn('Firestore income error:', err));
 
     const unsubExpenses = onSnapshot(collection(db, 'expenses'),
-      (snap) => setExpenses(snap.docs.map(d => ({ ...d.data(), id: d.id }))),
+      (snap) => {
+        const list = snap.docs.map(d => {
+          const data = d.data();
+          const dStr = data.expenseDate || data.date || (data.createdAt ? String(data.createdAt).split('T')[0] : new Date().toISOString().split('T')[0]);
+          return {
+            ...data,
+            id: d.id,
+            amount: Number(data.amount || data.expenseAmount || 0),
+            date: dStr,
+            expenseDate: dStr
+          };
+        });
+        setExpenses(list);
+      },
       (err) => console.warn('Firestore expenses error:', err));
 
     const unsubAuditLogs = onSnapshot(collection(db, 'audit_logs'),
@@ -1054,13 +1067,44 @@ export const DataProvider = ({ children }) => {
 
   const addExpense = async (expData) => {
     const id = expData.id || `EXP-SK-${Date.now()}`;
-    const newExp = { ...expData, id, date: expData.date || new Date().toISOString().split('T')[0] };
-    await setDoc(doc(db, 'expenses', id), newExp, { merge: true });
+    const amountNum = Number(expData.amount || 0);
+    const dateStr = expData.expenseDate || expData.date || new Date().toISOString().split('T')[0];
+    const newExp = {
+      ...expData,
+      id,
+      amount: amountNum,
+      date: dateStr,
+      expenseDate: dateStr,
+      createdAt: expData.createdAt || new Date().toISOString()
+    };
+
+    // Immediate local optimistic state update for instant dashboard and register refresh
+    setExpenses(prev => {
+      const filtered = (prev || []).filter(e => e.id !== id);
+      return [newExp, ...filtered];
+    });
+
+    try {
+      await setDoc(doc(db, 'expenses', id), newExp, { merge: true });
+    } catch (e) {
+      console.warn('Firestore setDoc expense error:', e);
+    }
+
+    addAuditLog({
+      userName: user?.name || 'Admin User',
+      userRole: user?.role || 'ADMIN',
+      action: 'CREATE_EXPENSE',
+      module: 'Expenses',
+      affectedRecord: id,
+      details: `Recorded company expenditure of ₹${amountNum.toLocaleString('en-IN')} (${newExp.category || 'Operations'})`
+    });
+
     return newExp;
   };
 
   const deleteExpense = async (id) => {
     if (!id) return;
+    setExpenses(prev => (prev || []).filter(e => String(e.id) !== String(id)));
     try {
       await deleteDoc(doc(db, 'expenses', String(id)));
     } catch (e) {
