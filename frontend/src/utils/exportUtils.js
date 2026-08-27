@@ -127,6 +127,7 @@ export const exportCustomer360PDF = (customer) => {
             <strong>${customer.bankName || 'Bank Account'}</strong>
             ${customer.bankHolderName ? ` | Holder: <strong>${customer.bankHolderName}</strong>` : ''}
             ${customer.bankAccountNumber ? ` | A/C No: <span style="font-family:monospace;">${customer.bankAccountNumber}</span>` : ''}
+            ${customer.bankAccountType ? ` | Type: <strong>${customer.bankAccountType}</strong>` : ''}
             ${customer.ifscCode ? ` | IFSC: <span style="font-family:monospace;">${customer.ifscCode}</span>` : ''}
           </td>
         </tr>

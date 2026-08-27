@@ -806,7 +806,7 @@ export const Customer360Provider = ({ children }) => {
                           <div className="flex items-start space-x-2 text-slate-600 font-bold text-xs pt-1 border-t border-slate-200/60">
                             <Building2 className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
                             <div>
-                              <span>Bank Account: <strong className="text-slate-900">{selectedCustomer.bankName || 'Bank Account'}</strong></span>
+                              <span>Bank Account: <strong className="text-slate-900">{selectedCustomer.bankName || 'Bank Account'}</strong> {selectedCustomer.bankAccountType ? <span className="badge bg-blue-100 text-blue-800 text-[10px] ml-1.5 font-bold uppercase">{selectedCustomer.bankAccountType}</span> : null}</span>
                               <p className="text-[10px] text-slate-500 font-medium mt-0.5">
                                 {selectedCustomer.bankHolderName ? `Holder: ${selectedCustomer.bankHolderName}` : ''}
                                 {selectedCustomer.bankHolderName && selectedCustomer.bankAccountNumber ? ' | ' : ''}
@@ -1682,6 +1682,19 @@ export const Customer360Provider = ({ children }) => {
                       />
                     </div>
                     <div>
+                      <label className="block text-[10px] font-bold text-slate-600 mb-1">Bank Account Type</label>
+                      <select
+                        value={editCustomerData.bankAccountType || 'Savings'}
+                        onChange={(e) => setEditCustomerData({...editCustomerData, bankAccountType: e.target.value})}
+                        className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50"
+                      >
+                        <option value="Savings">Savings Account</option>
+                        <option value="Current">Current Account</option>
+                        <option value="NRI">NRI Account</option>
+                        <option value="NRE">NRE Account</option>
+                      </select>
+                    </div>
+                    <div>
                       <label className="block text-[10px] font-bold text-slate-600 mb-1">Bank Account Number</label>
                       <input 
                         type="text" 
@@ -1691,7 +1704,7 @@ export const Customer360Provider = ({ children }) => {
                         className="w-full px-3 py-2 rounded-xl border text-xs font-mono outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50"
                       />
                     </div>
-                    <div>
+                    <div className="sm:col-span-2">
                       <label className="block text-[10px] font-bold text-slate-600 mb-1">IFSC Code</label>
                       <input 
                         type="text" 
