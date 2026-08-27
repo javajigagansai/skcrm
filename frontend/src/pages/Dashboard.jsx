@@ -3139,52 +3139,54 @@ export const Dashboard = () => {
         </div>
       )}
 
-      {/* EXECUTIVE BUSINESS ANALYTICS: INCOME VS EXPENSE */}
-      <div className="grid grid-cols-1 gap-6">
-        {/* Income vs Expense Variance */}
-        <div 
-          onClick={() => setActiveModal('INCOME_EXPENSE_CHART')}
-          className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-card space-y-4 hover:border-emerald-400 hover:shadow-md transition cursor-pointer group"
-          title="Click to view complete income vs expense variance breakdown"
-        >
-          <div className="flex items-center justify-between border-b pb-3">
-            <div>
-              <h3 className="text-sm font-extrabold text-slate-900 group-hover:text-emerald-600 transition flex items-center space-x-1.5">
-                <span>Income vs Expense</span>
-                <ArrowUpRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition" />
-              </h3>
+      {/* EXECUTIVE BUSINESS ANALYTICS: INCOME VS EXPENSE (Admins & Managers only) */}
+      {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
+        <div className="grid grid-cols-1 gap-6">
+          {/* Income vs Expense Variance */}
+          <div 
+            onClick={() => setActiveModal('INCOME_EXPENSE_CHART')}
+            className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-card space-y-4 hover:border-emerald-400 hover:shadow-md transition cursor-pointer group"
+            title="Click to view complete income vs expense variance breakdown"
+          >
+            <div className="flex items-center justify-between border-b pb-3">
+              <div>
+                <h3 className="text-sm font-extrabold text-slate-900 group-hover:text-emerald-600 transition flex items-center space-x-1.5">
+                  <span>Income vs Expense</span>
+                  <ArrowUpRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition" />
+                </h3>
+              </div>
+            </div>
+
+            <div className="h-[340px] w-full bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart 
+                  data={dynamicFinancialsChart}
+                  margin={{ top: 15, right: 20, left: -10, bottom: 5 }}
+                  barGap={6}
+                  barCategoryGap="40%"
+                >
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                  <XAxis 
+                    dataKey="label" 
+                    tickLine={false} 
+                    axisLine={false} 
+                    interval={0}
+                    angle={0}
+                    textAnchor="middle"
+                    height={25}
+                    tick={{ fontSize: dynamicFinancialsChart.length > 15 ? 9 : 11, fontWeight: 700, fill: '#64748B' }} 
+                  />
+                  <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700 }} unit="L" />
+                  <Tooltip content={<FinancialChartTooltip />} cursor={{ fill: '#F1F5F9' }} />
+                  <Legend wrapperStyle={{ paddingTop: '10px' }} />
+                  <Bar dataKey="income" fill="#10B981" radius={[6, 6, 0, 0]} barSize={dynamicFinancialsChart.length > 15 ? 7 : (dynamicFinancialsChart.length > 7 ? 14 : 24)} name="Income (Lakhs)" />
+                  <Bar dataKey="expense" fill="#EF4444" radius={[6, 6, 0, 0]} barSize={dynamicFinancialsChart.length > 15 ? 7 : (dynamicFinancialsChart.length > 7 ? 14 : 24)} name="Expense (Lakhs)" />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </div>
-
-          <div className="h-[340px] w-full bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart 
-                data={dynamicFinancialsChart}
-                margin={{ top: 15, right: 20, left: -10, bottom: 5 }}
-                barGap={6}
-                barCategoryGap="40%"
-              >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                <XAxis 
-                  dataKey="label" 
-                  tickLine={false} 
-                  axisLine={false} 
-                  interval={0}
-                  angle={0}
-                  textAnchor="middle"
-                  height={25}
-                  tick={{ fontSize: dynamicFinancialsChart.length > 15 ? 9 : 11, fontWeight: 700, fill: '#64748B' }} 
-                />
-                <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700 }} unit="L" />
-                <Tooltip content={<FinancialChartTooltip />} cursor={{ fill: '#F1F5F9' }} />
-                <Legend wrapperStyle={{ paddingTop: '10px' }} />
-                <Bar dataKey="income" fill="#10B981" radius={[6, 6, 0, 0]} barSize={dynamicFinancialsChart.length > 15 ? 7 : (dynamicFinancialsChart.length > 7 ? 14 : 24)} name="Income (Lakhs)" />
-                <Bar dataKey="expense" fill="#EF4444" radius={[6, 6, 0, 0]} barSize={dynamicFinancialsChart.length > 15 ? 7 : (dynamicFinancialsChart.length > 7 ? 14 : 24)} name="Expense (Lakhs)" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
