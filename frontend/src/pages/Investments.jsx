@@ -107,7 +107,7 @@ export const Investments = () => {
     }
 
     const createdObj = await addInvestment({
-      customerName: newInv.customerName,
+      customerName: String(newInv.customerName || '').trim().toUpperCase(),
       provider: providerName,
       type: categoryType,
       amount: Number(newInv.amount),
@@ -401,7 +401,7 @@ export const Investments = () => {
                       className="font-black text-slate-900 hover:text-blue-600 hover:underline transition cursor-pointer text-left flex items-center space-x-1"
                       title="Click to view Customer 360° Profile"
                     >
-                      <span>{inv.customerName}</span>
+                      <span className="uppercase">{inv.customerName}</span>
                       <Sparkles className="h-3 w-3 text-blue-500 opacity-80" />
                     </button>
                     <p className="text-[11px] text-slate-400 font-mono mt-0.5">ID: {inv.id}</p>
@@ -551,14 +551,14 @@ export const Investments = () => {
 
             <form onSubmit={handleCreateInvestment} className="space-y-3">
               <div>
-                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Customer Full Name</label>
+                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Customer Full Name (CAPITALS ONLY)</label>
                 <input 
                   type="text" 
                   required 
-                  placeholder="Enter Customer Full Name"
+                  placeholder="Enter Customer Full Name in CAPITALS"
                   value={newInv.customerName} 
-                  onChange={(e) => setNewInv({...newInv, customerName: e.target.value})} 
-                  className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600" 
+                  onChange={(e) => setNewInv({...newInv, customerName: e.target.value.toUpperCase()})} 
+                  className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600 uppercase font-bold" 
                 />
               </div>
 
@@ -661,13 +661,14 @@ export const Investments = () => {
 
             <form onSubmit={handleSaveEditInvestment} className="space-y-3">
               <div>
-                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Customer Full Name</label>
+                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Customer Full Name (CAPITALS ONLY)</label>
                 <input 
                   type="text" 
                   required 
+                  placeholder="e.g. RAMESH KUMAR"
                   value={editingInvestment.customerName} 
-                  onChange={(e) => setEditingInvestment({...editingInvestment, customerName: e.target.value})} 
-                  className="w-full px-3 py-2 rounded-xl border text-xs font-semibold outline-none focus:ring-2 focus:ring-amber-500" 
+                  onChange={(e) => setEditingInvestment({...editingInvestment, customerName: e.target.value.toUpperCase()})} 
+                  className="w-full px-3 py-2 rounded-xl border text-xs font-semibold outline-none focus:ring-2 focus:ring-amber-500 uppercase" 
                 />
               </div>
 

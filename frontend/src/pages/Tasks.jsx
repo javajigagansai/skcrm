@@ -198,7 +198,7 @@ export const Tasks = () => {
                       onClick={() => openCustomer360(t.customerName)}
                       className="text-xs font-black text-blue-600 hover:underline flex items-center space-x-1 mt-0.5 cursor-pointer"
                     >
-                      <span>Customer: {t.customerName}</span>
+                      <span>Customer: <strong className="uppercase">{t.customerName}</strong></span>
                       <Sparkles className="h-3 w-3 text-amber-500" />
                     </button>
                   )}

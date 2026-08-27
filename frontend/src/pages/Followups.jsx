@@ -657,7 +657,7 @@ export const Followups = () => {
                           className="text-base font-black text-slate-900 hover:text-blue-600 hover:underline transition cursor-pointer text-left flex items-center space-x-1"
                           title="Click to view Customer 360° Profile"
                         >
-                          <span>{client.clientName}</span>
+                          <span className="uppercase">{client.clientName}</span>
                           <Sparkles className="h-3.5 w-3.5 text-blue-500 opacity-80" />
                         </button>
                         <span className="badge badge-brand text-[10px]">{client.clientId}</span>
@@ -1100,18 +1100,18 @@ export const Followups = () => {
             <form onSubmit={handleCreateNewClientFollowup} className="space-y-3.5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="relative">
-                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Customer Name *</label>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Customer Name (CAPITALS ONLY) *</label>
                   <input 
                     type="text" 
                     required 
-                    placeholder=""
+                    placeholder="e.g. RAMESH KUMAR"
                     value={newClientForm.clientName} 
                     onChange={(e) => {
-                      setNewClientForm({ ...newClientForm, clientName: e.target.value });
+                      setNewClientForm({ ...newClientForm, clientName: e.target.value.toUpperCase() });
                       setShowCustomerAutocomplete(true);
                     }} 
                     onFocus={() => setShowCustomerAutocomplete(true)}
-                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold focus:border-blue-600 focus:ring-2 focus:ring-blue-100" 
+                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold focus:border-blue-600 focus:ring-2 focus:ring-blue-100 uppercase" 
                   />
 
                   {/* LIVE CRM CUSTOMER 360 AUTOCOMPLETE DROPDOWN */}

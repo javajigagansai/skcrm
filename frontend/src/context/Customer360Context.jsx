@@ -189,9 +189,12 @@ export const Customer360Provider = ({ children }) => {
       ? editCustomerData.emails.map(e => (e || '').trim()).filter(e => e !== '')
       : (editCustomerData.email ? [editCustomerData.email.trim()] : []);
     const primaryEmail = cleanEmails[0] || (editCustomerData.email || '').trim();
+    const cleanName = String(editCustomerData.name || editCustomerData.customerName || selectedCustomer.name || '').trim().toUpperCase();
 
     const finalData = {
       ...editCustomerData,
+      name: cleanName,
+      customerName: cleanName,
       email: primaryEmail,
       emails: cleanEmails.length > 0 ? cleanEmails : (primaryEmail ? [primaryEmail] : []),
       assignedStaffId:   finalAssignedStaffId,
@@ -514,7 +517,7 @@ export const Customer360Provider = ({ children }) => {
                 </div>
                 <div>
                   <div className="flex items-center space-x-2 flex-wrap gap-y-1">
-                    <h3 className="text-xl font-black tracking-tight">{selectedCustomer.name}</h3>
+                    <h3 className="text-xl font-black tracking-tight uppercase">{selectedCustomer.name}</h3>
                     <span className="badge bg-amber-400 text-slate-900 text-[10px] font-black uppercase">
                       Code: {selectedCustomer.customerCode || selectedCustomer.id}
                     </span>
@@ -1409,13 +1412,14 @@ export const Customer360Provider = ({ children }) => {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Customer Full Name</label>
+                    <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Customer Full Name (CAPITALS ONLY)</label>
                     <input 
                       type="text" 
                       required
+                      placeholder="e.g. RAMESH KUMAR"
                       value={editCustomerData.name || ''}
-                      onChange={(e) => setEditCustomerData({...editCustomerData, name: e.target.value})}
-                      className="w-full px-3 py-2 rounded-xl border text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-600 bg-white"
+                      onChange={(e) => setEditCustomerData({...editCustomerData, name: e.target.value.toUpperCase()})}
+                      className="w-full px-3 py-2 rounded-xl border text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-600 bg-white uppercase"
                     />
                   </div>
                   <div>

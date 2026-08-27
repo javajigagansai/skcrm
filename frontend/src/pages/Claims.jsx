@@ -489,7 +489,7 @@ export const Claims = () => {
                       className="font-black text-slate-900 hover:text-blue-600 hover:underline transition cursor-pointer text-left flex items-center space-x-1"
                       title="Click to view Customer 360° Profile (Claims Tab)"
                     >
-                      <span>{c.customerName}</span>
+                      <span className="uppercase">{c.customerName}</span>
                       <Sparkles className="h-3 w-3 text-blue-500 opacity-80" />
                     </button>
                     {c.hospitalOrGarage && (
@@ -583,11 +583,14 @@ export const Claims = () => {
             <form onSubmit={handleFileClaim} className="space-y-3" autoComplete="off">
               {/* CUSTOMER NAME WITH STRICT TYPING AUTOCOMPLETE */}
               <div ref={custWrapperRef} className="relative">
-                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Customer Full Name *</label>
+                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">
+                  Customer Full Name (CAPITALS ONLY) *
+                </label>
                 <div className="relative">
                   <input 
                     type="text" 
                     required 
+                    placeholder="Enter Customer Full Name in CAPITALS" 
                     value={newClaim.customerName} 
                     onFocus={() => {
                       if (newClaim.customerName && newClaim.customerName.trim().length > 0) {
@@ -595,7 +598,7 @@ export const Claims = () => {
                       }
                     }}
                     onChange={(e) => {
-                      const val = e.target.value;
+                      const val = e.target.value.toUpperCase();
                       setNewClaim({...newClaim, customerName: val});
                       if (val.trim().length > 0) {
                         setShowCustSuggest(true);
@@ -604,7 +607,7 @@ export const Claims = () => {
                         setAvailableCustomerPolicies([]);
                       }
                     }} 
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white" 
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white uppercase" 
                   />
                   <User className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
                 </div>

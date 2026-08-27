@@ -419,7 +419,7 @@ export const SpecialDays = () => {
                           className="font-black text-slate-900 hover:text-blue-600 transition truncate text-sm block text-left w-full cursor-pointer"
                           title="View Customer 360° Profile"
                         >
-                          {evt.customerName}
+                          <span className="uppercase">{evt.customerName}</span>
                         </button>
                         <p className="text-[11px] text-slate-500 font-semibold mt-0.5">
                           Relation: <span className="text-slate-800 font-bold">{evt.relation || 'Self'}</span>

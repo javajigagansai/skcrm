@@ -686,7 +686,7 @@ export const Policies = () => {
                       className="font-black text-slate-900 hover:text-blue-600 hover:underline transition cursor-pointer text-left flex items-center space-x-1"
                       title="Click to view Customer 360° Profile"
                     >
-                      <span>{pol.customerName}</span>
+                      <span className="uppercase">{pol.customerName}</span>
                       <Sparkles className="h-3 w-3 text-blue-500 opacity-80" />
                     </button>
                     <p className="text-[11px] text-slate-400 font-mono mt-0.5">{pol.id}</p>
@@ -1008,13 +1008,13 @@ export const Policies = () => {
               {/* FIELD 1: CUSTOMER FULL NAME (STRICT FOCUS != SEARCH; TYPING = SEARCH) */}
               <div ref={custWrapperRef} className="relative">
                 <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">
-                  Customer Full Name *
+                  Customer Full Name (CAPITALS ONLY) *
                 </label>
                 <div className="relative">
                   <input 
                     type="text" 
                     required 
-                    placeholder="Enter Customer Full Name" 
+                    placeholder="Enter Customer Full Name in CAPITALS" 
                     value={newPolicy.customerName} 
                     onFocus={() => {
                       if (newPolicy.customerName && newPolicy.customerName.trim().length > 0) {
@@ -1022,7 +1022,7 @@ export const Policies = () => {
                       }
                     }}
                     onChange={(e) => {
-                      const val = e.target.value;
+                      const val = e.target.value.toUpperCase();
                       setNewPolicy({...newPolicy, customerName: val});
                       if (val.trim().length > 0) {
                         setShowCustSuggest(true);
@@ -1030,7 +1030,7 @@ export const Policies = () => {
                         setShowCustSuggest(false);
                       }
                     }} 
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:ring-2 focus:ring-blue-600 font-bold bg-white" 
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:ring-2 focus:ring-blue-600 font-bold bg-white uppercase" 
                   />
                   <User className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
                 </div>
@@ -1511,13 +1511,14 @@ export const Policies = () => {
 
             <form onSubmit={handleSaveEditPolicy} className="space-y-3.5">
               <div>
-                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Customer Full Name</label>
+                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Customer Full Name (CAPITALS ONLY)</label>
                 <input 
                   type="text" 
                   required 
+                  placeholder="e.g. RAMESH KUMAR"
                   value={editingPolicy.customerName} 
-                  onChange={(e) => setEditingPolicy({...editingPolicy, customerName: e.target.value})} 
-                  className="w-full px-3 py-2 rounded-xl border text-xs font-semibold outline-none focus:ring-2 focus:ring-amber-500" 
+                  onChange={(e) => setEditingPolicy({...editingPolicy, customerName: e.target.value.toUpperCase()})} 
+                  className="w-full px-3 py-2 rounded-xl border text-xs font-semibold outline-none focus:ring-2 focus:ring-amber-500 uppercase" 
                 />
               </div>
 

@@ -43,7 +43,7 @@ export const DataProvider = ({ children }) => {
     (rawCustomers || []).forEach((c, idx) => {
       const cId = String(c.id || c.customerCode || '').toLowerCase().trim();
       const cCode = String(c.customerCode || c.id || '').toLowerCase().trim();
-      const cName = String(c.name || '').trim();
+      const cName = String(c.name || c.customerName || '').trim().toUpperCase();
       
       const custPoliciesList = Array.isArray(c.policiesList) && c.policiesList.length > 0 ? c.policiesList : [];
       
@@ -57,7 +57,7 @@ export const DataProvider = ({ children }) => {
               policyNo: polId,
               customerId: c.id || c.customerCode,
               customerCode: c.customerCode || c.id,
-              customerName: pol.customerName || cName,
+              customerName: (pol.customerName || cName).toUpperCase(),
               phone: pol.phone || c.phone || c.mobileNumber || '',
               insuranceCompany: pol.insuranceCompany || c.insuranceCompany || 'Tata AIA Life',
               type: pol.type || pol.category || c.insuranceType || 'Life Insurance',
@@ -126,6 +126,7 @@ export const DataProvider = ({ children }) => {
     const list = [...rawInvestments];
     (rawCustomers || []).forEach((c, idx) => {
       const cId = String(c.id || c.customerCode || '').toLowerCase().trim();
+      const cName = String(c.name || c.customerName || '').trim().toUpperCase();
       const custInvestmentsList = Array.isArray(c.investmentsList) && c.investmentsList.length > 0 ? c.investmentsList : [];
       if (custInvestmentsList.length > 0) {
         custInvestmentsList.forEach((inv, iIdx) => {
@@ -136,7 +137,7 @@ export const DataProvider = ({ children }) => {
               id: invId,
               customerId: c.id || c.customerCode,
               customerCode: c.customerCode || c.id,
-              customerName: inv.customerName || c.name,
+              customerName: (inv.customerName || cName).toUpperCase(),
               provider: inv.provider || inv.amcName || 'HDFC Mutual Fund & AMC',
               type: inv.type || inv.category || 'SIP Mutual Fund',
               amount: Number(inv.amount || inv.sipAmount || 10000),
@@ -155,7 +156,7 @@ export const DataProvider = ({ children }) => {
             id: invId,
             customerId: c.id || c.customerCode,
             customerCode: c.customerCode || c.id,
-            customerName: c.name,
+            customerName: cName,
             provider: c.investmentProvider || c.amcName || 'HDFC Mutual Fund & AMC',
             type: c.investmentType || (c.sipAmount ? 'SIP Mutual Fund' : (c.fdAmount ? 'Fixed Deposit' : 'Mutual Fund')),
             amount: Number(c.investmentAmount || c.sipAmount || c.fdAmount || c.totalPortfolioValue || 100000),
@@ -175,6 +176,7 @@ export const DataProvider = ({ children }) => {
   const effectiveClaims = useMemo(() => {
     const list = [...rawClaims];
     (rawCustomers || []).forEach((c, idx) => {
+      const cName = String(c.name || c.customerName || '').trim().toUpperCase();
       const custClaimsList = Array.isArray(c.claimsList) && c.claimsList.length > 0 ? c.claimsList : [];
       if (custClaimsList.length > 0) {
         custClaimsList.forEach((clm, cIdx) => {
@@ -185,7 +187,7 @@ export const DataProvider = ({ children }) => {
               id: clmId,
               customerId: c.id || c.customerCode,
               customerCode: c.customerCode || c.id,
-              customerName: clm.customerName || c.name,
+              customerName: (clm.customerName || cName).toUpperCase(),
               insuranceCompany: clm.insuranceCompany || c.insuranceCompany || 'Tata AIA Life',
               policyNo: clm.policyNo || c.policyNo || `POL-${c.customerCode || c.id}`,
               claimType: clm.claimType || 'Hospitalization Claim',
@@ -232,32 +234,61 @@ export const DataProvider = ({ children }) => {
   // They update state on every Firestore change — including empty collections.
   useEffect(() => {
     const unsubCustomers = onSnapshot(collection(db, 'customers'),
-      (snap) => setCustomers(snap.docs.map(d => ({ ...d.data(), id: d.id }))),
+      (snap) => setCustomers(snap.docs.map(d => {
+        const data = d.data();
+        const upperName = String(data.name || data.customerName || '').toUpperCase();
+        return { ...data, id: d.id, name: upperName, customerName: upperName };
+      })),
       (err) => console.warn('Firestore customers error:', err));
 
     const unsubPolicies = onSnapshot(collection(db, 'policies'),
-      (snap) => setPolicies(snap.docs.map(d => ({ ...d.data(), id: d.id }))),
+      (snap) => setPolicies(snap.docs.map(d => {
+        const data = d.data();
+        const upperName = String(data.customerName || data.name || '').toUpperCase();
+        return { ...data, id: d.id, ...(upperName ? { customerName: upperName } : {}) };
+      })),
       (err) => console.warn('Firestore policies error:', err));
 
     const unsubInvestments = onSnapshot(collection(db, 'investments'),
-      (snap) => setInvestments(snap.docs.map(d => ({ ...d.data(), id: d.id }))),
+      (snap) => setInvestments(snap.docs.map(d => {
+        const data = d.data();
+        const upperName = String(data.customerName || data.clientName || '').toUpperCase();
+        return { ...data, id: d.id, ...(upperName ? { customerName: upperName } : {}) };
+      })),
       (err) => console.warn('Firestore investments error:', err));
 
     const unsubClaims = onSnapshot(collection(db, 'claims'),
-      (snap) => setClaims(snap.docs.map(d => ({ ...d.data(), id: d.id }))),
+      (snap) => setClaims(snap.docs.map(d => {
+        const data = d.data();
+        const upperName = String(data.customerName || data.clientName || '').toUpperCase();
+        return { ...data, id: d.id, ...(upperName ? { customerName: upperName } : {}) };
+      })),
       (err) => console.warn('Firestore claims error:', err));
 
     const unsubLeads = onSnapshot(collection(db, 'leads'),
-      (snap) => setLeads(snap.docs.map(d => ({ ...d.data(), id: d.id }))),
+      (snap) => setLeads(snap.docs.map(d => {
+        const data = d.data();
+        const upperName = String(data.customerName || data.name || '').toUpperCase();
+        return { ...data, id: d.id, ...(upperName ? { customerName: upperName, name: upperName } : {}) };
+      })),
       (err) => console.warn('Firestore leads error:', err));
 
     const unsubFollowups = onSnapshot(collection(db, 'followups'),
-      (snap) => setFollowups(snap.docs.map(d => ({ ...d.data(), id: d.id }))),
+      (snap) => setFollowups(snap.docs.map(d => {
+        const data = d.data();
+        const upperName = String(data.clientName || data.customerName || data.name || '').toUpperCase();
+        return { ...data, id: d.id, ...(upperName ? { clientName: upperName, customerName: upperName } : {}) };
+      })),
       (err) => console.warn('Firestore followups error:', err));
 
     const unsubTasks = onSnapshot(collection(db, 'tasks'),
-      (snap) => setTasks(snap.docs.map(d => ({ ...d.data(), id: d.id }))),
+      (snap) => setTasks(snap.docs.map(d => {
+        const data = d.data();
+        const upperName = String(data.customerName || '').toUpperCase();
+        return { ...data, id: d.id, ...(upperName ? { customerName: upperName } : {}) };
+      })),
       (err) => console.warn('Firestore tasks error:', err));
+
 
     const unsubIncome = onSnapshot(collection(db, 'income'),
       (snap) => setIncome(snap.docs.map(d => ({ ...d.data(), id: d.id }))),
@@ -429,6 +460,7 @@ export const DataProvider = ({ children }) => {
   // to all devices automatically. No localStorage fallbacks for business data.
 
   const addCustomer = async (custData) => {
+    const cleanName = String(custData.name || custData.customerName || '').trim().toUpperCase();
     const id = custData.id || `SK-CUST-${Date.now()}`;
     const assignedStaffId = custData.assignedStaffId || custData.staffId || user?.uid || '';
     const assignedStaffName = custData.assignedStaffName || custData.assignedAdvisorName || custData.assignedStaff || user?.name || '';
@@ -438,6 +470,8 @@ export const DataProvider = ({ children }) => {
     const newCust = {
       ...custData,
       id,
+      name: cleanName,
+      customerName: cleanName,
       customerCode: id,
       assignedStaffId,
       assignedStaffName,
@@ -532,10 +566,14 @@ export const DataProvider = ({ children }) => {
         const incomingStaffId = updateObj.assignedStaffId || updateObj.staffId;
         const finalStaffId = incomingStaffId ? incomingStaffId : c.assignedStaffId;
         const finalStaffName = updateObj.assignedStaffName || updateObj.assignedAdvisorName || updateObj.assignedStaff || c.assignedStaffName;
+        const incomingName = updateObj.name || updateObj.customerName;
+        const finalName = incomingName ? String(incomingName).trim().toUpperCase() : (c.name ? String(c.name).toUpperCase() : '');
 
         finalUpdatedRecord = {
           ...c,
           ...updateObj,
+          name: finalName,
+          customerName: finalName,
           assignedStaffId: finalStaffId,
           assignedStaffName: finalStaffName,
           assignedAdvisorName: finalStaffName,
@@ -600,14 +638,17 @@ export const DataProvider = ({ children }) => {
 
     const isRecordMatched = (rec) => {
       if (!rec) return false;
+      // 1. Code match (customerCode / customerId stored on the record)
       const recCustId = String(rec.customerId || rec.customer_id || rec.customerCode || '').trim().toLowerCase();
       if (recCustId && (recCustId === targetCode || recCustId === String(id).trim().toLowerCase())) {
         return true;
       }
+      // 2. Name match (customerName / clientName stored on the record)
       const recCustName = String(rec.customerName || rec.clientName || rec.name || '').trim().toLowerCase();
       if (targetName && recCustName && recCustName === targetName) {
         return true;
       }
+      // 3. Phone match
       const recPhone = String(rec.phone || rec.mobileNumber || rec.customerPhone || '').replace(/\D/g, '');
       if (targetPhone && targetPhone.length >= 7 && recPhone && recPhone === targetPhone) {
         return true;
@@ -694,10 +735,12 @@ export const DataProvider = ({ children }) => {
     const id = polData.id || `POL-SK-${Date.now()}`;
     const assignedStaffId = polData.assignedStaffId || polData.staffId || user?.uid || '';
     const assignedStaffName = polData.assignedStaffName || polData.assignedStaff || user?.name || '';
+    const upperCustName = String(polData.customerName || polData.name || '').trim().toUpperCase();
 
     const newPol = {
       ...polData,
       id,
+      customerName: upperCustName,
       assignedStaffId,
       assignedStaffName,
       assignedStaff: assignedStaffName,
@@ -757,6 +800,7 @@ export const DataProvider = ({ children }) => {
     if (!updatedPol || !updatedPol.id) return;
     const cleanPol = {
       ...updatedPol,
+      customerName: updatedPol.customerName ? String(updatedPol.customerName).trim().toUpperCase() : updatedPol.customerName,
       grossPremium: parseFloat(updatedPol.grossPremium || updatedPol.premium || 0),
       sumInsured: parseFloat(updatedPol.sumInsured || updatedPol.sumAssured || 0),
       updatedAt: new Date().toISOString()
@@ -790,10 +834,12 @@ export const DataProvider = ({ children }) => {
     const id = invData.id || `INV-SK-${Date.now()}`;
     const assignedStaffId = invData.assignedStaffId || invData.staffId || user?.uid || '';
     const assignedStaffName = invData.assignedStaffName || invData.advisorName || user?.name || '';
+    const upperCustName = String(invData.customerName || invData.clientName || '').trim().toUpperCase();
 
     const newInv = {
       ...invData,
       id,
+      customerName: upperCustName,
       assignedStaffId,
       assignedStaffName,
       status: invData.status || 'PENDING',
@@ -828,10 +874,12 @@ export const DataProvider = ({ children }) => {
     const id = claimData.id || `CLM-SK-${Date.now()}`;
     const assignedStaffId = claimData.assignedStaffId || claimData.staffId || user?.uid || '';
     const assignedStaffName = claimData.assignedStaffName || claimData.assignedStaff || user?.name || '';
+    const upperCustName = String(claimData.customerName || claimData.clientName || '').trim().toUpperCase();
 
     const newClaim = {
       ...claimData,
       id,
+      customerName: upperCustName,
       claimAmount: parseFloat(claimData.claimAmount || claimData.amount || 0),
       settlementAmount: parseFloat(claimData.settlementAmount || 0),
       assignedStaffId,
@@ -860,10 +908,12 @@ export const DataProvider = ({ children }) => {
     if (!updatedClaim || !updatedClaim.id) return;
     const cleanObj = {
       ...updatedClaim,
+      customerName: updatedClaim.customerName ? String(updatedClaim.customerName).trim().toUpperCase() : updatedClaim.customerName,
       claimAmount: parseFloat(updatedClaim.claimAmount || updatedClaim.amount || 0),
       settlementAmount: parseFloat(updatedClaim.settlementAmount || 0),
       updatedAt: new Date().toISOString()
     };
+
 
     setClaims(prev => prev.map(clm => clm.id === cleanObj.id ? { ...clm, ...cleanObj } : clm));
     try { await setDoc(doc(db, 'claims', cleanObj.id), cleanObj, { merge: true }); } catch (e) { }

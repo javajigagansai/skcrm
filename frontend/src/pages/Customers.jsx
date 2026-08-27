@@ -242,7 +242,8 @@ export const Customers = () => {
       clientCategory: newCustomer.clientCategory || 'New Lead',
       leadType: newCustomer.leadType || 'Warm Lead',
       isNri: Boolean(newCustomer.isNri),
-      name: newCustomer.name,
+      name: (newCustomer.name || '').trim().toUpperCase(),
+      customerName: (newCustomer.name || '').trim().toUpperCase(),
       email: primaryEmail,
       emails: cleanEmails.length > 0 ? cleanEmails : (primaryEmail ? [primaryEmail] : []),
       phone: newCustomer.phone,
@@ -520,8 +521,11 @@ export const Customers = () => {
       : (editCustomerData.email ? [editCustomerData.email.trim()] : []);
     const primaryEmail = cleanEmails[0] || (editCustomerData.email || '').trim();
 
+    const cleanName = (editCustomerData.name || '').trim().toUpperCase();
     const finalData = {
       ...editCustomerData,
+      name: cleanName,
+      customerName: cleanName,
       email: primaryEmail,
       emails: cleanEmails.length > 0 ? cleanEmails : (primaryEmail ? [primaryEmail] : []),
       assignedStaffId: finalStaffId,
@@ -860,7 +864,7 @@ export const Customers = () => {
                           className="font-black text-slate-900 hover:text-blue-600 hover:underline transition cursor-pointer text-left flex items-center space-x-1"
                           title="Click to view Customer 360° Profile"
                         >
-                          <span>{c.name}</span>
+                          <span className="uppercase font-extrabold">{c.name}</span>
                           <Sparkles className="h-3 w-3 text-blue-500 opacity-80" />
                         </button>
                       </td>
@@ -960,7 +964,7 @@ export const Customers = () => {
                 </div>
                 <div>
                   <div className="flex items-center space-x-2 flex-wrap gap-y-1">
-                    <h3 className="text-xl font-black tracking-tight">{selectedCustomer.name}</h3>
+                    <h3 className="text-xl font-black tracking-tight uppercase">{selectedCustomer.name}</h3>
                     <span className="badge bg-amber-400 text-slate-900 text-[10px] font-black uppercase">
                       Code: {selectedCustomer.customerCode || selectedCustomer.id}
                     </span>
@@ -1925,14 +1929,14 @@ export const Customers = () => {
 
                   {/* Customer Name */}
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Full Customer Name *</label>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Full Customer Name (CAPITALS ONLY) *</label>
                     <input
                       type="text"
                       required
-                      placeholder="e.g. Ramesh Kumar"
+                      placeholder="e.g. RAMESH KUMAR"
                       value={newCustomer.name}
-                      onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
-                      className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                      onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value.toUpperCase() })}
+                      className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-500 bg-white uppercase"
                     />
                   </div>
 
@@ -2976,13 +2980,14 @@ export const Customers = () => {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Customer Full Name</label>
+                    <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Customer Full Name (CAPITALS ONLY)</label>
                     <input
                       type="text"
                       required
+                      placeholder="e.g. RAMESH KUMAR"
                       value={editCustomerData.name || ''}
-                      onChange={(e) => setEditCustomerData({ ...editCustomerData, name: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl border text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-600 bg-white"
+                      onChange={(e) => setEditCustomerData({ ...editCustomerData, name: e.target.value.toUpperCase() })}
+                      className="w-full px-3 py-2 rounded-xl border text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-600 bg-white uppercase"
                     />
                   </div>
                   <div>

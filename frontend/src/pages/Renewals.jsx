@@ -475,7 +475,7 @@ export const Renewals = () => {
                               className="font-black text-slate-900 hover:text-blue-600 hover:underline transition cursor-pointer text-left flex items-center space-x-1"
                               title="Click to view Customer 360° Profile (Renewals Tab)"
                             >
-                              <span>{r.customerName}</span>
+                              <span className="uppercase">{r.customerName}</span>
                               <Sparkles className="h-3 w-3 text-blue-500 opacity-80" />
                             </button>
                             <p className="text-[11px] text-slate-400 font-mono font-semibold">{r.policyNo}</p>
