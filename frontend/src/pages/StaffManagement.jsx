@@ -121,6 +121,8 @@ export const StaffManagement = () => {
     const createdMember = {
       uid: 'UID-STF-' + Math.floor(1000 + Math.random() * 9000),
       ...newStaffForm,
+      fixedSalary: Math.max(0, Number(newStaffForm.fixedSalary) || 0),
+      monthlyTarget: Math.max(0, Number(newStaffForm.monthlyTarget) || 0),
       status: 'ACTIVE',
       achievedRevenue: 0,
       assignedClientsCount: 0,
@@ -147,6 +149,7 @@ export const StaffManagement = () => {
       title: 'Staff Advisor',
       phone: '',
       branch: 'Chennai Main Head Office',
+      fixedSalary: 250000,
       monthlyTarget: 400000,
       password: 'Password@123'
     });
@@ -162,8 +165,8 @@ export const StaffManagement = () => {
       title: st.title || 'Staff Advisor',
       phone: st.phone || '',
       branch: st.branch || 'Chennai Main Head Office',
-      fixedSalary: st.fixedSalary !== undefined ? st.fixedSalary : 270000,
-      monthlyTarget: st.monthlyTarget || 400000
+      fixedSalary: Math.max(0, Number(st.fixedSalary !== undefined ? st.fixedSalary : 270000)),
+      monthlyTarget: Math.max(0, Number(st.monthlyTarget || 400000))
     });
     setShowEditStaffModal(true);
   };
@@ -171,6 +174,9 @@ export const StaffManagement = () => {
   const handleUpdateStaff = (e) => {
     e.preventDefault();
     if (!editingStaff) return;
+
+    const safeSalary = Math.max(0, Number(editStaffForm.fixedSalary) || 0);
+    const safeTarget = Math.max(0, Number(editStaffForm.monthlyTarget) || 0);
 
     const updatedList = staffList.map(s => {
       if (s.uid === editingStaff.uid) {
@@ -182,8 +188,8 @@ export const StaffManagement = () => {
           title: editStaffForm.title,
           phone: editStaffForm.phone,
           branch: editStaffForm.branch,
-          fixedSalary: Number(editStaffForm.fixedSalary) || 0,
-          monthlyTarget: Number(editStaffForm.monthlyTarget) || 0
+          fixedSalary: safeSalary,
+          monthlyTarget: safeTarget
         };
       }
       return s;
@@ -200,8 +206,8 @@ export const StaffManagement = () => {
         title: editStaffForm.title,
         phone: editStaffForm.phone,
         branch: editStaffForm.branch,
-        fixedSalary: Number(editStaffForm.fixedSalary) || 0,
-        monthlyTarget: Number(editStaffForm.monthlyTarget) || 0
+        fixedSalary: safeSalary,
+        monthlyTarget: safeTarget
       }));
     }
 
@@ -215,8 +221,8 @@ export const StaffManagement = () => {
         title: editStaffForm.title,
         phone: editStaffForm.phone,
         branch: editStaffForm.branch,
-        fixedSalary: Number(editStaffForm.fixedSalary) || 0,
-        monthlyTarget: Number(editStaffForm.monthlyTarget) || 0
+        fixedSalary: safeSalary,
+        monthlyTarget: safeTarget
       }, { merge: true }).catch(() => { });
     } catch (err) { }
 
@@ -863,10 +869,21 @@ export const StaffManagement = () => {
                   </label>
                   <input
                     type="number"
+                    min="0"
+                    step="any"
                     required
                     disabled={!isAdminOrHigher}
-                    value={editStaffForm.fixedSalary}
-                    onChange={(e) => setEditStaffForm({ ...editStaffForm, fixedSalary: e.target.value })}
+                    value={editStaffForm.fixedSalary !== undefined ? editStaffForm.fixedSalary : ''}
+                    onKeyDown={(e) => {
+                      if (e.key === '-' || e.key === 'e' || e.key === 'E') e.preventDefault();
+                    }}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setEditStaffForm({ 
+                        ...editStaffForm, 
+                        fixedSalary: val === '' ? '' : Math.max(0, Number(val)) 
+                      });
+                    }}
                     className={`w-full p-2.5 rounded-xl border font-mono font-black outline-none ${isAdminOrHigher ? 'border-rose-300 text-rose-700 bg-rose-50/50 focus:ring-2 focus:ring-rose-500' : 'border-slate-200 text-slate-400 bg-slate-100 cursor-not-allowed'}`}
                     placeholder="e.g. 270000"
                   />
@@ -875,10 +892,21 @@ export const StaffManagement = () => {
                   <label className="block text-slate-700 mb-1 font-extrabold uppercase">Monthly Target (₹)</label>
                   <input
                     type="number"
-                    value={editStaffForm.monthlyTarget}
-                    onChange={(e) => setEditStaffForm({ ...editStaffForm, monthlyTarget: e.target.value })}
+                    min="0"
+                    step="any"
+                    value={editStaffForm.monthlyTarget !== undefined ? editStaffForm.monthlyTarget : ''}
+                    onKeyDown={(e) => {
+                      if (e.key === '-' || e.key === 'e' || e.key === 'E') e.preventDefault();
+                    }}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setEditStaffForm({ 
+                        ...editStaffForm, 
+                        monthlyTarget: val === '' ? '' : Math.max(0, Number(val)) 
+                      });
+                    }}
                     className="w-full p-2.5 rounded-xl border border-slate-200 font-mono font-bold outline-none focus:ring-2 focus:ring-blue-600"
-                    placeholder="e.g. 500000"
+                    placeholder="e.g. 400000"
                   />
                 </div>
               </div>
@@ -953,9 +981,20 @@ export const StaffManagement = () => {
                   <label className="block text-slate-700 mb-1 font-extrabold uppercase text-rose-600">Fixed Monthly Salary (₹)</label>
                   <input
                     type="number"
+                    min="0"
+                    step="any"
                     required
-                    value={newStaffForm.fixedSalary}
-                    onChange={(e) => setNewStaffForm({ ...newStaffForm, fixedSalary: e.target.value })}
+                    value={newStaffForm.fixedSalary !== undefined ? newStaffForm.fixedSalary : ''}
+                    onKeyDown={(e) => {
+                      if (e.key === '-' || e.key === 'e' || e.key === 'E') e.preventDefault();
+                    }}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setNewStaffForm({ 
+                        ...newStaffForm, 
+                        fixedSalary: val === '' ? '' : Math.max(0, Number(val)) 
+                      });
+                    }}
                     className="w-full p-2.5 rounded-xl border border-rose-300 font-mono font-black text-rose-700 outline-none focus:ring-2 focus:ring-rose-500 bg-rose-50/50"
                     placeholder="250000"
                   />

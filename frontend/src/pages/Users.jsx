@@ -133,7 +133,7 @@ export const Users = () => {
       password: staffForm.password || 'Password@123',
       phone: staffForm.phone || '9876543210',
       branch: staffForm.branch || 'Chennai Main Head Office',
-      fixedSalary: staffForm.fixedSalary !== undefined ? Number(staffForm.fixedSalary) : 250000,
+      fixedSalary: staffForm.fixedSalary !== undefined ? Math.max(0, Number(staffForm.fixedSalary) || 0) : 250000,
       status: 'ACTIVE'
     };
 
@@ -503,8 +503,19 @@ export const Users = () => {
                   <label className="block text-slate-700 mb-1 font-extrabold uppercase text-rose-600">Fixed Monthly Salary (₹) (Admin Only)</label>
                   <input 
                     type="number"
-                    value={staffForm.fixedSalary || ''}
-                    onChange={(e) => setStaffForm({ ...staffForm, fixedSalary: e.target.value })}
+                    min="0"
+                    step="any"
+                    value={staffForm.fixedSalary !== undefined ? staffForm.fixedSalary : ''}
+                    onKeyDown={(e) => {
+                      if (e.key === '-' || e.key === 'e' || e.key === 'E') e.preventDefault();
+                    }}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setStaffForm({ 
+                        ...staffForm, 
+                        fixedSalary: val === '' ? '' : Math.max(0, Number(val)) 
+                      });
+                    }}
                     className="w-full p-2.5 rounded-xl border border-rose-200 bg-rose-50/50 outline-none focus:ring-2 focus:ring-rose-500 font-mono font-black text-rose-700"
                     placeholder="e.g. 250000"
                   />
