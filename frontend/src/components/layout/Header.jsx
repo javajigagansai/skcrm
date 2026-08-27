@@ -2,11 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Shield, LogOut, User, ChevronDown, CheckSquare, AlertCircle, Trash2 } from 'lucide-react';
+import { Bell, Shield, LogOut, User, ChevronDown, CheckSquare, AlertCircle, Trash2, X } from 'lucide-react';
 
 export const Header = () => {
   const { user, logout } = useAuth();
-  const { notifications, unreadNotificationCount, markNotificationAsRead, markAllNotificationsAsRead, clearAllNotifications } = useNotification();
+  const { notifications, unreadNotificationCount, markNotificationAsRead, markAllNotificationsAsRead, clearAllNotifications, deleteNotification } = useNotification();
   const navigate = useNavigate();
 
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -98,22 +98,37 @@ export const Header = () => {
                 {notifications.map(n => (
                   <div 
                     key={n.id}
-                    onClick={() => handleNotifClick(n)}
-                    className={`p-3.5 hover:bg-slate-50 transition cursor-pointer flex items-start space-x-3 ${(!n.isRead && !n.read) ? 'bg-blue-50/50 font-semibold' : 'bg-white'}`}
+                    className={`p-3.5 hover:bg-slate-50 transition flex items-start space-x-3 group relative ${(!n.isRead && !n.read) ? 'bg-blue-50/50 font-semibold' : 'bg-white'}`}
                   >
-                    <div className={`p-2 rounded-xl shrink-0 mt-0.5 ${n.type === 'TASK_ASSIGNED' ? 'bg-amber-100 text-amber-700' : n.type === 'NEW_MESSAGE' ? 'bg-indigo-100 text-indigo-700' : 'bg-blue-100 text-blue-600'}`}>
+                    <div 
+                      onClick={() => handleNotifClick(n)}
+                      className={`p-2 rounded-xl shrink-0 mt-0.5 cursor-pointer ${n.type === 'TASK_ASSIGNED' ? 'bg-amber-100 text-amber-700' : n.type === 'NEW_MESSAGE' ? 'bg-indigo-100 text-indigo-700' : 'bg-blue-100 text-blue-600'}`}
+                    >
                       {n.type === 'TASK_ASSIGNED' ? <CheckSquare className="h-4 w-4 text-amber-600" /> : <AlertCircle className="h-4 w-4 text-blue-600" />}
                     </div>
-                    <div className="flex-1 space-y-0.5">
+                    <div 
+                      onClick={() => handleNotifClick(n)}
+                      className="flex-1 space-y-0.5 cursor-pointer min-w-0 pr-1"
+                    >
                       <div className="flex items-center justify-between">
                         <p className={`text-xs ${(!n.isRead && !n.read) ? 'font-black text-slate-900' : 'font-semibold text-slate-700'}`}>{n.title}</p>
-                        {(!n.isRead && !n.read) && <span className="h-2 w-2 rounded-full bg-blue-600 shrink-0"></span>}
+                        {(!n.isRead && !n.read) && <span className="h-2 w-2 rounded-full bg-blue-600 shrink-0 mr-1"></span>}
                       </div>
                       <p className="text-[11px] text-slate-500 leading-snug">{n.message || n.desc}</p>
                       <span className="text-[10px] text-slate-400 font-bold block pt-1">
                         {n.createdAt?.toDate ? n.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now'}
                       </span>
                     </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteNotification(n.id);
+                      }}
+                      className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer shrink-0 self-start mt-0.5"
+                      title="Remove this notification"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
                   </div>
                 ))}
                 {notifications.length === 0 && (

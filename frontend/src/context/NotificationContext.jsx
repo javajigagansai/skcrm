@@ -378,6 +378,45 @@ export const NotificationProvider = ({ children }) => {
     } catch (err) {}
   };
 
+  const deleteNotification = async (notificationId) => {
+    if (!notificationId) return;
+
+    const target = notifications.find(n => n.id === notificationId || n.firestoreDocId === notificationId);
+    const effectiveId = target?.id || notificationId;
+    const firestoreId = target?.firestoreDocId || notificationId;
+
+    const clearedIds = getPersistedClearedIds();
+    const readIds = getPersistedReadIds();
+    clearedIds.add(effectiveId);
+    clearedIds.add(firestoreId);
+    readIds.add(effectiveId);
+    readIds.add(firestoreId);
+    persistClearedIds(clearedIds);
+    persistReadIds(readIds);
+
+    setNotifications(prev => prev.filter(n => n.id !== effectiveId && n.firestoreDocId !== firestoreId && n.id !== notificationId));
+    setUnreadNotificationCount(prev => {
+      const isUnread = target && !target.isRead && !target.read;
+      return isUnread ? Math.max(0, prev - 1) : prev;
+    });
+
+    // Remove from localStorage
+    try {
+      const stored = JSON.parse(localStorage.getItem('crm_v2_notifications') || '[]');
+      const updated = stored.filter(n => n.id !== effectiveId && n.id !== notificationId);
+      localStorage.setItem('crm_v2_notifications', JSON.stringify(updated));
+      window.dispatchEvent(new CustomEvent('storage_notifications_updated'));
+    } catch (e) {}
+
+    // Delete from Firestore
+    try {
+      await deleteDoc(doc(db, 'notifications', firestoreId)).catch(() => {});
+      if (effectiveId !== firestoreId) {
+        await deleteDoc(doc(db, 'notifications', effectiveId)).catch(() => {});
+      }
+    } catch (err) {}
+  };
+
   return (
     <NotificationContext.Provider value={{
       notifications,
@@ -389,6 +428,7 @@ export const NotificationProvider = ({ children }) => {
       markNotificationAsRead,
       markAllNotificationsAsRead,
       clearAllNotifications,
+      deleteNotification,
       loading,
       error
     }}>
