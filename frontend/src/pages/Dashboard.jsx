@@ -1307,7 +1307,7 @@ export const Dashboard = () => {
       }).reduce((s, i) => s + (Number(i.amount || i.investmentAmount) || 0), 0);
 
       title = "Investments & Assets Under Management (AUM)";
-      subtitle = "Asset & Portfolio Volume Distribution Overview";
+      subtitle = "";
       content = (
         <div className="space-y-6">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -2147,7 +2147,7 @@ export const Dashboard = () => {
                 <BarChart3 className="h-5 w-5 text-blue-400 shrink-0" />
                 <h3 className="text-base sm:text-lg font-black tracking-tight">{title}</h3>
               </div>
-              <p className="text-xs text-slate-400 font-semibold">{subtitle}</p>
+              {subtitle && <p className="text-xs text-slate-400 font-semibold">{subtitle}</p>}
             </div>
             <button 
               onClick={() => setActiveModal(null)}
