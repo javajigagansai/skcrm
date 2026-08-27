@@ -93,8 +93,8 @@ export const Header = () => {
           >
             <Bell className={`h-5 w-5 transition-transform ${isShaking ? 'animate-bell-shake text-blue-600' : 'text-slate-600'}`} />
             {unreadNotificationCount > 0 && (
-              <span className={`absolute -top-0.5 -right-0.5 min-w-[19px] h-[19px] px-1 rounded-full bg-gradient-to-r from-rose-500 to-pink-600 text-white font-black text-[10px] flex items-center justify-center ring-2 ring-white shadow-md ${isShaking ? 'animate-badge-move' : ''}`}>
-                <span className={isShaking ? 'animate-number-jiggle' : ''}>{unreadNotificationCount}</span>
+              <span className="absolute -top-0.5 -right-0.5 min-w-[19px] h-[19px] px-1 rounded-full bg-gradient-to-r from-rose-500 to-pink-600 text-white font-black text-[10px] flex items-center justify-center ring-2 ring-white shadow-md">
+                <span>{unreadNotificationCount}</span>
               </span>
             )}
           </button>
