@@ -693,7 +693,7 @@ export const Dashboard = () => {
       incomeByMonth[mKey] = (incomeByMonth[mKey] || 0) + amt;
     });
 
-    const allExpenses = combinedCompanyExpenses;
+    const allExpenses = (companyOperatingExpenses?.items && companyOperatingExpenses.items.length > 0) ? companyOperatingExpenses.items : (expenses || []);
     allExpenses.forEach(item => {
       const dStr = item.expenseDate || item.date || item.createdAt || item.timestamp;
       if (!dStr) return;
@@ -733,7 +733,7 @@ export const Dashboard = () => {
         netProfit: netProfitLakhs
       };
     });
-  }, [dateFilter, customStartDate, customEndDate, policies, income, combinedCompanyExpenses]);
+  }, [dateFilter, customStartDate, customEndDate, policies, income, companyOperatingExpenses, expenses]);
 
   const dynamicAcquisitionsChart = useMemo(() => {
     const now = new Date();
@@ -1136,11 +1136,57 @@ export const Dashboard = () => {
     activeLeads: isStaffAdvisor ? myAssignedLeads.filter(l => l.leadStatus !== 'CONVERTED').length.toString() : (leads.length > 0 ? leads.filter(l => l.leadStatus !== 'CONVERTED').length.toLocaleString() : '0'),
     investmentVolume: isStaffAdvisor ? `₹${(myAssignedInvestments.reduce((s, i) => s + (Number(i.amount) || 0), 0) / 100000).toFixed(2)} Lakhs` : (investments.length > 0 ? `₹${(investments.reduce((s, i) => s + (Number(i.amount) || 0), 0) / 10000000).toFixed(2)} Cr` : '₹0.00'),
     activePolicies: isStaffAdvisor ? myAssignedPolicies.length : policies.length,
+    companyExpenditure: companyOperatingExpenses?.totalAmount || 0,
     acquisitionsChart: dynamicAcquisitionsChart,
     incomeExpenseChart: dynamicFinancialsChart,
     conversionClaimsChart: dynamicConversionClaimsChart,
     staffPerformanceChart: dynamicStaffPerformanceChart,
     productDistributionChart: dynamicProductDistributionChart
+  };
+
+  const handleExportDashboardPDF = () => {
+    exportDashboardAnalyticsPDF(
+      dateFilter,
+      currentMetrics,
+      currentMetrics.productDistributionChart,
+      currentMetrics.conversionClaimsChart,
+      currentMetrics.staffPerformanceChart,
+      policyCategoryOverview,
+      {
+        financialChart: dynamicFinancialsChart,
+        renewalsList: (policies || []).filter(p => p.status === 'ACTIVE' || !p.status),
+        specialDaysList: (customers || []).flatMap(c => {
+          const events = [];
+          if (c.dob) events.push({ customerName: c.name, type: 'Birthday 🎂', date: c.dob, phone: c.phone });
+          if (c.anniversaryDate) events.push({ customerName: c.name, type: 'Anniversary 💍', date: c.anniversaryDate, phone: c.phone });
+          return events;
+        }),
+        expensesList: expenses,
+        totalExpenses: companyOperatingExpenses?.totalAmount || 0,
+        dateFilter
+      }
+    );
+  };
+
+  const handleExportDashboardExcel = () => {
+    exportDashboardCategoryAndCompanyExcel(
+      policyCategoryOverview,
+      currentMetrics,
+      {
+        staffData: currentMetrics.staffPerformanceChart,
+        financialChart: dynamicFinancialsChart,
+        renewalsList: (policies || []).filter(p => p.status === 'ACTIVE' || !p.status),
+        expensesList: expenses,
+        specialDaysList: (customers || []).flatMap(c => {
+          const events = [];
+          if (c.dob) events.push({ customerName: c.name, type: 'Birthday', date: c.dob, phone: c.phone });
+          if (c.anniversaryDate) events.push({ customerName: c.name, type: 'Anniversary', date: c.anniversaryDate, phone: c.phone });
+          return events;
+        }),
+        totalExpenses: companyOperatingExpenses?.totalAmount || 0,
+        dateFilter
+      }
+    );
   };
 
   const renderAnalysisModal = () => {
@@ -1246,7 +1292,7 @@ export const Dashboard = () => {
             </button>
             {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
               <button 
-                onClick={() => exportDashboardAnalyticsPDF(dateFilter, currentMetrics, currentMetrics.productDistributionChart, currentMetrics.conversionClaimsChart, currentMetrics.staffPerformanceChart, policyCategoryOverview)}
+                onClick={handleExportDashboardPDF}
                 className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer"
               >
                 <Download className="h-3.5 w-3.5" />
@@ -1353,7 +1399,7 @@ export const Dashboard = () => {
             </button>
             {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
               <button 
-                onClick={() => exportDashboardAnalyticsPDF(dateFilter, currentMetrics, currentMetrics.productDistributionChart, currentMetrics.conversionClaimsChart, currentMetrics.staffPerformanceChart, policyCategoryOverview)}
+                onClick={handleExportDashboardPDF}
                 className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer"
               >
                 <Download className="h-3.5 w-3.5" />
@@ -1440,7 +1486,7 @@ export const Dashboard = () => {
             </button>
             {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
               <button 
-                onClick={() => exportDashboardAnalyticsPDF(dateFilter, currentMetrics, currentMetrics.productDistributionChart, currentMetrics.conversionClaimsChart, currentMetrics.staffPerformanceChart, policyCategoryOverview)}
+                onClick={handleExportDashboardPDF}
                 className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer"
               >
                 <Download className="h-3.5 w-3.5" />
@@ -1572,7 +1618,7 @@ export const Dashboard = () => {
             </button>
             {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
               <button 
-                onClick={() => exportDashboardAnalyticsPDF(dateFilter, currentMetrics, currentMetrics.productDistributionChart, currentMetrics.conversionClaimsChart, currentMetrics.staffPerformanceChart, policyCategoryOverview)}
+                onClick={handleExportDashboardPDF}
                 className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer"
               >
                 <Download className="h-3.5 w-3.5" />
@@ -2279,51 +2325,6 @@ export const Dashboard = () => {
           </div>
         </div>
       </div>
-    );
-  };
-
-  const handleExportDashboardPDF = () => {
-    exportDashboardAnalyticsPDF(
-      dateFilter,
-      currentMetrics,
-      currentMetrics.productDistributionChart,
-      currentMetrics.conversionClaimsChart,
-      currentMetrics.staffPerformanceChart,
-      policyCategoryOverview,
-      {
-        financialChart: dynamicFinancialsChart,
-        renewalsList: (policies || []).filter(p => p.status === 'ACTIVE' || !p.status),
-        specialDaysList: (customers || []).flatMap(c => {
-          const events = [];
-          if (c.dob) events.push({ customerName: c.name, type: 'Birthday 🎂', date: c.dob, phone: c.phone });
-          if (c.anniversaryDate) events.push({ customerName: c.name, type: 'Anniversary 💍', date: c.anniversaryDate, phone: c.phone });
-          return events;
-        }),
-        expensesList: expenses,
-        totalExpenses: companyOperatingExpenses.totalAmount,
-        dateFilter
-      }
-    );
-  };
-
-  const handleExportDashboardExcel = () => {
-    exportDashboardCategoryAndCompanyExcel(
-      policyCategoryOverview,
-      currentMetrics,
-      {
-        staffData: currentMetrics.staffPerformanceChart,
-        financialChart: dynamicFinancialsChart,
-        renewalsList: (policies || []).filter(p => p.status === 'ACTIVE' || !p.status),
-        expensesList: expenses,
-        specialDaysList: (customers || []).flatMap(c => {
-          const events = [];
-          if (c.dob) events.push({ customerName: c.name, type: 'Birthday', date: c.dob, phone: c.phone });
-          if (c.anniversaryDate) events.push({ customerName: c.name, type: 'Anniversary', date: c.anniversaryDate, phone: c.phone });
-          return events;
-        }),
-        totalExpenses: companyOperatingExpenses.totalAmount,
-        dateFilter
-      }
     );
   };
 
