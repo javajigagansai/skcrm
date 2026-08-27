@@ -868,13 +868,13 @@ export const Customers = () => {
         </div>
       </div>
 
-      {/* ================= CUSTOMER 360 DEGREE PROFILE MODAL ================= */}
+      {/* ================= CUSTOMER 360 DEGREE PROFILE MODAL (FULL SCREEN) ================= */}
       {selectedCustomer && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white max-w-5xl w-full rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-8 animate-fadeIn">
+        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex flex-col items-center justify-center p-0 sm:p-3 md:p-6 overflow-hidden animate-fadeIn">
+          <div className="bg-slate-50 w-full h-full sm:max-w-6xl sm:h-[95vh] sm:rounded-3xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden">
 
             {/* Modal Header */}
-            <div className="p-6 bg-gradient-to-r from-slate-900 via-[#1E6091] to-slate-900 text-white flex items-start justify-between">
+            <div className="p-6 bg-gradient-to-r from-slate-900 via-[#1E6091] to-slate-900 text-white flex items-start justify-between shrink-0">
               <div className="flex items-center space-x-4">
                 <div className="w-14 h-14 rounded-3xl bg-white/10 backdrop-blur-md text-amber-300 font-black flex items-center justify-center text-2xl border border-white/20 shadow-inner">
                   {selectedCustomer.name?.charAt(0)}
@@ -968,7 +968,7 @@ export const Customers = () => {
             </div>
 
             {/* Modal Body Content */}
-            <div className="p-6 max-h-[65vh] overflow-y-auto space-y-6">
+            <div className="p-4 sm:p-6 flex-1 overflow-y-auto space-y-6">
 
               {/* TAB 1: OVERVIEW & PERSONAL INFO */}
               {active360Tab === 'OVERVIEW' && (
@@ -1553,301 +1553,433 @@ export const Customers = () => {
         </div>
       )}
 
-      {/* ================= ADD NEW CUSTOMER MODAL ================= */}
+      {/* ================= ADD NEW CUSTOMER MODAL (FULL SCREEN) ================= */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-xl w-full p-6 space-y-4 shadow-2xl border border-slate-100 my-8">
-            <div className="flex items-center justify-between border-b pb-3">
-              <h3 className="text-base font-black text-slate-900">Add New Customer 360 Profile</h3>
-              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600"><X className="h-5 w-5" /></button>
+        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex flex-col items-center justify-center p-0 sm:p-3 md:p-6 overflow-hidden animate-fadeIn">
+          <div className="bg-slate-50 w-full h-full sm:max-w-6xl sm:h-[95vh] sm:rounded-3xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden">
+
+            {/* Fullscreen Sticky Modal Header */}
+            <div className="bg-gradient-to-r from-slate-900 via-[#1E6091] to-slate-900 text-white px-6 py-4 flex items-center justify-between shadow-sm shrink-0 border-b border-white/10">
+              <div className="flex items-center space-x-3.5">
+                <div className="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-amber-300 border border-white/20 shadow-inner">
+                  <UserCheck className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black tracking-tight flex items-center space-x-2">
+                    <span>Add New Customer 360 Profile</span>
+                    <span className="badge bg-amber-400 text-slate-900 text-[10px] font-black uppercase px-2 py-0.5">360° Studio</span>
+                  </h3>
+                  <p className="text-xs text-blue-100 font-medium">Create customer record with KYC, multi-email, banking, demographics and portfolio.</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer border border-white/10"
+                >
+                  <X className="h-4 w-4" />
+                  <span className="hidden sm:inline">Close</span>
+                </button>
+              </div>
             </div>
 
-            <form onSubmit={handleAddCustomer} className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
-              <div>
-                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Full Customer Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Ramesh Kumar"
-                  value={newCustomer.name}
-                  onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600"
-                />
-              </div>
+            {/* Scrollable Form Body with Organized Cards */}
+            <form id="add-customer-360-form" onSubmit={handleAddCustomer} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Primary Mobile Number *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="+91 98765 43210"
-                    value={newCustomer.phone}
-                    onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600 font-mono font-bold"
-                  />
+              {/* SECTION 1: CORE IDENTITY & CONTACT DETAILS */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <h4 className="text-xs font-black uppercase text-blue-900 tracking-wider flex items-center space-x-2">
+                    <UserCheck className="h-4 w-4 text-blue-600" />
+                    <span>1. Basic Profile &amp; Multi-Channel Contact</span>
+                  </h4>
+                  <span className="text-[11px] font-bold text-slate-400">Step 1 of 4</span>
                 </div>
-                <div>
-                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Alternate Mobile Number</label>
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                    <select
-                      value={newCustomer.altCountryCode || '+91'}
-                      onChange={(e) => setNewCustomer({ ...newCustomer, altCountryCode: e.target.value })}
-                      className="w-full sm:w-[210px] px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-slate-50 outline-none focus:ring-2 focus:ring-blue-600 shrink-0 cursor-pointer"
-                      title="Select Country & Dial Code"
-                    >
-                      {COUNTRY_DIAL_CODES.map(c => (
-                        <option key={`${c.name}-${c.code}`} value={c.code}>{c.display}</option>
-                      ))}
-                    </select>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Full Customer Name *</label>
                     <input
                       type="text"
-                      placeholder="98765 00000 (Optional)"
-                      value={newCustomer.alternatePhone || ''}
-                      onChange={(e) => setNewCustomer({ ...newCustomer, alternatePhone: e.target.value, altPhone: e.target.value })}
-                      className="flex-1 px-3 py-2 rounded-xl border text-xs font-mono font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white"
+                      required
+                      placeholder="e.g. Ramesh Kumar"
+                      value={newCustomer.name}
+                      onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50/50"
                     />
                   </div>
-                </div>
-              </div>
-
-              {/* MULTI-EMAIL SECTION IN ADD CUSTOMER MODAL */}
-              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="block text-[11px] font-black uppercase text-slate-700 flex items-center space-x-1.5">
-                    <Mail className="h-3.5 w-3.5 text-blue-600" />
-                    <span>Email Address(es)</span>
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const cur = Array.isArray(newCustomer.emails) ? [...newCustomer.emails] : (newCustomer.email ? [newCustomer.email] : ['']);
-                      setNewCustomer({ ...newCustomer, emails: [...cur, ''] });
-                    }}
-                    className="text-[10px] font-extrabold text-blue-700 hover:text-blue-900 flex items-center space-x-1 cursor-pointer bg-blue-100/70 hover:bg-blue-200/80 px-2.5 py-1 rounded-xl border border-blue-300/60 transition"
-                  >
-                    <Plus className="h-3 w-3" />
-                    <span>Add Another Email</span>
-                  </button>
+                  <div>
+                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Customer Category</label>
+                    <select
+                      value={newCustomer.clientCategory || 'New Lead'}
+                      onChange={(e) => setNewCustomer({ ...newCustomer, clientCategory: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-slate-50/50 outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer"
+                    >
+                      <option value="New Lead">New Lead 🔵</option>
+                      <option value="Existing Lead">Existing Lead 🟣</option>
+                      <option value="VIP Client">VIP Client ⭐</option>
+                    </select>
+                  </div>
                 </div>
 
-                {/* Primary Email */}
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="email"
-                    placeholder="primary.email@example.com (Primary)"
-                    value={(Array.isArray(newCustomer.emails) && newCustomer.emails[0] !== undefined) ? newCustomer.emails[0] : (newCustomer.email || '')}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      const cur = Array.isArray(newCustomer.emails) && newCustomer.emails.length > 0 ? [...newCustomer.emails] : [newCustomer.email || ''];
-                      cur[0] = val;
-                      setNewCustomer({ ...newCustomer, email: val, emails: cur });
-                    }}
-                    className="flex-1 px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600 bg-white font-semibold"
-                  />
-                  <span className="badge bg-blue-100 text-blue-800 text-[10px] font-black shrink-0 px-2.5 py-1">Primary</span>
-                </div>
-
-                {/* Additional Emails */}
-                {Array.isArray(newCustomer.emails) && newCustomer.emails.slice(1).map((em, idx) => (
-                  <div key={`add-em-${idx + 1}`} className="flex items-center space-x-2 animate-fadeIn">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                  <div>
+                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Primary Mobile Number *</label>
                     <input
-                      type="email"
-                      placeholder={`Additional Email #${idx + 2}`}
-                      value={em || ''}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        const cur = [...newCustomer.emails];
-                        cur[idx + 1] = val;
-                        setNewCustomer({ ...newCustomer, emails: cur });
-                      }}
-                      className="flex-1 px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600 bg-white"
+                      type="text"
+                      required
+                      placeholder="+91 98765 43210"
+                      value={newCustomer.phone}
+                      onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50/50"
                     />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Alternate Mobile Number</label>
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                      <select
+                        value={newCustomer.altCountryCode || '+91'}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, altCountryCode: e.target.value })}
+                        className="w-full sm:w-[220px] px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-slate-50 outline-none focus:ring-2 focus:ring-blue-600 shrink-0 cursor-pointer"
+                        title="Select Country & Dial Code"
+                      >
+                        {COUNTRY_DIAL_CODES.map(c => (
+                          <option key={`${c.name}-${c.code}`} value={c.code}>{c.display}</option>
+                        ))}
+                      </select>
+                      <input
+                        type="text"
+                        placeholder="98765 00000 (Optional)"
+                        value={newCustomer.alternatePhone || ''}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, alternatePhone: e.target.value, altPhone: e.target.value })}
+                        className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-600 bg-white"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* MULTI-EMAIL SECTION */}
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/90 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-[11px] font-black uppercase text-slate-700 flex items-center space-x-1.5">
+                      <Mail className="h-3.5 w-3.5 text-blue-600" />
+                      <span>Email Address(es)</span>
+                    </label>
                     <button
                       type="button"
                       onClick={() => {
-                        const cur = newCustomer.emails.filter((_, i) => i !== idx + 1);
-                        setNewCustomer({ ...newCustomer, email: cur[0] || '', emails: cur });
+                        const cur = Array.isArray(newCustomer.emails) ? [...newCustomer.emails] : (newCustomer.email ? [newCustomer.email] : ['']);
+                        setNewCustomer({ ...newCustomer, emails: [...cur, ''] });
                       }}
-                      className="p-2 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 transition cursor-pointer border border-rose-200"
-                      title="Remove Email"
+                      className="text-[10px] font-extrabold text-blue-700 hover:text-blue-900 flex items-center space-x-1 cursor-pointer bg-blue-100/70 hover:bg-blue-200/80 px-3 py-1 rounded-xl border border-blue-300/60 transition"
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
+                      <Plus className="h-3 w-3" />
+                      <span>Add Another Email</span>
                     </button>
                   </div>
-                ))}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                    {/* Primary Email */}
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="email"
+                        placeholder="primary.email@example.com (Primary)"
+                        value={(Array.isArray(newCustomer.emails) && newCustomer.emails[0] !== undefined) ? newCustomer.emails[0] : (newCustomer.email || '')}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const cur = Array.isArray(newCustomer.emails) && newCustomer.emails.length > 0 ? [...newCustomer.emails] : [newCustomer.email || ''];
+                          cur[0] = val;
+                          setNewCustomer({ ...newCustomer, email: val, emails: cur });
+                        }}
+                        className="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-xs outline-none focus:ring-2 focus:ring-blue-600 bg-white font-semibold"
+                      />
+                      <span className="badge bg-blue-100 text-blue-800 text-[10px] font-black shrink-0 px-2.5 py-1">Primary</span>
+                    </div>
+
+                    {/* Additional Emails */}
+                    {Array.isArray(newCustomer.emails) && newCustomer.emails.slice(1).map((em, idx) => (
+                      <div key={`add-em-${idx + 1}`} className="flex items-center space-x-2 animate-fadeIn">
+                        <input
+                          type="email"
+                          placeholder={`Additional Email #${idx + 2}`}
+                          value={em || ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const cur = [...newCustomer.emails];
+                            cur[idx + 1] = val;
+                            setNewCustomer({ ...newCustomer, emails: cur });
+                          }}
+                          className="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-xs outline-none focus:ring-2 focus:ring-blue-600 bg-white font-semibold"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const cur = newCustomer.emails.filter((_, i) => i !== idx + 1);
+                            setNewCustomer({ ...newCustomer, email: cur[0] || '', emails: cur });
+                          }}
+                          className="p-2 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 transition cursor-pointer border border-rose-200"
+                          title="Remove Email"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">City / Region</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Chennai, Bangalore, Mumbai"
+                      value={newCustomer.city}
+                      onChange={(e) => setNewCustomer({ ...newCustomer, city: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50/50"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Full Residential Address</label>
+                    <input
+                      type="text"
+                      placeholder="Door No, Street Name, Landmark, Pincode"
+                      value={newCustomer.address || ''}
+                      onChange={(e) => setNewCustomer({ ...newCustomer, address: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50/50"
+                    />
+                  </div>
+                </div>
               </div>
 
-              {/* MARITAL STATUS & ANNIVERSARY OPTION */}
-              <div className="bg-pink-50/60 p-3.5 rounded-2xl border border-pink-200/80 space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-black uppercase text-pink-700 mb-1">Marital Status</label>
-                    <select
-                      value={newCustomer.maritalStatus}
-                      onChange={(e) => setNewCustomer({ ...newCustomer, maritalStatus: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl border border-pink-200 text-xs font-bold text-slate-800 bg-white outline-none focus:ring-2 focus:ring-pink-500"
-                    >
-                      <option value="">-- Select Marital Status --</option>
-                      <option value="Single">Single</option>
-                      <option value="Married">Married 💍</option>
-                    </select>
-                  </div>
+              {/* SECTION 2: DEMOGRAPHICS, MARITAL & FAMILY DIRECTORY */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <h4 className="text-xs font-black uppercase text-pink-900 tracking-wider flex items-center space-x-2">
+                    <Heart className="h-4 w-4 text-pink-600 fill-pink-600" />
+                    <span>2. Personal Demographics &amp; Family Members</span>
+                  </h4>
+                  <span className="text-[11px] font-bold text-slate-400">Step 2 of 4</span>
+                </div>
 
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Date of Birth</label>
+                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Date of Birth</label>
                     <input
                       type="date"
                       value={newCustomer.dob}
                       onChange={(e) => setNewCustomer({ ...newCustomer, dob: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600 bg-white"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50/50"
                     />
                   </div>
-                </div>
-
-                {/* Show Anniversary Date Input ONLY if Married */}
-                {newCustomer.maritalStatus === 'Married' && (
-                  <div className="pt-2 border-t border-pink-200/60 animate-fadeIn">
-                    <label className="block text-[11px] font-black uppercase text-pink-800 mb-1 flex items-center space-x-1">
-                      <Heart className="h-3.5 w-3.5 fill-pink-600 text-pink-600" />
-                      <span>Wedding Anniversary Date</span>
-                    </label>
+                  <div>
+                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Gender</label>
+                    <select
+                      value={newCustomer.gender || 'Male'}
+                      onChange={(e) => setNewCustomer({ ...newCustomer, gender: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-slate-50/50 outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer"
+                    >
+                      <option value="Male">Male 👨</option>
+                      <option value="Female">Female 👩</option>
+                      <option value="Other">Other 🧑</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Occupation</label>
                     <input
-                      type="date"
-                      value={newCustomer.anniversaryDate}
-                      onChange={(e) => setNewCustomer({ ...newCustomer, anniversaryDate: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl border border-pink-300 text-xs outline-none focus:ring-2 focus:ring-pink-500 bg-white font-bold"
+                      type="text"
+                      placeholder="e.g. Software Architect / Business"
+                      value={newCustomer.occupation || ''}
+                      onChange={(e) => setNewCustomer({ ...newCustomer, occupation: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50/50"
                     />
                   </div>
-                )}
-              </div>
-
-              {/* FAMILY MEMBERS SECTION */}
-              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-black uppercase text-slate-700">Family Members ({newCustomer.familyMembers.length})</span>
-                  <button
-                    type="button"
-                    onClick={() => setShowAddFamilyModal(true)}
-                    className="text-[11px] font-extrabold text-pink-600 hover:underline flex items-center space-x-1"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    <span>Add Spouse / Child</span>
-                  </button>
+                  <div>
+                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Annual Income Bracket</label>
+                    <select
+                      value={newCustomer.incomeBracket || ''}
+                      onChange={(e) => setNewCustomer({ ...newCustomer, incomeBracket: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-slate-50/50 outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer"
+                    >
+                      <option value="">-- Select Income --</option>
+                      <option value="Below 5 Lakhs">Below 5 Lakhs</option>
+                      <option value="5-10 Lakhs">5-10 Lakhs</option>
+                      <option value="10-25 Lakhs">10-25 Lakhs</option>
+                      <option value="25-50 Lakhs">25-50 Lakhs</option>
+                      <option value="50 Lakhs - 1 Crore">50 Lakhs - 1 Crore</option>
+                      <option value="Above 1 Crore">Above 1 Crore ⭐</option>
+                    </select>
+                  </div>
                 </div>
 
-                {newCustomer.familyMembers.length > 0 && (
-                  <div className="space-y-1.5">
-                    {newCustomer.familyMembers.map((fm, idx) => (
-                      <div key={idx} className="bg-white p-2 rounded-xl border border-slate-200 text-xs flex items-center justify-between">
-                        <div>
-                          <strong className="text-slate-900">{fm.name}</strong> <span className="text-slate-400">({fm.relation})</span>
-                        </div>
-                        <span className="text-[10px] text-slate-500">{fm.dob ? `DOB: ${fm.dob}` : ''}</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                  <div className="bg-pink-50/60 p-4 rounded-2xl border border-pink-200/80 space-y-3">
+                    <label className="block text-[11px] font-black uppercase text-pink-900 mb-1 flex items-center space-x-1.5">
+                      <Heart className="h-3.5 w-3.5 text-pink-600 fill-pink-600" />
+                      <span>Marital Status &amp; Anniversary</span>
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <select
+                          value={newCustomer.maritalStatus || 'Single'}
+                          onChange={(e) => setNewCustomer({ ...newCustomer, maritalStatus: e.target.value })}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-pink-200 text-xs font-bold text-slate-800 bg-white outline-none focus:ring-2 focus:ring-pink-500"
+                        >
+                          <option value="Single">Single 👤</option>
+                          <option value="Married">Married 💍</option>
+                        </select>
                       </div>
-                    ))}
+                      {newCustomer.maritalStatus === 'Married' && (
+                        <div>
+                          <input
+                            type="date"
+                            placeholder="Anniversary Date"
+                            value={newCustomer.anniversaryDate || ''}
+                            onChange={(e) => setNewCustomer({ ...newCustomer, anniversaryDate: e.target.value })}
+                            className="w-full px-3.5 py-2.5 rounded-xl border border-pink-300 text-xs font-bold outline-none focus:ring-2 focus:ring-pink-500 bg-white"
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
-                )}
-              </div>
 
-              {/* SECTION: GOVERNMENT IDENTIFIERS & KYC (PAN & AADHAAR) */}
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
-                <h4 className="text-xs font-black uppercase text-purple-900 tracking-wider flex items-center space-x-1.5">
-                  <CreditCard className="h-4 w-4 text-purple-600" />
-                  <span>Government Identifiers &amp; KYC Verification</span>
-                </h4>
+                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-black uppercase text-slate-700 flex items-center space-x-1.5">
+                        <Users className="h-3.5 w-3.5 text-purple-600" />
+                        <span>Family Members ({newCustomer.familyMembers?.length || 0})</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setShowAddFamilyModal(true)}
+                        className="text-[11px] font-extrabold text-pink-600 hover:text-pink-800 hover:underline flex items-center space-x-1 cursor-pointer bg-white px-2.5 py-1 rounded-xl border border-pink-200"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        <span>Add Spouse / Child</span>
+                      </button>
+                    </div>
 
-                {/* PAN Card Section */}
-                <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2.5">
-                  <div className="flex items-center space-x-1.5 text-[11px] font-black uppercase text-purple-800">
-                    <span>PAN Card Details</span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-600 mb-1">PAN Card Number</label>
-                      <input
-                        type="text"
-                        placeholder="ABCDE1234F"
-                        value={newCustomer.pan}
-                        onChange={(e) => setNewCustomer({ ...newCustomer, pan: e.target.value.toUpperCase() })}
-                        className="w-full px-3 py-2 rounded-xl border text-xs font-mono font-bold uppercase tracking-wider outline-none focus:ring-2 focus:ring-purple-600 bg-slate-50"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-600 mb-1">PAN Card Name</label>
-                      <input
-                        type="text"
-                        placeholder="Name as on PAN Card"
-                        value={newCustomer.panName || ''}
-                        onChange={(e) => setNewCustomer({ ...newCustomer, panName: e.target.value })}
-                        className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-purple-600 bg-slate-50"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-600 mb-1">PAN Card DOB</label>
-                      <input
-                        type="date"
-                        value={newCustomer.panDob || ''}
-                        onChange={(e) => setNewCustomer({ ...newCustomer, panDob: e.target.value })}
-                        className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-purple-600 bg-slate-50"
-                      />
-                    </div>
+                    {newCustomer.familyMembers && newCustomer.familyMembers.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {newCustomer.familyMembers.map((fm, idx) => (
+                          <div key={idx} className="bg-white p-2.5 rounded-xl border border-slate-200 text-xs flex items-center justify-between">
+                            <div>
+                              <strong className="text-slate-900">{fm.name}</strong> <span className="text-slate-400">({fm.relation})</span>
+                            </div>
+                            <span className="text-[10px] text-slate-500 font-semibold">{fm.dob ? `DOB: ${fm.dob}` : ''}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-slate-400 font-medium italic">No family members registered yet.</p>
+                    )}
                   </div>
                 </div>
+              </div>
 
-                {/* Aadhaar / UIDAI Section */}
-                <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2.5">
-                  <div className="flex items-center space-x-1.5 text-[11px] font-black uppercase text-emerald-800">
-                    <span>Aadhaar / UIDAI Details</span>
+              {/* SECTION 3: GOVERNMENT IDENTIFIERS & BANK SETTLEMENT */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <h4 className="text-xs font-black uppercase text-purple-900 tracking-wider flex items-center space-x-2">
+                    <CreditCard className="h-4 w-4 text-purple-600" />
+                    <span>3. Government Identifiers &amp; Bank Settlement Details</span>
+                  </h4>
+                  <span className="text-[11px] font-bold text-slate-400">Step 3 of 4</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* PAN Card Section */}
+                  <div className="bg-purple-50/50 p-4 rounded-2xl border border-purple-100 space-y-3">
+                    <div className="flex items-center space-x-1.5 text-[11px] font-black uppercase text-purple-900">
+                      <span>PAN Card Details</span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-600 mb-1">PAN Card Number</label>
+                        <input
+                          type="text"
+                          placeholder="ABCDE1234F"
+                          value={newCustomer.pan}
+                          onChange={(e) => setNewCustomer({ ...newCustomer, pan: e.target.value.toUpperCase() })}
+                          className="w-full px-3 py-2 rounded-xl border border-purple-200 text-xs font-mono font-bold uppercase tracking-wider outline-none focus:ring-2 focus:ring-purple-600 bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-600 mb-1">Name as in PAN</label>
+                        <input
+                          type="text"
+                          placeholder="Full Name"
+                          value={newCustomer.panName || ''}
+                          onChange={(e) => setNewCustomer({ ...newCustomer, panName: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl border border-purple-200 text-xs outline-none focus:ring-2 focus:ring-purple-600 bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-600 mb-1">PAN DOB</label>
+                        <input
+                          type="date"
+                          value={newCustomer.panDob || ''}
+                          onChange={(e) => setNewCustomer({ ...newCustomer, panDob: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl border border-purple-200 text-xs outline-none focus:ring-2 focus:ring-purple-600 bg-white"
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-600 mb-1">Aadhaar / UIDAI Number</label>
-                      <input
-                        type="text"
-                        placeholder="xxxx-xxxx-9999"
-                        value={newCustomer.aadhaar}
-                        onChange={(e) => setNewCustomer({ ...newCustomer, aadhaar: e.target.value })}
-                        className="w-full px-3 py-2 rounded-xl border text-xs font-mono font-bold outline-none focus:ring-2 focus:ring-emerald-600 bg-slate-50"
-                      />
+
+                  {/* Aadhaar / UIDAI Section */}
+                  <div className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100 space-y-3">
+                    <div className="flex items-center space-x-1.5 text-[11px] font-black uppercase text-emerald-900">
+                      <span>Aadhaar / UIDAI Details</span>
                     </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-600 mb-1">Aadhaar / UIDAI Name</label>
-                      <input
-                        type="text"
-                        placeholder="Name as on Aadhaar"
-                        value={newCustomer.aadhaarName || ''}
-                        onChange={(e) => setNewCustomer({ ...newCustomer, aadhaarName: e.target.value })}
-                        className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-emerald-600 bg-slate-50"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-600 mb-1">Aadhaar / UIDAI DOB</label>
-                      <input
-                        type="date"
-                        value={newCustomer.aadhaarDob || ''}
-                        onChange={(e) => setNewCustomer({ ...newCustomer, aadhaarDob: e.target.value })}
-                        className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-emerald-600 bg-slate-50"
-                      />
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-600 mb-1">Aadhaar Number</label>
+                        <input
+                          type="text"
+                          placeholder="xxxx-xxxx-9999"
+                          value={newCustomer.aadhaar}
+                          onChange={(e) => setNewCustomer({ ...newCustomer, aadhaar: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl border border-emerald-200 text-xs font-mono font-bold outline-none focus:ring-2 focus:ring-emerald-600 bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-600 mb-1">Name as in Aadhaar</label>
+                        <input
+                          type="text"
+                          placeholder="Full Name"
+                          value={newCustomer.aadhaarName || ''}
+                          onChange={(e) => setNewCustomer({ ...newCustomer, aadhaarName: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl border border-emerald-200 text-xs outline-none focus:ring-2 focus:ring-emerald-600 bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-600 mb-1">Aadhaar DOB</label>
+                        <input
+                          type="date"
+                          value={newCustomer.aadhaarDob || ''}
+                          onChange={(e) => setNewCustomer({ ...newCustomer, aadhaarDob: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl border border-emerald-200 text-xs outline-none focus:ring-2 focus:ring-emerald-600 bg-white"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Bank Account Details Section */}
-                <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2.5">
-                  <div className="flex items-center space-x-1.5 text-[11px] font-black uppercase text-blue-800">
-                    <Building2 className="h-3.5 w-3.5 text-blue-600" />
+                <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100 space-y-3">
+                  <div className="flex items-center space-x-1.5 text-[11px] font-black uppercase text-blue-900">
+                    <Building2 className="h-4 w-4 text-blue-600" />
                     <span>Bank Account &amp; Settlement Details</span>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-600 mb-1">Bank Account Holder Name</label>
+                      <label className="block text-[10px] font-bold text-slate-600 mb-1">Account Holder Name</label>
                       <input
                         type="text"
-                        placeholder="Account Holder Name as in Bank"
+                        placeholder="Holder Name as in Bank"
                         value={newCustomer.bankHolderName || ''}
                         onChange={(e) => setNewCustomer({ ...newCustomer, bankHolderName: e.target.value })}
-                        className="w-full px-3 py-2 rounded-xl border text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50"
+                        className="w-full px-3 py-2.5 rounded-xl border border-blue-200 text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-600 bg-white"
                       />
                     </div>
                     <div>
@@ -1857,7 +1989,7 @@ export const Customers = () => {
                         placeholder="e.g. HDFC Bank / SBI / ICICI"
                         value={newCustomer.bankName || ''}
                         onChange={(e) => setNewCustomer({ ...newCustomer, bankName: e.target.value })}
-                        className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50"
+                        className="w-full px-3 py-2.5 rounded-xl border border-blue-200 text-xs outline-none focus:ring-2 focus:ring-blue-600 bg-white"
                       />
                     </div>
                     <div>
@@ -1865,7 +1997,7 @@ export const Customers = () => {
                       <select
                         value={newCustomer.bankAccountType || 'Savings'}
                         onChange={(e) => setNewCustomer({ ...newCustomer, bankAccountType: e.target.value })}
-                        className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50"
+                        className="w-full px-3 py-2.5 rounded-xl border border-blue-200 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white"
                       >
                         <option value="Savings">Savings Account</option>
                         <option value="Current">Current Account</option>
@@ -1880,135 +2012,40 @@ export const Customers = () => {
                         placeholder="e.g. 5010023456789"
                         value={newCustomer.bankAccountNumber || ''}
                         onChange={(e) => setNewCustomer({ ...newCustomer, bankAccountNumber: e.target.value })}
-                        className="w-full px-3 py-2 rounded-xl border text-xs font-mono outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50"
+                        className="w-full px-3 py-2.5 rounded-xl border border-blue-200 text-xs font-mono outline-none focus:ring-2 focus:ring-blue-600 bg-white"
                       />
                     </div>
-                    <div className="sm:col-span-2">
+                    <div>
                       <label className="block text-[10px] font-bold text-slate-600 mb-1">IFSC Code</label>
                       <input
                         type="text"
                         placeholder="e.g. HDFC0001234"
                         value={newCustomer.ifscCode || ''}
                         onChange={(e) => setNewCustomer({ ...newCustomer, ifscCode: e.target.value.toUpperCase() })}
-                        className="w-full px-3 py-2 rounded-xl border text-xs font-mono uppercase outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50"
+                        className="w-full px-3 py-2.5 rounded-xl border border-blue-200 text-xs font-mono uppercase outline-none focus:ring-2 focus:ring-blue-600 bg-white"
                       />
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">City / Region</label>
-                  <input
-                    type="text"
-                    placeholder="Mumbai"
-                    value={newCustomer.city}
-                    onChange={(e) => setNewCustomer({ ...newCustomer, city: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600"
-                  />
+              {/* SECTION 4: INITIAL BUSINESS, INSURER & ADVISOR ASSIGNMENT */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <h4 className="text-xs font-black uppercase text-indigo-900 tracking-wider flex items-center space-x-2">
+                    <ShieldCheck className="h-4 w-4 text-indigo-600" />
+                    <span>4. Initial Business Interest &amp; Advisor Assignment</span>
+                  </h4>
+                  <span className="text-[11px] font-bold text-slate-400">Step 4 of 4</span>
                 </div>
-                <div className="relative">
-                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Assigned Staff</label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Select or Type Assigned Staff"
-                      value={newCustomer.assignedAdvisorName || ''}
-                      onFocus={() => setShowAddStaffSuggest(true)}
-                      onClick={() => setShowAddStaffSuggest(true)}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setNewCustomer({ ...newCustomer, assignedAdvisorName: val });
-                        setShowAddStaffSuggest(true);
-                      }}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-white outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer pr-8"
-                    />
-                    <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                  </div>
 
-                  {/* Floating Staff Suggestions Dropdown */}
-                  {showAddStaffSuggest && addStaffSearchResults.total > 0 && (
-                    <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white rounded-2xl border border-slate-200 shadow-2xl max-h-52 overflow-y-auto divide-y divide-slate-100 animate-fadeIn">
-                      <div className="p-2 bg-slate-50 text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between sticky top-0 z-10 border-b">
-                        <span>Registered Staff ({addStaffSearchResults.total})</span>
-                        <button
-                          type="button"
-                          onClick={() => setShowAddStaffSuggest(false)}
-                          className="text-slate-400 hover:text-slate-700 cursor-pointer text-xs font-bold"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                      {addStaffSearchResults.startsWith.map((stf, idx) => (
-                        <div
-                          key={`add-stf-start-${idx}`}
-                          onClick={() => {
-                            setNewCustomer({
-                              ...newCustomer,
-                              assignedAdvisorName: stf.name,
-                              assignedStaffId: stf.uid || stf.id || `UID-STF-${idx}`
-                            });
-                            setShowAddStaffSuggest(false);
-                          }}
-                          className="p-2.5 hover:bg-blue-50 cursor-pointer transition flex items-center justify-between text-xs"
-                        >
-                          <div className="flex items-center space-x-2">
-                            <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 font-black text-[10px] flex items-center justify-center">
-                              {stf.name?.charAt(0)}
-                            </div>
-                            <div>
-                              <p className="font-extrabold text-slate-900">{stf.name}</p>
-                              <p className="text-[10px] text-slate-400 font-semibold">{stf.title || stf.role || 'Staff Advisor'}</p>
-                            </div>
-                          </div>
-                          <span className="badge bg-blue-50 text-blue-700 text-[9px] font-black">{stf.role || 'Advisor'}</span>
-                        </div>
-                      ))}
-                      {addStaffSearchResults.contains.map((stf, idx) => (
-                        <div
-                          key={`add-stf-cont-${idx}`}
-                          onClick={() => {
-                            setNewCustomer({
-                              ...newCustomer,
-                              assignedAdvisorName: stf.name,
-                              assignedStaffId: stf.uid || stf.id || `UID-STF-${idx}`
-                            });
-                            setShowAddStaffSuggest(false);
-                          }}
-                          className="p-2.5 hover:bg-slate-50 cursor-pointer transition flex items-center justify-between text-xs"
-                        >
-                          <div className="flex items-center space-x-2">
-                            <div className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 font-black text-[10px] flex items-center justify-center">
-                              {stf.name?.charAt(0)}
-                            </div>
-                            <div>
-                              <p className="font-extrabold text-slate-900">{stf.name}</p>
-                              <p className="text-[10px] text-slate-400 font-semibold">{stf.title || stf.role || 'Staff Advisor'}</p>
-                            </div>
-                          </div>
-                          <span className="badge bg-slate-100 text-slate-700 text-[9px] font-black">{stf.role || 'Advisor'}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* SECTION: ACTIVE POLICY & INSURER DETAILS */}
-              <div className="bg-blue-50/70 p-4 rounded-2xl border border-blue-200 space-y-3">
-                <h4 className="text-xs font-black uppercase text-blue-900 tracking-wider flex items-center space-x-1.5">
-                  <ShieldCheck className="h-4 w-4 text-blue-600" />
-                  <span>Active Policy &amp; Insurer Details</span>
-                </h4>
-
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-[11px] font-black uppercase text-blue-900 mb-1">Policy Type / Category</label>
+                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Policy Type / Category</label>
                     <select
                       value={newCustomer.insuranceType}
                       onChange={(e) => setNewCustomer({ ...newCustomer, insuranceType: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl border border-blue-200 text-xs font-bold text-slate-800 bg-white outline-none focus:ring-2 focus:ring-blue-600"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-slate-50/50 outline-none focus:ring-2 focus:ring-blue-600"
                     >
                       <option value="">-- Select Policy Category --</option>
                       <option value="LIFE">Life Insurance (LIFE)</option>
@@ -2020,11 +2057,11 @@ export const Customers = () => {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-black uppercase text-blue-900 mb-1">Insurance Company</label>
+                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Insurance Company</label>
                     <select
                       value={newCustomer.insuranceCompany}
                       onChange={(e) => setNewCustomer({ ...newCustomer, insuranceCompany: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl border border-blue-200 text-xs font-extrabold text-slate-900 bg-white outline-none focus:ring-2 focus:ring-blue-600"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-extrabold text-slate-900 bg-slate-50/50 outline-none focus:ring-2 focus:ring-blue-600"
                     >
                       <option value="">-- Select Insurance Company --</option>
                       <option value="Tata AIA Life">Tata AIA Life 🛡️</option>
@@ -2038,26 +2075,112 @@ export const Customers = () => {
                       <option value="Bajaj Allianz">Bajaj Allianz 🚗</option>
                     </select>
                   </div>
+
+                  <div className="relative">
+                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Assigned Staff Advisor</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Select or Type Assigned Staff"
+                        value={newCustomer.assignedAdvisorName || ''}
+                        onFocus={() => setShowAddStaffSuggest(true)}
+                        onClick={() => setShowAddStaffSuggest(true)}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setNewCustomer({ ...newCustomer, assignedAdvisorName: val });
+                          setShowAddStaffSuggest(true);
+                        }}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-slate-50/50 outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer pr-8"
+                      />
+                      <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                    </div>
+
+                    {/* Floating Staff Suggestions Dropdown */}
+                    {showAddStaffSuggest && addStaffSearchResults.total > 0 && (
+                      <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white rounded-2xl border border-slate-200 shadow-2xl max-h-52 overflow-y-auto divide-y divide-slate-100 animate-fadeIn">
+                        <div className="p-2 bg-slate-50 text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between sticky top-0 z-10 border-b">
+                          <span>Registered Staff ({addStaffSearchResults.total})</span>
+                          <button
+                            type="button"
+                            onClick={() => setShowAddStaffSuggest(false)}
+                            className="text-slate-400 hover:text-slate-700 cursor-pointer text-xs font-bold"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        {addStaffSearchResults.startsWith.map((stf, idx) => (
+                          <div
+                            key={`add-stf-start-${idx}`}
+                            onClick={() => {
+                              setNewCustomer({
+                                ...newCustomer,
+                                assignedAdvisorName: stf.name,
+                                assignedStaffId: stf.uid || stf.id || `UID-STF-${idx}`
+                              });
+                              setShowAddStaffSuggest(false);
+                            }}
+                            className="p-2.5 hover:bg-blue-50 cursor-pointer transition flex items-center justify-between text-xs"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 font-black text-[10px] flex items-center justify-center">
+                                {stf.name?.charAt(0)}
+                              </div>
+                              <div>
+                                <p className="font-extrabold text-slate-900">{stf.name}</p>
+                                <p className="text-[10px] text-slate-400 font-semibold">{stf.title || stf.role || 'Staff Advisor'}</p>
+                              </div>
+                            </div>
+                            <span className="badge bg-blue-50 text-blue-700 text-[9px] font-black">{stf.role || 'Advisor'}</span>
+                          </div>
+                        ))}
+                        {addStaffSearchResults.contains.map((stf, idx) => (
+                          <div
+                            key={`add-stf-cont-${idx}`}
+                            onClick={() => {
+                              setNewCustomer({
+                                ...newCustomer,
+                                assignedAdvisorName: stf.name,
+                                assignedStaffId: stf.uid || stf.id || `UID-STF-${idx}`
+                              });
+                              setShowAddStaffSuggest(false);
+                            }}
+                            className="p-2.5 hover:bg-slate-50 cursor-pointer transition flex items-center justify-between text-xs"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <div className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 font-black text-[10px] flex items-center justify-center">
+                                {stf.name?.charAt(0)}
+                              </div>
+                              <div>
+                                <p className="font-extrabold text-slate-900">{stf.name}</p>
+                                <p className="text-[10px] text-slate-400 font-semibold">{stf.title || stf.role || 'Staff Advisor'}</p>
+                              </div>
+                            </div>
+                            <span className="badge bg-slate-100 text-slate-700 text-[9px] font-black">{stf.role || 'Advisor'}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Sales Pitch / Proposed Product</label>
+                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Sales Pitch / Proposed Plan</label>
                     <input
                       type="text"
-                      placeholder="e.g. Retirement Savings Plan"
+                      placeholder="e.g. Retirement Pension Plan + Super Top-up"
                       value={newCustomer.salesPitch}
                       onChange={(e) => setNewCustomer({ ...newCustomer, salesPitch: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl border text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-600 bg-white"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50/50"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Customer Status</label>
+                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Customer Lead Status</label>
                     <select
                       value={newCustomer.clientStatus}
                       onChange={(e) => setNewCustomer({ ...newCustomer, clientStatus: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl border text-xs font-bold text-slate-800 bg-white outline-none focus:ring-2 focus:ring-blue-600"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-slate-50/50 outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer"
                     >
                       <option value="">-- Select Customer Status --</option>
                       <option value="Quotation Shared">Quotation Shared 📄</option>
@@ -2070,44 +2193,80 @@ export const Customers = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Advisor Notes &amp; Observations</label>
+                  <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Advisor Notes &amp; Strategy Observations</label>
                   <textarea
                     rows="2"
-                    placeholder="Enter notes about client requirements or pitch details..."
+                    placeholder="Enter strategic observations, customer requirements, preferred call timings, or policy customizations..."
                     value={newCustomer.advisorNotes}
                     onChange={(e) => setNewCustomer({ ...newCustomer, advisorNotes: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600 bg-white"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50/50"
                   />
                 </div>
               </div>
 
-              <button
-                type="submit"
-                className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer"
-              >
-                Save Complete Customer 360 Record
-              </button>
             </form>
+
+            {/* Sticky Action Footer */}
+            <div className="bg-white border-t border-slate-200 px-6 py-4 flex items-center justify-between shrink-0 shadow-sm">
+              <div className="hidden sm:flex items-center space-x-2 text-xs text-slate-500 font-medium">
+                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                <span>All customer data is encrypted &amp; synced live with Firestore.</span>
+              </div>
+              <div className="flex items-center space-x-3 w-full sm:w-auto justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100 text-xs font-extrabold transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  form="add-customer-360-form"
+                  className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer flex items-center space-x-2"
+                >
+                  <UserCheck className="h-4 w-4" />
+                  <span>Save Complete Customer 360 Record</span>
+                </button>
+              </div>
+            </div>
+
           </div>
         </div>
       )}
 
-      {/* ================= EDIT CUSTOMER 360 MODAL ================= */}
+      {/* ================= EDIT CUSTOMER 360 MODAL (FULL SCREEN) ================= */}
       {showEditModal && editCustomerData && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-2xl border border-slate-100 my-8">
-            <div className="flex items-center justify-between border-b pb-3">
-              <div>
-                <h3 className="text-base font-black text-slate-900 flex items-center space-x-2">
-                  <Edit3 className="h-4 w-4 text-blue-600" />
-                  <span>Edit Customer 360 Profile ({editCustomerData.customerCode || editCustomerData.id})</span>
-                </h3>
-                <p className="text-[11px] text-slate-500 font-semibold">Update address, PAN, Aadhaar, personal info, active staff, and policy details.</p>
+        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex flex-col items-center justify-center p-0 sm:p-3 md:p-6 overflow-hidden animate-fadeIn">
+          <div className="bg-slate-50 w-full h-full sm:max-w-6xl sm:h-[95vh] sm:rounded-3xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden">
+
+            {/* Fullscreen Sticky Modal Header */}
+            <div className="bg-gradient-to-r from-slate-900 via-[#1E6091] to-slate-900 text-white px-6 py-4 flex items-center justify-between shadow-sm shrink-0 border-b border-white/10">
+              <div className="flex items-center space-x-3.5">
+                <div className="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-amber-300 border border-white/20 shadow-inner">
+                  <Edit3 className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black tracking-tight flex items-center space-x-2">
+                    <span>Edit Customer 360 Profile ({editCustomerData.customerCode || editCustomerData.id})</span>
+                    <span className="badge bg-amber-400 text-slate-900 text-[10px] font-black uppercase px-2 py-0.5">360° Studio</span>
+                  </h3>
+                  <p className="text-xs text-blue-100 font-medium">Update address, PAN, Aadhaar, personal info, active staff, and policy details.</p>
+                </div>
               </div>
-              <button onClick={() => setShowEditModal(false)} className="text-slate-400 hover:text-slate-600"><X className="h-5 w-5" /></button>
+              <div className="flex items-center space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer border border-white/10"
+                >
+                  <X className="h-4 w-4" />
+                  <span className="hidden sm:inline">Close</span>
+                </button>
+              </div>
             </div>
 
-            <form onSubmit={handleSaveEditCustomer} className="space-y-4 max-h-[72vh] overflow-y-auto pr-1">
+            <form id="edit-customer-360-form" onSubmit={handleSaveEditCustomer} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
 
               {/* SECTION 1: PERSONAL & DEMOGRAPHICS */}
               <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
@@ -2708,14 +2867,33 @@ export const Customers = () => {
                 </div>
               </div>
 
-              <button
-                type="submit"
-                className="w-full py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs shadow-lg transition cursor-pointer flex items-center justify-center space-x-2"
-              >
-                <CheckCircle2 className="h-4 w-4" />
-                <span>Save All Updated Customer 360 Details</span>
-              </button>
             </form>
+
+            {/* Sticky Action Footer */}
+            <div className="bg-white border-t border-slate-200 px-6 py-4 flex items-center justify-between shrink-0 shadow-sm">
+              <div className="hidden sm:flex items-center space-x-2 text-xs text-slate-500 font-medium">
+                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                <span>Updates sync live across all modules in Firestore.</span>
+              </div>
+              <div className="flex items-center space-x-3 w-full sm:w-auto justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100 text-xs font-extrabold transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  form="edit-customer-360-form"
+                  className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer flex items-center space-x-2"
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                  <span>Save All Updated Customer 360 Details</span>
+                </button>
+              </div>
+            </div>
+
           </div>
         </div>
       )}
