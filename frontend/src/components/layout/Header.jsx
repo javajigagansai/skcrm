@@ -11,11 +11,42 @@ export const Header = () => {
 
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [isShaking, setIsShaking] = useState(false);
 
   const notifRef = useRef(null);
   const userMenuRef = useRef(null);
+  const prevCountRef = useRef(unreadNotificationCount);
+  const shakeTimerRef = useRef(null);
 
   const isManagerOrAdmin = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER';
+
+  // Trigger shake animation ONLY when a new notification arrives
+  useEffect(() => {
+    if (unreadNotificationCount > prevCountRef.current) {
+      setIsShaking(true);
+      if (shakeTimerRef.current) clearTimeout(shakeTimerRef.current);
+      shakeTimerRef.current = setTimeout(() => {
+        setIsShaking(false);
+      }, 5000); // Shakes for 5s to notify user
+    }
+    prevCountRef.current = unreadNotificationCount;
+  }, [unreadNotificationCount]);
+
+  useEffect(() => {
+    const handleNewNotif = () => {
+      setIsShaking(true);
+      if (shakeTimerRef.current) clearTimeout(shakeTimerRef.current);
+      shakeTimerRef.current = setTimeout(() => {
+        setIsShaking(false);
+      }, 5000);
+    };
+
+    window.addEventListener('storage_notifications_updated', handleNewNotif);
+    return () => {
+      window.removeEventListener('storage_notifications_updated', handleNewNotif);
+      if (shakeTimerRef.current) clearTimeout(shakeTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -53,14 +84,17 @@ export const Header = () => {
         {/* Interactive Real-Time Notification Bell */}
         <div className="relative" ref={notifRef}>
           <button 
-            onClick={() => setShowNotifications(!showNotifications)}
+            onClick={() => {
+              setShowNotifications(!showNotifications);
+              setIsShaking(false);
+            }}
             className="p-2.5 rounded-2xl text-slate-700 hover:bg-slate-100 hover:text-blue-600 relative transition cursor-pointer flex items-center justify-center" 
             title="Real-Time Notifications"
           >
-            <Bell className={`h-5 w-5 ${unreadNotificationCount > 0 ? 'animate-bell-shake text-blue-600' : 'animate-bell-shake text-slate-600'}`} />
+            <Bell className={`h-5 w-5 transition-transform ${isShaking ? 'animate-bell-shake text-blue-600' : 'text-slate-600'}`} />
             {unreadNotificationCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 min-w-[19px] h-[19px] px-1 rounded-full bg-gradient-to-r from-rose-500 to-pink-600 text-white font-black text-[10px] flex items-center justify-center ring-2 ring-white shadow-md animate-badge-move">
-                <span className="animate-number-jiggle">{unreadNotificationCount}</span>
+              <span className={`absolute -top-0.5 -right-0.5 min-w-[19px] h-[19px] px-1 rounded-full bg-gradient-to-r from-rose-500 to-pink-600 text-white font-black text-[10px] flex items-center justify-center ring-2 ring-white shadow-md ${isShaking ? 'animate-badge-move' : ''}`}>
+                <span className={isShaking ? 'animate-number-jiggle' : ''}>{unreadNotificationCount}</span>
               </span>
             )}
           </button>
