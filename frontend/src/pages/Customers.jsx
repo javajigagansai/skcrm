@@ -1699,222 +1699,179 @@ export const Customers = () => {
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex flex-col items-center justify-center p-0 sm:p-3 md:p-6 overflow-hidden animate-fadeIn">
           <div className="bg-slate-50 w-full h-full sm:max-w-6xl sm:h-[95vh] sm:rounded-3xl shadow-2xl border border-slate-200/80 flex flex-col overflow-hidden">
 
-            {/* Studio Header Bar */}
-            <div className="bg-gradient-to-r from-slate-900 via-[#1E6091] to-slate-900 text-white px-6 py-4 flex items-center justify-between shadow-md shrink-0 border-b border-white/10">
-              <div className="flex items-center space-x-3.5">
-                <div className="w-11 h-11 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-amber-300 border border-white/20 shadow-inner">
-                  <UserCheck className="h-6 w-6" />
+            {/* Sleek Modal Header */}
+            <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between shadow-sm shrink-0 border-b border-slate-800">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-600/20 text-blue-400 border border-blue-500/30 flex items-center justify-center">
+                  <UserCheck className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black tracking-tight text-white">Add New Customer 360 Profile</h3>
+                  <h3 className="text-base font-bold tracking-tight text-white">Add New Customer Profile</h3>
+                  <p className="text-xs text-slate-400">Complete customer onboarding with KYC, NRI dossier &amp; portfolio</p>
                 </div>
               </div>
-
-              {/* Header Live Status Badges & Close Button */}
-              <div className="flex items-center space-x-3">
-                <div className="hidden md:flex items-center space-x-2">
-                  <span className={`badge text-[10px] font-black uppercase px-2.5 py-1 ${newCustomer.leadType === 'Hot Lead' ? 'bg-rose-500 text-white' : newCustomer.leadType === 'Cold Lead' ? 'bg-sky-500 text-white' : 'bg-amber-500 text-white'}`}>
-                    {newCustomer.leadType === 'Hot Lead' ? '🔥 Hot Lead' : newCustomer.leadType === 'Cold Lead' ? '❄️ Cold Lead' : '⚡ Warm Lead'}
-                  </span>
-                  <span className={`badge text-[10px] font-black uppercase px-2.5 py-1 ${newCustomer.isNri ? 'bg-indigo-600 text-white' : 'bg-blue-600 text-white'}`}>
-                    {newCustomer.isNri ? '✈️ NRI' : '🇮🇳 Resident'}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer border border-white/10 shadow-xs"
-                >
-                  <X className="h-4 w-4" />
-                  <span className="hidden sm:inline">Close</span>
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddModal(false)}
+                className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition flex items-center justify-center cursor-pointer border border-slate-700"
+              >
+                <X className="h-5 w-5" />
+              </button>
             </div>
 
-            {/* Studio Sticky Section Tabs Bar */}
-            <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-2.5 flex items-center justify-between gap-2 overflow-x-auto shrink-0 shadow-2xs">
-              <div className="flex items-center space-x-2 overflow-x-auto py-0.5">
+            {/* Clean Segmented Navigation Tabs */}
+            <div className="bg-white border-b border-slate-200 px-6 py-2.5 flex items-center space-x-2 overflow-x-auto shrink-0">
+              <button
+                type="button"
+                onClick={() => setAddModalTab('ALL')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer whitespace-nowrap ${addModalTab === 'ALL' ? 'bg-slate-900 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+              >
+                <span>📋 All Sections</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setAddModalTab('IDENTITY')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer whitespace-nowrap ${addModalTab === 'IDENTITY' ? 'bg-blue-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+              >
+                <span>👤 Identity &amp; Contact</span>
+              </button>
+              {newCustomer.isNri && (
                 <button
                   type="button"
-                  onClick={() => setAddModalTab('ALL')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center space-x-1.5 cursor-pointer whitespace-nowrap ${addModalTab === 'ALL' ? 'bg-slate-900 text-white shadow-sm ring-2 ring-slate-400' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                  onClick={() => setAddModalTab('NRI')}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer whitespace-nowrap ${addModalTab === 'NRI' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200'}`}
                 >
-                  <span>📋 All Sections</span>
+                  <span>✈️ NRI Dossier</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setAddModalTab('IDENTITY')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center space-x-1.5 cursor-pointer whitespace-nowrap ${addModalTab === 'IDENTITY' ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-300' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
-                >
-                  <span>1. 👤 Identity &amp; Contact</span>
-                  {newCustomer.name && <span className="w-1.5 h-1.5 rounded-full bg-emerald-300"></span>}
-                </button>
-                {newCustomer.isNri && (
-                  <button
-                    type="button"
-                    onClick={() => setAddModalTab('NRI')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center space-x-1.5 cursor-pointer whitespace-nowrap animate-fadeIn ${addModalTab === 'NRI' ? 'bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-300' : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200'}`}
-                  >
-                    <span>2. ✈️ NRI Dossier</span>
-                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setAddModalTab('FAMILY')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center space-x-1.5 cursor-pointer whitespace-nowrap ${addModalTab === 'FAMILY' ? 'bg-pink-600 text-white shadow-sm ring-2 ring-pink-300' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
-                >
-                  <span>{newCustomer.isNri ? '3.' : '2.'} 🎂 Personal &amp; Family</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAddModalTab('KYC')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center space-x-1.5 cursor-pointer whitespace-nowrap ${addModalTab === 'KYC' ? 'bg-purple-600 text-white shadow-sm ring-2 ring-purple-300' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
-                >
-                  <span>{newCustomer.isNri ? '4.' : '3.'} 🏛️ KYC &amp; Banking</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAddModalTab('BUSINESS')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center space-x-1.5 cursor-pointer whitespace-nowrap ${addModalTab === 'BUSINESS' ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-300' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
-                >
-                  <span>{newCustomer.isNri ? '5.' : '4.'} 🛡️ Business &amp; Insurers (30)</span>
-                </button>
-              </div>
+              )}
+              <button
+                type="button"
+                onClick={() => setAddModalTab('FAMILY')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer whitespace-nowrap ${addModalTab === 'FAMILY' ? 'bg-pink-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+              >
+                <span>🎂 Personal &amp; Family</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setAddModalTab('KYC')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer whitespace-nowrap ${addModalTab === 'KYC' ? 'bg-purple-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+              >
+                <span>🏛️ KYC &amp; Banking</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setAddModalTab('BUSINESS')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer whitespace-nowrap ${addModalTab === 'BUSINESS' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+              >
+                <span>🛡️ Business &amp; Insurers</span>
+              </button>
             </div>
 
-            {/* Scrollable Form Body with Organized Cards */}
+            {/* Scrollable Form Body */}
             <form id="add-customer-360-form" onSubmit={handleAddCustomer} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
 
               {/* SECTION 1: CORE IDENTITY, LEAD STAGE & CONTACT DETAILS */}
               {(addModalTab === 'ALL' || addModalTab === 'IDENTITY') && (
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-5 animate-fadeIn">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                    <h4 className="text-xs font-black uppercase text-blue-900 tracking-wider flex items-center space-x-2">
-                      <UserCheck className="h-4.5 w-4.5 text-blue-600" />
-                      <span>1. Basic Profile, Lead Stage &amp; Multi-Channel Contact</span>
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4 animate-fadeIn">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                    <h4 className="text-xs font-bold uppercase text-slate-800 tracking-wider flex items-center space-x-2">
+                      <UserCheck className="h-4 w-4 text-blue-600" />
+                      <span>1. Basic Profile &amp; Contact Details</span>
                     </h4>
-                    <span className="badge bg-blue-50 text-blue-700 text-[10px] font-black">Step 1</span>
+                    <span className="badge bg-blue-50 text-blue-700 text-[10px] font-bold">Step 1</span>
                   </div>
 
-                  {/* LEAD PRIORITY & CUSTOMER CATEGORY */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className={`p-3.5 rounded-2xl border transition-all ${
-                      newCustomer.leadType === 'Hot Lead'
-                        ? 'bg-rose-50/80 border-rose-200'
-                        : newCustomer.leadType === 'Cold Lead'
-                        ? 'bg-sky-50/80 border-sky-200'
-                        : 'bg-amber-50/80 border-amber-200'
-                    }`}>
-                      <label className="block text-[11px] font-black uppercase text-slate-700 mb-1.5 flex items-center justify-between">
-                        <span>Lead Priority / Temperature *</span>
-                        <span className={`badge text-[10px] font-black uppercase px-2.5 py-0.5 ${
-                          newCustomer.leadType === 'Hot Lead'
-                            ? 'bg-rose-500 text-white'
-                            : newCustomer.leadType === 'Cold Lead'
-                            ? 'bg-sky-500 text-white'
-                            : 'bg-amber-500 text-white'
-                        }`}>
-                          {newCustomer.leadType === 'Hot Lead' ? '🔥 Hot Lead' : newCustomer.leadType === 'Cold Lead' ? '❄️ Cold Lead' : '⚡ Warm Lead'}
-                        </span>
+                  {/* 3-Column Top Selector Row */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                        Lead Priority *
                       </label>
                       <select
                         value={newCustomer.leadType || 'Warm Lead'}
                         onChange={(e) => setNewCustomer({ ...newCustomer, leadType: e.target.value })}
-                        className={`w-full px-3.5 py-2.5 rounded-xl border text-xs font-black outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 cursor-pointer shadow-xs transition ${
+                        className={`w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer transition ${
                           newCustomer.leadType === 'Hot Lead'
-                            ? 'bg-white border-rose-300 text-rose-800'
+                            ? 'bg-rose-50 border-rose-200 text-rose-700'
                             : newCustomer.leadType === 'Cold Lead'
-                            ? 'bg-white border-sky-300 text-sky-800'
-                            : 'bg-white border-amber-300 text-amber-900'
+                            ? 'bg-sky-50 border-sky-200 text-sky-700'
+                            : 'bg-amber-50 border-amber-200 text-amber-800'
                         }`}
                       >
-                        <option value="Hot Lead">🔥 Hot Lead (High Urgency / Closing Soon)</option>
-                        <option value="Warm Lead">⚡ Warm Lead (Quotation Sent / Discussing)</option>
-                        <option value="Cold Lead">❄️ Cold Lead (Long-term / Periodic Check-in)</option>
+                        <option value="Hot Lead">🔥 Hot Lead</option>
+                        <option value="Warm Lead">⚡ Warm Lead</option>
+                        <option value="Cold Lead">❄️ Cold Lead</option>
                       </select>
                     </div>
 
-                    <div className="p-3.5 rounded-2xl border border-slate-200 bg-slate-50/80">
-                      <label className="block text-[11px] font-black uppercase text-slate-700 mb-1.5 flex items-center justify-between">
-                        <span>Customer Category</span>
-                        <span className="badge bg-slate-200 text-slate-700 text-[10px] font-black">Lifecycle</span>
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                        Customer Category
                       </label>
                       <select
                         value={newCustomer.clientCategory || 'New Lead'}
                         onChange={(e) => setNewCustomer({ ...newCustomer, clientCategory: e.target.value })}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-black text-slate-800 bg-white outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 cursor-pointer shadow-xs"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-white outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                       >
                         <option value="New Lead">New Lead 🔵</option>
                         <option value="Existing Lead">Existing Lead 🟣</option>
                         <option value="VIP Client">VIP Client ⭐</option>
                       </select>
                     </div>
-                  </div>
 
-                  {/* RESIDENTIAL CATEGORY SELECTOR */}
-                  <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80 space-y-2">
-                    <label className="block text-[11px] font-black uppercase text-slate-700 flex items-center space-x-1.5">
-                      <span>Residential Category (Resident Indian vs NRI) *</span>
-                    </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setNewCustomer({ ...newCustomer, isNri: false })}
-                        className={`p-3 rounded-2xl text-xs font-black transition-all border flex items-center justify-center space-x-2.5 cursor-pointer ${!newCustomer.isNri ? 'bg-blue-600 text-white border-blue-700 shadow-md ring-4 ring-blue-200' : 'bg-white text-slate-700 border-slate-200 hover:bg-blue-50 hover:text-blue-700'}`}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                        Residential Status *
+                      </label>
+                      <select
+                        value={newCustomer.isNri ? 'NRI' : 'RESIDENT'}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, isNri: e.target.value === 'NRI' })}
+                        className={`w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer ${
+                          newCustomer.isNri
+                            ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
+                            : 'bg-blue-50 border-blue-200 text-blue-800'
+                        }`}
                       >
-                        <span className="text-lg">🇮🇳</span>
-                        <div className="text-left">
-                          <p className="font-black text-xs">Resident Indian Client</p>
-                          <p className={`text-[10px] ${!newCustomer.isNri ? 'text-blue-100' : 'text-slate-400'}`}>Standard PAN, Aadhaar &amp; Resident Bank Account</p>
-                        </div>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setNewCustomer({ ...newCustomer, isNri: true })}
-                        className={`p-3 rounded-2xl text-xs font-black transition-all border flex items-center justify-center space-x-2.5 cursor-pointer ${newCustomer.isNri ? 'bg-indigo-600 text-white border-indigo-700 shadow-md ring-4 ring-indigo-200' : 'bg-white text-slate-700 border-slate-200 hover:bg-indigo-50 hover:text-indigo-700'}`}
-                      >
-                        <span className="text-lg">✈️</span>
-                        <div className="text-left">
-                          <p className="font-black text-xs">NRI (Non-Resident Indian)</p>
-                          <p className={`text-[10px] ${newCustomer.isNri ? 'text-indigo-100' : 'text-slate-400'}`}>Requires Passport KYC, Overseas Address &amp; NRI Bank</p>
-                        </div>
-                      </button>
+                        <option value="RESIDENT">🇮🇳 Resident Indian</option>
+                        <option value="NRI">✈️ NRI (Non-Resident Indian)</option>
+                      </select>
                     </div>
                   </div>
 
+                  {/* Customer Name */}
                   <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Full Customer Name *</label>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Full Customer Name *</label>
                     <input
                       type="text"
                       required
                       placeholder="e.g. Ramesh Kumar"
                       value={newCustomer.name}
                       onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 bg-white"
+                      className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                  {/* Phones */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                     <div>
-                      <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Primary Mobile Number *</label>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">Primary Mobile Number *</label>
                       <input
                         type="text"
                         required
                         placeholder="+91 98765 43210"
                         value={newCustomer.phone}
                         onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono font-bold text-slate-900 outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 bg-white"
+                        className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-mono font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Alternate Mobile Number</label>
-                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">Alternate Mobile Number</label>
+                      <div className="flex items-center gap-2">
                         <select
                           value={newCustomer.altCountryCode || '+91'}
                           onChange={(e) => setNewCustomer({ ...newCustomer, altCountryCode: e.target.value })}
-                          className="w-full sm:w-[220px] px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-white outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 shrink-0 cursor-pointer"
-                          title="Select Country & Dial Code"
+                          className="w-[140px] px-2.5 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-white outline-none focus:ring-2 focus:ring-blue-500 shrink-0 cursor-pointer"
                         >
                           {COUNTRY_DIAL_CODES.map(c => (
                             <option key={`${c.name}-${c.code}`} value={c.code}>{c.display}</option>
@@ -1925,7 +1882,7 @@ export const Customers = () => {
                           placeholder="98765 00000 (Optional)"
                           value={newCustomer.alternatePhone || ''}
                           onChange={(e) => setNewCustomer({ ...newCustomer, alternatePhone: e.target.value, altPhone: e.target.value })}
-                          className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono font-bold text-slate-900 outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 bg-white"
+                          className="flex-1 px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-mono font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                         />
                       </div>
                     </div>
@@ -2695,116 +2652,94 @@ export const Customers = () => {
         <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex flex-col items-center justify-center p-0 sm:p-3 md:p-6 overflow-hidden animate-fadeIn">
           <div className="bg-slate-50 w-full h-full sm:max-w-6xl sm:h-[95vh] sm:rounded-3xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden">
 
-            {/* Fullscreen Sticky Modal Header */}
-            <div className="bg-gradient-to-r from-slate-900 via-[#1E6091] to-slate-900 text-white px-6 py-4 flex items-center justify-between shadow-sm shrink-0 border-b border-white/10">
-              <div className="flex items-center space-x-3.5">
-                <div className="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-amber-300 border border-white/20 shadow-inner">
+            {/* Sleek Edit Modal Header */}
+            <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between shadow-sm shrink-0 border-b border-slate-800">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center">
                   <Edit3 className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black tracking-tight text-white">
-                    Edit Customer 360 Profile ({editCustomerData.customerCode || editCustomerData.id})
+                  <h3 className="text-base font-bold tracking-tight text-white">
+                    Edit Customer Profile ({editCustomerData.customerCode || editCustomerData.id})
                   </h3>
+                  <p className="text-xs text-slate-400">Update profile, KYC, NRI information, and insurance portfolio</p>
                 </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <button
-                  type="button"
-                  onClick={() => setShowEditModal(false)}
-                  className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer border border-white/10"
-                >
-                  <X className="h-4 w-4" />
-                  <span className="hidden sm:inline">Close</span>
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setShowEditModal(false)}
+                className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition flex items-center justify-center cursor-pointer border border-slate-700"
+              >
+                <X className="h-5 w-5" />
+              </button>
             </div>
 
             <form id="edit-customer-360-form" onSubmit={handleSaveEditCustomer} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
 
               {/* SECTION 1: PERSONAL & DEMOGRAPHICS */}
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
-                <h4 className="text-xs font-black uppercase text-blue-900 tracking-wider flex items-center space-x-1.5">
-                  <UserCheck className="h-4 w-4 text-blue-600" />
-                  <span>1. Lead Priority, Residential Category &amp; Demographics</span>
-                </h4>
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                  <h4 className="text-xs font-bold uppercase text-slate-800 tracking-wider flex items-center space-x-2">
+                    <UserCheck className="h-4 w-4 text-blue-600" />
+                    <span>1. Basic Profile &amp; Contact Details</span>
+                  </h4>
+                  <span className="badge bg-blue-50 text-blue-700 text-[10px] font-bold">Edit Profile</span>
+                </div>
 
-                {/* LEAD PRIORITY & CUSTOMER CATEGORY */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className={`p-3.5 rounded-2xl border transition-all ${
-                    editCustomerData.leadType === 'Hot Lead'
-                      ? 'bg-rose-50/80 border-rose-200'
-                      : editCustomerData.leadType === 'Cold Lead'
-                      ? 'bg-sky-50/80 border-sky-200'
-                      : 'bg-amber-50/80 border-amber-200'
-                  }`}>
-                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1.5 flex items-center justify-between">
-                      <span>Lead Priority / Temperature *</span>
-                      <span className={`badge text-[10px] font-black uppercase px-2.5 py-0.5 ${
-                        editCustomerData.leadType === 'Hot Lead'
-                          ? 'bg-rose-500 text-white'
-                          : editCustomerData.leadType === 'Cold Lead'
-                          ? 'bg-sky-500 text-white'
-                          : 'bg-amber-500 text-white'
-                      }`}>
-                        {editCustomerData.leadType === 'Hot Lead' ? '🔥 Hot Lead' : editCustomerData.leadType === 'Cold Lead' ? '❄️ Cold Lead' : '⚡ Warm Lead'}
-                      </span>
+                {/* 3-Column Top Selector Row */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Lead Priority *
                     </label>
                     <select
                       value={editCustomerData.leadType || 'Warm Lead'}
                       onChange={(e) => setEditCustomerData({ ...editCustomerData, leadType: e.target.value })}
-                      className={`w-full px-3.5 py-2.5 rounded-xl border text-xs font-black outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 cursor-pointer shadow-xs transition ${
+                      className={`w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer transition ${
                         editCustomerData.leadType === 'Hot Lead'
-                          ? 'bg-white border-rose-300 text-rose-800'
+                          ? 'bg-rose-50 border-rose-200 text-rose-700'
                           : editCustomerData.leadType === 'Cold Lead'
-                          ? 'bg-white border-sky-300 text-sky-800'
-                          : 'bg-white border-amber-300 text-amber-900'
+                          ? 'bg-sky-50 border-sky-200 text-sky-700'
+                          : 'bg-amber-50 border-amber-200 text-amber-800'
                       }`}
                     >
-                      <option value="Hot Lead">🔥 Hot Lead (High Urgency / Closing Soon)</option>
-                      <option value="Warm Lead">⚡ Warm Lead (Quotation Sent / Discussing)</option>
-                      <option value="Cold Lead">❄️ Cold Lead (Long-term / Periodic Check-in)</option>
+                      <option value="Hot Lead">🔥 Hot Lead</option>
+                      <option value="Warm Lead">⚡ Warm Lead</option>
+                      <option value="Cold Lead">❄️ Cold Lead</option>
                     </select>
                   </div>
 
-                  <div className="p-3.5 rounded-2xl border border-slate-200 bg-slate-50/80">
-                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1.5 flex items-center justify-between">
-                      <span>Customer Category</span>
-                      <span className="badge bg-slate-200 text-slate-700 text-[10px] font-black">Lifecycle</span>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Customer Category
                     </label>
                     <select
                       value={editCustomerData.clientCategory || 'New Lead'}
                       onChange={(e) => setEditCustomerData({ ...editCustomerData, clientCategory: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-black text-slate-800 bg-white outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 cursor-pointer shadow-xs"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-white outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                     >
                       <option value="New Lead">New Lead 🔵</option>
                       <option value="Existing Lead">Existing Lead 🟣</option>
                       <option value="VIP Client">VIP Client ⭐</option>
                     </select>
                   </div>
-                </div>
 
-                {/* RESIDENTIAL CATEGORY SELECTOR */}
-                <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2">
-                  <label className="block text-[11px] font-black uppercase text-slate-700 flex items-center space-x-1.5">
-                    <span>Residential Category (Resident Indian vs NRI) *</span>
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setEditCustomerData({ ...editCustomerData, isNri: false })}
-                      className={`p-2.5 rounded-xl text-xs font-black transition-all border flex items-center justify-center space-x-2 cursor-pointer ${!editCustomerData.isNri ? 'bg-blue-600 text-white border-blue-700 shadow-md ring-2 ring-blue-300' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-blue-50 hover:text-blue-700'}`}
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Residential Status *
+                    </label>
+                    <select
+                      value={editCustomerData.isNri ? 'NRI' : 'RESIDENT'}
+                      onChange={(e) => setEditCustomerData({ ...editCustomerData, isNri: e.target.value === 'NRI' })}
+                      className={`w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer ${
+                        editCustomerData.isNri
+                          ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
+                          : 'bg-blue-50 border-blue-200 text-blue-800'
+                      }`}
                     >
-                      <span>🇮🇳</span>
-                      <span>Resident Indian</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditCustomerData({ ...editCustomerData, isNri: true })}
-                      className={`p-2.5 rounded-xl text-xs font-black transition-all border flex items-center justify-center space-x-2 cursor-pointer ${editCustomerData.isNri ? 'bg-indigo-600 text-white border-indigo-700 shadow-md ring-2 ring-indigo-300' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-indigo-50 hover:text-indigo-700'}`}
-                    >
-                      <span>✈️</span>
-                      <span>NRI Customer</span>
-                    </button>
+                      <option value="RESIDENT">🇮🇳 Resident Indian</option>
+                      <option value="NRI">✈️ NRI (Non-Resident Indian)</option>
+                    </select>
                   </div>
                 </div>
 
