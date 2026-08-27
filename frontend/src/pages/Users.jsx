@@ -4,7 +4,7 @@ import { collection, getDocs, doc, setDoc, deleteDoc, onSnapshot } from 'firebas
 import { db } from '../config/firebaseClient';
 import { 
   Plus, Search, Shield, Trash2, UserPlus, X, Key, Eye, EyeOff, Edit, 
-  CheckCircle2, Lock, RefreshCw, Copy, UserCheck, Award, Sparkles, Building2, Phone 
+  CheckCircle2, Lock, RefreshCw, Copy, UserCheck, Award, Sparkles, Building2, Phone, Power
 } from 'lucide-react';
 
 export const Users = () => {
@@ -379,45 +379,54 @@ export const Users = () => {
                     <td className="p-4">
                       <span className={`badge ${u.status === 'ACTIVE' ? 'badge-green' : 'badge-red'}`}>{u.status}</span>
                     </td>
-                    <td className="p-4 text-right space-x-2">
+                    <td className="p-4 text-right">
                       {isAdminOrHigher && (
-                        <>
+                        <div className="flex items-center justify-end space-x-1.5">
+                          {/* Edit Staff */}
                           <button 
                             onClick={() => setEditingStaff({ ...u })}
-                            className="px-3 py-1.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 font-extrabold text-[11px] cursor-pointer inline-flex items-center space-x-1 shadow-xs"
+                            className="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white border border-blue-200/80 font-bold text-[11px] transition cursor-pointer shadow-2xs group"
                             title="Edit Staff Member & Role"
                           >
-                            <Edit className="h-3.5 w-3.5" />
-                            <span>Edit Staff</span>
+                            <Edit className="h-3.5 w-3.5 group-hover:scale-110 transition" />
+                            <span>Edit</span>
                           </button>
 
+                          {/* Reset Password */}
                           <button 
                             onClick={() => { setResettingPasswordStaff(u); setNewPassword(''); }}
-                            className="px-3 py-1.5 rounded-xl bg-amber-50 text-amber-800 hover:bg-amber-100 font-extrabold text-[11px] cursor-pointer inline-flex items-center space-x-1"
-                            title="Reset Password"
+                            className="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-amber-50 text-amber-800 hover:bg-amber-500 hover:text-white border border-amber-200/80 font-bold text-[11px] transition cursor-pointer shadow-2xs group"
+                            title="Reset Staff Password"
                           >
-                            <Key className="h-3.5 w-3.5" />
-                            <span>Reset Password</span>
+                            <Key className="h-3.5 w-3.5 group-hover:rotate-12 transition" />
+                            <span>Password</span>
                           </button>
 
+                          {/* Status Toggle */}
                           <button 
                             onClick={() => handleStatusToggle(u.uid, u.status)}
-                            className={`px-3 py-1.5 rounded-xl font-extrabold text-[11px] cursor-pointer ${u.status === 'ACTIVE' ? 'bg-slate-100 text-slate-700 hover:bg-slate-200' : 'bg-emerald-50 text-emerald-700'}`}
+                            className={`inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl font-bold text-[11px] transition cursor-pointer shadow-2xs border ${
+                              u.status === 'ACTIVE' 
+                                ? 'bg-slate-50 text-slate-700 hover:bg-slate-800 hover:text-white border-slate-200' 
+                                : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white border-emerald-200'
+                            }`}
+                            title={u.status === 'ACTIVE' ? 'Deactivate Account' : 'Activate Account'}
                           >
-                            {u.status === 'ACTIVE' ? 'Disable' : 'Enable'}
+                            <Power className="h-3.5 w-3.5" />
+                            <span>{u.status === 'ACTIVE' ? 'Disable' : 'Enable'}</span>
                           </button>
 
+                          {/* Delete Account */}
                           {u.uid !== activeUser?.uid && (
                             <button 
                               onClick={() => handleRemoveStaff(u.uid, u.name)}
-                              className="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 font-extrabold text-[11px] cursor-pointer inline-flex items-center space-x-1"
+                              className="p-1.5 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white border border-rose-200/80 transition cursor-pointer shadow-2xs group"
                               title="Remove Staff Account"
                             >
-                              <Trash2 className="h-3.5 w-3.5" />
-                              <span>Remove</span>
+                              <Trash2 className="h-3.5 w-3.5 group-hover:scale-110 transition" />
                             </button>
                           )}
-                        </>
+                        </div>
                       )}
                     </td>
                   </tr>
