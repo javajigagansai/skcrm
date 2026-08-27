@@ -1102,6 +1102,39 @@ export const DataProvider = ({ children }) => {
     return newExp;
   };
 
+  const updateExpense = async (id, updatedData) => {
+    if (!id) return;
+    const amountNum = Number(updatedData.amount || 0);
+    const dateStr = updatedData.expenseDate || updatedData.date || new Date().toISOString().split('T')[0];
+    const updated = {
+      ...updatedData,
+      id,
+      amount: amountNum,
+      date: dateStr,
+      expenseDate: dateStr,
+      updatedAt: new Date().toISOString()
+    };
+
+    setExpenses(prev => (prev || []).map(e => (String(e.id) === String(id) ? { ...e, ...updated } : e)));
+
+    try {
+      await setDoc(doc(db, 'expenses', String(id)), updated, { merge: true });
+    } catch (e) {
+      console.warn('Firestore updateExpense error:', e);
+    }
+
+    addAuditLog({
+      userName: user?.name || 'Admin User',
+      userRole: user?.role || 'ADMIN',
+      action: 'UPDATE_EXPENSE',
+      module: 'Expenses',
+      affectedRecord: String(id),
+      details: `Updated company expenditure ${id} to ₹${amountNum.toLocaleString('en-IN')} (${updated.category || 'Operations'})`
+    });
+
+    return updated;
+  };
+
   const deleteExpense = async (id) => {
     if (!id) return;
     setExpenses(prev => (prev || []).filter(e => String(e.id) !== String(id)));
@@ -1330,6 +1363,7 @@ export const DataProvider = ({ children }) => {
       deleteTask,
       addIncome,
       addExpense,
+      updateExpense,
       deleteExpense,
       addAuditLog,
       getCustomerAggregatedDetails,

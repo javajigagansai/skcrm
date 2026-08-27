@@ -201,70 +201,48 @@ export const Dashboard = () => {
     };
   }, []);
 
-  // 1. Staff Payroll Expenses (auto computed from staffList identical to /expenses tracker)
-  const staffPayrollExpenses = useMemo(() => {
-    const staffMembers = Array.isArray(staffList) && staffList.length > 0 
-      ? staffList 
-      : (Array.isArray(liveUsers) && liveUsers.length > 0 ? liveUsers : (Array.isArray(staffListState) ? staffListState : []));
-    const currentDate = new Date().toISOString().split('T')[0];
+  // Live Expenses Calculations (Filtered by Date Filter, Live Single Source of Truth)
+  const companyOperatingExpenses = useMemo(() => {
+    const allList = Array.isArray(expenses) ? expenses : [];
+    
+    const filteredList = allList.filter(e => {
+      const d = e.expenseDate || e.date || e.createdAt;
+      return isDateInSelectedFilter(d, dateFilter, customStartDate, customEndDate);
+    });
 
-    return staffMembers
-      .filter(st => st.status === 'ACTIVE' || !st.status || st.status !== 'DISABLED')
-      .map(st => ({
-        id: `SALARY-AUTO-${st.uid || st.id || st.name}`,
-        category: 'Staff Salary (Payroll)',
-        description: `Monthly Fixed Salary Payout — ${st.name} (${st.title || st.role || 'Staff Advisor'})`,
-        amount: Number(st.fixedSalary !== undefined ? st.fixedSalary : (st.monthlyTarget ? Math.round(st.monthlyTarget * 0.5) : 0)),
-        expenseDate: currentDate,
-        date: currentDate,
-        isAutoSalary: true,
-        staffName: st.name
-      }));
-  }, [staffList, liveUsers, staffListState]);
+    const activeList = filteredList.length > 0 ? filteredList : allList;
 
-  // 2. Total Staff Salary Payroll Outflow
-  const totalStaffPayroll = useMemo(() => {
-    return staffPayrollExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
-  }, [staffPayrollExpenses]);
+    // Staff Payroll vs Operational breakdown from live database records
+    const payrollItems = activeList.filter(e => {
+      const cat = (e.category || e.title || '').toLowerCase();
+      return cat.includes('salary') || cat.includes('payroll');
+    });
 
-  // 3. Operational Expenses (manual expenses excluding payroll)
-  const operationalExpensesList = useMemo(() => {
-    return (expenses || []).filter(e => {
+    const operationalItems = activeList.filter(e => {
       const cat = (e.category || e.title || '').toLowerCase();
       return !cat.includes('salary') && !cat.includes('payroll');
     });
-  }, [expenses]);
 
-  const totalOperationalExpenses = useMemo(() => {
-    return operationalExpensesList.reduce((sum, e) => sum + Number(e.amount || 0), 0);
-  }, [operationalExpensesList]);
+    const payrollTotal = payrollItems.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+    const operationalTotal = operationalItems.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+    const grandTotal = payrollTotal + operationalTotal;
 
-  // 4. Combined All Company Expenses List (Manual Operational + Auto Staff Payroll)
-  const combinedCompanyExpenses = useMemo(() => {
-    return [...staffPayrollExpenses, ...operationalExpensesList];
-  }, [operationalExpensesList, staffPayrollExpenses]);
-
-  // 5. Grand Total Company Expenditure Outflow
-  const grandTotalCompanyExpenditure = totalStaffPayroll + totalOperationalExpenses;
-
-  // 6. Company Expenditure Metrics with Breakdown by Categories
-  const companyOperatingExpenses = useMemo(() => {
-    // Category aggregations for the breakdown cards
-    const rentAmount = operationalExpensesList.filter(e => (e.category || '').toLowerCase().includes('rent')).reduce((s, e) => s + Number(e.amount || 0), 0);
-    const fuelGenAmount = operationalExpensesList.filter(e => (e.category || '').toLowerCase().includes('generator') || (e.category || '').toLowerCase().includes('fuel') || (e.category || '').toLowerCase().includes('gas')).reduce((s, e) => s + Number(e.amount || 0), 0);
-    const electricityAmount = operationalExpensesList.filter(e => (e.category || '').toLowerCase().includes('electric') || (e.category || '').toLowerCase().includes('power') || (e.category || '').toLowerCase().includes('util')).reduce((s, e) => s + Number(e.amount || 0), 0);
-    const telecomAmount = operationalExpensesList.filter(e => (e.category || '').toLowerCase().includes('internet') || (e.category || '').toLowerCase().includes('telecom') || (e.category || '').toLowerCase().includes('software') || (e.category || '').toLowerCase().includes('saas') || (e.category || '').toLowerCase().includes('cloud')).reduce((s, e) => s + Number(e.amount || 0), 0);
-    const marketingAmount = operationalExpensesList.filter(e => (e.category || '').toLowerCase().includes('market') || (e.category || '').toLowerCase().includes('ad') || (e.category || '').toLowerCase().includes('campaign')).reduce((s, e) => s + Number(e.amount || 0), 0);
-    const suppliesAmount = operationalExpensesList.filter(e => (e.category || '').toLowerCase().includes('supplies') || (e.category || '').toLowerCase().includes('maintenance') || (e.category || '').toLowerCase().includes('travel') || (e.category || '').toLowerCase().includes('misc') || (e.category || '').toLowerCase().includes('other')).reduce((s, e) => s + Number(e.amount || 0), 0);
+    // Category aggregations for breakdown cards
+    const rentAmount = operationalItems.filter(e => (e.category || '').toLowerCase().includes('rent')).reduce((s, e) => s + Number(e.amount || 0), 0);
+    const fuelGenAmount = operationalItems.filter(e => (e.category || '').toLowerCase().includes('generator') || (e.category || '').toLowerCase().includes('fuel') || (e.category || '').toLowerCase().includes('gas')).reduce((s, e) => s + Number(e.amount || 0), 0);
+    const electricityAmount = operationalItems.filter(e => (e.category || '').toLowerCase().includes('electric') || (e.category || '').toLowerCase().includes('power') || (e.category || '').toLowerCase().includes('util')).reduce((s, e) => s + Number(e.amount || 0), 0);
+    const telecomAmount = operationalItems.filter(e => (e.category || '').toLowerCase().includes('internet') || (e.category || '').toLowerCase().includes('telecom') || (e.category || '').toLowerCase().includes('software') || (e.category || '').toLowerCase().includes('saas') || (e.category || '').toLowerCase().includes('cloud')).reduce((s, e) => s + Number(e.amount || 0), 0);
+    const marketingAmount = operationalItems.filter(e => (e.category || '').toLowerCase().includes('market') || (e.category || '').toLowerCase().includes('ad') || (e.category || '').toLowerCase().includes('campaign')).reduce((s, e) => s + Number(e.amount || 0), 0);
+    const suppliesAmount = operationalItems.filter(e => (e.category || '').toLowerCase().includes('supplies') || (e.category || '').toLowerCase().includes('maintenance') || (e.category || '').toLowerCase().includes('travel') || (e.category || '').toLowerCase().includes('misc') || (e.category || '').toLowerCase().includes('other')).reduce((s, e) => s + Number(e.amount || 0), 0);
 
     return {
-      totalAmount: grandTotalCompanyExpenditure,
-      grandTotal: grandTotalCompanyExpenditure,
-      operationalTotal: totalOperationalExpenses,
-      payrollTotal: totalStaffPayroll,
-      items: combinedCompanyExpenses,
-      operationalItems: operationalExpensesList,
-      payrollItems: staffPayrollExpenses,
+      totalAmount: grandTotal,
+      grandTotal,
+      operationalTotal,
+      payrollTotal,
+      items: activeList,
+      operationalItems,
+      payrollItems,
       categories: {
         rentAmount,
         fuelGenAmount,
@@ -272,10 +250,10 @@ export const Dashboard = () => {
         telecomAmount,
         marketingAmount,
         suppliesAmount,
-        payrollAmount: totalStaffPayroll
+        payrollAmount: payrollTotal
       }
     };
-  }, [operationalExpensesList, staffPayrollExpenses, grandTotalCompanyExpenditure, totalOperationalExpenses, totalStaffPayroll, combinedCompanyExpenses]);
+  }, [expenses, dateFilter, customStartDate, customEndDate]);
 
   const employeeSalarySpend = useMemo(() => {
     const salaryItems = (expenses || []).filter(e => {
@@ -1551,25 +1529,26 @@ export const Dashboard = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {items.length > 0 ? (
-                    items.map((e, idx) => (
-                      <tr key={e.id || idx} className="hover:bg-slate-50 transition font-semibold">
-                        <td className="p-3 font-bold text-slate-900">
-                          <span className={`badge text-[10px] ${e.isAutoSalary ? 'bg-purple-100 text-purple-800 border border-purple-300' : 'badge-amber'}`}>
-                            {e.category || 'Operations'}
-                          </span>
-                        </td>
-                        <td className="p-3 text-slate-700 font-extrabold">{e.description || e.vendor || e.title || 'Operating Overhead'}</td>
-                        <td className="p-3 font-black text-rose-700">₹{Number(e.amount || 0).toLocaleString('en-IN')}</td>
-                        <td className="p-3 text-slate-600 font-mono">{e.expenseDate || e.date || '—'}</td>
-                        <td className="p-3">
-                          {e.isAutoSalary ? (
-                            <span className="badge bg-purple-50 text-purple-700 text-[10px] font-bold">Auto Salary Payout</span>
-                          ) : (
-                            <span className="badge badge-green text-[10px]">Synced Database Record ⚡</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))
+                    items.map((e, idx) => {
+                      const isSalary = (e.category || '').toLowerCase().includes('salary') || (e.category || '').toLowerCase().includes('payroll');
+                      return (
+                        <tr key={e.id || idx} className="hover:bg-slate-50 transition font-semibold">
+                          <td className="p-3 font-bold text-slate-900">
+                            <span className={`badge text-[10px] ${isSalary ? 'bg-purple-100 text-purple-800 border border-purple-300' : 'badge-amber'}`}>
+                              {e.category || 'Operations'}
+                            </span>
+                          </td>
+                          <td className="p-3 text-slate-700 font-extrabold">{e.description || e.vendor || e.title || 'Operating Overhead'}</td>
+                          <td className="p-3 font-black text-rose-700">₹{Number(e.amount || 0).toLocaleString('en-IN')}</td>
+                          <td className="p-3 text-slate-600 font-mono">{e.expenseDate || e.date || '—'}</td>
+                          <td className="p-3">
+                            <span className="badge bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-bold">
+                              {isSalary ? 'Staff Payroll 💼' : 'Manual Expense ⚡'}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })
                   ) : (
                     <tr>
                       <td colSpan="5" className="p-4 text-center text-slate-400 font-semibold">No expenditure records found in database.</td>
