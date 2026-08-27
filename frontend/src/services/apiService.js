@@ -90,7 +90,7 @@ const firestoreFallbackHandler = async (endpoint, options) => {
   }
 
   if (endpoint.startsWith('/api/admin/policy-categories-overview') || endpoint.startsWith('/admin/policy-categories-overview')) {
-    const savedUser = localStorage.getItem('crm_v2_active_user');
+    const savedUser = sessionStorage.getItem('crm_v2_active_user') || localStorage.getItem('crm_v2_active_user');
     let userRole = 'USER';
     if (savedUser) {
       try { userRole = JSON.parse(savedUser)?.role || 'USER'; } catch (e) {}

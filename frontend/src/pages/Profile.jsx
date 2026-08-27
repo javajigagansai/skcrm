@@ -18,8 +18,8 @@ export const Profile = () => {
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   useEffect(() => {
-    // Sync active staff user state from localStorage if available
-    const savedActive = localStorage.getItem('crm_v2_active_user');
+    // Sync active staff user state from sessionStorage if available
+    const savedActive = sessionStorage.getItem('crm_v2_active_user') || localStorage.getItem('crm_v2_active_user');
     if (savedActive) {
       try {
         const parsed = JSON.parse(savedActive);
@@ -96,7 +96,8 @@ export const Profile = () => {
     };
 
     if (setUser) setUser(updatedUser);
-    localStorage.setItem('crm_v2_active_user', JSON.stringify(updatedUser));
+    sessionStorage.setItem('crm_v2_active_user', JSON.stringify(updatedUser));
+    localStorage.removeItem('crm_v2_active_user');
     
     // Sync to staff celebration registry so Greetings Officer & Dashboard celebrate coworker dates
     syncStaffCelebrationsRegistry(updatedUser);

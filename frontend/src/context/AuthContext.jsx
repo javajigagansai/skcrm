@@ -3,17 +3,27 @@ import {
   signInWithEmailAndPassword, 
   signOut as firebaseSignOut,
   sendPasswordResetEmail,
-  onAuthStateChanged
+  onAuthStateChanged,
+  setPersistence,
+  browserSessionPersistence
 } from 'firebase/auth';
 import { doc, getDoc, getDocs, collection, query, where } from 'firebase/firestore';
 import { auth, db } from '../config/firebaseClient';
+
+// Ensure Firebase Auth uses browser session persistence only (cleared on tab close)
+try {
+  setPersistence(auth, browserSessionPersistence).catch(() => {});
+  // Purge any legacy active user from localStorage so closed tabs require login
+  localStorage.removeItem('crm_v2_active_user');
+} catch (e) {}
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     try {
-      const saved = localStorage.getItem('crm_v2_active_user');
+      // Strictly use sessionStorage so closing the tab/browser requires re-login
+      const saved = sessionStorage.getItem('crm_v2_active_user');
       if (saved) return JSON.parse(saved);
     } catch (e) {}
     return null;
@@ -89,13 +99,13 @@ export const AuthProvider = ({ children }) => {
           const profile = await fetchFirestoreUserProfile(firebaseUser);
           if (profile) {
             setUser(profile);
-            localStorage.setItem('crm_v2_active_user', JSON.stringify(profile));
+            sessionStorage.setItem('crm_v2_active_user', JSON.stringify(profile));
           }
         } catch (err) {
           console.warn("Auth state change error:", err);
         }
       } else {
-        const saved = localStorage.getItem('crm_v2_active_user');
+        const saved = sessionStorage.getItem('crm_v2_active_user');
         if (saved) {
           try {
             setUser(JSON.parse(saved));
@@ -164,25 +174,29 @@ export const AuthProvider = ({ children }) => {
           branchId: matchedUser.branch || matchedUser.branchId || ''
         };
 
-        // Try authenticating with Firebase Auth in parallel if available
+        // Try authenticating with Firebase Auth in parallel with session persistence
         try {
+          await setPersistence(auth, browserSessionPersistence);
           await signInWithEmailAndPassword(auth, formattedEmail, inputPassword);
         } catch (e) {
           // Firestore account is the authoritative source of truth
         }
 
         setUser(activeUser);
-        localStorage.setItem('crm_v2_active_user', JSON.stringify(activeUser));
+        sessionStorage.setItem('crm_v2_active_user', JSON.stringify(activeUser));
+        localStorage.removeItem('crm_v2_active_user');
         window.dispatchEvent(new CustomEvent('auth_user_changed', { detail: activeUser }));
         return activeUser;
       }
 
       // Step 3: Attempt Firebase Authentication (Identity service) if not in Firestore users list
       try {
+        await setPersistence(auth, browserSessionPersistence);
         const userCred = await signInWithEmailAndPassword(auth, formattedEmail, inputPassword);
         const activeUser = await fetchFirestoreUserProfile(userCred.user);
         setUser(activeUser);
-        localStorage.setItem('crm_v2_active_user', JSON.stringify(activeUser));
+        sessionStorage.setItem('crm_v2_active_user', JSON.stringify(activeUser));
+        localStorage.removeItem('crm_v2_active_user');
         window.dispatchEvent(new CustomEvent('auth_user_changed', { detail: activeUser }));
         return activeUser;
       } catch (firebaseErr) {
@@ -208,6 +222,7 @@ export const AuthProvider = ({ children }) => {
     try {
       await firebaseSignOut(auth).catch(() => {});
     } finally {
+      sessionStorage.removeItem('crm_v2_active_user');
       localStorage.removeItem('crm_v2_active_user');
       setUser(null);
       window.dispatchEvent(new CustomEvent('auth_user_logged_out'));
