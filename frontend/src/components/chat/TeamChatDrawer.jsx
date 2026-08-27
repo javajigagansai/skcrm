@@ -1,33 +1,24 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useData } from '../../context/DataContext';
 import { 
   MessageSquare, Send, X, Users, AtSign, Sparkles, CheckCheck, User, Bell, Clock, ShieldCheck 
 } from 'lucide-react';
 import { db } from '../../config/firebaseClient';
 import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from 'firebase/firestore';
 
-const TEAM_STAFF_MEMBERS = [
-  { id: '1', name: 'Prakash Gajendiran', role: 'Admin', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256' },
-  { id: '2', name: 'Priya Sharma', role: 'Staff Advisor', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=256' },
-  { id: '3', name: 'Branch Manager', role: 'Manager', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=256' },
-  { id: '4', name: 'Greetings Officer', role: 'Greetings Officer', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=256' }
-];
-
-const DEFAULT_MESSAGES = [
-  {
-    id: 'MSG-INIT-101',
-    senderName: 'Branch Manager',
-    senderRole: 'Manager',
-    senderAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=256',
-    text: 'Welcome to SK Smart Investments Real-time Team Messenger! Tag team members using @Priya Sharma or @Branch Manager for instant alerts.',
-    timestamp: '10:00 AM',
-    taggedStaff: []
-  }
-];
-
 export const TeamChatDrawer = ({ isOpen, onClose, initialHighlightTag = null }) => {
   const { user } = useAuth();
+  const { staffList: rawStaff = [] } = useData();
   
+  const staffMembers = useMemo(() => {
+    return (rawStaff || []).map((s, idx) => ({
+      id: s.uid || s.id || `staff-${idx}`,
+      name: s.name || 'Staff Member',
+      role: s.title || s.role || 'Staff Advisor'
+    }));
+  }, [rawStaff]);
+
   const [messages, setMessages] = useState(() => {
     const saved = localStorage.getItem('crm_v2_team_chat_messages');
     if (saved) {
@@ -36,7 +27,7 @@ export const TeamChatDrawer = ({ isOpen, onClose, initialHighlightTag = null }) 
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       } catch (e) {}
     }
-    return DEFAULT_MESSAGES;
+    return [];
   });
 
   const [inputText, setInputText] = useState('');
@@ -97,11 +88,9 @@ export const TeamChatDrawer = ({ isOpen, onClose, initialHighlightTag = null }) 
     const val = e.target.value;
     setInputText(val);
 
-    // Detect @ symbol for auto-complete tag menu
     const lastAtIndex = val.lastIndexOf('@');
     if (lastAtIndex !== -1) {
       const textAfterAt = val.slice(lastAtIndex + 1);
-      // Check if there is no space after @
       if (!textAfterAt.includes(' ')) {
         setShowTagMenu(true);
         setTagSearchTerm(textAfterAt.toLowerCase());
@@ -125,16 +114,14 @@ export const TeamChatDrawer = ({ isOpen, onClose, initialHighlightTag = null }) 
     e.preventDefault();
     if (!inputText.trim()) return;
 
-    // Detect tagged staff members in text
-    const taggedStaff = TEAM_STAFF_MEMBERS.filter(s => 
+    const taggedStaff = staffMembers.filter(s => 
       inputText.toLowerCase().includes(`@${s.name.toLowerCase()}`)
     ).map(s => s.name);
 
     const newMsg = {
       id: `MSG-${Date.now()}`,
-      senderName: user?.name || 'Prakash Gajendiran',
-      senderRole: user?.roleDisplayName || user?.role || 'Super Admin',
-      senderAvatar: user?.avatarUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=256',
+      senderName: user?.name || 'Staff User',
+      senderRole: user?.roleDisplayName || user?.role || 'Staff',
       text: inputText,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       taggedStaff
@@ -144,7 +131,6 @@ export const TeamChatDrawer = ({ isOpen, onClose, initialHighlightTag = null }) 
     setMessages(updatedMessages);
     localStorage.setItem('crm_v2_team_chat_messages', JSON.stringify(updatedMessages));
 
-    // Save to Firestore team_chats for 0ms real-time sync across devices
     try {
       addDoc(collection(db, 'team_chats'), {
         ...newMsg,
@@ -154,14 +140,12 @@ export const TeamChatDrawer = ({ isOpen, onClose, initialHighlightTag = null }) 
       console.warn("Firestore chat post warning:", err.message);
     }
 
-    // Broadcast in real-time to all open tabs/windows
     try {
       const bc = new BroadcastChannel('crm_v2_team_chat_channel');
       bc.postMessage({ messages: updatedMessages });
       bc.close();
     } catch (err) {}
 
-    // Dispatch tagged notifications for every tagged employee!
     if (taggedStaff.length > 0) {
       const savedNotifs = localStorage.getItem('crm_v2_admin_manager_notifications');
       let notifList = [];
@@ -191,11 +175,10 @@ export const TeamChatDrawer = ({ isOpen, onClose, initialHighlightTag = null }) 
   };
 
   const renderMessageTextWithTags = (text) => {
-    // Highlight @Name in blue pill
     const parts = text.split(/(@[A-Za-z\s]+)/g);
     return parts.map((part, idx) => {
       if (part.startsWith('@')) {
-        const matchingStaff = TEAM_STAFF_MEMBERS.find(s => 
+        const matchingStaff = staffMembers.find(s => 
           part.toLowerCase().startsWith(`@${s.name.toLowerCase()}`)
         );
         if (matchingStaff) {
@@ -211,7 +194,7 @@ export const TeamChatDrawer = ({ isOpen, onClose, initialHighlightTag = null }) 
     });
   };
 
-  const filteredStaffList = TEAM_STAFF_MEMBERS.filter(s => 
+  const filteredStaffList = staffMembers.filter(s => 
     s.name.toLowerCase().includes(tagSearchTerm) || s.role.toLowerCase().includes(tagSearchTerm)
   );
 
@@ -243,38 +226,45 @@ export const TeamChatDrawer = ({ isOpen, onClose, initialHighlightTag = null }) 
 
         {/* Chat Feed */}
         <div className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-4 bg-slate-50/50">
-          {messages.map((msg) => {
-            const isMe = msg.senderName?.toLowerCase() === user?.name?.toLowerCase();
+          {messages.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-center p-8 text-slate-400 space-y-2">
+              <MessageSquare className="h-8 w-8 text-slate-300 stroke-1" />
+              <p className="text-xs font-semibold">No team messages yet.</p>
+              <p className="text-[11px] text-slate-400">Type a message below to start a discussion with your team.</p>
+            </div>
+          ) : (
+            messages.map((msg) => {
+              const isMe = msg.senderName?.toLowerCase() === user?.name?.toLowerCase();
+              const initial = msg.senderName ? msg.senderName.charAt(0).toUpperCase() : 'U';
 
-            return (
-              <div 
-                key={msg.id} 
-                className={`flex items-start space-x-3 ${isMe ? 'flex-row-reverse space-x-reverse' : ''}`}
-              >
-                <img 
-                  src={msg.senderAvatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=256'} 
-                  alt={msg.senderName}
-                  className="h-10 w-10 rounded-2xl object-cover shrink-0 border border-slate-200 shadow-sm"
-                />
-
-                <div className={`max-w-[80%] space-y-1 ${isMe ? 'items-end text-right' : ''}`}>
-                  <div className="flex items-center space-x-2 text-[11px]">
-                    <span className="font-extrabold text-slate-900">{msg.senderName}</span>
-                    <span className="badge badge-brand text-[9px] px-2 py-0.5">{msg.senderRole}</span>
-                    <span className="text-slate-400 text-[10px]">{msg.timestamp}</span>
+              return (
+                <div 
+                  key={msg.id} 
+                  className={`flex items-start space-x-3 ${isMe ? 'flex-row-reverse space-x-reverse' : ''}`}
+                >
+                  <div className="h-9 w-9 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-black flex items-center justify-center text-xs shrink-0 shadow-sm">
+                    {initial}
                   </div>
 
-                  <div className={`p-3.5 rounded-2xl text-xs font-semibold shadow-sm leading-relaxed ${
-                    isMe 
-                      ? 'bg-blue-600 text-white rounded-tr-none' 
-                      : 'bg-white text-slate-800 border border-slate-200/90 rounded-tl-none'
-                  }`}>
-                    {renderMessageTextWithTags(msg.text)}
+                  <div className={`max-w-[80%] space-y-1 ${isMe ? 'items-end text-right' : ''}`}>
+                    <div className="flex items-center space-x-2 text-[11px]">
+                      <span className="font-extrabold text-slate-900">{msg.senderName}</span>
+                      <span className="badge badge-brand text-[9px] px-2 py-0.5">{msg.senderRole}</span>
+                      <span className="text-slate-400 text-[10px]">{msg.timestamp}</span>
+                    </div>
+
+                    <div className={`p-3.5 rounded-2xl text-xs font-semibold shadow-sm leading-relaxed ${
+                      isMe 
+                        ? 'bg-blue-600 text-white rounded-tr-none' 
+                        : 'bg-white text-slate-800 border border-slate-200/90 rounded-tl-none'
+                    }`}>
+                      {renderMessageTextWithTags(msg.text)}
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
           <div ref={chatEndRef} />
         </div>
 
@@ -294,7 +284,9 @@ export const TeamChatDrawer = ({ isOpen, onClose, initialHighlightTag = null }) 
                   className="p-2.5 hover:bg-blue-50 transition cursor-pointer flex items-center justify-between group"
                 >
                   <div className="flex items-center space-x-2.5">
-                    <img src={staff.avatar} alt={staff.name} className="h-7 w-7 rounded-xl object-cover" />
+                    <div className="h-7 w-7 rounded-xl bg-blue-100 text-blue-800 font-bold flex items-center justify-center text-xs">
+                      {staff.name.charAt(0).toUpperCase()}
+                    </div>
                     <div>
                       <p className="text-xs font-extrabold text-slate-900 group-hover:text-blue-700">{staff.name}</p>
                       <p className="text-[10px] text-slate-400 font-medium">{staff.role}</p>

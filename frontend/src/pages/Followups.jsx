@@ -67,7 +67,7 @@ export const Followups = () => {
         if (Array.isArray(parsed) && parsed.length > 0) return parsed.map(u => u.name);
       } catch (e) {}
     }
-    return ['Branch Manager', 'Prakash Gajendiran'];
+    return [];
   });
 
   // Real-time listener for User Management updates

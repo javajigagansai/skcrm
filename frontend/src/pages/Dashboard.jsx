@@ -129,18 +129,14 @@ export const Dashboard = () => {
   const [activeAdminStaffTab, setActiveAdminStaffTab] = useState('CUSTOMERS');
 
   const [staffListState, setStaffListState] = useState(() => {
-    let registered = [];
     try {
       const saved = localStorage.getItem('crm_v2_users_list');
-      if (saved) registered = JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
     } catch (e) {}
-    if (!registered || registered.length === 0) {
-      registered = [
-        { uid: 'UID-STF-1001', name: 'Prakash Gajendiran', email: 'admin@sk-smart-investments.com', role: 'SUPER_ADMIN', title: 'Super Admin / Executive Director', branch: 'Chennai Main HQ Desk', fixedSalary: 0, status: 'ACTIVE' },
-        { uid: 'UID-STF-1002', name: 'Branch Manager', email: 'manager@sk-smart-investments.com', role: 'MANAGER', title: 'Regional Operations Manager', branch: 'Bangalore Regional Desk', fixedSalary: 0, status: 'ACTIVE' }
-      ];
-    }
-    return registered;
+    return [];
   });
 
   useEffect(() => {

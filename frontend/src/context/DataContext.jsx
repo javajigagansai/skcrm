@@ -42,11 +42,7 @@ export const DataProvider = ({ children }) => {
     return rawAuditLogs.filter(l => l.userName === user?.name || l.userRole === user?.role);
   }, [user, rawAuditLogs]);
   const staffList = useMemo(() => {
-    if (rawUsers.length > 0) return rawUsers;
-    return [
-      { uid: 'UID-STF-1001', name: 'Prakash Gajendiran', role: 'SUPER_ADMIN', title: 'Super Admin' },
-      { uid: 'UID-STF-1002', name: 'Branch Manager', role: 'MANAGER', title: 'Branch Manager' }
-    ];
+    return rawUsers;
   }, [rawUsers]);
 
   // ─── NO localStorage write-backs. Firestore onSnapshot is the only sync mechanism. ───

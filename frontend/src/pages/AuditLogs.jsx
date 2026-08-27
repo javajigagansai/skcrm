@@ -64,7 +64,7 @@ export const AuditLogs = () => {
     if (!newLogForm.details.trim()) return;
 
     await addAuditLog({
-      userName: user?.name || 'Prakash Gajendiran',
+      userName: user?.name || 'Admin',
       userRole: user?.role || 'SUPER_ADMIN',
       action: newLogForm.action,
       module: newLogForm.module,

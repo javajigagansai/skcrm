@@ -47,10 +47,7 @@ export const Policies = () => {
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       } catch (e) {}
     }
-    return [
-      { uid: 'UID-STF-1001', name: 'Prakash Gajendiran', role: 'SUPER_ADMIN' },
-      { uid: 'UID-STF-1002', name: 'Branch Manager', role: 'MANAGER' }
-    ];
+    return [];
   });
 
   // Manage Catalog Modal State
@@ -187,10 +184,7 @@ export const Policies = () => {
   }, [insuranceCompanies, newPolicy?.insuranceCompany]);
 
   const allStaffOptions = useMemo(() => {
-    const list = (liveStaffList && liveStaffList.length > 0) ? liveStaffList : ((staffList && staffList.length > 0) ? staffList : [
-      { uid: 'UID-STF-1001', name: 'Prakash Gajendiran', role: 'SUPER_ADMIN' },
-      { uid: 'UID-STF-1002', name: 'Branch Manager', role: 'MANAGER' }
-    ]);
+    const list = (liveStaffList && liveStaffList.length > 0) ? liveStaffList : ((staffList && staffList.length > 0) ? staffList : []);
     return list
       .filter(s => s && (s.name || s.email || s.displayName))
       .map(s => ({

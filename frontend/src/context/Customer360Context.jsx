@@ -46,10 +46,7 @@ const loadStaffListFromStorage = () => {
       if (Array.isArray(parsed) && parsed.length > 0) return parsed;
     }
   } catch (e) {}
-  return [
-    { uid: 'UID-STF-1001', name: 'Prakash Gajendiran', role: 'SUPER_ADMIN' },
-    { uid: 'UID-STF-1002', name: 'Branch Manager', role: 'MANAGER' }
-  ];
+  return [];
 };
 
 export const Customer360Provider = ({ children }) => {
@@ -115,10 +112,7 @@ export const Customer360Provider = ({ children }) => {
   const effectiveStaffList = useMemo(() => {
     if (liveStaffList && Array.isArray(liveStaffList) && liveStaffList.length > 0) return liveStaffList;
     if (staffList360 && Array.isArray(staffList360) && staffList360.length > 0) return staffList360;
-    return [
-      { uid: 'UID-STF-1001', name: 'Prakash Gajendiran', role: 'SUPER_ADMIN', title: 'Super Admin' },
-      { uid: 'UID-STF-1002', name: 'Branch Manager', role: 'MANAGER', title: 'Branch Manager' }
-    ];
+    return [];
   }, [liveStaffList, staffList360]);
 
   const editStaffSearchResults = useMemo(() => {

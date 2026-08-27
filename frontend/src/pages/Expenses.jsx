@@ -3,11 +3,6 @@ import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { Plus, TrendingDown, IndianRupee, X, Users, Fuel, Zap, Building2, Filter, Sparkles, Trash2 } from 'lucide-react';
 
-const INITIAL_STAFF_SEED = [
-  { uid: 'UID-STF-1001', name: 'Prakash Gajendiran', role: 'SUPER_ADMIN', title: 'Super Admin / Executive Director', status: 'ACTIVE', fixedSalary: 0 },
-  { uid: 'UID-STF-1002', name: 'Branch Manager', role: 'MANAGER', title: 'Regional Operations Manager', status: 'ACTIVE', fixedSalary: 0 }
-];
-
 export const Expenses = () => {
   const { user } = useAuth();
   const { expenses = [], addExpense, deleteExpense, staffList = [] } = useData();
@@ -25,7 +20,7 @@ export const Expenses = () => {
 
   // Staff Salary Details automatically integrated directly from Staff Management
   const staffPayrollExpenses = useMemo(() => {
-    const staffMembers = (staffList && staffList.length > 0) ? staffList : INITIAL_STAFF_SEED;
+    const staffMembers = Array.isArray(staffList) ? staffList : [];
     const currentDate = new Date().toISOString().split('T')[0];
 
     return staffMembers

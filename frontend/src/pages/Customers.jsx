@@ -136,19 +136,13 @@ export const Customers = () => {
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       } catch (e) { }
     }
-    return [
-      { uid: 'UID-STF-1001', name: 'Prakash Gajendiran', role: 'SUPER_ADMIN', title: 'Super Admin' },
-      { uid: 'UID-STF-1002', name: 'Branch Manager', role: 'MANAGER', title: 'Branch Manager' }
-    ];
+    return [];
   });
 
   const effectiveStaffList = useMemo(() => {
     if (liveStaffList && Array.isArray(liveStaffList) && liveStaffList.length > 0) return liveStaffList;
     if (staffList && Array.isArray(staffList) && staffList.length > 0) return staffList;
-    return [
-      { uid: 'UID-STF-1001', name: 'Prakash Gajendiran', role: 'SUPER_ADMIN', title: 'Super Admin' },
-      { uid: 'UID-STF-1002', name: 'Branch Manager', role: 'MANAGER', title: 'Branch Manager' }
-    ];
+    return [];
   }, [liveStaffList, staffList]);
 
   const addStaffSearchResults = useMemo(() => {
@@ -223,10 +217,9 @@ export const Customers = () => {
     }
 
     const matchedStaff = (liveStaffList || staffList).find(s => s.name === newCustomer.assignedAdvisorName || s.uid === newCustomer.assignedStaffId);
-    const assignedStaffId = matchedStaff?.uid || newCustomer.assignedStaffId || user?.uid || 'UID-STF-1001';
-    const assignedStaffName = matchedStaff?.name || newCustomer.assignedAdvisorName || user?.name || 'Prakash Gajendiran';
-    const assignedStaffEmail = matchedStaff?.email || user?.email || 'admin@sk-smart-investments.com';
-    const branchId = matchedStaff?.branch || 'BR-KNM-001';
+    const assignedStaffId = matchedStaff?.uid || newCustomer.assignedStaffId || user?.uid || '';
+    const assignedStaffName = matchedStaff?.name || newCustomer.assignedAdvisorName || user?.name || '';
+    const assignedStaffEmail = matchedStaff?.email || user?.email || '';
 
     const cleanEmails = Array.isArray(newCustomer.emails)
       ? newCustomer.emails.map(e => (e || '').trim()).filter(e => e !== '')
