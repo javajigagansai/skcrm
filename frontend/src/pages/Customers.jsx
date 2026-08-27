@@ -1706,11 +1706,7 @@ export const Customers = () => {
                   <UserCheck className="h-6 w-6" />
                 </div>
                 <div>
-                  <div className="flex items-center space-x-2">
-                    <h3 className="text-base font-black tracking-tight text-white">Add New Customer 360 Profile</h3>
-                    <span className="badge bg-amber-400 text-slate-900 text-[10px] font-black uppercase px-2 py-0.5 shadow-xs">360° Studio</span>
-                  </div>
-                  <p className="text-xs text-blue-100 font-medium">Create client profile with KYC, Lead Priority, NRI dossier, Multi-Email &amp; 30 Insurers.</p>
+                  <h3 className="text-base font-black tracking-tight text-white">Add New Customer 360 Profile</h3>
                 </div>
               </div>
 
@@ -2715,11 +2711,9 @@ export const Customers = () => {
                   <Edit3 className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black tracking-tight flex items-center space-x-2">
-                    <span>Edit Customer 360 Profile ({editCustomerData.customerCode || editCustomerData.id})</span>
-                    <span className="badge bg-amber-400 text-slate-900 text-[10px] font-black uppercase px-2 py-0.5">360° Studio</span>
+                  <h3 className="text-base font-black tracking-tight text-white">
+                    Edit Customer 360 Profile ({editCustomerData.customerCode || editCustomerData.id})
                   </h3>
-                  <p className="text-xs text-blue-100 font-medium">Update address, PAN, Aadhaar, personal info, active staff, and policy details.</p>
                 </div>
               </div>
               <div className="flex items-center space-x-2">
