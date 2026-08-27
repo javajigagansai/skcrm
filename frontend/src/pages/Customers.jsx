@@ -63,6 +63,7 @@ export const Customers = () => {
     phone: ''
   });
   const [active360Tab, setActive360Tab] = useState('OVERVIEW');
+  const [addModalTab, setAddModalTab] = useState('ALL'); // 'ALL' | 'IDENTITY' | 'NRI' | 'FAMILY' | 'KYC' | 'BUSINESS'
   const [customerToDelete, setCustomerToDelete] = useState(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
@@ -1693,33 +1694,95 @@ export const Customers = () => {
         </div>
       )}
 
-      {/* ================= ADD NEW CUSTOMER MODAL (FULL SCREEN) ================= */}
+      {/* ================= ADD NEW CUSTOMER MODAL (STUDIO 360) ================= */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex flex-col items-center justify-center p-0 sm:p-3 md:p-6 overflow-hidden animate-fadeIn">
-          <div className="bg-slate-50 w-full h-full sm:max-w-6xl sm:h-[95vh] sm:rounded-3xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden">
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex flex-col items-center justify-center p-0 sm:p-3 md:p-6 overflow-hidden animate-fadeIn">
+          <div className="bg-slate-50 w-full h-full sm:max-w-6xl sm:h-[95vh] sm:rounded-3xl shadow-2xl border border-slate-200/80 flex flex-col overflow-hidden">
 
-            {/* Fullscreen Sticky Modal Header */}
-            <div className="bg-gradient-to-r from-slate-900 via-[#1E6091] to-slate-900 text-white px-6 py-4 flex items-center justify-between shadow-sm shrink-0 border-b border-white/10">
+            {/* Studio Header Bar */}
+            <div className="bg-gradient-to-r from-slate-900 via-[#1E6091] to-slate-900 text-white px-6 py-4 flex items-center justify-between shadow-md shrink-0 border-b border-white/10">
               <div className="flex items-center space-x-3.5">
-                <div className="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-amber-300 border border-white/20 shadow-inner">
-                  <UserCheck className="h-5 w-5" />
+                <div className="w-11 h-11 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-amber-300 border border-white/20 shadow-inner">
+                  <UserCheck className="h-6 w-6" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black tracking-tight flex items-center space-x-2">
-                    <span>Add New Customer 360 Profile</span>
-                    <span className="badge bg-amber-400 text-slate-900 text-[10px] font-black uppercase px-2 py-0.5">360° Studio</span>
-                  </h3>
-                  <p className="text-xs text-blue-100 font-medium">Create customer record with KYC, multi-email, banking, demographics and portfolio.</p>
+                  <div className="flex items-center space-x-2">
+                    <h3 className="text-base font-black tracking-tight text-white">Add New Customer 360 Profile</h3>
+                    <span className="badge bg-amber-400 text-slate-900 text-[10px] font-black uppercase px-2 py-0.5 shadow-xs">360° Studio</span>
+                  </div>
+                  <p className="text-xs text-blue-100 font-medium">Create client profile with KYC, Lead Priority, NRI dossier, Multi-Email &amp; 30 Insurers.</p>
                 </div>
               </div>
-              <div className="flex items-center space-x-2">
+
+              {/* Header Live Status Badges & Close Button */}
+              <div className="flex items-center space-x-3">
+                <div className="hidden md:flex items-center space-x-2">
+                  <span className={`badge text-[10px] font-black uppercase px-2.5 py-1 ${newCustomer.leadType === 'Hot Lead' ? 'bg-rose-500 text-white' : newCustomer.leadType === 'Cold Lead' ? 'bg-sky-500 text-white' : 'bg-amber-500 text-white'}`}>
+                    {newCustomer.leadType === 'Hot Lead' ? '🔥 Hot Lead' : newCustomer.leadType === 'Cold Lead' ? '❄️ Cold Lead' : '⚡ Warm Lead'}
+                  </span>
+                  <span className={`badge text-[10px] font-black uppercase px-2.5 py-1 ${newCustomer.isNri ? 'bg-indigo-600 text-white' : 'bg-blue-600 text-white'}`}>
+                    {newCustomer.isNri ? '✈️ NRI' : '🇮🇳 Resident'}
+                  </span>
+                </div>
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer border border-white/10"
+                  className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer border border-white/10 shadow-xs"
                 >
                   <X className="h-4 w-4" />
                   <span className="hidden sm:inline">Close</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Studio Sticky Section Tabs Bar */}
+            <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-2.5 flex items-center justify-between gap-2 overflow-x-auto shrink-0 shadow-2xs">
+              <div className="flex items-center space-x-2 overflow-x-auto py-0.5">
+                <button
+                  type="button"
+                  onClick={() => setAddModalTab('ALL')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center space-x-1.5 cursor-pointer whitespace-nowrap ${addModalTab === 'ALL' ? 'bg-slate-900 text-white shadow-sm ring-2 ring-slate-400' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                >
+                  <span>📋 All Sections</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAddModalTab('IDENTITY')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center space-x-1.5 cursor-pointer whitespace-nowrap ${addModalTab === 'IDENTITY' ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-300' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                >
+                  <span>1. 👤 Identity &amp; Contact</span>
+                  {newCustomer.name && <span className="w-1.5 h-1.5 rounded-full bg-emerald-300"></span>}
+                </button>
+                {newCustomer.isNri && (
+                  <button
+                    type="button"
+                    onClick={() => setAddModalTab('NRI')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center space-x-1.5 cursor-pointer whitespace-nowrap animate-fadeIn ${addModalTab === 'NRI' ? 'bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-300' : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200'}`}
+                  >
+                    <span>2. ✈️ NRI Dossier</span>
+                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setAddModalTab('FAMILY')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center space-x-1.5 cursor-pointer whitespace-nowrap ${addModalTab === 'FAMILY' ? 'bg-pink-600 text-white shadow-sm ring-2 ring-pink-300' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                >
+                  <span>{newCustomer.isNri ? '3.' : '2.'} 🎂 Personal &amp; Family</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAddModalTab('KYC')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center space-x-1.5 cursor-pointer whitespace-nowrap ${addModalTab === 'KYC' ? 'bg-purple-600 text-white shadow-sm ring-2 ring-purple-300' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                >
+                  <span>{newCustomer.isNri ? '4.' : '3.'} 🏛️ KYC &amp; Banking</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAddModalTab('BUSINESS')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center space-x-1.5 cursor-pointer whitespace-nowrap ${addModalTab === 'BUSINESS' ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-300' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                >
+                  <span>{newCustomer.isNri ? '5.' : '4.'} 🛡️ Business &amp; Insurers (30)</span>
                 </button>
               </div>
             </div>
@@ -1728,253 +1791,255 @@ export const Customers = () => {
             <form id="add-customer-360-form" onSubmit={handleAddCustomer} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
 
               {/* SECTION 1: CORE IDENTITY, LEAD STAGE & CONTACT DETAILS */}
-              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                  <h4 className="text-xs font-black uppercase text-blue-900 tracking-wider flex items-center space-x-2">
-                    <UserCheck className="h-4 w-4 text-blue-600" />
-                    <span>1. Basic Profile, Lead Stage &amp; Multi-Channel Contact</span>
-                  </h4>
-                  <span className="text-[11px] font-bold text-slate-400">Step 1 of 5</span>
-                </div>
+              {(addModalTab === 'ALL' || addModalTab === 'IDENTITY') && (
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-5 animate-fadeIn">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <h4 className="text-xs font-black uppercase text-blue-900 tracking-wider flex items-center space-x-2">
+                      <UserCheck className="h-4.5 w-4.5 text-blue-600" />
+                      <span>1. Basic Profile, Lead Stage &amp; Multi-Channel Contact</span>
+                    </h4>
+                    <span className="badge bg-blue-50 text-blue-700 text-[10px] font-black">Step 1</span>
+                  </div>
 
-                {/* LEAD PRIORITY / STAGE SECTION */}
-                <div className="bg-gradient-to-r from-amber-50/70 via-orange-50/50 to-slate-50 p-4.5 rounded-2xl border border-amber-200/90 space-y-3 shadow-2xs">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-100/80 pb-2.5">
-                    <div className="flex items-center space-x-2.5">
-                      <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-black text-sm shadow-xs shrink-0">
-                        🎯
+                  {/* LEAD PRIORITY / STAGE SECTION */}
+                  <div className="bg-gradient-to-r from-amber-50/70 via-orange-50/50 to-slate-50 p-4.5 rounded-2xl border border-amber-200/90 space-y-3 shadow-2xs">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-100/80 pb-2.5">
+                      <div className="flex items-center space-x-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-black text-sm shadow-xs shrink-0">
+                          🎯
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-black uppercase text-amber-950 tracking-wider">
+                            Lead Section &amp; Temperature Priority *
+                          </h4>
+                          <p className="text-[11px] text-amber-800 font-semibold">Select client lead temperature for follow-up speed &amp; sales prioritization.</p>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="text-xs font-black uppercase text-amber-950 tracking-wider">
-                          Lead Section &amp; Temperature Priority *
-                        </h4>
-                        <p className="text-[11px] text-amber-800 font-semibold">Select client lead temperature for follow-up speed &amp; sales prioritization.</p>
-                      </div>
+                      <span className={`badge text-[10px] font-black uppercase px-3 py-1 shadow-2xs self-start sm:self-auto ${newCustomer.leadType === 'Hot Lead' ? 'bg-rose-500 text-white' : newCustomer.leadType === 'Cold Lead' ? 'bg-sky-500 text-white' : 'bg-amber-500 text-white'}`}>
+                        {newCustomer.leadType === 'Hot Lead' ? '🔥 Hot Priority Lead' : newCustomer.leadType === 'Cold Lead' ? '❄️ Cold Follow-up' : '⚡ Warm Active Lead'}
+                      </span>
                     </div>
-                    <span className={`badge text-[10px] font-black uppercase px-3 py-1 shadow-2xs self-start sm:self-auto ${newCustomer.leadType === 'Hot Lead' ? 'bg-rose-500 text-white' : newCustomer.leadType === 'Cold Lead' ? 'bg-sky-500 text-white' : 'bg-amber-500 text-white'}`}>
-                      {newCustomer.leadType === 'Hot Lead' ? '🔥 Hot Priority Lead' : newCustomer.leadType === 'Cold Lead' ? '❄️ Cold Follow-up' : '⚡ Warm Active Lead'}
-                    </span>
-                  </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-0.5">
-                    <button
-                      type="button"
-                      onClick={() => setNewCustomer({ ...newCustomer, leadType: 'Hot Lead' })}
-                      className={`p-3 rounded-2xl text-xs font-black transition-all border flex flex-col items-center justify-center space-y-1 cursor-pointer ${newCustomer.leadType === 'Hot Lead' ? 'bg-rose-500 text-white border-rose-600 shadow-md ring-4 ring-rose-200 scale-[1.02]' : 'bg-white text-slate-700 border-slate-200 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300'}`}
-                    >
-                      <span className="text-xl">🔥</span>
-                      <span className="text-sm font-black">Hot Lead</span>
-                      <span className={`text-[10px] font-semibold ${newCustomer.leadType === 'Hot Lead' ? 'text-rose-100' : 'text-slate-400'}`}>High Urgency / Closing Soon</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setNewCustomer({ ...newCustomer, leadType: 'Warm Lead' })}
-                      className={`p-3 rounded-2xl text-xs font-black transition-all border flex flex-col items-center justify-center space-y-1 cursor-pointer ${newCustomer.leadType === 'Warm Lead' ? 'bg-amber-500 text-white border-amber-600 shadow-md ring-4 ring-amber-200 scale-[1.02]' : 'bg-white text-slate-700 border-slate-200 hover:bg-amber-50 hover:text-amber-700 hover:border-amber-300'}`}
-                    >
-                      <span className="text-xl">⚡</span>
-                      <span className="text-sm font-black">Warm Lead</span>
-                      <span className={`text-[10px] font-semibold ${newCustomer.leadType === 'Warm Lead' ? 'text-amber-100' : 'text-slate-400'}`}>Quotation Sent / Discussing</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setNewCustomer({ ...newCustomer, leadType: 'Cold Lead' })}
-                      className={`p-3 rounded-2xl text-xs font-black transition-all border flex flex-col items-center justify-center space-y-1 cursor-pointer ${newCustomer.leadType === 'Cold Lead' ? 'bg-sky-500 text-white border-sky-600 shadow-md ring-4 ring-sky-200 scale-[1.02]' : 'bg-white text-slate-700 border-slate-200 hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300'}`}
-                    >
-                      <span className="text-xl">❄️</span>
-                      <span className="text-sm font-black">Cold Lead</span>
-                      <span className={`text-[10px] font-semibold ${newCustomer.leadType === 'Cold Lead' ? 'text-sky-100' : 'text-slate-400'}`}>Long-term / Periodic Check-in</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* RESIDENTIAL CATEGORY SELECTOR */}
-                <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80 space-y-2">
-                  <label className="block text-[11px] font-black uppercase text-slate-700 flex items-center space-x-1.5">
-                    <span>Residential Category (Resident Indian vs NRI) *</span>
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setNewCustomer({ ...newCustomer, isNri: false })}
-                      className={`p-3 rounded-2xl text-xs font-black transition-all border flex items-center justify-center space-x-2.5 cursor-pointer ${!newCustomer.isNri ? 'bg-blue-600 text-white border-blue-700 shadow-md ring-4 ring-blue-200' : 'bg-white text-slate-700 border-slate-200 hover:bg-blue-50 hover:text-blue-700'}`}
-                    >
-                      <span className="text-lg">🇮🇳</span>
-                      <div className="text-left">
-                        <p className="font-black text-xs">Resident Indian Client</p>
-                        <p className={`text-[10px] ${!newCustomer.isNri ? 'text-blue-100' : 'text-slate-400'}`}>Standard PAN, Aadhaar &amp; Resident Bank Account</p>
-                      </div>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setNewCustomer({ ...newCustomer, isNri: true })}
-                      className={`p-3 rounded-2xl text-xs font-black transition-all border flex items-center justify-center space-x-2.5 cursor-pointer ${newCustomer.isNri ? 'bg-indigo-600 text-white border-indigo-700 shadow-md ring-4 ring-indigo-200' : 'bg-white text-slate-700 border-slate-200 hover:bg-indigo-50 hover:text-indigo-700'}`}
-                    >
-                      <span className="text-lg">✈️</span>
-                      <div className="text-left">
-                        <p className="font-black text-xs">NRI (Non-Resident Indian)</p>
-                        <p className={`text-[10px] ${newCustomer.isNri ? 'text-indigo-100' : 'text-slate-400'}`}>Requires Passport KYC, Overseas Address &amp; NRI Bank</p>
-                      </div>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="md:col-span-2">
-                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Full Customer Name *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Ramesh Kumar"
-                      value={newCustomer.name}
-                      onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50/50"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Customer Category</label>
-                    <select
-                      value={newCustomer.clientCategory || 'New Lead'}
-                      onChange={(e) => setNewCustomer({ ...newCustomer, clientCategory: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-slate-50/50 outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer"
-                    >
-                      <option value="New Lead">New Lead 🔵</option>
-                      <option value="Existing Lead">Existing Lead 🟣</option>
-                      <option value="VIP Client">VIP Client ⭐</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-                  <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Primary Mobile Number *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="+91 98765 43210"
-                      value={newCustomer.phone}
-                      onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50/50"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Alternate Mobile Number</label>
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                      <select
-                        value={newCustomer.altCountryCode || '+91'}
-                        onChange={(e) => setNewCustomer({ ...newCustomer, altCountryCode: e.target.value })}
-                        className="w-full sm:w-[220px] px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-slate-50 outline-none focus:ring-2 focus:ring-blue-600 shrink-0 cursor-pointer"
-                        title="Select Country & Dial Code"
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-0.5">
+                      <button
+                        type="button"
+                        onClick={() => setNewCustomer({ ...newCustomer, leadType: 'Hot Lead' })}
+                        className={`p-3 rounded-2xl text-xs font-black transition-all border flex flex-col items-center justify-center space-y-1 cursor-pointer ${newCustomer.leadType === 'Hot Lead' ? 'bg-rose-500 text-white border-rose-600 shadow-md ring-4 ring-rose-200 scale-[1.02]' : 'bg-white text-slate-700 border-slate-200 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300'}`}
                       >
-                        {COUNTRY_DIAL_CODES.map(c => (
-                          <option key={`${c.name}-${c.code}`} value={c.code}>{c.display}</option>
-                        ))}
-                      </select>
+                        <span className="text-xl">🔥</span>
+                        <span className="text-sm font-black">Hot Lead</span>
+                        <span className={`text-[10px] font-semibold ${newCustomer.leadType === 'Hot Lead' ? 'text-rose-100' : 'text-slate-400'}`}>High Urgency / Closing Soon</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setNewCustomer({ ...newCustomer, leadType: 'Warm Lead' })}
+                        className={`p-3 rounded-2xl text-xs font-black transition-all border flex flex-col items-center justify-center space-y-1 cursor-pointer ${newCustomer.leadType === 'Warm Lead' ? 'bg-amber-500 text-white border-amber-600 shadow-md ring-4 ring-amber-200 scale-[1.02]' : 'bg-white text-slate-700 border-slate-200 hover:bg-amber-50 hover:text-amber-700 hover:border-amber-300'}`}
+                      >
+                        <span className="text-xl">⚡</span>
+                        <span className="text-sm font-black">Warm Lead</span>
+                        <span className={`text-[10px] font-semibold ${newCustomer.leadType === 'Warm Lead' ? 'text-amber-100' : 'text-slate-400'}`}>Quotation Sent / Discussing</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setNewCustomer({ ...newCustomer, leadType: 'Cold Lead' })}
+                        className={`p-3 rounded-2xl text-xs font-black transition-all border flex flex-col items-center justify-center space-y-1 cursor-pointer ${newCustomer.leadType === 'Cold Lead' ? 'bg-sky-500 text-white border-sky-600 shadow-md ring-4 ring-sky-200 scale-[1.02]' : 'bg-white text-slate-700 border-slate-200 hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300'}`}
+                      >
+                        <span className="text-xl">❄️</span>
+                        <span className="text-sm font-black">Cold Lead</span>
+                        <span className={`text-[10px] font-semibold ${newCustomer.leadType === 'Cold Lead' ? 'text-sky-100' : 'text-slate-400'}`}>Long-term / Periodic Check-in</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* RESIDENTIAL CATEGORY SELECTOR */}
+                  <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80 space-y-2">
+                    <label className="block text-[11px] font-black uppercase text-slate-700 flex items-center space-x-1.5">
+                      <span>Residential Category (Resident Indian vs NRI) *</span>
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setNewCustomer({ ...newCustomer, isNri: false })}
+                        className={`p-3 rounded-2xl text-xs font-black transition-all border flex items-center justify-center space-x-2.5 cursor-pointer ${!newCustomer.isNri ? 'bg-blue-600 text-white border-blue-700 shadow-md ring-4 ring-blue-200' : 'bg-white text-slate-700 border-slate-200 hover:bg-blue-50 hover:text-blue-700'}`}
+                      >
+                        <span className="text-lg">🇮🇳</span>
+                        <div className="text-left">
+                          <p className="font-black text-xs">Resident Indian Client</p>
+                          <p className={`text-[10px] ${!newCustomer.isNri ? 'text-blue-100' : 'text-slate-400'}`}>Standard PAN, Aadhaar &amp; Resident Bank Account</p>
+                        </div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setNewCustomer({ ...newCustomer, isNri: true })}
+                        className={`p-3 rounded-2xl text-xs font-black transition-all border flex items-center justify-center space-x-2.5 cursor-pointer ${newCustomer.isNri ? 'bg-indigo-600 text-white border-indigo-700 shadow-md ring-4 ring-indigo-200' : 'bg-white text-slate-700 border-slate-200 hover:bg-indigo-50 hover:text-indigo-700'}`}
+                      >
+                        <span className="text-lg">✈️</span>
+                        <div className="text-left">
+                          <p className="font-black text-xs">NRI (Non-Resident Indian)</p>
+                          <p className={`text-[10px] ${newCustomer.isNri ? 'text-indigo-100' : 'text-slate-400'}`}>Requires Passport KYC, Overseas Address &amp; NRI Bank</p>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="md:col-span-2">
+                      <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Full Customer Name *</label>
                       <input
                         type="text"
-                        placeholder="98765 00000 (Optional)"
-                        value={newCustomer.alternatePhone || ''}
-                        onChange={(e) => setNewCustomer({ ...newCustomer, alternatePhone: e.target.value, altPhone: e.target.value })}
-                        className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-600 bg-white"
+                        required
+                        placeholder="e.g. Ramesh Kumar"
+                        value={newCustomer.name}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 bg-white"
                       />
                     </div>
-                  </div>
-                </div>
-
-                {/* MULTI-EMAIL SECTION */}
-                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/90 space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <label className="block text-[11px] font-black uppercase text-slate-700 flex items-center space-x-1.5">
-                      <Mail className="h-3.5 w-3.5 text-blue-600" />
-                      <span>Email Address(es)</span>
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const cur = Array.isArray(newCustomer.emails) ? [...newCustomer.emails] : (newCustomer.email ? [newCustomer.email] : ['']);
-                        setNewCustomer({ ...newCustomer, emails: [...cur, ''] });
-                      }}
-                      className="text-[10px] font-extrabold text-blue-700 hover:text-blue-900 flex items-center space-x-1 cursor-pointer bg-blue-100/70 hover:bg-blue-200/80 px-3 py-1 rounded-xl border border-blue-300/60 transition"
-                    >
-                      <Plus className="h-3 w-3" />
-                      <span>Add Another Email</span>
-                    </button>
+                    <div>
+                      <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Customer Category</label>
+                      <select
+                        value={newCustomer.clientCategory || 'New Lead'}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, clientCategory: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-white outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 cursor-pointer"
+                      >
+                        <option value="New Lead">New Lead 🔵</option>
+                        <option value="Existing Lead">Existing Lead 🟣</option>
+                        <option value="VIP Client">VIP Client ⭐</option>
+                      </select>
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-                    {/* Primary Email */}
-                    <div className="flex items-center space-x-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                    <div>
+                      <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Primary Mobile Number *</label>
                       <input
-                        type="email"
-                        placeholder="primary.email@example.com (Primary)"
-                        value={(Array.isArray(newCustomer.emails) && newCustomer.emails[0] !== undefined) ? newCustomer.emails[0] : (newCustomer.email || '')}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          const cur = Array.isArray(newCustomer.emails) && newCustomer.emails.length > 0 ? [...newCustomer.emails] : [newCustomer.email || ''];
-                          cur[0] = val;
-                          setNewCustomer({ ...newCustomer, email: val, emails: cur });
-                        }}
-                        className="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-xs outline-none focus:ring-2 focus:ring-blue-600 bg-white font-semibold"
+                        type="text"
+                        required
+                        placeholder="+91 98765 43210"
+                        value={newCustomer.phone}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono font-bold text-slate-900 outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 bg-white"
                       />
-                      <span className="badge bg-blue-100 text-blue-800 text-[10px] font-black shrink-0 px-2.5 py-1">Primary</span>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Alternate Mobile Number</label>
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                        <select
+                          value={newCustomer.altCountryCode || '+91'}
+                          onChange={(e) => setNewCustomer({ ...newCustomer, altCountryCode: e.target.value })}
+                          className="w-full sm:w-[220px] px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-white outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 shrink-0 cursor-pointer"
+                          title="Select Country & Dial Code"
+                        >
+                          {COUNTRY_DIAL_CODES.map(c => (
+                            <option key={`${c.name}-${c.code}`} value={c.code}>{c.display}</option>
+                          ))}
+                        </select>
+                        <input
+                          type="text"
+                          placeholder="98765 00000 (Optional)"
+                          value={newCustomer.alternatePhone || ''}
+                          onChange={(e) => setNewCustomer({ ...newCustomer, alternatePhone: e.target.value, altPhone: e.target.value })}
+                          className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono font-bold text-slate-900 outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 bg-white"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* MULTI-EMAIL SECTION */}
+                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-[11px] font-black uppercase text-slate-700 flex items-center space-x-1.5">
+                        <Mail className="h-3.5 w-3.5 text-blue-600" />
+                        <span>Email Address(es)</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const cur = Array.isArray(newCustomer.emails) ? [...newCustomer.emails] : (newCustomer.email ? [newCustomer.email] : ['']);
+                          setNewCustomer({ ...newCustomer, emails: [...cur, ''] });
+                        }}
+                        className="text-[10px] font-extrabold text-blue-700 hover:text-blue-900 flex items-center space-x-1 cursor-pointer bg-blue-100/70 hover:bg-blue-200/80 px-3 py-1 rounded-xl border border-blue-300/60 transition"
+                      >
+                        <Plus className="h-3 w-3" />
+                        <span>Add Another Email</span>
+                      </button>
                     </div>
 
-                    {/* Additional Emails */}
-                    {Array.isArray(newCustomer.emails) && newCustomer.emails.slice(1).map((em, idx) => (
-                      <div key={`add-em-${idx + 1}`} className="flex items-center space-x-2 animate-fadeIn">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                      {/* Primary Email */}
+                      <div className="flex items-center space-x-2">
                         <input
                           type="email"
-                          placeholder={`Additional Email #${idx + 2}`}
-                          value={em || ''}
+                          placeholder="primary.email@example.com (Primary)"
+                          value={(Array.isArray(newCustomer.emails) && newCustomer.emails[0] !== undefined) ? newCustomer.emails[0] : (newCustomer.email || '')}
                           onChange={(e) => {
                             const val = e.target.value;
-                            const cur = [...newCustomer.emails];
-                            cur[idx + 1] = val;
-                            setNewCustomer({ ...newCustomer, emails: cur });
+                            const cur = Array.isArray(newCustomer.emails) && newCustomer.emails.length > 0 ? [...newCustomer.emails] : [newCustomer.email || ''];
+                            cur[0] = val;
+                            setNewCustomer({ ...newCustomer, email: val, emails: cur });
                           }}
-                          className="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-xs outline-none focus:ring-2 focus:ring-blue-600 bg-white font-semibold"
+                          className="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-xs outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 bg-white font-semibold"
                         />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const cur = newCustomer.emails.filter((_, i) => i !== idx + 1);
-                            setNewCustomer({ ...newCustomer, email: cur[0] || '', emails: cur });
-                          }}
-                          className="p-2 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 transition cursor-pointer border border-rose-200"
-                          title="Remove Email"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
+                        <span className="badge bg-blue-100 text-blue-800 text-[10px] font-black shrink-0 px-2.5 py-1">Primary</span>
                       </div>
-                    ))}
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">City / Region</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Chennai, Bangalore, Mumbai"
-                      value={newCustomer.city}
-                      onChange={(e) => setNewCustomer({ ...newCustomer, city: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50/50"
-                    />
+                      {/* Additional Emails */}
+                      {Array.isArray(newCustomer.emails) && newCustomer.emails.slice(1).map((em, idx) => (
+                        <div key={`add-em-${idx + 1}`} className="flex items-center space-x-2 animate-fadeIn">
+                          <input
+                            type="email"
+                            placeholder={`Additional Email #${idx + 2}`}
+                            value={em || ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const cur = [...newCustomer.emails];
+                              cur[idx + 1] = val;
+                              setNewCustomer({ ...newCustomer, emails: cur });
+                            }}
+                            className="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-xs outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 bg-white font-semibold"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const cur = newCustomer.emails.filter((_, i) => i !== idx + 1);
+                              setNewCustomer({ ...newCustomer, email: cur[0] || '', emails: cur });
+                            }}
+                            className="p-2 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 transition cursor-pointer border border-rose-200"
+                            title="Remove Email"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Full Residential Address</label>
-                    <input
-                      type="text"
-                      placeholder="Door No, Street Name, Landmark, Pincode"
-                      value={newCustomer.address || ''}
-                      onChange={(e) => setNewCustomer({ ...newCustomer, address: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50/50"
-                    />
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">City / Region</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Chennai, Bangalore, Mumbai"
+                        value={newCustomer.city}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, city: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 bg-white"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Full Residential Address</label>
+                      <input
+                        type="text"
+                        placeholder="Door No, Street Name, Landmark, Pincode"
+                        value={newCustomer.address || ''}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, address: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 bg-white"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* DYNAMIC SECTION: ✈️ NON-RESIDENT INDIAN (NRI) EXTENDED DOSSIER */}
-              {newCustomer.isNri && (
+              {newCustomer.isNri && (addModalTab === 'ALL' || addModalTab === 'NRI') && (
                 <div className="bg-gradient-to-br from-indigo-50/90 via-sky-50/50 to-blue-50/90 p-5 rounded-2xl border-2 border-indigo-200 shadow-sm space-y-4 animate-fadeIn">
                   <div className="flex items-center justify-between border-b border-indigo-100 pb-3">
                     <div className="flex items-center space-x-2">
@@ -1983,7 +2048,7 @@ export const Customers = () => {
                       </div>
                       <div>
                         <h4 className="text-xs font-black uppercase text-indigo-950 tracking-wider">
-                          Non-Resident Indian (NRI) Extended Dossier
+                          2. Non-Resident Indian (NRI) Extended Dossier
                         </h4>
                         <p className="text-[10px] text-indigo-700 font-semibold">Overseas Passport KYC, International Address &amp; NRI Settlement Bank Account</p>
                       </div>
@@ -2006,7 +2071,7 @@ export const Customers = () => {
                           placeholder="e.g. Z1234567"
                           value={newCustomer.passportNumber || ''}
                           onChange={(e) => setNewCustomer({ ...newCustomer, passportNumber: e.target.value.toUpperCase() })}
-                          className="w-full px-3 py-2 rounded-xl border border-indigo-200 text-xs font-mono font-bold uppercase tracking-wider outline-none focus:ring-2 focus:ring-indigo-600 bg-indigo-50/30"
+                          className="w-full px-3 py-2 rounded-xl border border-indigo-200 text-xs font-mono font-bold uppercase tracking-wider outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 bg-indigo-50/30"
                         />
                       </div>
                       <div>
@@ -2016,7 +2081,7 @@ export const Customers = () => {
                           placeholder="Full Name as in Passport"
                           value={newCustomer.passportName || ''}
                           onChange={(e) => setNewCustomer({ ...newCustomer, passportName: e.target.value })}
-                          className="w-full px-3 py-2 rounded-xl border border-indigo-200 text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-600 bg-indigo-50/30"
+                          className="w-full px-3 py-2 rounded-xl border border-indigo-200 text-xs font-bold outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 bg-indigo-50/30"
                         />
                       </div>
                       <div>
@@ -2025,7 +2090,7 @@ export const Customers = () => {
                           type="date"
                           value={newCustomer.passportDob || ''}
                           onChange={(e) => setNewCustomer({ ...newCustomer, passportDob: e.target.value })}
-                          className="w-full px-3 py-2 rounded-xl border border-indigo-200 text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-600 bg-indigo-50/30"
+                          className="w-full px-3 py-2 rounded-xl border border-indigo-200 text-xs font-bold outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 bg-indigo-50/30"
                         />
                       </div>
                     </div>
@@ -2038,7 +2103,7 @@ export const Customers = () => {
                           placeholder="Overseas Street Address, City, Country"
                           value={newCustomer.passportAddress || ''}
                           onChange={(e) => setNewCustomer({ ...newCustomer, passportAddress: e.target.value })}
-                          className="w-full px-3 py-2 rounded-xl border border-indigo-200 text-xs font-semibold outline-none focus:ring-2 focus:ring-indigo-600 bg-indigo-50/30"
+                          className="w-full px-3 py-2 rounded-xl border border-indigo-200 text-xs font-semibold outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 bg-indigo-50/30"
                         />
                       </div>
                       <div>
@@ -2048,7 +2113,7 @@ export const Customers = () => {
                           placeholder="e.g. 94016 / 10001 / DXB-01"
                           value={newCustomer.passportPincode || ''}
                           onChange={(e) => setNewCustomer({ ...newCustomer, passportPincode: e.target.value })}
-                          className="w-full px-3 py-2 rounded-xl border border-indigo-200 text-xs font-mono font-bold outline-none focus:ring-2 focus:ring-indigo-600 bg-indigo-50/30"
+                          className="w-full px-3 py-2 rounded-xl border border-indigo-200 text-xs font-mono font-bold outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 bg-indigo-50/30"
                         />
                       </div>
                     </div>
@@ -2069,7 +2134,7 @@ export const Customers = () => {
                           placeholder="Holder Name as in Bank"
                           value={newCustomer.nriBankHolderName || ''}
                           onChange={(e) => setNewCustomer({ ...newCustomer, nriBankHolderName: e.target.value })}
-                          className="w-full px-3 py-2.5 rounded-xl border border-blue-200 text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-600 bg-blue-50/30"
+                          className="w-full px-3 py-2.5 rounded-xl border border-blue-200 text-xs font-semibold outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 bg-blue-50/30"
                         />
                       </div>
                       <div>
@@ -2079,7 +2144,7 @@ export const Customers = () => {
                           placeholder="e.g. HDFC NRI / SBI NRE"
                           value={newCustomer.nriBankName || ''}
                           onChange={(e) => setNewCustomer({ ...newCustomer, nriBankName: e.target.value })}
-                          className="w-full px-3 py-2.5 rounded-xl border border-blue-200 text-xs outline-none focus:ring-2 focus:ring-blue-600 bg-blue-50/30"
+                          className="w-full px-3 py-2.5 rounded-xl border border-blue-200 text-xs outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 bg-blue-50/30"
                         />
                       </div>
                       <div>
@@ -2087,7 +2152,7 @@ export const Customers = () => {
                         <select
                           value={newCustomer.nriBankAccountType || 'Savings'}
                           onChange={(e) => setNewCustomer({ ...newCustomer, nriBankAccountType: e.target.value })}
-                          className="w-full px-3 py-2.5 rounded-xl border border-blue-200 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-blue-50/30 cursor-pointer"
+                          className="w-full px-3 py-2.5 rounded-xl border border-blue-200 text-xs font-bold outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 bg-blue-50/30 cursor-pointer"
                         >
                           <option value="Savings">Savings Account</option>
                           <option value="Current">Current Account</option>
@@ -2103,7 +2168,7 @@ export const Customers = () => {
                           placeholder="e.g. 5010099887766"
                           value={newCustomer.nriBankAccountNumber || ''}
                           onChange={(e) => setNewCustomer({ ...newCustomer, nriBankAccountNumber: e.target.value })}
-                          className="w-full px-3 py-2.5 rounded-xl border border-blue-200 text-xs font-mono outline-none focus:ring-2 focus:ring-blue-600 bg-blue-50/30"
+                          className="w-full px-3 py-2.5 rounded-xl border border-blue-200 text-xs font-mono outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 bg-blue-50/30"
                         />
                       </div>
                       <div>
@@ -2113,7 +2178,7 @@ export const Customers = () => {
                           placeholder="e.g. HDFC0001234"
                           value={newCustomer.nriIfscCode || ''}
                           onChange={(e) => setNewCustomer({ ...newCustomer, nriIfscCode: e.target.value.toUpperCase() })}
-                          className="w-full px-3 py-2.5 rounded-xl border border-blue-200 text-xs font-mono uppercase outline-none focus:ring-2 focus:ring-blue-600 bg-blue-50/30"
+                          className="w-full px-3 py-2.5 rounded-xl border border-blue-200 text-xs font-mono uppercase outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 bg-blue-50/30"
                         />
                       </div>
                     </div>
@@ -2122,471 +2187,511 @@ export const Customers = () => {
               )}
 
               {/* SECTION 2: DEMOGRAPHICS, MARITAL & FAMILY DIRECTORY */}
-              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                  <h4 className="text-xs font-black uppercase text-pink-900 tracking-wider flex items-center space-x-2">
-                    <Heart className="h-4 w-4 text-pink-600 fill-pink-600" />
-                    <span>2. Personal Demographics &amp; Family Members</span>
-                  </h4>
-                  <span className="text-[11px] font-bold text-slate-400">Step 2 of 4</span>
-                </div>
+              {(addModalTab === 'ALL' || addModalTab === 'FAMILY') && (
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4 animate-fadeIn">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <h4 className="text-xs font-black uppercase text-pink-900 tracking-wider flex items-center space-x-2">
+                      <Heart className="h-4.5 w-4.5 text-pink-600 fill-pink-600" />
+                      <span>{newCustomer.isNri ? '3.' : '2.'} Personal Demographics &amp; Family Members</span>
+                    </h4>
+                    <span className="badge bg-pink-50 text-pink-700 text-[10px] font-black">Family &amp; Life</span>
+                  </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Date of Birth</label>
-                    <input
-                      type="date"
-                      value={newCustomer.dob}
-                      onChange={(e) => setNewCustomer({ ...newCustomer, dob: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50/50"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                      <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Date of Birth</label>
+                      <input
+                        type="date"
+                        value={newCustomer.dob}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, dob: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold outline-none focus:ring-4 focus:ring-pink-100 focus:border-pink-500 bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Gender</label>
+                      <select
+                        value={newCustomer.gender || 'Male'}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, gender: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-white outline-none focus:ring-4 focus:ring-pink-100 focus:border-pink-500 cursor-pointer"
+                      >
+                        <option value="Male">Male 👨</option>
+                        <option value="Female">Female 👩</option>
+                        <option value="Other">Other 🧑</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Occupation</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Software Architect / Business"
+                        value={newCustomer.occupation || ''}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, occupation: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold outline-none focus:ring-4 focus:ring-pink-100 focus:border-pink-500 bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Annual Income Bracket</label>
+                      <select
+                        value={newCustomer.incomeBracket || ''}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, incomeBracket: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-white outline-none focus:ring-4 focus:ring-pink-100 focus:border-pink-500 cursor-pointer"
+                      >
+                        <option value="">-- Select Income --</option>
+                        <option value="Below 5 Lakhs">Below 5 Lakhs</option>
+                        <option value="5-10 Lakhs">5-10 Lakhs</option>
+                        <option value="10-25 Lakhs">10-25 Lakhs</option>
+                        <option value="25-50 Lakhs">25-50 Lakhs</option>
+                        <option value="50 Lakhs - 1 Crore">50 Lakhs - 1 Crore</option>
+                        <option value="Above 1 Crore">Above 1 Crore ⭐</option>
+                      </select>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Gender</label>
-                    <select
-                      value={newCustomer.gender || 'Male'}
-                      onChange={(e) => setNewCustomer({ ...newCustomer, gender: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-slate-50/50 outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer"
-                    >
-                      <option value="Male">Male 👨</option>
-                      <option value="Female">Female 👩</option>
-                      <option value="Other">Other 🧑</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Occupation</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Software Architect / Business"
-                      value={newCustomer.occupation || ''}
-                      onChange={(e) => setNewCustomer({ ...newCustomer, occupation: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50/50"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Annual Income Bracket</label>
-                    <select
-                      value={newCustomer.incomeBracket || ''}
-                      onChange={(e) => setNewCustomer({ ...newCustomer, incomeBracket: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-slate-50/50 outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer"
-                    >
-                      <option value="">-- Select Income --</option>
-                      <option value="Below 5 Lakhs">Below 5 Lakhs</option>
-                      <option value="5-10 Lakhs">5-10 Lakhs</option>
-                      <option value="10-25 Lakhs">10-25 Lakhs</option>
-                      <option value="25-50 Lakhs">25-50 Lakhs</option>
-                      <option value="50 Lakhs - 1 Crore">50 Lakhs - 1 Crore</option>
-                      <option value="Above 1 Crore">Above 1 Crore ⭐</option>
-                    </select>
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-                  <div className="bg-pink-50/60 p-4 rounded-2xl border border-pink-200/80 space-y-3">
-                    <label className="block text-[11px] font-black uppercase text-pink-900 mb-1 flex items-center space-x-1.5">
-                      <Heart className="h-3.5 w-3.5 text-pink-600 fill-pink-600" />
-                      <span>Marital Status &amp; Anniversary</span>
-                    </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <select
-                          value={newCustomer.maritalStatus || 'Single'}
-                          onChange={(e) => setNewCustomer({ ...newCustomer, maritalStatus: e.target.value })}
-                          className="w-full px-3.5 py-2.5 rounded-xl border border-pink-200 text-xs font-bold text-slate-800 bg-white outline-none focus:ring-2 focus:ring-pink-500"
-                        >
-                          <option value="Single">Single 👤</option>
-                          <option value="Married">Married 💍</option>
-                        </select>
-                      </div>
-                      {newCustomer.maritalStatus === 'Married' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                    <div className="bg-pink-50/60 p-4 rounded-2xl border border-pink-200/80 space-y-3">
+                      <label className="block text-[11px] font-black uppercase text-pink-900 mb-1 flex items-center space-x-1.5">
+                        <Heart className="h-3.5 w-3.5 text-pink-600 fill-pink-600" />
+                        <span>Marital Status &amp; Anniversary</span>
+                      </label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
+                          <select
+                            value={newCustomer.maritalStatus || 'Single'}
+                            onChange={(e) => setNewCustomer({ ...newCustomer, maritalStatus: e.target.value })}
+                            className="w-full px-3.5 py-2.5 rounded-xl border border-pink-200 text-xs font-bold text-slate-800 bg-white outline-none focus:ring-2 focus:ring-pink-500"
+                          >
+                            <option value="Single">Single 👤</option>
+                            <option value="Married">Married 💍</option>
+                          </select>
+                        </div>
+                        {newCustomer.maritalStatus === 'Married' && (
+                          <div>
+                            <input
+                              type="date"
+                              placeholder="Anniversary Date"
+                              value={newCustomer.anniversaryDate || ''}
+                              onChange={(e) => setNewCustomer({ ...newCustomer, anniversaryDate: e.target.value })}
+                              className="w-full px-3.5 py-2.5 rounded-xl border border-pink-300 text-xs font-bold outline-none focus:ring-2 focus:ring-pink-500 bg-white"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-black uppercase text-slate-700 flex items-center space-x-1.5">
+                          <Users className="h-3.5 w-3.5 text-purple-600" />
+                          <span>Family Members ({newCustomer.familyMembers?.length || 0})</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setShowAddFamilyModal(true)}
+                          className="text-[11px] font-extrabold text-pink-600 hover:text-pink-800 hover:underline flex items-center space-x-1 cursor-pointer bg-white px-2.5 py-1 rounded-xl border border-pink-200"
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                          <span>Add Spouse / Child</span>
+                        </button>
+                      </div>
+
+                      {newCustomer.familyMembers && newCustomer.familyMembers.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {newCustomer.familyMembers.map((fm, idx) => (
+                            <div key={idx} className="bg-white p-2.5 rounded-xl border border-slate-200 text-xs flex items-center justify-between">
+                              <div>
+                                <strong className="text-slate-900">{fm.name}</strong> <span className="text-slate-400">({fm.relation})</span>
+                              </div>
+                              <span className="text-[10px] text-slate-500 font-semibold">{fm.dob ? `DOB: ${fm.dob}` : ''}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-[11px] text-slate-400 font-medium italic">No family members registered yet.</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* SECTION 3: GOVERNMENT IDENTIFIERS & BANK SETTLEMENT */}
+              {(addModalTab === 'ALL' || addModalTab === 'KYC') && (
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4 animate-fadeIn">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <h4 className="text-xs font-black uppercase text-purple-900 tracking-wider flex items-center space-x-2">
+                      <CreditCard className="h-4.5 w-4.5 text-purple-600" />
+                      <span>{newCustomer.isNri ? '4.' : '3.'} Government Identifiers &amp; Bank Settlement Details</span>
+                    </h4>
+                    <span className="badge bg-purple-50 text-purple-700 text-[10px] font-black">KYC &amp; Banking</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* PAN Card Section */}
+                    <div className="bg-purple-50/50 p-4 rounded-2xl border border-purple-100 space-y-3">
+                      <div className="flex items-center space-x-1.5 text-[11px] font-black uppercase text-purple-900">
+                        <span>PAN Card Details</span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-600 mb-1">PAN Card Number</label>
+                          <input
+                            type="text"
+                            placeholder="ABCDE1234F"
+                            value={newCustomer.pan}
+                            onChange={(e) => setNewCustomer({ ...newCustomer, pan: e.target.value.toUpperCase() })}
+                            className="w-full px-3 py-2 rounded-xl border border-purple-200 text-xs font-mono font-bold uppercase tracking-wider outline-none focus:ring-4 focus:ring-purple-100 focus:border-purple-500 bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-600 mb-1">Name as in PAN</label>
+                          <input
+                            type="text"
+                            placeholder="Full Name"
+                            value={newCustomer.panName || ''}
+                            onChange={(e) => setNewCustomer({ ...newCustomer, panName: e.target.value })}
+                            className="w-full px-3 py-2 rounded-xl border border-purple-200 text-xs outline-none focus:ring-4 focus:ring-purple-100 focus:border-purple-500 bg-white font-semibold"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-600 mb-1">PAN DOB</label>
                           <input
                             type="date"
-                            placeholder="Anniversary Date"
-                            value={newCustomer.anniversaryDate || ''}
-                            onChange={(e) => setNewCustomer({ ...newCustomer, anniversaryDate: e.target.value })}
-                            className="w-full px-3.5 py-2.5 rounded-xl border border-pink-300 text-xs font-bold outline-none focus:ring-2 focus:ring-pink-500 bg-white"
+                            value={newCustomer.panDob || ''}
+                            onChange={(e) => setNewCustomer({ ...newCustomer, panDob: e.target.value })}
+                            className="w-full px-3 py-2 rounded-xl border border-purple-200 text-xs outline-none focus:ring-4 focus:ring-purple-100 focus:border-purple-500 bg-white font-semibold"
                           />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Aadhaar / UIDAI Section */}
+                    <div className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100 space-y-3">
+                      <div className="flex items-center space-x-1.5 text-[11px] font-black uppercase text-emerald-900">
+                        <span>Aadhaar / UIDAI Details</span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-600 mb-1">Aadhaar Number</label>
+                          <input
+                            type="text"
+                            placeholder="xxxx-xxxx-9999"
+                            value={newCustomer.aadhaar}
+                            onChange={(e) => setNewCustomer({ ...newCustomer, aadhaar: e.target.value })}
+                            className="w-full px-3 py-2 rounded-xl border border-emerald-200 text-xs font-mono font-bold outline-none focus:ring-4 focus:ring-emerald-100 focus:border-emerald-500 bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-600 mb-1">Name as in Aadhaar</label>
+                          <input
+                            type="text"
+                            placeholder="Full Name"
+                            value={newCustomer.aadhaarName || ''}
+                            onChange={(e) => setNewCustomer({ ...newCustomer, aadhaarName: e.target.value })}
+                            className="w-full px-3 py-2 rounded-xl border border-emerald-200 text-xs outline-none focus:ring-4 focus:ring-emerald-100 focus:border-emerald-500 bg-white font-semibold"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-600 mb-1">Aadhaar DOB</label>
+                          <input
+                            type="date"
+                            value={newCustomer.aadhaarDob || ''}
+                            onChange={(e) => setNewCustomer({ ...newCustomer, aadhaarDob: e.target.value })}
+                            className="w-full px-3 py-2 rounded-xl border border-emerald-200 text-xs outline-none focus:ring-4 focus:ring-emerald-100 focus:border-emerald-500 bg-white font-semibold"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bank Account Details Section */}
+                  <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100 space-y-3">
+                    <div className="flex items-center space-x-1.5 text-[11px] font-black uppercase text-blue-900">
+                      <Building2 className="h-4 w-4 text-blue-600" />
+                      <span>Resident Bank Account &amp; Settlement Details</span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-600 mb-1">Account Holder Name</label>
+                        <input
+                          type="text"
+                          placeholder="Holder Name as in Bank"
+                          value={newCustomer.bankHolderName || ''}
+                          onChange={(e) => setNewCustomer({ ...newCustomer, bankHolderName: e.target.value })}
+                          className="w-full px-3 py-2.5 rounded-xl border border-blue-200 text-xs font-semibold outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-600 mb-1">Bank Name</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. HDFC Bank / SBI / ICICI"
+                          value={newCustomer.bankName || ''}
+                          onChange={(e) => setNewCustomer({ ...newCustomer, bankName: e.target.value })}
+                          className="w-full px-3 py-2.5 rounded-xl border border-blue-200 text-xs outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 bg-white font-semibold"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-600 mb-1">Bank Account Type</label>
+                        <select
+                          value={newCustomer.bankAccountType || 'Savings'}
+                          onChange={(e) => setNewCustomer({ ...newCustomer, bankAccountType: e.target.value })}
+                          className="w-full px-3 py-2.5 rounded-xl border border-blue-200 text-xs font-bold outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 bg-white cursor-pointer"
+                        >
+                          <option value="Savings">Savings Account</option>
+                          <option value="Current">Current Account</option>
+                          <option value="NRI">NRI Account</option>
+                          <option value="NRE">NRE Account</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-600 mb-1">Bank Account Number</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. 5010023456789"
+                          value={newCustomer.bankAccountNumber || ''}
+                          onChange={(e) => setNewCustomer({ ...newCustomer, bankAccountNumber: e.target.value })}
+                          className="w-full px-3 py-2.5 rounded-xl border border-blue-200 text-xs font-mono outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-600 mb-1">IFSC Code</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. HDFC0001234"
+                          value={newCustomer.ifscCode || ''}
+                          onChange={(e) => setNewCustomer({ ...newCustomer, ifscCode: e.target.value.toUpperCase() })}
+                          className="w-full px-3 py-2.5 rounded-xl border border-blue-200 text-xs font-mono uppercase outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 bg-white"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* SECTION 4: INITIAL BUSINESS, INSURER & ADVISOR ASSIGNMENT */}
+              {(addModalTab === 'ALL' || addModalTab === 'BUSINESS') && (
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4 animate-fadeIn">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <h4 className="text-xs font-black uppercase text-indigo-900 tracking-wider flex items-center space-x-2">
+                      <ShieldCheck className="h-4.5 w-4.5 text-indigo-600" />
+                      <span>{newCustomer.isNri ? '5.' : '4.'} Initial Business Interest &amp; Advisor Assignment</span>
+                    </h4>
+                    <span className="badge bg-emerald-50 text-emerald-700 text-[10px] font-black">All 30 Insurers</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Policy Type / Category</label>
+                      <select
+                        value={newCustomer.insuranceType}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, insuranceType: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-white outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 cursor-pointer"
+                      >
+                        <option value="">-- Select Policy Category --</option>
+                        <option value="LIFE">Life Insurance (LIFE)</option>
+                        <option value="HEALTH">Health / Medical (HEALTH)</option>
+                        <option value="MOTOR">Motor / Vehicle (MOTOR)</option>
+                        <option value="FIRE">Fire &amp; Asset Protection (FIRE)</option>
+                        <option value="SIP">Mutual Fund SIP (SIP)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Insurance Company (All 30 Insurers)</label>
+                      <select
+                        value={newCustomer.insuranceCompany}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, insuranceCompany: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-extrabold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 cursor-pointer"
+                      >
+                        <option value="">-- Select Insurance Company ({insuranceCompanies.length}) --</option>
+                        {insuranceCompanies.map(comp => (
+                          <option key={comp} value={comp}>{comp}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="relative">
+                      <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Assigned Staff Advisor</label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          placeholder="Select or Type Assigned Staff"
+                          value={newCustomer.assignedAdvisorName || ''}
+                          onFocus={() => setShowAddStaffSuggest(true)}
+                          onClick={() => setShowAddStaffSuggest(true)}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setNewCustomer({ ...newCustomer, assignedAdvisorName: val });
+                            setShowAddStaffSuggest(true);
+                          }}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-white outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 cursor-pointer pr-8"
+                        />
+                        <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                      </div>
+
+                      {/* Floating Staff Suggestions Dropdown */}
+                      {showAddStaffSuggest && addStaffSearchResults.total > 0 && (
+                        <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white rounded-2xl border border-slate-200 shadow-2xl max-h-52 overflow-y-auto divide-y divide-slate-100 animate-fadeIn">
+                          <div className="p-2 bg-slate-50 text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between sticky top-0 z-10 border-b">
+                            <span>Registered Staff ({addStaffSearchResults.total})</span>
+                            <button
+                              type="button"
+                              onClick={() => setShowAddStaffSuggest(false)}
+                              className="text-slate-400 hover:text-slate-700 cursor-pointer text-xs font-bold"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                          {addStaffSearchResults.startsWith.map((stf, idx) => (
+                            <div
+                              key={`add-stf-start-${idx}`}
+                              onClick={() => {
+                                setNewCustomer({
+                                  ...newCustomer,
+                                  assignedAdvisorName: stf.name,
+                                  assignedStaffId: stf.uid || stf.id || `UID-STF-${idx}`
+                                });
+                                setShowAddStaffSuggest(false);
+                              }}
+                              className="p-2.5 hover:bg-blue-50 cursor-pointer transition flex items-center justify-between text-xs"
+                            >
+                              <div className="flex items-center space-x-2">
+                                <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 font-black text-[10px] flex items-center justify-center">
+                                  {stf.name?.charAt(0)}
+                                </div>
+                                <div>
+                                  <p className="font-extrabold text-slate-900">{stf.name}</p>
+                                  <p className="text-[10px] text-slate-400 font-semibold">{stf.title || stf.role || 'Staff Advisor'}</p>
+                                </div>
+                              </div>
+                              <span className="badge bg-blue-50 text-blue-700 text-[9px] font-black">{stf.role || 'Advisor'}</span>
+                            </div>
+                          ))}
+                          {addStaffSearchResults.contains.map((stf, idx) => (
+                            <div
+                              key={`add-stf-cont-${idx}`}
+                              onClick={() => {
+                                setNewCustomer({
+                                  ...newCustomer,
+                                  assignedAdvisorName: stf.name,
+                                  assignedStaffId: stf.uid || stf.id || `UID-STF-${idx}`
+                                });
+                                setShowAddStaffSuggest(false);
+                              }}
+                              className="p-2.5 hover:bg-slate-50 cursor-pointer transition flex items-center justify-between text-xs"
+                            >
+                              <div className="flex items-center space-x-2">
+                                <div className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 font-black text-[10px] flex items-center justify-center">
+                                  {stf.name?.charAt(0)}
+                                </div>
+                                <div>
+                                  <p className="font-extrabold text-slate-900">{stf.name}</p>
+                                  <p className="text-[10px] text-slate-400 font-semibold">{stf.title || stf.role || 'Staff Advisor'}</p>
+                                </div>
+                              </div>
+                              <span className="badge bg-slate-100 text-slate-700 text-[9px] font-black">{stf.role || 'Advisor'}</span>
+                            </div>
+                          ))}
                         </div>
                       )}
                     </div>
                   </div>
 
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-black uppercase text-slate-700 flex items-center space-x-1.5">
-                        <Users className="h-3.5 w-3.5 text-purple-600" />
-                        <span>Family Members ({newCustomer.familyMembers?.length || 0})</span>
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setShowAddFamilyModal(true)}
-                        className="text-[11px] font-extrabold text-pink-600 hover:text-pink-800 hover:underline flex items-center space-x-1 cursor-pointer bg-white px-2.5 py-1 rounded-xl border border-pink-200"
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                        <span>Add Spouse / Child</span>
-                      </button>
-                    </div>
-
-                    {newCustomer.familyMembers && newCustomer.familyMembers.length > 0 ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {newCustomer.familyMembers.map((fm, idx) => (
-                          <div key={idx} className="bg-white p-2.5 rounded-xl border border-slate-200 text-xs flex items-center justify-between">
-                            <div>
-                              <strong className="text-slate-900">{fm.name}</strong> <span className="text-slate-400">({fm.relation})</span>
-                            </div>
-                            <span className="text-[10px] text-slate-500 font-semibold">{fm.dob ? `DOB: ${fm.dob}` : ''}</span>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-[11px] text-slate-400 font-medium italic">No family members registered yet.</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* SECTION 3: GOVERNMENT IDENTIFIERS & BANK SETTLEMENT */}
-              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                  <h4 className="text-xs font-black uppercase text-purple-900 tracking-wider flex items-center space-x-2">
-                    <CreditCard className="h-4 w-4 text-purple-600" />
-                    <span>3. Government Identifiers &amp; Bank Settlement Details</span>
-                  </h4>
-                  <span className="text-[11px] font-bold text-slate-400">Step 3 of 4</span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* PAN Card Section */}
-                  <div className="bg-purple-50/50 p-4 rounded-2xl border border-purple-100 space-y-3">
-                    <div className="flex items-center space-x-1.5 text-[11px] font-black uppercase text-purple-900">
-                      <span>PAN Card Details</span>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-600 mb-1">PAN Card Number</label>
-                        <input
-                          type="text"
-                          placeholder="ABCDE1234F"
-                          value={newCustomer.pan}
-                          onChange={(e) => setNewCustomer({ ...newCustomer, pan: e.target.value.toUpperCase() })}
-                          className="w-full px-3 py-2 rounded-xl border border-purple-200 text-xs font-mono font-bold uppercase tracking-wider outline-none focus:ring-2 focus:ring-purple-600 bg-white"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-600 mb-1">Name as in PAN</label>
-                        <input
-                          type="text"
-                          placeholder="Full Name"
-                          value={newCustomer.panName || ''}
-                          onChange={(e) => setNewCustomer({ ...newCustomer, panName: e.target.value })}
-                          className="w-full px-3 py-2 rounded-xl border border-purple-200 text-xs outline-none focus:ring-2 focus:ring-purple-600 bg-white"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-600 mb-1">PAN DOB</label>
-                        <input
-                          type="date"
-                          value={newCustomer.panDob || ''}
-                          onChange={(e) => setNewCustomer({ ...newCustomer, panDob: e.target.value })}
-                          className="w-full px-3 py-2 rounded-xl border border-purple-200 text-xs outline-none focus:ring-2 focus:ring-purple-600 bg-white"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Aadhaar / UIDAI Section */}
-                  <div className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100 space-y-3">
-                    <div className="flex items-center space-x-1.5 text-[11px] font-black uppercase text-emerald-900">
-                      <span>Aadhaar / UIDAI Details</span>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-600 mb-1">Aadhaar Number</label>
-                        <input
-                          type="text"
-                          placeholder="xxxx-xxxx-9999"
-                          value={newCustomer.aadhaar}
-                          onChange={(e) => setNewCustomer({ ...newCustomer, aadhaar: e.target.value })}
-                          className="w-full px-3 py-2 rounded-xl border border-emerald-200 text-xs font-mono font-bold outline-none focus:ring-2 focus:ring-emerald-600 bg-white"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-600 mb-1">Name as in Aadhaar</label>
-                        <input
-                          type="text"
-                          placeholder="Full Name"
-                          value={newCustomer.aadhaarName || ''}
-                          onChange={(e) => setNewCustomer({ ...newCustomer, aadhaarName: e.target.value })}
-                          className="w-full px-3 py-2 rounded-xl border border-emerald-200 text-xs outline-none focus:ring-2 focus:ring-emerald-600 bg-white"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-600 mb-1">Aadhaar DOB</label>
-                        <input
-                          type="date"
-                          value={newCustomer.aadhaarDob || ''}
-                          onChange={(e) => setNewCustomer({ ...newCustomer, aadhaarDob: e.target.value })}
-                          className="w-full px-3 py-2 rounded-xl border border-emerald-200 text-xs outline-none focus:ring-2 focus:ring-emerald-600 bg-white"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Bank Account Details Section */}
-                <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100 space-y-3">
-                  <div className="flex items-center space-x-1.5 text-[11px] font-black uppercase text-blue-900">
-                    <Building2 className="h-4 w-4 text-blue-600" />
-                    <span>Bank Account &amp; Settlement Details</span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-600 mb-1">Account Holder Name</label>
+                      <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Sales Pitch / Proposed Plan</label>
                       <input
                         type="text"
-                        placeholder="Holder Name as in Bank"
-                        value={newCustomer.bankHolderName || ''}
-                        onChange={(e) => setNewCustomer({ ...newCustomer, bankHolderName: e.target.value })}
-                        className="w-full px-3 py-2.5 rounded-xl border border-blue-200 text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-600 bg-white"
+                        placeholder="e.g. Retirement Pension Plan + Super Top-up"
+                        value={newCustomer.salesPitch}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, salesPitch: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 bg-white"
                       />
                     </div>
+
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-600 mb-1">Bank Name</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. HDFC Bank / SBI / ICICI"
-                        value={newCustomer.bankName || ''}
-                        onChange={(e) => setNewCustomer({ ...newCustomer, bankName: e.target.value })}
-                        className="w-full px-3 py-2.5 rounded-xl border border-blue-200 text-xs outline-none focus:ring-2 focus:ring-blue-600 bg-white"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-600 mb-1">Bank Account Type</label>
+                      <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Customer Lead Status</label>
                       <select
-                        value={newCustomer.bankAccountType || 'Savings'}
-                        onChange={(e) => setNewCustomer({ ...newCustomer, bankAccountType: e.target.value })}
-                        className="w-full px-3 py-2.5 rounded-xl border border-blue-200 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-600 bg-white"
+                        value={newCustomer.clientStatus}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, clientStatus: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-white outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 cursor-pointer"
                       >
-                        <option value="Savings">Savings Account</option>
-                        <option value="Current">Current Account</option>
-                        <option value="NRI">NRI Account</option>
-                        <option value="NRE">NRE Account</option>
+                        <option value="">-- Select Customer Status --</option>
+                        <option value="Quotation Shared">Quotation Shared 📄</option>
+                        <option value="Under Review">Under Review ⏳</option>
+                        <option value="Interested">Interested 👍</option>
+                        <option value="Active">Active Client ✅</option>
+                        <option value="Closed">Closed / Converted 🎉</option>
                       </select>
                     </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-600 mb-1">Bank Account Number</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. 5010023456789"
-                        value={newCustomer.bankAccountNumber || ''}
-                        onChange={(e) => setNewCustomer({ ...newCustomer, bankAccountNumber: e.target.value })}
-                        className="w-full px-3 py-2.5 rounded-xl border border-blue-200 text-xs font-mono outline-none focus:ring-2 focus:ring-blue-600 bg-white"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-600 mb-1">IFSC Code</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. HDFC0001234"
-                        value={newCustomer.ifscCode || ''}
-                        onChange={(e) => setNewCustomer({ ...newCustomer, ifscCode: e.target.value.toUpperCase() })}
-                        className="w-full px-3 py-2.5 rounded-xl border border-blue-200 text-xs font-mono uppercase outline-none focus:ring-2 focus:ring-blue-600 bg-white"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* SECTION 4: INITIAL BUSINESS, INSURER & ADVISOR ASSIGNMENT */}
-              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                  <h4 className="text-xs font-black uppercase text-indigo-900 tracking-wider flex items-center space-x-2">
-                    <ShieldCheck className="h-4 w-4 text-indigo-600" />
-                    <span>4. Initial Business Interest &amp; Advisor Assignment</span>
-                  </h4>
-                  <span className="text-[11px] font-bold text-slate-400">Step 4 of 4</span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Policy Type / Category</label>
-                    <select
-                      value={newCustomer.insuranceType}
-                      onChange={(e) => setNewCustomer({ ...newCustomer, insuranceType: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-slate-50/50 outline-none focus:ring-2 focus:ring-blue-600"
-                    >
-                      <option value="">-- Select Policy Category --</option>
-                      <option value="LIFE">Life Insurance (LIFE)</option>
-                      <option value="HEALTH">Health / Medical (HEALTH)</option>
-                      <option value="MOTOR">Motor / Vehicle (MOTOR)</option>
-                      <option value="FIRE">Fire &amp; Asset Protection (FIRE)</option>
-                      <option value="SIP">Mutual Fund SIP (SIP)</option>
-                    </select>
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Insurance Company</label>
-                    <select
-                      value={newCustomer.insuranceCompany}
-                      onChange={(e) => setNewCustomer({ ...newCustomer, insuranceCompany: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-extrabold text-slate-900 bg-slate-50/50 outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer"
-                    >
-                      <option value="">-- Select Insurance Company ({insuranceCompanies.length}) --</option>
-                      {insuranceCompanies.map(comp => (
-                        <option key={comp} value={comp}>{comp}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="relative">
-                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Assigned Staff Advisor</label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        placeholder="Select or Type Assigned Staff"
-                        value={newCustomer.assignedAdvisorName || ''}
-                        onFocus={() => setShowAddStaffSuggest(true)}
-                        onClick={() => setShowAddStaffSuggest(true)}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setNewCustomer({ ...newCustomer, assignedAdvisorName: val });
-                          setShowAddStaffSuggest(true);
-                        }}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-slate-50/50 outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer pr-8"
-                      />
-                      <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                    </div>
-
-                    {/* Floating Staff Suggestions Dropdown */}
-                    {showAddStaffSuggest && addStaffSearchResults.total > 0 && (
-                      <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white rounded-2xl border border-slate-200 shadow-2xl max-h-52 overflow-y-auto divide-y divide-slate-100 animate-fadeIn">
-                        <div className="p-2 bg-slate-50 text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between sticky top-0 z-10 border-b">
-                          <span>Registered Staff ({addStaffSearchResults.total})</span>
-                          <button
-                            type="button"
-                            onClick={() => setShowAddStaffSuggest(false)}
-                            className="text-slate-400 hover:text-slate-700 cursor-pointer text-xs font-bold"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                        {addStaffSearchResults.startsWith.map((stf, idx) => (
-                          <div
-                            key={`add-stf-start-${idx}`}
-                            onClick={() => {
-                              setNewCustomer({
-                                ...newCustomer,
-                                assignedAdvisorName: stf.name,
-                                assignedStaffId: stf.uid || stf.id || `UID-STF-${idx}`
-                              });
-                              setShowAddStaffSuggest(false);
-                            }}
-                            className="p-2.5 hover:bg-blue-50 cursor-pointer transition flex items-center justify-between text-xs"
-                          >
-                            <div className="flex items-center space-x-2">
-                              <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 font-black text-[10px] flex items-center justify-center">
-                                {stf.name?.charAt(0)}
-                              </div>
-                              <div>
-                                <p className="font-extrabold text-slate-900">{stf.name}</p>
-                                <p className="text-[10px] text-slate-400 font-semibold">{stf.title || stf.role || 'Staff Advisor'}</p>
-                              </div>
-                            </div>
-                            <span className="badge bg-blue-50 text-blue-700 text-[9px] font-black">{stf.role || 'Advisor'}</span>
-                          </div>
-                        ))}
-                        {addStaffSearchResults.contains.map((stf, idx) => (
-                          <div
-                            key={`add-stf-cont-${idx}`}
-                            onClick={() => {
-                              setNewCustomer({
-                                ...newCustomer,
-                                assignedAdvisorName: stf.name,
-                                assignedStaffId: stf.uid || stf.id || `UID-STF-${idx}`
-                              });
-                              setShowAddStaffSuggest(false);
-                            }}
-                            className="p-2.5 hover:bg-slate-50 cursor-pointer transition flex items-center justify-between text-xs"
-                          >
-                            <div className="flex items-center space-x-2">
-                              <div className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 font-black text-[10px] flex items-center justify-center">
-                                {stf.name?.charAt(0)}
-                              </div>
-                              <div>
-                                <p className="font-extrabold text-slate-900">{stf.name}</p>
-                                <p className="text-[10px] text-slate-400 font-semibold">{stf.title || stf.role || 'Staff Advisor'}</p>
-                              </div>
-                            </div>
-                            <span className="badge bg-slate-100 text-slate-700 text-[9px] font-black">{stf.role || 'Advisor'}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Sales Pitch / Proposed Plan</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Retirement Pension Plan + Super Top-up"
-                      value={newCustomer.salesPitch}
-                      onChange={(e) => setNewCustomer({ ...newCustomer, salesPitch: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50/50"
+                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Advisor Notes &amp; Strategy Observations</label>
+                    <textarea
+                      rows="2"
+                      placeholder="Enter strategic observations, customer requirements, preferred call timings, or policy customizations..."
+                      value={newCustomer.advisorNotes}
+                      onChange={(e) => setNewCustomer({ ...newCustomer, advisorNotes: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 bg-white"
                     />
                   </div>
-
-                  <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Customer Lead Status</label>
-                    <select
-                      value={newCustomer.clientStatus}
-                      onChange={(e) => setNewCustomer({ ...newCustomer, clientStatus: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-slate-50/50 outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer"
-                    >
-                      <option value="">-- Select Customer Status --</option>
-                      <option value="Quotation Shared">Quotation Shared 📄</option>
-                      <option value="Under Review">Under Review ⏳</option>
-                      <option value="Interested">Interested 👍</option>
-                      <option value="Active">Active Client ✅</option>
-                      <option value="Closed">Closed / Converted 🎉</option>
-                    </select>
-                  </div>
                 </div>
-
-                <div>
-                  <label className="block text-[11px] font-black uppercase text-slate-700 mb-1">Advisor Notes &amp; Strategy Observations</label>
-                  <textarea
-                    rows="2"
-                    placeholder="Enter strategic observations, customer requirements, preferred call timings, or policy customizations..."
-                    value={newCustomer.advisorNotes}
-                    onChange={(e) => setNewCustomer({ ...newCustomer, advisorNotes: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50/50"
-                  />
-                </div>
-              </div>
+              )}
 
             </form>
 
             {/* Sticky Action Footer */}
-            <div className="bg-white border-t border-slate-200 px-6 py-4 flex items-center justify-between shrink-0 shadow-sm">
-              <div className="hidden sm:flex items-center space-x-2 text-xs text-slate-500 font-medium">
-                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                <span>All customer data is encrypted &amp; synced live with Firestore.</span>
+            <div className="bg-white border-t border-slate-200 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0 shadow-md">
+              <div className="flex items-center space-x-2 text-xs text-slate-500 font-medium">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>Encrypted &amp; Synced live with Firestore</span>
               </div>
-              <div className="flex items-center space-x-3 w-full sm:w-auto justify-end">
+
+              <div className="flex items-center space-x-2.5 w-full sm:w-auto justify-end">
+                {addModalTab !== 'ALL' && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const tabs = newCustomer.isNri 
+                          ? ['IDENTITY', 'NRI', 'FAMILY', 'KYC', 'BUSINESS'] 
+                          : ['IDENTITY', 'FAMILY', 'KYC', 'BUSINESS'];
+                        const idx = tabs.indexOf(addModalTab);
+                        if (idx > 0) setAddModalTab(tabs[idx - 1]);
+                      }}
+                      disabled={addModalTab === 'IDENTITY'}
+                      className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-bold transition cursor-pointer"
+                    >
+                      ← Back
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const tabs = newCustomer.isNri 
+                          ? ['IDENTITY', 'NRI', 'FAMILY', 'KYC', 'BUSINESS'] 
+                          : ['IDENTITY', 'FAMILY', 'KYC', 'BUSINESS'];
+                        const idx = tabs.indexOf(addModalTab);
+                        if (idx < tabs.length - 1) setAddModalTab(tabs[idx + 1]);
+                      }}
+                      disabled={addModalTab === 'BUSINESS'}
+                      className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-bold transition cursor-pointer"
+                    >
+                      Next Section →
+                    </button>
+                  </>
+                )}
+
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100 text-xs font-extrabold transition cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-extrabold transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   form="add-customer-360-form"
-                  className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer flex items-center space-x-2"
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white font-black text-xs shadow-lg shadow-blue-600/30 transition cursor-pointer flex items-center space-x-2"
                 >
                   <UserCheck className="h-4 w-4" />
                   <span>Save Complete Customer 360 Record</span>
