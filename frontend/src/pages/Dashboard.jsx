@@ -2343,26 +2343,16 @@ export const Dashboard = () => {
             <p className="text-xs text-blue-100 font-medium">Real-time Performance, Portfolio &amp; Financial Overview</p>
           </div>
 
-          <div className="flex items-center space-x-2.5 flex-wrap gap-2">
+          <div className="flex items-center space-x-3">
             {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
-              <>
-                <button 
-                  onClick={handleExportDashboardPDF} 
-                  className="flex items-center space-x-1.5 px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition cursor-pointer"
-                  title="Download All Dashboard Data as Master PDF Report"
-                >
-                  <Download className="h-4 w-4" />
-                  <span>Export PDF</span>
-                </button>
-                <button 
-                  onClick={handleExportDashboardExcel} 
-                  className="flex items-center space-x-1.5 px-4 py-2.5 rounded-2xl bg-white/15 hover:bg-white/25 text-white font-bold text-xs shadow-md border border-white/20 transition cursor-pointer"
-                  title="Download All Dashboard Data as Master Excel / CSV Spreadsheet"
-                >
-                  <FileText className="h-4 w-4" />
-                  <span>Export Excel</span>
-                </button>
-              </>
+              <button 
+                onClick={handleExportDashboardPDF} 
+                className="flex items-center space-x-2 px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow transition cursor-pointer"
+                title="Export Dashboard Analytics as PDF Report"
+              >
+                <Download className="h-4 w-4" />
+                <span>Export</span>
+              </button>
             )}
           </div>
         </div>
