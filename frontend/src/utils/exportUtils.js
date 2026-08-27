@@ -85,14 +85,17 @@ export const exportCustomer360PDF = (customer) => {
           <div class="info-val">${customer.name}</div>
         </div>
         <div class="info-card">
-          <div class="info-label">Marital Status</div>
-          <div class="info-val" style="color: ${customer.maritalStatus === 'Married' ? '#be185d' : '#7e22ce'};">
-            ${customer.maritalStatus === 'Married' ? 'Married 💍' : 'Single 👤'}
+          <div class="info-label">Lead Priority &amp; Category</div>
+          <div class="info-val" style="color: ${customer.leadType === 'Hot Lead' ? '#e11d48' : customer.leadType === 'Cold Lead' ? '#0284c7' : '#d97706'};">
+            ${customer.leadType === 'Hot Lead' ? '🔥 Hot Lead' : customer.leadType === 'Cold Lead' ? '❄️ Cold Lead' : '⚡ Warm Lead'}
+            ${customer.isNri ? '<span style="font-size:10px; background:#4f46e5; color:#fff; padding:2px 6px; border-radius:4px; margin-left:4px;">✈️ NRI</span>' : '<span style="font-size:10px; background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:4px; margin-left:4px;">🇮🇳 Resident</span>'}
           </div>
         </div>
         <div class="info-card">
-          <div class="info-label">Wedding Anniversary</div>
-          <div class="info-val" style="color: #be185d;">${customer.anniversaryDate || 'N/A'}</div>
+          <div class="info-label">Marital Status / Anniversary</div>
+          <div class="info-val" style="color: ${customer.maritalStatus === 'Married' ? '#be185d' : '#7e22ce'};">
+            ${customer.maritalStatus === 'Married' ? `Married 💍 (${customer.anniversaryDate || 'Date N/A'})` : 'Single 👤'}
+          </div>
         </div>
         <div class="info-card">
           <div class="info-label">Active Staff / Advisor</div>
@@ -122,13 +125,38 @@ export const exportCustomer360PDF = (customer) => {
         </tr>
         ${(customer.bankHolderName || customer.bankName || customer.bankAccountNumber || customer.ifscCode) ? `
         <tr>
-          <td style="font-weight: 800; background:#f8fafc;">Bank Account Details:</td>
+          <td style="font-weight: 800; background:#f8fafc;">Primary Bank Account:</td>
           <td colSpan="3">
             <strong>${customer.bankName || 'Bank Account'}</strong>
             ${customer.bankHolderName ? ` | Holder: <strong>${customer.bankHolderName}</strong>` : ''}
             ${customer.bankAccountNumber ? ` | A/C No: <span style="font-family:monospace;">${customer.bankAccountNumber}</span>` : ''}
             ${customer.bankAccountType ? ` | Type: <strong>${customer.bankAccountType}</strong>` : ''}
             ${customer.ifscCode ? ` | IFSC: <span style="font-family:monospace;">${customer.ifscCode}</span>` : ''}
+          </td>
+        </tr>
+        ` : ''}
+        ${customer.isNri ? `
+        <tr style="background: #eef2ff;">
+          <td style="font-weight: 800; color: #3730a3;">✈️ NRI Passport Details:</td>
+          <td>
+            <strong>${customer.passportNumber || 'N/A'}</strong>
+            ${customer.passportName ? `<br/><small style="color:#4f46e5;">Name: ${customer.passportName}</small>` : ''}
+            ${customer.passportDob ? `<br/><small style="color:#4f46e5;">DOB: ${customer.passportDob}</small>` : ''}
+          </td>
+          <td style="font-weight: 800; color: #3730a3;">Overseas Address:</td>
+          <td>
+            ${customer.passportAddress || 'N/A'}
+            ${customer.passportPincode ? `<br/><small style="color:#4f46e5;">Postal/Pincode: ${customer.passportPincode}</small>` : ''}
+          </td>
+        </tr>
+        <tr style="background: #eef2ff;">
+          <td style="font-weight: 800; color: #3730a3;">✈️ NRI Bank Account:</td>
+          <td colSpan="3">
+            <strong>${customer.nriBankName || 'NRI Bank'}</strong>
+            ${customer.nriBankHolderName ? ` | Holder: <strong>${customer.nriBankHolderName}</strong>` : ''}
+            ${customer.nriBankAccountNumber ? ` | A/C: <span style="font-family:monospace;">${customer.nriBankAccountNumber}</span>` : ''}
+            ${customer.nriBankAccountType ? ` | Type: <strong>${customer.nriBankAccountType}</strong>` : ''}
+            ${customer.nriIfscCode ? ` | IFSC/Swift: <span style="font-family:monospace;">${customer.nriIfscCode}</span>` : ''}
           </td>
         </tr>
         ` : ''}
