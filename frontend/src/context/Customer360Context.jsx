@@ -1013,6 +1013,9 @@ export const Customer360Provider = ({ children }) => {
                                 <span className="badge badge-green text-[9px]">{pol.status || 'ACTIVE'}</span>
                               </td>
                               <td className="p-3 text-center">
+                                {pol._embedded ? (
+                                  <span className="text-[10px] font-semibold text-slate-400 italic">From Customer Record</span>
+                                ) : (
                                 <div className="flex items-center justify-center space-x-1.5">
                                   <button
                                     onClick={() => handleOpenEditPolicy(pol)}
@@ -1029,6 +1032,7 @@ export const Customer360Provider = ({ children }) => {
                                     <Trash2 className="h-4 w-4" />
                                   </button>
                                 </div>
+                                )}
                               </td>
                             </tr>
                           ))

@@ -861,7 +861,43 @@ export const DataProvider = ({ children }) => {
       return false;
     };
 
-    const userPolicies = rawPolicies.filter(matchingRecord);
+    let userPolicies = rawPolicies.filter(matchingRecord);
+
+    // ── FALLBACK: Synthesize from embedded customer fields ──────────────────
+    // Older customers may have policy data stored directly on the customer
+    // document (insuranceCompany, policyName, policyAmount, etc.) instead of
+    // as separate documents in the "policies" collection.
+    // Build synthetic policy entries so the Policies tab always shows something.
+    if (userPolicies.length === 0 && masterCustomer) {
+      const c = masterCustomer;
+      // Handle multiple embedded policies stored as arrays or single fields
+      const companies = Array.isArray(c.insuranceCompanies) ? c.insuranceCompanies
+                        : c.insuranceCompany ? [c.insuranceCompany] : [];
+      companies.forEach((company, i) => {
+        if (!company) return;
+        userPolicies.push({
+          id: c.policyNo || c.policyNumber || `EMB-${c.id || c.customerCode}-${i}`,
+          customerName: c.name,
+          customerId: c.id || c.customerCode,
+          insuranceCompany: company,
+          type: Array.isArray(c.insuranceTypes) ? c.insuranceTypes[i] : (c.insuranceType || c.type || 'Insurance'),
+          category: c.insuranceType || c.type || 'Insurance',
+          policyName: Array.isArray(c.policyNames) ? c.policyNames[i] : (c.policyName || c.planName || ''),
+          planName: c.policyName || c.planName || '',
+          sumInsured: Number(c.sumInsured || c.sumAssured || c.coverageAmount || 0),
+          grossPremium: Number(c.grossPremium || c.policyAmount || c.premium || c.annualPremium || 0),
+          premium: Number(c.grossPremium || c.policyAmount || c.premium || c.annualPremium || 0),
+          startDate: c.policyStartDate || c.startDate || '',
+          expiryDate: c.policyExpiryDate || c.expiryDate || c.renewalDate || '',
+          status: c.policyStatus || 'ACTIVE',
+          assignedStaff: c.assignedAdvisorName || c.assignedStaffName || '',
+          assignedStaffName: c.assignedStaffName || c.assignedAdvisorName || '',
+          phone: c.phone || '',
+          _embedded: true   // flag to distinguish from real policy docs
+        });
+      });
+    }
+
     const userInvestments = rawInvestments.filter(matchingRecord);
     const userClaims = rawClaims.filter(matchingRecord);
     const userTasks = rawTasks.filter(matchingRecord);
