@@ -6,8 +6,6 @@ import {
   Sparkles, CheckCircle2, Lock, X, Activity, UserCheck, Calendar
 } from 'lucide-react';
 
-const DEFAULT_AUDIT_LOGS = [];
-
 export const AuditLogs = () => {
   const { user } = useAuth();
   const { auditLogs, addAuditLog } = useData();
@@ -25,7 +23,7 @@ export const AuditLogs = () => {
     details: 'Completed quarterly security audit and access review.'
   });
 
-  const logsList = Array.isArray(auditLogs) && auditLogs.length > 0 ? auditLogs : DEFAULT_AUDIT_LOGS;
+  const logsList = Array.isArray(auditLogs) ? auditLogs : [];
 
   const filteredLogs = logsList.filter(log => {
     if (!log) return false;
