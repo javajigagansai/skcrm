@@ -45,7 +45,7 @@ export const AuditLogs = () => {
     if (selectedModule !== 'ALL' && module !== selectedModule) return false;
 
     if (filterStartDate || filterEndDate) {
-      const logDate = log.timestamp ? new Date(log.timestamp) : null;
+      const logDate = log.createdAt ? new Date(log.createdAt) : (log.timestamp ? new Date(log.timestamp) : null);
       if (logDate && !isNaN(logDate.getTime())) {
         if (filterStartDate && logDate < new Date(filterStartDate + 'T00:00:00')) return false;
         if (filterEndDate && logDate > new Date(filterEndDate + 'T23:59:59')) return false;
@@ -55,11 +55,17 @@ export const AuditLogs = () => {
     return true;
   });
 
-  const handleAddLogSubmit = (e) => {
+  const sortedLogs = [...filteredLogs].sort((a, b) => {
+    const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return (timeB || 0) - (timeA || 0);
+  });
+
+  const handleAddLogSubmit = async (e) => {
     e.preventDefault();
     if (!newLogForm.details.trim()) return;
 
-    addAuditLog({
+    await addAuditLog({
       userName: user?.name || 'Prakash Gajendiran',
       userRole: user?.role || 'SUPER_ADMIN',
       action: newLogForm.action,
@@ -76,17 +82,17 @@ export const AuditLogs = () => {
       affectedRecord: 'System Settings',
       details: 'Completed quarterly security audit and access review.'
     });
-    alert('Security Audit Log recorded successfully!');
+    alert('Audit Log recorded successfully!');
   };
 
   const handleExportCSV = () => {
-    if (filteredLogs.length === 0) {
+    if (sortedLogs.length === 0) {
       alert('No audit logs available to export!');
       return;
     }
 
     const headers = ['Log ID', 'Action', 'Module', 'User Name', 'User Role', 'Affected Record', 'Details', 'Timestamp'];
-    const rows = filteredLogs.map(l => [
+    const rows = sortedLogs.map(l => [
       l.id || '',
       l.action || '',
       l.module || '',
@@ -114,7 +120,7 @@ export const AuditLogs = () => {
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center space-x-2">
             <ShieldCheck className="h-7 w-7 text-blue-600" />
-            <span>Security &amp; Activity Audit Desk</span>
+            <span>Audit log</span>
           </h1>
         </div>
 
@@ -125,7 +131,7 @@ export const AuditLogs = () => {
               className="flex items-center space-x-2 px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer"
             >
               <Download className="h-4 w-4" />
-              <span>Export Audit Logs (CSV)</span>
+              <span>Export Audit Log (CSV)</span>
             </button>
           )}
 
@@ -134,7 +140,7 @@ export const AuditLogs = () => {
             className="flex items-center space-x-2 px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer"
           >
             <Plus className="h-4 w-4" />
-            <span>Record Security Log</span>
+            <span>Record Audit Log</span>
           </button>
         </div>
       </div>
@@ -255,7 +261,7 @@ export const AuditLogs = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-xs font-semibold text-slate-700">
-              {filteredLogs.map(log => (
+              {sortedLogs.map(log => (
                 <tr key={log.id || Math.random()} className="hover:bg-slate-50/80 transition">
                   <td className="p-4">
                     <span className={`badge ${
@@ -280,7 +286,7 @@ export const AuditLogs = () => {
                 </tr>
               ))}
 
-              {filteredLogs.length === 0 && (
+              {sortedLogs.length === 0 && (
                 <tr>
                   <td colSpan="5" className="p-8 text-center text-xs text-slate-400 font-semibold">
                     No matching audit log records found for "{searchTerm}".
@@ -299,7 +305,7 @@ export const AuditLogs = () => {
             <div className="flex items-center justify-between border-b pb-3">
               <h3 className="text-base font-black text-slate-900 flex items-center space-x-2">
                 <ShieldCheck className="h-5 w-5 text-blue-600" />
-                <span>Record Security Audit Log</span>
+                <span>Record Audit Log</span>
               </h3>
               <button onClick={() => setShowAddModal(false)} className="p-1 rounded-xl text-slate-400 hover:text-slate-600">
                 <X className="h-5 w-5" />

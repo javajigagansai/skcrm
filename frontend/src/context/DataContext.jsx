@@ -35,7 +35,12 @@ export const DataProvider = ({ children }) => {
   const tasks = useMemo(() => filterScopedRecords(user, rawTasks), [user, rawTasks]);
   const income = useMemo(() => (user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER' ? rawIncome : []), [user, rawIncome]);
   const expenses = useMemo(() => (user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER' ? rawExpenses : []), [user, rawExpenses]);
-  const auditLogs = useMemo(() => filterScopedRecords(user, rawAuditLogs), [user, rawAuditLogs]);
+  const auditLogs = useMemo(() => {
+    if (user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER') {
+      return rawAuditLogs;
+    }
+    return rawAuditLogs.filter(l => l.userName === user?.name || l.userRole === user?.role);
+  }, [user, rawAuditLogs]);
   const staffList = useMemo(() => {
     if (rawUsers.length > 0) return rawUsers;
     return [
@@ -86,6 +91,10 @@ export const DataProvider = ({ children }) => {
       (snap) => setExpenses(snap.docs.map(d => ({ ...d.data(), id: d.id }))),
       (err) => console.warn('Firestore expenses error:', err));
 
+    const unsubAuditLogs = onSnapshot(collection(db, 'audit_logs'),
+      (snap) => setAuditLogs(snap.docs.map(d => ({ ...d.data(), id: d.id }))),
+      (err) => console.warn('Firestore audit_logs error:', err));
+
     const unsubUsers = onSnapshot(collection(db, 'users'),
       (snap) => {
         const uList = snap.docs.map(d => ({ ...d.data(), id: d.id, uid: d.id }));
@@ -102,7 +111,7 @@ export const DataProvider = ({ children }) => {
     return () => {
       unsubCustomers(); unsubPolicies(); unsubInvestments(); unsubClaims();
       unsubLeads(); unsubFollowups(); unsubTasks(); unsubIncome(); unsubExpenses();
-      unsubUsers();
+      unsubAuditLogs(); unsubUsers();
     };
   }, []);
 
@@ -122,18 +131,25 @@ export const DataProvider = ({ children }) => {
     return result;
   };
 
-  const addAuditLog = (logData) => {
+  const addAuditLog = async (logData) => {
+    const id = logData?.id || `LOG-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
     const newLog = {
-      id: `LOG-${Math.floor(1000 + Math.random() * 9000)}`,
+      id,
       userName: logData?.userName || user?.name || 'System User',
       userRole: logData?.userRole || user?.role || 'STAFF',
       action: logData?.action || 'MUTATION',
       module: logData?.module || 'General',
       affectedRecord: logData?.affectedRecord || '-',
       timestamp: logData?.timestamp || new Date().toLocaleString('en-IN'),
-      details: logData?.details || 'Action completed successfully'
+      details: logData?.details || 'Action completed successfully',
+      createdAt: new Date().toISOString()
     };
-    setAuditLogs(prev => [newLog, ...(prev || [])]);
+    setAuditLogs(prev => [newLog, ...(prev || []).filter(l => l.id !== id)]);
+    try {
+      await setDoc(doc(db, 'audit_logs', id), sanitizeForFirestore(newLog), { merge: true });
+    } catch (e) {
+      console.warn('Firestore audit_logs write error:', e);
+    }
     return newLog;
   };
 
