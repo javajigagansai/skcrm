@@ -2588,7 +2588,7 @@ export const Dashboard = () => {
             </p>
             <div className="flex items-center justify-between pt-1">
               <span className="badge bg-amber-100 text-amber-800 text-[10px]">
-                Payroll: ₹{Number(companyOperatingExpenses.payrollTotal || 0).toLocaleString('en-IN')} | Ops: ₹{Number(companyOperatingExpenses.operationalTotal || 0).toLocaleString('en-IN')}
+                {companyOperatingExpenses.items.length} {companyOperatingExpenses.items.length === 1 ? 'Recorded Entry' : 'Recorded Entries'}
               </span>
               <span className="text-[10px] font-extrabold text-amber-600 hover:underline flex items-center space-x-0.5">
                 <span>View Details</span>
