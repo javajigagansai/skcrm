@@ -7,7 +7,20 @@ import { Customer360Provider } from './context/Customer360Context';
 import { NotificationProvider } from './context/NotificationContext';
 import { AppRoutes } from './routes/AppRoutes';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { ToastContainer, showToast } from './components/common/ToastContainer';
 import './index.css';
+
+// Override native window.alert to prevent disruptive "sk-crm-1.web.app says" popups
+if (typeof window !== 'undefined') {
+  window.showToast = showToast;
+  window.alert = (msg) => {
+    if (!msg) return;
+    const msgStr = typeof msg === 'string' ? msg : JSON.stringify(msg);
+    const isError = msgStr.toLowerCase().includes('failed') || msgStr.toLowerCase().includes('error') || msgStr.toLowerCase().includes('please');
+    const isWarning = msgStr.toLowerCase().includes('single') || msgStr.toLowerCase().includes('confirm') || msgStr.toLowerCase().includes('already');
+    showToast(msgStr, isError ? 'error' : isWarning ? 'warning' : 'success');
+  };
+}
 
 // Sanitize residual demo keys from browser localStorage
 try {
@@ -43,6 +56,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <DataProvider>
               <Customer360Provider>
                 <AppRoutes />
+                <ToastContainer />
               </Customer360Provider>
             </DataProvider>
           </NotificationProvider>
@@ -51,3 +65,4 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     </ErrorBoundary>
   </React.StrictMode>
 );
+
