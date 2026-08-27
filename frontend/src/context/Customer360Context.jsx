@@ -8,49 +8,11 @@ import { exportCustomer360PDF } from '../utils/exportUtils';
 import { updateCustomerBackend, deleteCustomerBackend } from '../services/apiService';
 import { useData } from './DataContext';
 import { useAuth } from './AuthContext';
+import { COUNTRY_DIAL_CODES } from '../utils/countryCodes';
 
 const Customer360Context = createContext();
 
 export const initialMockCustomersList = [];
-
-const COUNTRY_DIAL_CODES = [
-  { code: '+61', name: 'Australia', flag: '🇦🇺', display: '🇦🇺 Australia (+61)' },
-  { code: '+973', name: 'Bahrain', flag: '🇧🇭', display: '🇧🇭 Bahrain (+973)' },
-  { code: '+880', name: 'Bangladesh', flag: '🇧🇩', display: '🇧🇩 Bangladesh (+880)' },
-  { code: '+1', name: 'Canada', flag: '🇨🇦', display: '🇨🇦 Canada (+1)' },
-  { code: '+86', name: 'China', flag: '🇨🇳', display: '🇨🇳 China (+86)' },
-  { code: '+45', name: 'Denmark', flag: '🇩🇰', display: '🇩🇰 Denmark (+45)' },
-  { code: '+33', name: 'France', flag: '🇫🇷', display: '🇫🇷 France (+33)' },
-  { code: '+49', name: 'Germany', flag: '🇩🇪', display: '🇩🇪 Germany (+49)' },
-  { code: '+852', name: 'Hong Kong', flag: '🇭🇰', display: '🇭🇰 Hong Kong (+852)' },
-  { code: '+91', name: 'India', flag: '🇮🇳', display: '🇮🇳 India (+91)' },
-  { code: '+62', name: 'Indonesia', flag: '🇮🇩', display: '🇮🇩 Indonesia (+62)' },
-  { code: '+353', name: 'Ireland', flag: '🇮🇪', display: '🇮🇪 Ireland (+353)' },
-  { code: '+39', name: 'Italy', flag: '🇮🇹', display: '🇮🇹 Italy (+39)' },
-  { code: '+81', name: 'Japan', flag: '🇯🇵', display: '🇯🇵 Japan (+81)' },
-  { code: '+965', name: 'Kuwait', flag: '🇰🇼', display: '🇰🇼 Kuwait (+965)' },
-  { code: '+60', name: 'Malaysia', flag: '🇲🇾', display: '🇲🇾 Malaysia (+60)' },
-  { code: '+977', name: 'Nepal', flag: '🇳🇵', display: '🇳🇵 Nepal (+977)' },
-  { code: '+31', name: 'Netherlands', flag: '🇳🇱', display: '🇳🇱 Netherlands (+31)' },
-  { code: '+64', name: 'New Zealand', flag: '🇳🇿', display: '🇳🇿 New Zealand (+64)' },
-  { code: '+47', name: 'Norway', flag: '🇳🇴', display: '🇳🇴 Norway (+47)' },
-  { code: '+968', name: 'Oman', flag: '🇴🇲', display: '🇴🇲 Oman (+968)' },
-  { code: '+63', name: 'Philippines', flag: '🇵🇭', display: '🇵🇭 Philippines (+63)' },
-  { code: '+974', name: 'Qatar', flag: '🇶🇦', display: '🇶🇦 Qatar (+974)' },
-  { code: '+966', name: 'Saudi Arabia', flag: '🇸🇦', display: '🇸🇦 Saudi Arabia (+966)' },
-  { code: '+65', name: 'Singapore', flag: '🇸🇬', display: '🇸🇬 Singapore (+65)' },
-  { code: '+27', name: 'South Africa', flag: '🇿🇦', display: '🇿🇦 South Africa (+27)' },
-  { code: '+82', name: 'South Korea', flag: '🇰🇷', display: '🇰🇷 South Korea (+82)' },
-  { code: '+34', name: 'Spain', flag: '🇪🇸', display: '🇪🇸 Spain (+34)' },
-  { code: '+94', name: 'Sri Lanka', flag: '🇱🇰', display: '🇱🇰 Sri Lanka (+94)' },
-  { code: '+46', name: 'Sweden', flag: '🇸🇪', display: '🇸🇪 Sweden (+46)' },
-  { code: '+41', name: 'Switzerland', flag: '🇨🇭', display: '🇨🇭 Switzerland (+41)' },
-  { code: '+66', name: 'Thailand', flag: '🇹🇭', display: '🇹🇭 Thailand (+66)' },
-  { code: '+971', name: 'United Arab Emirates', flag: '🇦🇪', display: '🇦🇪 UAE (+971)' },
-  { code: '+44', name: 'United Kingdom', flag: '🇬🇧', display: '🇬🇧 UK (+44)' },
-  { code: '+1', name: 'United States', flag: '🇺🇸', display: '🇺🇸 USA (+1)' },
-  { code: '+84', name: 'Vietnam', flag: '🇻🇳', display: '🇻🇳 Vietnam (+84)' }
-];
 
 /** Load staff list from localStorage (kept in sync by StaffManagement) */
 const loadStaffListFromStorage = () => {
