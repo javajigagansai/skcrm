@@ -1172,13 +1172,15 @@ export const Dashboard = () => {
               <span>Manage Customer 360</span>
               <ExternalLink className="h-3.5 w-3.5" />
             </button>
-            <button 
-              onClick={() => exportDashboardAnalyticsPDF(dateFilter, currentMetrics, currentMetrics.productDistributionChart, currentMetrics.conversionClaimsChart, currentMetrics.staffPerformanceChart, policyCategoryOverview)}
-              className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer"
-            >
-              <Download className="h-3.5 w-3.5" />
-              <span>Export Analytics (PDF)</span>
-            </button>
+            {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
+              <button 
+                onClick={() => exportDashboardAnalyticsPDF(dateFilter, currentMetrics, currentMetrics.productDistributionChart, currentMetrics.conversionClaimsChart, currentMetrics.staffPerformanceChart, policyCategoryOverview)}
+                className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer"
+              >
+                <Download className="h-3.5 w-3.5" />
+                <span>Export Analytics (PDF)</span>
+              </button>
+            )}
           </div>
         </div>
       );
@@ -1277,13 +1279,15 @@ export const Dashboard = () => {
               <span>Insurance Policies Register</span>
               <ExternalLink className="h-3.5 w-3.5" />
             </button>
-            <button 
-              onClick={() => exportDashboardAnalyticsPDF(dateFilter, currentMetrics, currentMetrics.productDistributionChart, currentMetrics.conversionClaimsChart, currentMetrics.staffPerformanceChart, policyCategoryOverview)}
-              className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer"
-            >
-              <Download className="h-3.5 w-3.5" />
-              <span>Export Analytics (PDF)</span>
-            </button>
+            {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
+              <button 
+                onClick={() => exportDashboardAnalyticsPDF(dateFilter, currentMetrics, currentMetrics.productDistributionChart, currentMetrics.conversionClaimsChart, currentMetrics.staffPerformanceChart, policyCategoryOverview)}
+                className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer"
+              >
+                <Download className="h-3.5 w-3.5" />
+                <span>Export Analytics (PDF)</span>
+              </button>
+            )}
           </div>
         </div>
       );
@@ -1379,13 +1383,15 @@ export const Dashboard = () => {
               <span>View Investments Register</span>
               <ExternalLink className="h-3.5 w-3.5" />
             </button>
-            <button 
-              onClick={() => exportDashboardAnalyticsPDF(dateFilter, currentMetrics, currentMetrics.productDistributionChart, currentMetrics.conversionClaimsChart, currentMetrics.staffPerformanceChart, policyCategoryOverview)}
-              className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer"
-            >
-              <Download className="h-3.5 w-3.5" />
-              <span>Export Analytics (PDF)</span>
-            </button>
+            {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
+              <button 
+                onClick={() => exportDashboardAnalyticsPDF(dateFilter, currentMetrics, currentMetrics.productDistributionChart, currentMetrics.conversionClaimsChart, currentMetrics.staffPerformanceChart, policyCategoryOverview)}
+                className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer"
+              >
+                <Download className="h-3.5 w-3.5" />
+                <span>Export Analytics (PDF)</span>
+              </button>
+            )}
           </div>
         </div>
       );
@@ -1469,13 +1475,15 @@ export const Dashboard = () => {
               <span>Manage Expenses Register</span>
               <ExternalLink className="h-3.5 w-3.5" />
             </button>
-            <button 
-              onClick={() => exportDashboardAnalyticsPDF(dateFilter, currentMetrics, currentMetrics.productDistributionChart, currentMetrics.conversionClaimsChart, currentMetrics.staffPerformanceChart, policyCategoryOverview)}
-              className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer"
-            >
-              <Download className="h-3.5 w-3.5" />
-              <span>Export Analytics (PDF)</span>
-            </button>
+            {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
+              <button 
+                onClick={() => exportDashboardAnalyticsPDF(dateFilter, currentMetrics, currentMetrics.productDistributionChart, currentMetrics.conversionClaimsChart, currentMetrics.staffPerformanceChart, policyCategoryOverview)}
+                className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer"
+              >
+                <Download className="h-3.5 w-3.5" />
+                <span>Export Analytics (PDF)</span>
+              </button>
+            )}
           </div>
         </div>
       );
@@ -1556,13 +1564,15 @@ export const Dashboard = () => {
               <span>Manage Staff Directory</span>
               <ExternalLink className="h-3.5 w-3.5" />
             </button>
-            <button 
-              onClick={() => exportDashboardAnalyticsPDF(dateFilter, currentMetrics, currentMetrics.productDistributionChart, currentMetrics.conversionClaimsChart, currentMetrics.staffPerformanceChart, policyCategoryOverview)}
-              className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer"
-            >
-              <Download className="h-3.5 w-3.5" />
-              <span>Export Analytics (PDF)</span>
-            </button>
+            {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
+              <button 
+                onClick={() => exportDashboardAnalyticsPDF(dateFilter, currentMetrics, currentMetrics.productDistributionChart, currentMetrics.conversionClaimsChart, currentMetrics.staffPerformanceChart, policyCategoryOverview)}
+                className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer"
+              >
+                <Download className="h-3.5 w-3.5" />
+                <span>Export Analytics (PDF)</span>
+              </button>
+            )}
           </div>
         </div>
       );
