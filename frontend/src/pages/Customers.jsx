@@ -90,7 +90,15 @@ export const Customers = () => {
     city: '',
     address: '',
     pan: '',
+    panName: '',
+    panDob: '',
     aadhaar: '',
+    aadhaarName: '',
+    aadhaarDob: '',
+    bankHolderName: '',
+    bankName: '',
+    bankAccountNumber: '',
+    ifscCode: '',
     occupation: '',
     incomeBracket: '',
     insuranceCompany: '',
@@ -233,8 +241,25 @@ export const Customers = () => {
       emails: cleanEmails.length > 0 ? cleanEmails : (primaryEmail ? [primaryEmail] : []),
       phone: newCustomer.phone,
       mobileNumber: newCustomer.phone,
+      altCountryCode: newCustomer.altCountryCode || '+91',
       alternatePhone: newCustomer.alternatePhone || newCustomer.altPhone || '',
       altPhone: newCustomer.alternatePhone || newCustomer.altPhone || '',
+      gender: newCustomer.gender || '',
+      dob: newCustomer.dob || '',
+      address: newCustomer.address || '',
+      city: newCustomer.city || '',
+      pan: newCustomer.pan || '',
+      panName: newCustomer.panName || '',
+      panDob: newCustomer.panDob || '',
+      aadhaar: newCustomer.aadhaar || '',
+      aadhaarName: newCustomer.aadhaarName || '',
+      aadhaarDob: newCustomer.aadhaarDob || '',
+      bankHolderName: newCustomer.bankHolderName || '',
+      bankName: newCustomer.bankName || '',
+      bankAccountNumber: newCustomer.bankAccountNumber || '',
+      ifscCode: newCustomer.ifscCode || '',
+      occupation: newCustomer.occupation || '',
+      incomeBracket: newCustomer.incomeBracket || '',
       insuranceType: newCustomer.insuranceType || '',
       insuranceCompany: newCustomer.insuranceCompany || '',
       salesPitch: newCustomer.salesPitch || '',
@@ -243,7 +268,6 @@ export const Customers = () => {
       advisorNotes: newCustomer.advisorNotes || '',
       maritalStatus: newCustomer.maritalStatus || '',
       anniversaryDate: newCustomer.anniversaryDate || '',
-      city: newCustomer.city || '',
       assignedStaffId,
       assignedStaffName,
       assignedAdvisorName: assignedStaffName,
@@ -262,6 +286,7 @@ export const Customers = () => {
         email: '',
         emails: [''],
         phone: '',
+        altCountryCode: '+91',
         alternatePhone: '',
         altPhone: '',
         gender: '',
@@ -271,7 +296,15 @@ export const Customers = () => {
         city: '',
         address: '',
         pan: '',
+        panName: '',
+        panDob: '',
         aadhaar: '',
+        aadhaarName: '',
+        aadhaarDob: '',
+        bankHolderName: '',
+        bankName: '',
+        bankAccountNumber: '',
+        ifscCode: '',
         occupation: '',
         incomeBracket: '',
         insuranceCompany: '',
@@ -1120,16 +1153,51 @@ export const Customers = () => {
                         </div>
                       </div>
 
-                      <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-1.5">
-                        <div className="flex items-center space-x-2 text-slate-600 font-bold text-xs">
-                          <CreditCard className="h-4 w-4 text-purple-600" />
-                          <span>PAN Card: <strong className="font-mono">{selectedCustomer.pan || 'ABCDE1234F'}</strong></span>
+                      <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-2">
+                        <div className="flex items-start space-x-2 text-slate-600 font-bold text-xs">
+                          <CreditCard className="h-4 w-4 text-purple-600 shrink-0 mt-0.5" />
+                          <div>
+                            <span>PAN Card: <strong className="font-mono text-slate-900">{selectedCustomer.pan || 'N/A'}</strong></span>
+                            {(selectedCustomer.panName || selectedCustomer.panDob) && (
+                              <p className="text-[10px] text-slate-500 font-medium mt-0.5">
+                                {selectedCustomer.panName ? `Name: ${selectedCustomer.panName}` : ''}
+                                {selectedCustomer.panName && selectedCustomer.panDob ? ' | ' : ''}
+                                {selectedCustomer.panDob ? `DOB: ${selectedCustomer.panDob}` : ''}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center space-x-2 text-slate-600 font-bold text-xs">
-                          <ShieldCheck className="h-4 w-4 text-emerald-600" />
-                          <span>Aadhaar UIDAI: <strong className="font-mono">{selectedCustomer.aadhaar || '9920-4819-1234'}</strong></span>
+
+                        <div className="flex items-start space-x-2 text-slate-600 font-bold text-xs">
+                          <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                          <div>
+                            <span>Aadhaar UIDAI: <strong className="font-mono text-slate-900">{selectedCustomer.aadhaar || 'N/A'}</strong></span>
+                            {(selectedCustomer.aadhaarName || selectedCustomer.aadhaarDob) && (
+                              <p className="text-[10px] text-slate-500 font-medium mt-0.5">
+                                {selectedCustomer.aadhaarName ? `Name: ${selectedCustomer.aadhaarName}` : ''}
+                                {selectedCustomer.aadhaarName && selectedCustomer.aadhaarDob ? ' | ' : ''}
+                                {selectedCustomer.aadhaarDob ? `DOB: ${selectedCustomer.aadhaarDob}` : ''}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center space-x-2 text-slate-600 font-bold text-xs">
+
+                        {(selectedCustomer.bankHolderName || selectedCustomer.bankName || selectedCustomer.bankAccountNumber || selectedCustomer.ifscCode) && (
+                          <div className="flex items-start space-x-2 text-slate-600 font-bold text-xs pt-1 border-t border-slate-200/60">
+                            <Building2 className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+                            <div>
+                              <span>Bank Account: <strong className="text-slate-900">{selectedCustomer.bankName || 'Bank Account'}</strong></span>
+                              <p className="text-[10px] text-slate-500 font-medium mt-0.5">
+                                {selectedCustomer.bankHolderName ? `Holder: ${selectedCustomer.bankHolderName}` : ''}
+                                {selectedCustomer.bankHolderName && selectedCustomer.bankAccountNumber ? ' | ' : ''}
+                                {selectedCustomer.bankAccountNumber ? `A/C: ${selectedCustomer.bankAccountNumber}` : ''}
+                                {selectedCustomer.ifscCode ? ` | IFSC: ${selectedCustomer.ifscCode}` : ''}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex items-center space-x-2 text-slate-600 font-bold text-xs pt-0.5">
                           <Award className="h-4 w-4 text-amber-600" />
                           <span>KYC Status: <span className="badge badge-green text-[10px]">Verified 100%</span></span>
                         </div>
@@ -1709,26 +1777,137 @@ export const Customers = () => {
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">PAN Card</label>
-                  <input
-                    type="text"
-                    placeholder="ABCDE1234F"
-                    value={newCustomer.pan}
-                    onChange={(e) => setNewCustomer({ ...newCustomer, pan: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600"
-                  />
+              {/* SECTION: GOVERNMENT IDENTIFIERS & KYC (PAN & AADHAAR) */}
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+                <h4 className="text-xs font-black uppercase text-purple-900 tracking-wider flex items-center space-x-1.5">
+                  <CreditCard className="h-4 w-4 text-purple-600" />
+                  <span>Government Identifiers &amp; KYC Verification</span>
+                </h4>
+
+                {/* PAN Card Section */}
+                <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2.5">
+                  <div className="flex items-center space-x-1.5 text-[11px] font-black uppercase text-purple-800">
+                    <span>PAN Card Details</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 mb-1">PAN Card Number</label>
+                      <input
+                        type="text"
+                        placeholder="ABCDE1234F"
+                        value={newCustomer.pan}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, pan: e.target.value.toUpperCase() })}
+                        className="w-full px-3 py-2 rounded-xl border text-xs font-mono font-bold uppercase tracking-wider outline-none focus:ring-2 focus:ring-purple-600 bg-slate-50"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 mb-1">PAN Card Name</label>
+                      <input
+                        type="text"
+                        placeholder="Name as on PAN Card"
+                        value={newCustomer.panName || ''}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, panName: e.target.value })}
+                        className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-purple-600 bg-slate-50"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 mb-1">PAN Card DOB</label>
+                      <input
+                        type="date"
+                        value={newCustomer.panDob || ''}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, panDob: e.target.value })}
+                        className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-purple-600 bg-slate-50"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Aadhaar / UIDAI</label>
-                  <input
-                    type="text"
-                    placeholder="xxxx-xxxx-9999"
-                    value={newCustomer.aadhaar}
-                    onChange={(e) => setNewCustomer({ ...newCustomer, aadhaar: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600"
-                  />
+
+                {/* Aadhaar / UIDAI Section */}
+                <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2.5">
+                  <div className="flex items-center space-x-1.5 text-[11px] font-black uppercase text-emerald-800">
+                    <span>Aadhaar / UIDAI Details</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 mb-1">Aadhaar / UIDAI Number</label>
+                      <input
+                        type="text"
+                        placeholder="xxxx-xxxx-9999"
+                        value={newCustomer.aadhaar}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, aadhaar: e.target.value })}
+                        className="w-full px-3 py-2 rounded-xl border text-xs font-mono font-bold outline-none focus:ring-2 focus:ring-emerald-600 bg-slate-50"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 mb-1">Aadhaar / UIDAI Name</label>
+                      <input
+                        type="text"
+                        placeholder="Name as on Aadhaar"
+                        value={newCustomer.aadhaarName || ''}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, aadhaarName: e.target.value })}
+                        className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-emerald-600 bg-slate-50"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 mb-1">Aadhaar / UIDAI DOB</label>
+                      <input
+                        type="date"
+                        value={newCustomer.aadhaarDob || ''}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, aadhaarDob: e.target.value })}
+                        className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-emerald-600 bg-slate-50"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bank Account Details Section */}
+                <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2.5">
+                  <div className="flex items-center space-x-1.5 text-[11px] font-black uppercase text-blue-800">
+                    <Building2 className="h-3.5 w-3.5 text-blue-600" />
+                    <span>Bank Account &amp; Settlement Details</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 mb-1">Bank Account Holder Name</label>
+                      <input
+                        type="text"
+                        placeholder="Account Holder Name as in Bank"
+                        value={newCustomer.bankHolderName || ''}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, bankHolderName: e.target.value })}
+                        className="w-full px-3 py-2 rounded-xl border text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 mb-1">Bank Name</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. HDFC Bank / SBI / ICICI"
+                        value={newCustomer.bankName || ''}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, bankName: e.target.value })}
+                        className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 mb-1">Bank Account Number</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 5010023456789"
+                        value={newCustomer.bankAccountNumber || ''}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, bankAccountNumber: e.target.value })}
+                        className="w-full px-3 py-2 rounded-xl border text-xs font-mono outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 mb-1">IFSC Code</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. HDFC0001234"
+                        value={newCustomer.ifscCode || ''}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, ifscCode: e.target.value.toUpperCase() })}
+                        className="w-full px-3 py-2 rounded-xl border text-xs font-mono uppercase outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -2185,33 +2364,136 @@ export const Customers = () => {
                 </div>
               </div>
 
-              {/* SECTION 3: KYC IDENTIFIERS (PAN & AADHAAR) */}
+              {/* SECTION 3: KYC IDENTIFIERS (PAN, AADHAAR & BANKING) */}
               <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
-                <h4 className="text-xs font-black uppercase text-blue-900 tracking-wider flex items-center space-x-1.5">
+                <h4 className="text-xs font-black uppercase text-purple-900 tracking-wider flex items-center space-x-1.5">
                   <CreditCard className="h-4 w-4 text-purple-600" />
-                  <span>3. Government Identifiers (PAN &amp; Aadhaar)</span>
+                  <span>3. Government Identifiers &amp; Bank Details</span>
                 </h4>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">PAN Card Number</label>
-                    <input
-                      type="text"
-                      placeholder="ABCDE1234F"
-                      value={editCustomerData.pan || ''}
-                      onChange={(e) => setEditCustomerData({ ...editCustomerData, pan: e.target.value.toUpperCase() })}
-                      className="w-full px-3 py-2 rounded-xl border text-xs font-mono font-bold uppercase tracking-wider outline-none focus:ring-2 focus:ring-purple-600 bg-white"
-                    />
+                {/* PAN Card Section */}
+                <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2.5">
+                  <div className="flex items-center space-x-1.5 text-[11px] font-black uppercase text-purple-800">
+                    <span>PAN Card Details</span>
                   </div>
-                  <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Aadhaar Card UIDAI Number</label>
-                    <input
-                      type="text"
-                      placeholder="xxxx-xxxx-9999"
-                      value={editCustomerData.aadhaar || ''}
-                      onChange={(e) => setEditCustomerData({ ...editCustomerData, aadhaar: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl border text-xs font-mono font-bold outline-none focus:ring-2 focus:ring-purple-600 bg-white"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 mb-1">PAN Card Number</label>
+                      <input
+                        type="text"
+                        placeholder="ABCDE1234F"
+                        value={editCustomerData.pan || ''}
+                        onChange={(e) => setEditCustomerData({ ...editCustomerData, pan: e.target.value.toUpperCase() })}
+                        className="w-full px-3 py-2 rounded-xl border text-xs font-mono font-bold uppercase tracking-wider outline-none focus:ring-2 focus:ring-purple-600 bg-slate-50"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 mb-1">PAN Card Name</label>
+                      <input
+                        type="text"
+                        placeholder="Name as on PAN Card"
+                        value={editCustomerData.panName || ''}
+                        onChange={(e) => setEditCustomerData({ ...editCustomerData, panName: e.target.value })}
+                        className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-purple-600 bg-slate-50"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 mb-1">PAN Card DOB</label>
+                      <input
+                        type="date"
+                        value={editCustomerData.panDob || ''}
+                        onChange={(e) => setEditCustomerData({ ...editCustomerData, panDob: e.target.value })}
+                        className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-purple-600 bg-slate-50"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Aadhaar / UIDAI Section */}
+                <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2.5">
+                  <div className="flex items-center space-x-1.5 text-[11px] font-black uppercase text-emerald-800">
+                    <span>Aadhaar / UIDAI Details</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 mb-1">Aadhaar / UIDAI Number</label>
+                      <input
+                        type="text"
+                        placeholder="xxxx-xxxx-9999"
+                        value={editCustomerData.aadhaar || ''}
+                        onChange={(e) => setEditCustomerData({ ...editCustomerData, aadhaar: e.target.value })}
+                        className="w-full px-3 py-2 rounded-xl border text-xs font-mono font-bold outline-none focus:ring-2 focus:ring-emerald-600 bg-slate-50"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 mb-1">Aadhaar / UIDAI Name</label>
+                      <input
+                        type="text"
+                        placeholder="Name as on Aadhaar"
+                        value={editCustomerData.aadhaarName || ''}
+                        onChange={(e) => setEditCustomerData({ ...editCustomerData, aadhaarName: e.target.value })}
+                        className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-emerald-600 bg-slate-50"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 mb-1">Aadhaar / UIDAI DOB</label>
+                      <input
+                        type="date"
+                        value={editCustomerData.aadhaarDob || ''}
+                        onChange={(e) => setEditCustomerData({ ...editCustomerData, aadhaarDob: e.target.value })}
+                        className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-emerald-600 bg-slate-50"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bank Account Details Section */}
+                <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2.5">
+                  <div className="flex items-center space-x-1.5 text-[11px] font-black uppercase text-blue-800">
+                    <Building2 className="h-3.5 w-3.5 text-blue-600" />
+                    <span>Bank Account &amp; Settlement Details</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 mb-1">Bank Account Holder Name</label>
+                      <input
+                        type="text"
+                        placeholder="Account Holder Name as in Bank"
+                        value={editCustomerData.bankHolderName || ''}
+                        onChange={(e) => setEditCustomerData({ ...editCustomerData, bankHolderName: e.target.value })}
+                        className="w-full px-3 py-2 rounded-xl border text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 mb-1">Bank Name</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. HDFC Bank / SBI / ICICI"
+                        value={editCustomerData.bankName || ''}
+                        onChange={(e) => setEditCustomerData({ ...editCustomerData, bankName: e.target.value })}
+                        className="w-full px-3 py-2 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 mb-1">Bank Account Number</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 5010023456789"
+                        value={editCustomerData.bankAccountNumber || ''}
+                        onChange={(e) => setEditCustomerData({ ...editCustomerData, bankAccountNumber: e.target.value })}
+                        className="w-full px-3 py-2 rounded-xl border text-xs font-mono outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 mb-1">IFSC Code</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. HDFC0001234"
+                        value={editCustomerData.ifscCode || ''}
+                        onChange={(e) => setEditCustomerData({ ...editCustomerData, ifscCode: e.target.value.toUpperCase() })}
+                        className="w-full px-3 py-2 rounded-xl border text-xs font-mono uppercase outline-none focus:ring-2 focus:ring-blue-600 bg-slate-50"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

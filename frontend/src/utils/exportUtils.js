@@ -115,11 +115,22 @@ export const exportCustomer360PDF = (customer) => {
           <td>${customer.gender || 'Male'}</td>
         </tr>
         <tr>
-          <td style="font-weight: 800; background:#f8fafc;">PAN Number:</td>
-          <td><strong>${customer.pan || 'ABCDE1234F'}</strong></td>
-          <td style="font-weight: 800; background:#f8fafc;">Aadhaar UIDAI:</td>
-          <td><strong>${customer.aadhaar || '9920-4819-1234'}</strong></td>
+          <td style="font-weight: 800; background:#f8fafc;">PAN Card Details:</td>
+          <td><strong>${customer.pan || 'N/A'}</strong>${customer.panName ? `<br/><small style="color:#64748b;">Name: ${customer.panName}</small>` : ''}${customer.panDob ? `<br/><small style="color:#64748b;">DOB: ${customer.panDob}</small>` : ''}</td>
+          <td style="font-weight: 800; background:#f8fafc;">Aadhaar UIDAI Details:</td>
+          <td><strong>${customer.aadhaar || 'N/A'}</strong>${customer.aadhaarName ? `<br/><small style="color:#64748b;">Name: ${customer.aadhaarName}</small>` : ''}${customer.aadhaarDob ? `<br/><small style="color:#64748b;">DOB: ${customer.aadhaarDob}</small>` : ''}</td>
         </tr>
+        ${(customer.bankHolderName || customer.bankName || customer.bankAccountNumber || customer.ifscCode) ? `
+        <tr>
+          <td style="font-weight: 800; background:#f8fafc;">Bank Account Details:</td>
+          <td colSpan="3">
+            <strong>${customer.bankName || 'Bank Account'}</strong>
+            ${customer.bankHolderName ? ` | Holder: <strong>${customer.bankHolderName}</strong>` : ''}
+            ${customer.bankAccountNumber ? ` | A/C No: <span style="font-family:monospace;">${customer.bankAccountNumber}</span>` : ''}
+            ${customer.ifscCode ? ` | IFSC: <span style="font-family:monospace;">${customer.ifscCode}</span>` : ''}
+          </td>
+        </tr>
+        ` : ''}
         <tr>
           <td style="font-weight: 800; background:#f8fafc;">Occupation:</td>
           <td>${customer.occupation || 'Salaried Executive'}</td>
@@ -128,7 +139,7 @@ export const exportCustomer360PDF = (customer) => {
         </tr>
         <tr>
           <td style="font-weight: 800; background:#f8fafc;">Address:</td>
-          <td colSpan="3">${customer.address || customer.city}</td>
+          <td colSpan="3">${customer.address || customer.city || 'N/A'}</td>
         </tr>
       </table>
 
