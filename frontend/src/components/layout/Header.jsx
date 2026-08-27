@@ -71,7 +71,7 @@ export const Header = () => {
               <div className="p-4 bg-slate-900 text-white flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Bell className="h-4 w-4 text-blue-400" />
-                  <h3 className="text-xs font-black uppercase tracking-wider">Real-Time Notifications</h3>
+                  <h3 className="text-xs font-black uppercase tracking-wider">Notifications</h3>
                 </div>
                 {unreadNotificationCount > 0 && (
                   <button 
@@ -112,9 +112,8 @@ export const Header = () => {
                 )}
               </div>
 
-              <div className="p-2 bg-slate-50 text-center border-t border-slate-100 flex items-center justify-center space-x-1">
+              <div className="p-2.5 bg-slate-50 text-center border-t border-slate-100 flex items-center justify-center">
                 <span className="text-[10px] font-black text-red-600 uppercase tracking-wider">SK SMART INVESTMENTS</span>
-                <span className="text-[10px] font-bold text-black uppercase tracking-wider">• Real-Time Notification System</span>
               </div>
             </div>
           )}
