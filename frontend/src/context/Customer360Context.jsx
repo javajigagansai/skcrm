@@ -34,6 +34,9 @@ export const Customer360Provider = ({ children }) => {
     deleteCustomer,
     claims,
     policies,
+    rawPolicies,
+    rawClaims,
+    rawInvestments,
     addClaim,
     updateClaim,
     updateClaimStatus,
@@ -129,6 +132,27 @@ export const Customer360Provider = ({ children }) => {
       window.removeEventListener('storage', sync);
     };
   }, []);
+
+  // ── REACTIVE REFRESH: Keep Customer 360 data in sync with live Firestore updates ──
+  // Whenever policies, claims, or investments change in Firestore (via onSnapshot),
+  // re-aggregate and refresh the selected customer's data so the modal stays live.
+  useEffect(() => {
+    if (!selectedCustomer || selectedCustomer.accessDenied) return;
+    const refreshed = getCustomerAggregatedDetails(selectedCustomer);
+    if (refreshed && !refreshed.accessDenied) {
+      setSelectedCustomer(prev => ({
+        ...prev,
+        policiesList:    refreshed.policiesList    || [],
+        renewalsList:    refreshed.renewalsList    || [],
+        claimsList:      refreshed.claimsList      || [],
+        investmentsList: refreshed.investmentsList || [],
+        tasksList:       refreshed.tasksList       || [],
+        followupsList:   refreshed.followupsList   || [],
+      }));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rawPolicies, rawClaims, rawInvestments]);
+
 
   const openCustomer360 = (customerOrName, initialTab = 'OVERVIEW') => {
     if (!customerOrName) return;

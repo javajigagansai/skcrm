@@ -843,13 +843,22 @@ export const DataProvider = ({ children }) => {
 
     const matchingName = (n) => n && effectiveName && n.toLowerCase().trim() === effectiveName.toLowerCase().trim();
 
+    const effectivePhone = String(masterCustomer?.phone || masterCustomer?.mobileNumber || '').replace(/\D/g, '');
+
     const matchingRecord = (rec) => {
       if (!rec) return false;
-      const recCode = rec.customerCode || rec.customerId || rec.customer_id;
-      if (effectiveCode && recCode) {
-        return recCode.toLowerCase().trim() === effectiveCode.toLowerCase().trim();
+      // 1. Code match (customerCode / customerId stored on the record)
+      const recCode = String(rec.customerCode || rec.customerId || rec.customer_id || '').toLowerCase().trim();
+      if (effectiveCode && recCode && recCode === effectiveCode.toLowerCase().trim()) return true;
+      // 2. Name match (customerName / clientName stored on the record)
+      const recName = String(rec.customerName || rec.clientName || rec.name || '').toLowerCase().trim();
+      if (effectiveName && recName && recName === effectiveName.toLowerCase().trim()) return true;
+      // 3. Phone match (policies may store phone from customer)
+      if (effectivePhone && effectivePhone.length >= 7) {
+        const recPhone = String(rec.phone || rec.mobileNumber || rec.customerPhone || '').replace(/\D/g, '');
+        if (recPhone && recPhone === effectivePhone) return true;
       }
-      return matchingName(rec.customerName || rec.clientName || rec.name);
+      return false;
     };
 
     const userPolicies = rawPolicies.filter(matchingRecord);
