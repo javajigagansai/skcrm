@@ -2,11 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Shield, LogOut, User, ChevronDown, CheckSquare, AlertCircle } from 'lucide-react';
+import { Bell, Shield, LogOut, User, ChevronDown, CheckSquare, AlertCircle, Trash2 } from 'lucide-react';
 
 export const Header = () => {
   const { user, logout } = useAuth();
-  const { notifications, unreadNotificationCount, markNotificationAsRead, markAllNotificationsAsRead } = useNotification();
+  const { notifications, unreadNotificationCount, markNotificationAsRead, markAllNotificationsAsRead, clearAllNotifications } = useNotification();
   const navigate = useNavigate();
 
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -73,14 +73,25 @@ export const Header = () => {
                   <Bell className="h-4 w-4 text-blue-400" />
                   <h3 className="text-xs font-black uppercase tracking-wider">Notifications</h3>
                 </div>
-                {unreadNotificationCount > 0 && (
-                  <button 
-                    onClick={markAllNotificationsAsRead} 
-                    className="text-[10px] font-extrabold text-blue-300 hover:text-white transition cursor-pointer"
-                  >
-                    Mark All as Read
-                  </button>
-                )}
+                <div className="flex items-center space-x-2.5">
+                  {unreadNotificationCount > 0 && (
+                    <button 
+                      onClick={markAllNotificationsAsRead} 
+                      className="text-[10px] font-extrabold text-blue-300 hover:text-white transition cursor-pointer hover:underline"
+                    >
+                      Mark Read
+                    </button>
+                  )}
+                  {notifications.length > 0 && (
+                    <button 
+                      onClick={clearAllNotifications} 
+                      className="text-[10px] font-extrabold text-rose-300 hover:text-rose-100 transition cursor-pointer flex items-center space-x-1 hover:underline bg-rose-500/20 px-2 py-0.5 rounded-lg border border-rose-500/30"
+                    >
+                      <Trash2 className="h-3 w-3 inline" />
+                      <span>Clear All</span>
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="divide-y divide-slate-100 max-h-80 overflow-y-auto">

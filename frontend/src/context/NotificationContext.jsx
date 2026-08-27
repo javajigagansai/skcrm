@@ -4,7 +4,8 @@ import { db } from '../config/firebaseClient';
 import { 
   collection, 
   setDoc,
-  updateDoc, 
+  updateDoc,
+  deleteDoc,
   doc, 
   onSnapshot, 
   serverTimestamp
@@ -27,9 +28,25 @@ export const NotificationProvider = ({ children }) => {
     return 'crm_v2_read_notifs_' + (user?.uid || user?.email || 'default');
   };
 
+  const getUserClearedKey = () => {
+    return 'crm_v2_cleared_notifs_' + (user?.uid || user?.email || 'default');
+  };
+
   const getPersistedReadIds = () => {
     try {
       const key = getUserReadKey();
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return new Set(parsed);
+      }
+    } catch (e) {}
+    return new Set();
+  };
+
+  const getPersistedClearedIds = () => {
+    try {
+      const key = getUserClearedKey();
       const raw = localStorage.getItem(key);
       if (raw) {
         const parsed = JSON.parse(raw);
@@ -46,6 +63,13 @@ export const NotificationProvider = ({ children }) => {
     } catch (e) {}
   };
 
+  const persistClearedIds = (idsSet) => {
+    try {
+      const key = getUserClearedKey();
+      localStorage.setItem(key, JSON.stringify(Array.from(idsSet)));
+    } catch (e) {}
+  };
+
   // Helper to filter notifications targeted strictly to active user
   const filterNotificationsForUser = (notifList) => {
     if (!user) return [];
@@ -54,8 +78,14 @@ export const NotificationProvider = ({ children }) => {
     const activeUid = user.uid || '';
     const activeRole = user.role || '';
     const readIds = getPersistedReadIds();
+    const clearedIds = getPersistedClearedIds();
 
     return notifList.filter(item => {
+      // 0. Filter out explicitly cleared notifications
+      if (clearedIds.has(item.id) || (item.firestoreDocId && clearedIds.has(item.firestoreDocId))) {
+        return false;
+      }
+
       // 1. System-wide broadcast notifications
       if (item.forAll === true) return true;
 
@@ -311,6 +341,43 @@ export const NotificationProvider = ({ children }) => {
     } catch (err) {}
   };
 
+  const clearAllNotifications = async () => {
+    const clearedIds = getPersistedClearedIds();
+    const readIds = getPersistedReadIds();
+    notifications.forEach(n => {
+      if (n.id) {
+        clearedIds.add(n.id);
+        readIds.add(n.id);
+      }
+      if (n.firestoreDocId) {
+        clearedIds.add(n.firestoreDocId);
+        readIds.add(n.firestoreDocId);
+      }
+    });
+    persistClearedIds(clearedIds);
+    persistReadIds(readIds);
+
+    const oldNotifs = [...notifications];
+    setNotifications([]);
+    setUnreadNotificationCount(0);
+
+    // Clean from localStorage
+    try {
+      const stored = JSON.parse(localStorage.getItem('crm_v2_notifications') || '[]');
+      const updated = stored.filter(n => !clearedIds.has(n.id) && !clearedIds.has(n.firestoreDocId));
+      localStorage.setItem('crm_v2_notifications', JSON.stringify(updated));
+      window.dispatchEvent(new CustomEvent('storage_notifications_updated'));
+    } catch (e) {}
+
+    // Clean up from Firestore
+    try {
+      await Promise.all(oldNotifs.map(n => {
+        const docId = n.firestoreDocId || n.id;
+        return deleteDoc(doc(db, 'notifications', docId)).catch(() => {});
+      }));
+    } catch (err) {}
+  };
+
   return (
     <NotificationContext.Provider value={{
       notifications,
@@ -321,6 +388,7 @@ export const NotificationProvider = ({ children }) => {
       sendNotification,
       markNotificationAsRead,
       markAllNotificationsAsRead,
+      clearAllNotifications,
       loading,
       error
     }}>
