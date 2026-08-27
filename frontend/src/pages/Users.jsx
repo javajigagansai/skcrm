@@ -249,7 +249,6 @@ export const Users = () => {
               </div>
               <div>
                 <h3 className="text-sm font-black text-white">🔑 Admin Master Credentials &amp; Passwords Vault</h3>
-                <p className="text-[11px] text-blue-200 font-medium">Real-time active staff accounts. Click copy icon to duplicate login credentials.</p>
               </div>
             </div>
           </div>
