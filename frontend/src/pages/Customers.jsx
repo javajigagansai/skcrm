@@ -1724,65 +1724,84 @@ export const Customers = () => {
                   <span className="text-[11px] font-bold text-slate-400">Step 1 of 5</span>
                 </div>
 
-                {/* LEAD TEMPERATURE & RESIDENTIAL STATUS ROW */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80">
-                  {/* Lead Section */}
-                  <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1.5 flex items-center space-x-1.5">
-                      <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-                      <span>Lead Priority / Temperature *</span>
-                    </label>
-                    <div className="grid grid-cols-3 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setNewCustomer({ ...newCustomer, leadType: 'Hot Lead' })}
-                        className={`p-2.5 rounded-xl text-xs font-black transition border flex flex-col items-center justify-center space-y-0.5 cursor-pointer ${newCustomer.leadType === 'Hot Lead' ? 'bg-rose-500 text-white border-rose-600 shadow-md ring-2 ring-rose-300' : 'bg-white text-slate-700 border-slate-200 hover:bg-rose-50 hover:text-rose-700'}`}
-                      >
-                        <span className="text-base">🔥</span>
-                        <span>Hot Lead</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setNewCustomer({ ...newCustomer, leadType: 'Warm Lead' })}
-                        className={`p-2.5 rounded-xl text-xs font-black transition border flex flex-col items-center justify-center space-y-0.5 cursor-pointer ${newCustomer.leadType === 'Warm Lead' ? 'bg-amber-500 text-white border-amber-600 shadow-md ring-2 ring-amber-300' : 'bg-white text-slate-700 border-slate-200 hover:bg-amber-50 hover:text-amber-700'}`}
-                      >
-                        <span className="text-base">⚡</span>
-                        <span>Warm Lead</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setNewCustomer({ ...newCustomer, leadType: 'Cold Lead' })}
-                        className={`p-2.5 rounded-xl text-xs font-black transition border flex flex-col items-center justify-center space-y-0.5 cursor-pointer ${newCustomer.leadType === 'Cold Lead' ? 'bg-sky-500 text-white border-sky-600 shadow-md ring-2 ring-sky-300' : 'bg-white text-slate-700 border-slate-200 hover:bg-sky-50 hover:text-sky-700'}`}
-                      >
-                        <span className="text-base">❄️</span>
-                        <span>Cold Lead</span>
-                      </button>
+                {/* LEAD PRIORITY / STAGE SECTION */}
+                <div className="bg-gradient-to-r from-amber-50/70 via-orange-50/50 to-slate-50 p-4.5 rounded-2xl border border-amber-200/90 space-y-3 shadow-2xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-100/80 pb-2.5">
+                    <div className="flex items-center space-x-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-black text-sm shadow-xs shrink-0">
+                        🎯
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-black uppercase text-amber-950 tracking-wider">
+                          Lead Section &amp; Temperature Priority *
+                        </h4>
+                        <p className="text-[11px] text-amber-800 font-semibold">Select client lead temperature for follow-up speed &amp; sales prioritization.</p>
+                      </div>
                     </div>
+                    <span className={`badge text-[10px] font-black uppercase px-3 py-1 shadow-2xs self-start sm:self-auto ${newCustomer.leadType === 'Hot Lead' ? 'bg-rose-500 text-white' : newCustomer.leadType === 'Cold Lead' ? 'bg-sky-500 text-white' : 'bg-amber-500 text-white'}`}>
+                      {newCustomer.leadType === 'Hot Lead' ? '🔥 Hot Priority Lead' : newCustomer.leadType === 'Cold Lead' ? '❄️ Cold Follow-up' : '⚡ Warm Active Lead'}
+                    </span>
                   </div>
 
-                  {/* NRI / Resident Status Option */}
-                  <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1.5 flex items-center space-x-1.5">
-                      <span>Residential Category *</span>
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setNewCustomer({ ...newCustomer, isNri: false })}
-                        className={`p-2.5 rounded-xl text-xs font-black transition border flex items-center justify-center space-x-2 cursor-pointer ${!newCustomer.isNri ? 'bg-blue-600 text-white border-blue-700 shadow-md ring-2 ring-blue-300' : 'bg-white text-slate-700 border-slate-200 hover:bg-blue-50 hover:text-blue-700'}`}
-                      >
-                        <span className="text-base">🇮🇳</span>
-                        <span>Resident Indian</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setNewCustomer({ ...newCustomer, isNri: true })}
-                        className={`p-2.5 rounded-xl text-xs font-black transition border flex items-center justify-center space-x-2 cursor-pointer ${newCustomer.isNri ? 'bg-indigo-600 text-white border-indigo-700 shadow-md ring-2 ring-indigo-300' : 'bg-white text-slate-700 border-slate-200 hover:bg-indigo-50 hover:text-indigo-700'}`}
-                      >
-                        <span className="text-base">✈️</span>
-                        <span>NRI Customer</span>
-                      </button>
-                    </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setNewCustomer({ ...newCustomer, leadType: 'Hot Lead' })}
+                      className={`p-3 rounded-2xl text-xs font-black transition-all border flex flex-col items-center justify-center space-y-1 cursor-pointer ${newCustomer.leadType === 'Hot Lead' ? 'bg-rose-500 text-white border-rose-600 shadow-md ring-4 ring-rose-200 scale-[1.02]' : 'bg-white text-slate-700 border-slate-200 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300'}`}
+                    >
+                      <span className="text-xl">🔥</span>
+                      <span className="text-sm font-black">Hot Lead</span>
+                      <span className={`text-[10px] font-semibold ${newCustomer.leadType === 'Hot Lead' ? 'text-rose-100' : 'text-slate-400'}`}>High Urgency / Closing Soon</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNewCustomer({ ...newCustomer, leadType: 'Warm Lead' })}
+                      className={`p-3 rounded-2xl text-xs font-black transition-all border flex flex-col items-center justify-center space-y-1 cursor-pointer ${newCustomer.leadType === 'Warm Lead' ? 'bg-amber-500 text-white border-amber-600 shadow-md ring-4 ring-amber-200 scale-[1.02]' : 'bg-white text-slate-700 border-slate-200 hover:bg-amber-50 hover:text-amber-700 hover:border-amber-300'}`}
+                    >
+                      <span className="text-xl">⚡</span>
+                      <span className="text-sm font-black">Warm Lead</span>
+                      <span className={`text-[10px] font-semibold ${newCustomer.leadType === 'Warm Lead' ? 'text-amber-100' : 'text-slate-400'}`}>Quotation Sent / Discussing</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNewCustomer({ ...newCustomer, leadType: 'Cold Lead' })}
+                      className={`p-3 rounded-2xl text-xs font-black transition-all border flex flex-col items-center justify-center space-y-1 cursor-pointer ${newCustomer.leadType === 'Cold Lead' ? 'bg-sky-500 text-white border-sky-600 shadow-md ring-4 ring-sky-200 scale-[1.02]' : 'bg-white text-slate-700 border-slate-200 hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300'}`}
+                    >
+                      <span className="text-xl">❄️</span>
+                      <span className="text-sm font-black">Cold Lead</span>
+                      <span className={`text-[10px] font-semibold ${newCustomer.leadType === 'Cold Lead' ? 'text-sky-100' : 'text-slate-400'}`}>Long-term / Periodic Check-in</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* RESIDENTIAL CATEGORY SELECTOR */}
+                <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80 space-y-2">
+                  <label className="block text-[11px] font-black uppercase text-slate-700 flex items-center space-x-1.5">
+                    <span>Residential Category (Resident Indian vs NRI) *</span>
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setNewCustomer({ ...newCustomer, isNri: false })}
+                      className={`p-3 rounded-2xl text-xs font-black transition-all border flex items-center justify-center space-x-2.5 cursor-pointer ${!newCustomer.isNri ? 'bg-blue-600 text-white border-blue-700 shadow-md ring-4 ring-blue-200' : 'bg-white text-slate-700 border-slate-200 hover:bg-blue-50 hover:text-blue-700'}`}
+                    >
+                      <span className="text-lg">🇮🇳</span>
+                      <div className="text-left">
+                        <p className="font-black text-xs">Resident Indian Client</p>
+                        <p className={`text-[10px] ${!newCustomer.isNri ? 'text-blue-100' : 'text-slate-400'}`}>Standard PAN, Aadhaar &amp; Resident Bank Account</p>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNewCustomer({ ...newCustomer, isNri: true })}
+                      className={`p-3 rounded-2xl text-xs font-black transition-all border flex items-center justify-center space-x-2.5 cursor-pointer ${newCustomer.isNri ? 'bg-indigo-600 text-white border-indigo-700 shadow-md ring-4 ring-indigo-200' : 'bg-white text-slate-700 border-slate-200 hover:bg-indigo-50 hover:text-indigo-700'}`}
+                    >
+                      <span className="text-lg">✈️</span>
+                      <div className="text-left">
+                        <p className="font-black text-xs">NRI (Non-Resident Indian)</p>
+                        <p className={`text-[10px] ${newCustomer.isNri ? 'text-indigo-100' : 'text-slate-400'}`}>Requires Passport KYC, Overseas Address &amp; NRI Bank</p>
+                      </div>
+                    </button>
                   </div>
                 </div>
 
@@ -2612,65 +2631,78 @@ export const Customers = () => {
                   <span>1. Lead Priority, Residential Category &amp; Demographics</span>
                 </h4>
 
-                {/* LEAD TEMPERATURE & RESIDENTIAL STATUS ROW */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-white p-3.5 rounded-xl border border-slate-200">
-                  {/* Lead Section */}
-                  <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1.5 flex items-center space-x-1.5">
-                      <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-                      <span>Lead Priority / Temperature *</span>
-                    </label>
-                    <div className="grid grid-cols-3 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setEditCustomerData({ ...editCustomerData, leadType: 'Hot Lead' })}
-                        className={`p-2 rounded-xl text-xs font-black transition border flex flex-col items-center justify-center space-y-0.5 cursor-pointer ${editCustomerData.leadType === 'Hot Lead' ? 'bg-rose-500 text-white border-rose-600 shadow-md ring-2 ring-rose-300' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-rose-50 hover:text-rose-700'}`}
-                      >
-                        <span className="text-sm">🔥</span>
-                        <span>Hot Lead</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setEditCustomerData({ ...editCustomerData, leadType: 'Warm Lead' })}
-                        className={`p-2 rounded-xl text-xs font-black transition border flex flex-col items-center justify-center space-y-0.5 cursor-pointer ${(!editCustomerData.leadType || editCustomerData.leadType === 'Warm Lead') ? 'bg-amber-500 text-white border-amber-600 shadow-md ring-2 ring-amber-300' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-amber-50 hover:text-amber-700'}`}
-                      >
-                        <span className="text-sm">⚡</span>
-                        <span>Warm Lead</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setEditCustomerData({ ...editCustomerData, leadType: 'Cold Lead' })}
-                        className={`p-2 rounded-xl text-xs font-black transition border flex flex-col items-center justify-center space-y-0.5 cursor-pointer ${editCustomerData.leadType === 'Cold Lead' ? 'bg-sky-500 text-white border-sky-600 shadow-md ring-2 ring-sky-300' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-sky-50 hover:text-sky-700'}`}
-                      >
-                        <span className="text-sm">❄️</span>
-                        <span>Cold Lead</span>
-                      </button>
+                {/* LEAD PRIORITY / STAGE SECTION */}
+                <div className="bg-gradient-to-r from-amber-50/70 via-orange-50/50 to-slate-50 p-4.5 rounded-2xl border border-amber-200/90 space-y-3 shadow-2xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-100/80 pb-2.5">
+                    <div className="flex items-center space-x-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-black text-sm shadow-xs shrink-0">
+                        🎯
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-black uppercase text-amber-950 tracking-wider">
+                          Lead Section &amp; Temperature Priority *
+                        </h4>
+                        <p className="text-[11px] text-amber-800 font-semibold">Select client lead temperature for follow-up speed &amp; sales prioritization.</p>
+                      </div>
                     </div>
+                    <span className={`badge text-[10px] font-black uppercase px-3 py-1 shadow-2xs self-start sm:self-auto ${editCustomerData.leadType === 'Hot Lead' ? 'bg-rose-500 text-white' : editCustomerData.leadType === 'Cold Lead' ? 'bg-sky-500 text-white' : 'bg-amber-500 text-white'}`}>
+                      {editCustomerData.leadType === 'Hot Lead' ? '🔥 Hot Priority Lead' : editCustomerData.leadType === 'Cold Lead' ? '❄️ Cold Follow-up' : '⚡ Warm Active Lead'}
+                    </span>
                   </div>
 
-                  {/* NRI / Resident Status Option */}
-                  <div>
-                    <label className="block text-[11px] font-black uppercase text-slate-700 mb-1.5 flex items-center space-x-1.5">
-                      <span>Residential Category *</span>
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setEditCustomerData({ ...editCustomerData, isNri: false })}
-                        className={`p-2.5 rounded-xl text-xs font-black transition border flex items-center justify-center space-x-2 cursor-pointer ${!editCustomerData.isNri ? 'bg-blue-600 text-white border-blue-700 shadow-md ring-2 ring-blue-300' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-blue-50 hover:text-blue-700'}`}
-                      >
-                        <span>🇮🇳</span>
-                        <span>Resident Indian</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setEditCustomerData({ ...editCustomerData, isNri: true })}
-                        className={`p-2.5 rounded-xl text-xs font-black transition border flex items-center justify-center space-x-2 cursor-pointer ${editCustomerData.isNri ? 'bg-indigo-600 text-white border-indigo-700 shadow-md ring-2 ring-indigo-300' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-indigo-50 hover:text-indigo-700'}`}
-                      >
-                        <span>✈️</span>
-                        <span>NRI Customer</span>
-                      </button>
-                    </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setEditCustomerData({ ...editCustomerData, leadType: 'Hot Lead' })}
+                      className={`p-3 rounded-2xl text-xs font-black transition-all border flex flex-col items-center justify-center space-y-1 cursor-pointer ${editCustomerData.leadType === 'Hot Lead' ? 'bg-rose-500 text-white border-rose-600 shadow-md ring-4 ring-rose-200 scale-[1.02]' : 'bg-white text-slate-700 border-slate-200 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300'}`}
+                    >
+                      <span className="text-xl">🔥</span>
+                      <span className="text-sm font-black">Hot Lead</span>
+                      <span className={`text-[10px] font-semibold ${editCustomerData.leadType === 'Hot Lead' ? 'text-rose-100' : 'text-slate-400'}`}>High Urgency / Closing Soon</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditCustomerData({ ...editCustomerData, leadType: 'Warm Lead' })}
+                      className={`p-3 rounded-2xl text-xs font-black transition-all border flex flex-col items-center justify-center space-y-1 cursor-pointer ${(!editCustomerData.leadType || editCustomerData.leadType === 'Warm Lead') ? 'bg-amber-500 text-white border-amber-600 shadow-md ring-4 ring-amber-200 scale-[1.02]' : 'bg-white text-slate-700 border-slate-200 hover:bg-amber-50 hover:text-amber-700 hover:border-amber-300'}`}
+                    >
+                      <span className="text-xl">⚡</span>
+                      <span className="text-sm font-black">Warm Lead</span>
+                      <span className={`text-[10px] font-semibold ${editCustomerData.leadType === 'Warm Lead' ? 'text-amber-100' : 'text-slate-400'}`}>Quotation Sent / Discussing</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditCustomerData({ ...editCustomerData, leadType: 'Cold Lead' })}
+                      className={`p-3 rounded-2xl text-xs font-black transition-all border flex flex-col items-center justify-center space-y-1 cursor-pointer ${editCustomerData.leadType === 'Cold Lead' ? 'bg-sky-500 text-white border-sky-600 shadow-md ring-4 ring-sky-200 scale-[1.02]' : 'bg-white text-slate-700 border-slate-200 hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300'}`}
+                    >
+                      <span className="text-xl">❄️</span>
+                      <span className="text-sm font-black">Cold Lead</span>
+                      <span className={`text-[10px] font-semibold ${editCustomerData.leadType === 'Cold Lead' ? 'text-sky-100' : 'text-slate-400'}`}>Long-term / Periodic Check-in</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* RESIDENTIAL CATEGORY SELECTOR */}
+                <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2">
+                  <label className="block text-[11px] font-black uppercase text-slate-700 flex items-center space-x-1.5">
+                    <span>Residential Category (Resident Indian vs NRI) *</span>
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setEditCustomerData({ ...editCustomerData, isNri: false })}
+                      className={`p-2.5 rounded-xl text-xs font-black transition-all border flex items-center justify-center space-x-2 cursor-pointer ${!editCustomerData.isNri ? 'bg-blue-600 text-white border-blue-700 shadow-md ring-2 ring-blue-300' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-blue-50 hover:text-blue-700'}`}
+                    >
+                      <span>🇮🇳</span>
+                      <span>Resident Indian</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditCustomerData({ ...editCustomerData, isNri: true })}
+                      className={`p-2.5 rounded-xl text-xs font-black transition-all border flex items-center justify-center space-x-2 cursor-pointer ${editCustomerData.isNri ? 'bg-indigo-600 text-white border-indigo-700 shadow-md ring-2 ring-indigo-300' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-indigo-50 hover:text-indigo-700'}`}
+                    >
+                      <span>✈️</span>
+                      <span>NRI Customer</span>
+                    </button>
                   </div>
                 </div>
 
