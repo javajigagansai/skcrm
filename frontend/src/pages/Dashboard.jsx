@@ -1290,19 +1290,20 @@ export const Dashboard = () => {
     } else if (activeModal === 'INVESTMENTS_VOLUME') {
       const mfSum = (investments || []).filter(i => {
         const t = String(i.type || i.category || i.investmentType || '').toLowerCase();
-        return t.includes('mf') || t.includes('sip') || t.includes('mutual');
+        return t.includes('mf') || t.includes('sip') || t.includes('mutual') || t.includes('equity');
       }).reduce((s, i) => s + (Number(i.amount || i.investmentAmount) || 0), 0);
 
       const fdSum = (investments || []).filter(i => {
         const t = String(i.type || i.category || i.investmentType || '').toLowerCase();
-        return t.includes('fd') || t.includes('fixed') || t.includes('bond');
+        return t.includes('fd') || t.includes('fixed') || t.includes('deposit');
       }).reduce((s, i) => s + (Number(i.amount || i.investmentAmount) || 0), 0);
 
-      const insSum = (policies || []).reduce((s, p) => s + (Number(p.grossPremium || p.sumInsured) || 0), 0);
+      const insSum = (policies || []).reduce((s, p) => s + (Number(p.grossPremium || p.premium || p.sumInsured) || 0), 0);
 
-      const otherSum = (investments || []).filter(i => {
+      const bondsSum = (investments || []).filter(i => {
         const t = String(i.type || i.category || i.investmentType || '').toLowerCase();
-        return !t.includes('mf') && !t.includes('sip') && !t.includes('mutual') && !t.includes('fd') && !t.includes('fixed') && !t.includes('bond');
+        return t.includes('bond') || t.includes('gold') || t.includes('sgb') || t.includes('reit') || t.includes('real') ||
+          (!t.includes('mf') && !t.includes('sip') && !t.includes('mutual') && !t.includes('equity') && !t.includes('fd') && !t.includes('fixed') && !t.includes('deposit'));
       }).reduce((s, i) => s + (Number(i.amount || i.investmentAmount) || 0), 0);
 
       title = "Investments & Assets Under Management (AUM)";
@@ -1311,24 +1312,24 @@ export const Dashboard = () => {
         <div className="space-y-6">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="bg-emerald-50 p-3.5 rounded-2xl border border-emerald-100">
-              <span className="text-[10px] font-bold text-emerald-600 uppercase">Mutual Funds &amp; SIP</span>
+              <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wide">Mutual Funds &amp; SIP</span>
               <p className="text-xl font-black text-slate-900">{mfSum ? `₹${(mfSum / 10000000).toFixed(2)} Cr` : '₹0.00'}</p>
-              <span className="text-[10px] text-slate-500">Mutual Fund Portfolios</span>
+              <span className="text-[10px] text-slate-500 font-medium">Active SIPs &amp; Lumpsum AUM</span>
             </div>
             <div className="bg-blue-50 p-3.5 rounded-2xl border border-blue-100">
-              <span className="text-[10px] font-bold text-blue-600 uppercase">FDs &amp; Fixed Income</span>
+              <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wide">Fixed Deposits (FD)</span>
               <p className="text-xl font-black text-slate-900">{fdSum ? `₹${(fdSum / 10000000).toFixed(2)} Cr` : '₹0.00'}</p>
-              <span className="text-[10px] text-slate-500">Fixed Income Assets</span>
+              <span className="text-[10px] text-slate-500 font-medium">Bank &amp; Corporate FDs</span>
             </div>
             <div className="bg-purple-50 p-3.5 rounded-2xl border border-purple-100">
-              <span className="text-[10px] font-bold text-purple-600 uppercase">Insurance Policies AUM</span>
+              <span className="text-[10px] font-bold text-purple-700 uppercase tracking-wide">Insurance Premium Book</span>
               <p className="text-xl font-black text-slate-900">{insSum ? `₹${(insSum / 10000000).toFixed(2)} Cr` : '₹0.00'}</p>
-              <span className="text-[10px] text-slate-500">Insurance Contracts AUM</span>
+              <span className="text-[10px] text-slate-500 font-medium">Life, Health &amp; General Policies</span>
             </div>
             <div className="bg-amber-50 p-3.5 rounded-2xl border border-amber-100">
-              <span className="text-[10px] font-bold text-amber-600 uppercase">Real Estate &amp; Bonds</span>
-              <p className="text-xl font-black text-slate-900">{otherSum ? `₹${(otherSum / 10000000).toFixed(2)} Cr` : '₹0.00'}</p>
-              <span className="text-[10px] text-slate-500">Bonds &amp; Other Assets</span>
+              <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wide">Bonds &amp; Sovereign Gold</span>
+              <p className="text-xl font-black text-slate-900">{bondsSum ? `₹${(bondsSum / 10000000).toFixed(2)} Cr` : '₹0.00'}</p>
+              <span className="text-[10px] text-slate-500 font-medium">Govt Bonds, SGBs &amp; Securities</span>
             </div>
           </div>
 
