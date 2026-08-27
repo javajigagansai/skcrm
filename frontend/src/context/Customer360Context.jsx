@@ -33,10 +33,13 @@ export const Customer360Provider = ({ children }) => {
     updateCustomer, 
     deleteCustomer,
     claims,
+    policies,
     addClaim,
     updateClaim,
     updateClaimStatus,
     deleteClaim,
+    updatePolicy,
+    deletePolicy,
     staffList: liveStaffList
   } = useData();
 
@@ -68,6 +71,10 @@ export const Customer360Provider = ({ children }) => {
     anniversaryDate: '',
     phone: ''
   });
+
+  // Policy Edit Modal States
+  const [showEditPolicyModal, setShowEditPolicyModal] = useState(false);
+  const [editPolicyData, setEditPolicyData] = useState(null);
 
   // Claims Modal States (Direct Customer 360 <-> Claims Desk Synchronization)
   const [showAddClaimModal, setShowAddClaimModal] = useState(false);
@@ -139,6 +146,8 @@ export const Customer360Provider = ({ children }) => {
     setShowEditFamilyModal(false);
     setShowAddClaimModal(false);
     setShowEditClaimModal(false);
+    setShowEditPolicyModal(false);
+    setEditPolicyData(null);
   };
 
   const handleSaveEditCustomer = async (e) => {
@@ -412,6 +421,38 @@ export const Customer360Provider = ({ children }) => {
   const handleDeleteClaim360 = async (claimId) => {
     if (window.confirm(`Are you sure you want to delete claim ${claimId}? This will remove it from both Customer 360 and Claims Desk.`)) {
       await deleteClaim(claimId);
+    }
+  };
+
+  // ── Policy Edit Handlers ──────────────────────────────────────────────────
+  const handleOpenEditPolicy = (pol) => {
+    setEditPolicyData({ ...pol });
+    setShowEditPolicyModal(true);
+  };
+
+  const handleSaveEditPolicy = async (e) => {
+    e.preventDefault();
+    if (!editPolicyData || !editPolicyData.id) return;
+    await updatePolicy(editPolicyData);
+    // Refresh selected customer's policy list
+    setSelectedCustomer(prev => ({
+      ...prev,
+      policiesList: (prev.policiesList || []).map(p =>
+        p.id === editPolicyData.id ? { ...p, ...editPolicyData } : p
+      )
+    }));
+    setShowEditPolicyModal(false);
+    setEditPolicyData(null);
+    alert(`Policy ${editPolicyData.id} updated successfully!`);
+  };
+
+  const handleDeletePolicy360 = async (polId) => {
+    if (window.confirm(`Delete policy ${polId}? This will permanently remove it from the Policies Register.`)) {
+      await deletePolicy(polId);
+      setSelectedCustomer(prev => ({
+        ...prev,
+        policiesList: (prev.policiesList || []).filter(p => p.id !== polId)
+      }));
     }
   };
 
@@ -896,15 +937,17 @@ export const Customer360Provider = ({ children }) => {
               )}
 
               {/* TAB 3: INSURANCE POLICIES */}
-              {active360Tab === 'POLICIES' && (
+              {active360Tab === 'POLICIES' && (() => {
+                const activePoliciesList360 = (selectedCustomer.policiesList || []);
+                return (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h4 className="text-xs font-black uppercase text-slate-700 tracking-wider">Active Insurance Contracts</h4>
-                    <span className="badge bg-emerald-100 text-emerald-800 text-[10px] font-bold">{activePoliciesList.length} Policies</span>
+                    <span className="badge bg-emerald-100 text-emerald-800 text-[10px] font-bold">{activePoliciesList360.length} Policies</span>
                   </div>
 
-                  <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
-                    <table className="w-full text-left border-collapse">
+                  <div className="bg-white rounded-2xl border border-slate-200 overflow-x-auto shadow-xs">
+                    <table className="w-full text-left border-collapse min-w-[900px]">
                       <thead>
                         <tr className="bg-slate-900 text-white text-[10px] font-black uppercase tracking-wider">
                           <th className="p-3 border-r border-slate-800">Policy No</th>
@@ -912,14 +955,16 @@ export const Customer360Provider = ({ children }) => {
                           <th className="p-3 border-r border-slate-800">Policy / Plan Name</th>
                           <th className="p-3 border-r border-slate-800">Sum Assured</th>
                           <th className="p-3 border-r border-slate-800">Annual Premium</th>
+                          <th className="p-3 border-r border-slate-800">Expiry Date</th>
                           <th className="p-3 border-r border-slate-800">Assigned Officer</th>
-                          <th className="p-3 text-center">Status</th>
+                          <th className="p-3 border-r border-slate-800 text-center">Status</th>
+                          <th className="p-3 text-center">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-200 text-xs font-semibold text-slate-800">
-                        {activePoliciesList.length > 0 ? (
-                          activePoliciesList.map((pol, idx) => (
-                            <tr key={pol.id || idx} className="hover:bg-slate-50 transition">
+                        {activePoliciesList360.length > 0 ? (
+                          activePoliciesList360.map((pol, idx) => (
+                            <tr key={pol.id || idx} className="hover:bg-emerald-50/40 transition">
                               <td className="p-3 font-mono font-bold text-blue-900 border-r border-slate-100">{pol.id}</td>
                               <td className="p-3 border-r border-slate-100">
                                 <p className="font-extrabold text-slate-900">{pol.insuranceCompany}</p>
@@ -931,29 +976,49 @@ export const Customer360Provider = ({ children }) => {
                                   <span>{pol.policyName || pol.planName || pol.salesPitch || pol.type || 'Standard Policy Plan'}</span>
                                 </div>
                               </td>
-                              <td className="p-3 font-bold text-slate-900 border-r border-slate-100">{pol.sumInsured ? `₹ ${Number(pol.sumInsured).toLocaleString()}` : (pol.sumAssured ? `₹ ${Number(pol.sumAssured).toLocaleString()}` : '₹ 5,00,000')}</td>
-                              <td className="p-3 font-black text-emerald-700 border-r border-slate-100">{pol.grossPremium ? `₹ ${Number(pol.grossPremium).toLocaleString()} / yr` : (pol.premium ? `₹ ${Number(pol.premium).toLocaleString()} / yr` : '₹ 0.00')}</td>
+                              <td className="p-3 font-bold text-slate-900 border-r border-slate-100">{pol.sumInsured ? `₹ ${Number(pol.sumInsured).toLocaleString()}` : (pol.sumAssured ? `₹ ${Number(pol.sumAssured).toLocaleString()}` : '—')}</td>
+                              <td className="p-3 font-black text-emerald-700 border-r border-slate-100">{pol.grossPremium ? `₹ ${Number(pol.grossPremium).toLocaleString()} / yr` : (pol.premium ? `₹ ${Number(pol.premium).toLocaleString()} / yr` : '—')}</td>
+                              <td className="p-3 font-bold text-slate-700 border-r border-slate-100">{pol.expiryDate || pol.endDate || '—'}</td>
                               <td className="p-3 border-r border-slate-100">
                                 <span className="badge bg-purple-100 text-purple-800 text-[10px] font-extrabold flex items-center space-x-1 w-fit">
                                   <UserCheck className="h-3 w-3" />
-                                  <span>{pol.assignedStaff || pol.assignedStaffName || selectedCustomer.assignedAdvisorName || 'Priya Sharma'}</span>
+                                  <span>{pol.assignedStaff || pol.assignedStaffName || selectedCustomer.assignedAdvisorName || 'Advisor'}</span>
                                 </span>
                               </td>
-                              <td className="p-3 text-center">
+                              <td className="p-3 border-r border-slate-100 text-center">
                                 <span className="badge badge-green text-[9px]">{pol.status || 'ACTIVE'}</span>
+                              </td>
+                              <td className="p-3 text-center">
+                                <div className="flex items-center justify-center space-x-1.5">
+                                  <button
+                                    onClick={() => handleOpenEditPolicy(pol)}
+                                    className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition cursor-pointer"
+                                    title="Edit Policy"
+                                  >
+                                    <Edit3 className="h-4 w-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeletePolicy360(pol.id)}
+                                    className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                                    title="Delete Policy"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           ))
                         ) : (
                           <tr>
-                            <td colSpan="7" className="p-4 text-center text-slate-400 font-semibold">No insurance policy contracts attached to this customer.</td>
+                            <td colSpan="9" className="p-6 text-center text-slate-400 font-semibold">No insurance policy contracts attached to this customer.</td>
                           </tr>
                         )}
                       </tbody>
                     </table>
                   </div>
                 </div>
-              )}
+                );
+              })()}
 
               {/* TAB 4: CLAIMS HISTORY & ACTIVE ASSISTANCE (DIRECT SYNC WITH CLAIMS DESK) */}
               {active360Tab === 'CLAIMS' && (
@@ -2497,6 +2562,119 @@ export const Customer360Provider = ({ children }) => {
                 <CheckCircle2 className="h-4 w-4" />
                 <span>Save Changes &amp; Sync with Claims Desk</span>
               </button>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* ── EDIT POLICY MODAL ────────────────────────────────────────── */}
+      {showEditPolicyModal && editPolicyData && (
+        <div className="fixed inset-0 z-[80] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="p-5 bg-gradient-to-r from-slate-900 to-emerald-900 text-white rounded-t-3xl flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center">
+                  <ShieldCheck className="h-5 w-5 text-emerald-300" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black">Edit Insurance Policy</h3>
+                  <p className="text-[11px] text-emerald-200 font-semibold">{editPolicyData.id} · {editPolicyData.insuranceCompany}</p>
+                </div>
+              </div>
+              <button onClick={() => { setShowEditPolicyModal(false); setEditPolicyData(null); }} className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition cursor-pointer">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditPolicy} className="p-6 space-y-4">
+              {/* Row 1: Insurer + Category */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Insurance Company *</label>
+                  <input type="text" required value={editPolicyData.insuranceCompany || ''} onChange={e => setEditPolicyData({...editPolicyData, insuranceCompany: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500" />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Policy Category / Type *</label>
+                  <select value={editPolicyData.type || ''} onChange={e => setEditPolicyData({...editPolicyData, type: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
+                    <option value="">Select Type</option>
+                    <option value="Life Insurance">Life Insurance</option>
+                    <option value="Health Insurance">Health Insurance</option>
+                    <option value="Motor Insurance">Motor Insurance</option>
+                    <option value="Term Insurance">Term Insurance</option>
+                    <option value="ULIP">ULIP</option>
+                    <option value="Endowment Plan">Endowment Plan</option>
+                    <option value="Critical Illness">Critical Illness</option>
+                    <option value="Personal Accident">Personal Accident</option>
+                    <option value="Travel Insurance">Travel Insurance</option>
+                    <option value="Home Insurance">Home Insurance</option>
+                    <option value="General Insurance">General Insurance</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Row 2: Plan Name */}
+              <div>
+                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Policy / Plan Name</label>
+                <input type="text" value={editPolicyData.policyName || editPolicyData.planName || ''} onChange={e => setEditPolicyData({...editPolicyData, policyName: e.target.value, planName: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500" placeholder="e.g. Star Comprehensive Health Plan" />
+              </div>
+
+              {/* Row 3: Annual Premium + Sum Insured */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Annual Premium (₹) *</label>
+                  <input type="number" required min="0" step="0.01" value={editPolicyData.grossPremium || editPolicyData.premium || ''} onChange={e => setEditPolicyData({...editPolicyData, grossPremium: e.target.value, premium: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-xs font-mono font-bold text-emerald-700 outline-none focus:ring-2 focus:ring-emerald-500" placeholder="e.g. 25000" />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Sum Insured / Coverage (₹)</label>
+                  <input type="number" min="0" step="1" value={editPolicyData.sumInsured || editPolicyData.sumAssured || ''} onChange={e => setEditPolicyData({...editPolicyData, sumInsured: e.target.value, sumAssured: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-xs font-mono font-bold text-blue-700 outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g. 500000" />
+                </div>
+              </div>
+
+              {/* Row 4: Start Date + Expiry Date */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Start Date</label>
+                  <input type="date" value={editPolicyData.startDate || ''} onChange={e => setEditPolicyData({...editPolicyData, startDate: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Expiry / Renewal Date</label>
+                  <input type="date" value={editPolicyData.expiryDate || editPolicyData.endDate || ''} onChange={e => setEditPolicyData({...editPolicyData, expiryDate: e.target.value, endDate: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+              </div>
+
+              {/* Row 5: Policy No + Status */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Policy Number (ID)</label>
+                  <input type="text" value={editPolicyData.id || ''} readOnly className="w-full px-3 py-2 rounded-xl border bg-slate-50 text-xs font-mono font-bold text-slate-500 cursor-not-allowed" />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Policy Status</label>
+                  <select value={editPolicyData.status || 'ACTIVE'} onChange={e => setEditPolicyData({...editPolicyData, status: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500 bg-white">
+                    <option value="ACTIVE">ACTIVE</option>
+                    <option value="LAPSED">LAPSED</option>
+                    <option value="EXPIRED">EXPIRED</option>
+                    <option value="PENDING">PENDING</option>
+                    <option value="CANCELLED">CANCELLED</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Row 6: Notes */}
+              <div>
+                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Advisor Notes / Remarks</label>
+                <textarea rows={2} value={editPolicyData.advisorNotes || editPolicyData.notes || ''} onChange={e => setEditPolicyData({...editPolicyData, advisorNotes: e.target.value, notes: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-xs font-semibold outline-none focus:ring-2 focus:ring-emerald-500 resize-none" placeholder="Any special remarks, nominee details, rider info..." />
+              </div>
+
+              <div className="flex items-center space-x-3 pt-2">
+                <button type="button" onClick={() => { setShowEditPolicyModal(false); setEditPolicyData(null); }} className="flex-1 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs transition cursor-pointer">
+                  Cancel
+                </button>
+                <button type="submit" className="flex-[2] py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-md transition cursor-pointer flex items-center justify-center space-x-2">
+                  <CheckCircle2 className="h-4 w-4" />
+                  <span>Save Policy Changes</span>
+                </button>
+              </div>
             </form>
           </div>
         </div>

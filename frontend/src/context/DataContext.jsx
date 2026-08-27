@@ -539,7 +539,28 @@ export const DataProvider = ({ children }) => {
     });
   };
 
-  const clearAllPolicies = async () => {
+  const updatePolicy = async (updatedPol) => {
+    if (!updatedPol || !updatedPol.id) return;
+    const cleanPol = {
+      ...updatedPol,
+      grossPremium: parseFloat(updatedPol.grossPremium || updatedPol.premium || 0),
+      sumInsured: parseFloat(updatedPol.sumInsured || updatedPol.sumAssured || 0),
+      updatedAt: new Date().toISOString()
+    };
+    setPolicies(prev => prev.map(p => p.id === cleanPol.id ? { ...p, ...cleanPol } : p));
+    try { await setDoc(doc(db, 'policies', String(cleanPol.id)), cleanPol, { merge: true }); } catch (e) { console.warn('Firestore updatePolicy error:', e); }
+    addAuditLog({
+      userName: user?.name || 'Staff Advisor',
+      userRole: user?.role || 'STAFF',
+      action: 'UPDATE_POLICY',
+      module: 'Policies',
+      affectedRecord: `${cleanPol.insuranceCompany} (${cleanPol.id})`,
+      details: `Updated policy for ${cleanPol.customerName}: Premium ₹${cleanPol.grossPremium}, Coverage ₹${cleanPol.sumInsured}`
+    });
+    return cleanPol;
+  };
+
+ const clearAllPolicies = async () => {
     // Note: does not bulk-delete Firestore docs. Used for UI reset only.
     addAuditLog({
       userName: user?.name || 'Admin User',
@@ -938,6 +959,7 @@ export const DataProvider = ({ children }) => {
       updateCustomer,
       deleteCustomer,
       addPolicy,
+      updatePolicy,
       deletePolicy,
       clearAllPolicies,
       addInvestment,
