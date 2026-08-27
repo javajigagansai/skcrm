@@ -944,10 +944,13 @@ export const Customers = () => {
         </div>
       </div>
 
-      {/* ================= CUSTOMER 360 DEGREE PROFILE MODAL (FULL SCREEN) ================= */}
+      {/* ================= CUSTOMER 360 DEGREE PROFILE MODAL (POPUP DIALOG) ================= */}
       {selectedCustomer && (
-        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex flex-col items-center justify-center p-0 sm:p-3 md:p-6 overflow-hidden animate-fadeIn">
-          <div className="bg-slate-50 w-full h-full sm:max-w-6xl sm:h-[95vh] sm:rounded-3xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden">
+        <div 
+          onClick={(e) => { if (e.target === e.currentTarget) setSelectedCustomer(null); }}
+          className="fixed inset-0 z-50 bg-black/45 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 md:p-6 overflow-y-auto animate-fadeIn"
+        >
+          <div className="bg-white w-full max-w-6xl h-[90vh] max-h-[880px] rounded-3xl shadow-2xl border border-slate-200/90 flex flex-col overflow-hidden animate-scaleIn">
 
             {/* Modal Header */}
             <div className="p-6 bg-gradient-to-r from-slate-900 via-[#1E6091] to-slate-900 text-white flex items-start justify-between shrink-0">
@@ -1689,10 +1692,13 @@ export const Customers = () => {
         </div>
       )}
 
-      {/* ================= ADD NEW CUSTOMER MODAL (STUDIO 360) ================= */}
+      {/* ================= ADD NEW CUSTOMER MODAL (POPUP DIALOG) ================= */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex flex-col items-center justify-center p-0 sm:p-3 md:p-6 overflow-hidden animate-fadeIn">
-          <div className="bg-slate-50 w-full h-full sm:max-w-6xl sm:h-[95vh] sm:rounded-3xl shadow-2xl border border-slate-200/80 flex flex-col overflow-hidden">
+        <div 
+          onClick={(e) => { if (e.target === e.currentTarget) setShowAddModal(false); }}
+          className="fixed inset-0 z-50 bg-black/45 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 md:p-6 overflow-y-auto animate-fadeIn"
+        >
+          <div className="bg-white w-full max-w-5xl h-[88vh] max-h-[860px] rounded-3xl shadow-2xl border border-slate-200/90 flex flex-col overflow-hidden animate-scaleIn">
 
             {/* Sleek Modal Header */}
             <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between shadow-sm shrink-0 border-b border-slate-800">
@@ -2726,10 +2732,13 @@ export const Customers = () => {
         </div>
       )}
 
-      {/* ================= EDIT CUSTOMER 360 MODAL (FULL SCREEN) ================= */}
+      {/* ================= EDIT CUSTOMER PROFILE MODAL (POPUP DIALOG) ================= */}
       {showEditModal && editCustomerData && (
-        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex flex-col items-center justify-center p-0 sm:p-3 md:p-6 overflow-hidden animate-fadeIn">
-          <div className="bg-slate-50 w-full h-full sm:max-w-6xl sm:h-[95vh] sm:rounded-3xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden">
+        <div 
+          onClick={(e) => { if (e.target === e.currentTarget) setShowEditModal(false); }}
+          className="fixed inset-0 z-50 bg-black/45 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 md:p-6 overflow-y-auto animate-fadeIn"
+        >
+          <div className="bg-white w-full max-w-5xl h-[88vh] max-h-[860px] rounded-3xl shadow-2xl border border-slate-200/90 flex flex-col overflow-hidden animate-scaleIn">
 
             {/* Sleek Edit Modal Header */}
             <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between shadow-sm shrink-0 border-b border-slate-800">
