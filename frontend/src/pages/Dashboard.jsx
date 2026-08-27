@@ -1310,23 +1310,9 @@ export const Dashboard = () => {
       subtitle = "";
       content = (
         <div className="space-y-6">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="bg-emerald-50 p-3.5 rounded-2xl border border-emerald-100">
-              <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wide">Mutual Funds &amp; SIP</span>
-              <p className="text-xl font-black text-slate-900 mt-1">{mfSum ? `₹${(mfSum / 10000000).toFixed(2)} Cr` : '₹0.00'}</p>
-            </div>
-            <div className="bg-blue-50 p-3.5 rounded-2xl border border-blue-100">
-              <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wide">Fixed Deposits (FD)</span>
-              <p className="text-xl font-black text-slate-900 mt-1">{fdSum ? `₹${(fdSum / 10000000).toFixed(2)} Cr` : '₹0.00'}</p>
-            </div>
-            <div className="bg-purple-50 p-3.5 rounded-2xl border border-purple-100">
-              <span className="text-[10px] font-bold text-purple-700 uppercase tracking-wide">Insurance Premium Book</span>
-              <p className="text-xl font-black text-slate-900 mt-1">{insSum ? `₹${(insSum / 10000000).toFixed(2)} Cr` : '₹0.00'}</p>
-            </div>
-            <div className="bg-amber-50 p-3.5 rounded-2xl border border-amber-100">
-              <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wide">Bonds &amp; Sovereign Gold</span>
-              <p className="text-xl font-black text-slate-900 mt-1">{bondsSum ? `₹${(bondsSum / 10000000).toFixed(2)} Cr` : '₹0.00'}</p>
-            </div>
+          <div className="bg-purple-50 p-4 rounded-2xl border border-purple-100 shadow-2xs">
+            <span className="text-[10px] font-bold text-purple-700 uppercase tracking-wide">Insurance Premium Book</span>
+            <p className="text-2xl font-black text-slate-900 mt-1">{insSum ? `₹${(insSum / 10000000).toFixed(2)} Cr` : '₹0.00'}</p>
           </div>
 
           <div>
