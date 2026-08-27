@@ -1719,57 +1719,140 @@ export const Customers = () => {
               </button>
             </div>
 
-            {/* Clean Segmented Navigation Tabs */}
-            <div className="bg-white border-b border-slate-200 px-6 py-2.5 flex items-center space-x-2 overflow-x-auto shrink-0">
-              <button
-                type="button"
-                onClick={() => setAddModalTab('ALL')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer whitespace-nowrap ${addModalTab === 'ALL' ? 'bg-slate-900 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
-              >
-                <span>📋 All Sections</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setAddModalTab('IDENTITY')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer whitespace-nowrap ${addModalTab === 'IDENTITY' ? 'bg-blue-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
-              >
-                <span>👤 Identity &amp; Contact</span>
-              </button>
-              {newCustomer.isNri && (
-                <button
-                  type="button"
-                  onClick={() => setAddModalTab('NRI')}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer whitespace-nowrap ${addModalTab === 'NRI' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200'}`}
-                >
-                  <span>✈️ NRI Dossier</span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => setAddModalTab('FAMILY')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer whitespace-nowrap ${addModalTab === 'FAMILY' ? 'bg-pink-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
-              >
-                <span>🎂 Personal &amp; Family</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setAddModalTab('KYC')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer whitespace-nowrap ${addModalTab === 'KYC' ? 'bg-purple-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
-              >
-                <span>🏛️ KYC &amp; Banking</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setAddModalTab('BUSINESS')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer whitespace-nowrap ${addModalTab === 'BUSINESS' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
-              >
-                <span>🛡️ Business &amp; Insurers</span>
-              </button>
-            </div>
+            {/* Modal Studio Body: Left Sidebar + Scrollable Form */}
+            <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
 
-            {/* Scrollable Form Body */}
-            <form id="add-customer-360-form" onSubmit={handleAddCustomer} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+              {/* Left-Side Navigation Sidebar */}
+              <aside className="w-full md:w-64 lg:w-72 bg-slate-50 border-r border-slate-200/90 p-4 flex flex-col justify-between shrink-0 overflow-y-auto">
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-black uppercase text-slate-400 px-3 tracking-wider block mb-2">Sections Navigation</span>
+
+                  <button
+                    type="button"
+                    onClick={() => setAddModalTab('ALL')}
+                    className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-between text-left cursor-pointer ${
+                      addModalTab === 'ALL'
+                        ? 'bg-slate-900 text-white shadow-xs'
+                        : 'text-slate-600 hover:bg-slate-200/70 hover:text-slate-900'
+                    }`}
+                  >
+                    <span className="flex items-center space-x-2.5">
+                      <span className="text-sm">📋</span>
+                      <span>All Sections (Full)</span>
+                    </span>
+                    <span className="text-[10px] opacity-75 font-normal">View All</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setAddModalTab('IDENTITY')}
+                    className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-between text-left cursor-pointer ${
+                      addModalTab === 'IDENTITY'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'text-slate-600 hover:bg-slate-200/70 hover:text-slate-900'
+                    }`}
+                  >
+                    <span className="flex items-center space-x-2.5">
+                      <span className="text-sm">👤</span>
+                      <span>1. Profile &amp; Contact</span>
+                    </span>
+                    {newCustomer.name ? <span className="w-2 h-2 rounded-full bg-emerald-400"></span> : null}
+                  </button>
+
+                  {newCustomer.isNri && (
+                    <button
+                      type="button"
+                      onClick={() => setAddModalTab('NRI')}
+                      className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-between text-left cursor-pointer animate-fadeIn ${
+                        addModalTab === 'NRI'
+                          ? 'bg-indigo-600 text-white shadow-xs'
+                          : 'text-indigo-700 bg-indigo-50/70 hover:bg-indigo-100/80 border border-indigo-200'
+                      }`}
+                    >
+                      <span className="flex items-center space-x-2.5">
+                        <span className="text-sm">✈️</span>
+                        <span>2. NRI Dossier</span>
+                      </span>
+                      <span className="badge bg-amber-400 text-slate-900 text-[9px] font-black uppercase px-1.5 py-0.5">NRI</span>
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => setAddModalTab('FAMILY')}
+                    className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-between text-left cursor-pointer ${
+                      addModalTab === 'FAMILY'
+                        ? 'bg-pink-600 text-white shadow-xs'
+                        : 'text-slate-600 hover:bg-slate-200/70 hover:text-slate-900'
+                    }`}
+                  >
+                    <span className="flex items-center space-x-2.5">
+                      <span className="text-sm">🎂</span>
+                      <span>{newCustomer.isNri ? '3.' : '2.'} Personal &amp; Family</span>
+                    </span>
+                    {newCustomer.dob ? <span className="w-2 h-2 rounded-full bg-emerald-400"></span> : null}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setAddModalTab('KYC')}
+                    className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-between text-left cursor-pointer ${
+                      addModalTab === 'KYC'
+                        ? 'bg-purple-600 text-white shadow-xs'
+                        : 'text-slate-600 hover:bg-slate-200/70 hover:text-slate-900'
+                    }`}
+                  >
+                    <span className="flex items-center space-x-2.5">
+                      <span className="text-sm">🏛️</span>
+                      <span>{newCustomer.isNri ? '4.' : '3.'} KYC &amp; Banking</span>
+                    </span>
+                    {(newCustomer.pan || newCustomer.bankAccountNumber) ? <span className="w-2 h-2 rounded-full bg-emerald-400"></span> : null}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setAddModalTab('BUSINESS')}
+                    className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-between text-left cursor-pointer ${
+                      addModalTab === 'BUSINESS'
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : 'text-slate-600 hover:bg-slate-200/70 hover:text-slate-900'
+                    }`}
+                  >
+                    <span className="flex items-center space-x-2.5">
+                      <span className="text-sm">🛡️</span>
+                      <span>{newCustomer.isNri ? '5.' : '4.'} Business &amp; Insurers</span>
+                    </span>
+                    {newCustomer.insuranceCompany ? <span className="w-2 h-2 rounded-full bg-emerald-400"></span> : null}
+                  </button>
+                </div>
+
+                {/* Profile Summary Card on Sidebar */}
+                <div className="mt-4 p-3 bg-white rounded-2xl border border-slate-200/80 shadow-2xs space-y-2">
+                  <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Live Status</span>
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-800">
+                    <span className="text-slate-500 font-medium">Lead Temp:</span>
+                    <span className={`badge text-[9px] font-bold uppercase px-2 py-0.5 ${
+                      newCustomer.leadType === 'Hot Lead' ? 'bg-rose-500 text-white' : newCustomer.leadType === 'Cold Lead' ? 'bg-sky-500 text-white' : 'bg-amber-500 text-white'
+                    }`}>
+                      {newCustomer.leadType === 'Hot Lead' ? '🔥 Hot' : newCustomer.leadType === 'Cold Lead' ? '❄️ Cold' : '⚡ Warm'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-800">
+                    <span className="text-slate-500 font-medium">Category:</span>
+                    <span className={`badge text-[9px] font-bold uppercase px-2 py-0.5 ${newCustomer.isNri ? 'bg-indigo-600 text-white' : 'bg-blue-600 text-white'}`}>
+                      {newCustomer.isNri ? '✈️ NRI' : '🇮🇳 Resident'}
+                    </span>
+                  </div>
+                  {newCustomer.name && (
+                    <div className="pt-1.5 border-t border-slate-100 text-[11px] font-bold text-slate-800 truncate">
+                      👤 {newCustomer.name}
+                    </div>
+                  )}
+                </div>
+              </aside>
+
+              {/* Scrollable Form Body */}
+              <form id="add-customer-360-form" onSubmit={handleAddCustomer} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 bg-slate-100/50">
 
               {/* SECTION 1: CORE IDENTITY, LEAD STAGE & CONTACT DETAILS */}
               {(addModalTab === 'ALL' || addModalTab === 'IDENTITY') && (
@@ -2583,6 +2666,7 @@ export const Customers = () => {
               )}
 
             </form>
+            </div>
 
             {/* Sticky Action Footer */}
             <div className="bg-white border-t border-slate-200 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0 shadow-md">
