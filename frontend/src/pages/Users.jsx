@@ -321,7 +321,6 @@ export const Users = () => {
             <option value="ADMIN">Admin</option>
             <option value="MANAGER">Manager</option>
             <option value="EMPLOYEE">Staff Advisor</option>
-            <option value="GREETINGS_OFFICER">Greetings Officer</option>
           </select>
         </div>
       </div>
@@ -490,7 +489,6 @@ export const Users = () => {
                   <option value="EMPLOYEE">Staff Advisor (Scoped Client View)</option>
                   <option value="MANAGER">Branch Manager (Branch View)</option>
                   <option value="ADMIN">System Admin (Full Access)</option>
-                  <option value="GREETINGS_OFFICER">Greetings Officer (Special Days Desk)</option>
                 </select>
               </div>
 
@@ -593,7 +591,6 @@ export const Users = () => {
                   <option value="ADMIN">System Admin</option>
                   <option value="MANAGER">Manager</option>
                   <option value="EMPLOYEE">Staff Advisor</option>
-                  <option value="GREETINGS_OFFICER">Greetings Officer</option>
                 </select>
               </div>
 

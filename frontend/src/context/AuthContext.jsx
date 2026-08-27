@@ -51,8 +51,7 @@ export const AuthProvider = ({ children }) => {
           role,
           roleDisplayName: role === 'SUPER_ADMIN' ? 'Super Admin' :
                            role === 'MANAGER' ? 'Manager' :
-                           role === 'ADMIN' ? 'Admin' :
-                           role === 'GREETINGS_OFFICER' ? 'Greetings Officer' : 'Staff Advisor',
+                           role === 'ADMIN' ? 'Admin' : 'Staff Advisor',
           branchId: data.branch || data.branchId || ''
         };
       }
@@ -71,8 +70,7 @@ export const AuthProvider = ({ children }) => {
             role,
             roleDisplayName: role === 'SUPER_ADMIN' ? 'Super Admin' :
                              role === 'MANAGER' ? 'Manager' :
-                             role === 'ADMIN' ? 'Admin' :
-                             role === 'GREETINGS_OFFICER' ? 'Greetings Officer' : 'Staff Advisor',
+                             role === 'ADMIN' ? 'Admin' : 'Staff Advisor',
             branchId: docData.branch || docData.branchId || ''
           };
         }
@@ -169,8 +167,7 @@ export const AuthProvider = ({ children }) => {
           role: role,
           roleDisplayName: role === 'SUPER_ADMIN' ? 'Super Admin' :
                            role === 'MANAGER' ? 'Manager' :
-                           role === 'ADMIN' ? 'Admin' :
-                           role === 'GREETINGS_OFFICER' ? 'Greetings Officer' : 'Staff Advisor',
+                           role === 'ADMIN' ? 'Admin' : 'Staff Advisor',
           branchId: matchedUser.branch || matchedUser.branchId || ''
         };
 

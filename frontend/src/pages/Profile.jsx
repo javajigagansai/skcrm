@@ -99,7 +99,7 @@ export const Profile = () => {
     sessionStorage.setItem('crm_v2_active_user', JSON.stringify(updatedUser));
     localStorage.removeItem('crm_v2_active_user');
     
-    // Sync to staff celebration registry so Greetings Officer & Dashboard celebrate coworker dates
+    // Sync to staff celebration registry so Special Days Desk & Dashboard celebrate coworker dates
     syncStaffCelebrationsRegistry(updatedUser);
 
     setSavedSuccess(true);
@@ -128,7 +128,7 @@ export const Profile = () => {
       {savedSuccess && (
         <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-extrabold flex items-center space-x-2 shadow-sm animate-fade-in">
           <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
-          <span>Profile updated successfully! Birthdays &amp; Anniversary dates synced to Greetings Officer &amp; Team Radar.</span>
+          <span>Profile updated successfully! Birthdays &amp; Anniversary dates synced to Special Days Desk &amp; Team Radar.</span>
         </div>
       )}
 

@@ -69,8 +69,7 @@ const RoleProtectedRoute = ({ children, allowedRoles }) => {
   }
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    const fallback = user.role === 'GREETINGS_OFFICER' ? '/special-days' : '/dashboard';
-    return <Navigate to={fallback} replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return (
@@ -85,13 +84,12 @@ const RoleProtectedRoute = ({ children, allowedRoles }) => {
 const RootRedirect = () => {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" replace />;
-  const target = user.role === 'GREETINGS_OFFICER' ? '/special-days' : '/dashboard';
-  return <Navigate to={target} replace />;
+  return <Navigate to="/dashboard" replace />;
 };
 
 export const AppRoutes = () => {
-  const ALL_ROLES = ['SUPER_ADMIN', 'ADMIN', 'GREETINGS_OFFICER', 'MANAGER', 'EMPLOYEE', 'USER'];
-  const GREETINGS_ROLES = ['SUPER_ADMIN', 'ADMIN', 'GREETINGS_OFFICER', 'MANAGER'];
+  const ALL_ROLES = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'EMPLOYEE', 'USER'];
+  const SPECIAL_DAYS_ROLES = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'EMPLOYEE', 'USER'];
   const WORKER_ROLES = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'EMPLOYEE', 'USER'];
   const MID_MANAGEMENT_ROLES = ['SUPER_ADMIN', 'ADMIN', 'MANAGER'];
   const ADMIN_ROLES = ['SUPER_ADMIN', 'ADMIN'];
@@ -103,7 +101,7 @@ export const AppRoutes = () => {
       <Route path="/" element={<RootRedirect />} />
 
       <Route path="/dashboard" element={<RoleProtectedRoute allowedRoles={WORKER_ROLES}><Dashboard /></RoleProtectedRoute>} />
-      <Route path="/special-days" element={<RoleProtectedRoute allowedRoles={GREETINGS_ROLES}><SpecialDays /></RoleProtectedRoute>} />
+      <Route path="/special-days" element={<RoleProtectedRoute allowedRoles={SPECIAL_DAYS_ROLES}><SpecialDays /></RoleProtectedRoute>} />
       <Route path="/followups" element={<RoleProtectedRoute allowedRoles={WORKER_ROLES}><Followups /></RoleProtectedRoute>} />
       <Route path="/customers" element={<RoleProtectedRoute allowedRoles={WORKER_ROLES}><Customers /></RoleProtectedRoute>} />
       <Route path="/policies" element={<RoleProtectedRoute allowedRoles={WORKER_ROLES}><Policies /></RoleProtectedRoute>} />

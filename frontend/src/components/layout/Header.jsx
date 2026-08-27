@@ -78,7 +78,7 @@ export const Header = () => {
         {/* User Role Badge */}
         <div className="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 border border-slate-200 text-xs font-extrabold">
           <Shield className="h-3.5 w-3.5 text-blue-600" />
-          <span>{user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' ? 'Admin' : user?.role === 'MANAGER' ? 'Manager' : user?.role === 'GREETINGS_OFFICER' ? 'Greetings Officer' : 'Staff Advisor'}</span>
+          <span>{user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' ? 'Admin' : user?.role === 'MANAGER' ? 'Manager' : 'Staff Advisor'}</span>
         </div>
 
         {/* Interactive Real-Time Notification Bell */}

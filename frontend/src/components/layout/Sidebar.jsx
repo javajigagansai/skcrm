@@ -28,7 +28,7 @@ export const Sidebar = () => {
 
   const navItems = [
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'EMPLOYEE', 'USER'] },
-    { label: 'Special Days & Wishes', path: '/special-days', icon: PartyPopper, roles: ['SUPER_ADMIN', 'ADMIN', 'GREETINGS_OFFICER', 'MANAGER'] },
+    { label: 'Special Days & Wishes', path: '/special-days', icon: PartyPopper, roles: ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'EMPLOYEE', 'USER'] },
     { label: 'Customer Follow-ups', path: '/followups', icon: Clock, roles: ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'EMPLOYEE', 'USER'] },
     { label: 'Customer 360', path: '/customers', icon: UserCheck, roles: ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'EMPLOYEE', 'USER'] },
     { label: 'Insurance Policies', path: '/policies', icon: FileText, roles: ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'EMPLOYEE', 'USER'] },
@@ -93,7 +93,7 @@ export const Sidebar = () => {
         <div className="flex items-center justify-between">
           <div className="truncate">
             <p className="text-xs font-black text-white truncate">{user?.name || 'Admin'}</p>
-            <span className="badge badge-brand text-[9px] px-2 py-0.5 mt-0.5">{user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' ? 'Admin' : user?.role === 'MANAGER' ? 'Manager' : user?.role === 'GREETINGS_OFFICER' ? 'Greetings Officer' : 'Staff Advisor'}</span>
+            <span className="badge badge-brand text-[9px] px-2 py-0.5 mt-0.5">{user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' ? 'Admin' : user?.role === 'MANAGER' ? 'Manager' : 'Staff Advisor'}</span>
           </div>
           <button
             onClick={() => {
