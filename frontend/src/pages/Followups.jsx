@@ -752,10 +752,10 @@ export const Followups = () => {
                           <div
                             key={step.stepId}
                             className={`p-3.5 rounded-2xl border transition relative space-y-2 ${isCurrent
-                                ? 'bg-blue-50/80 border-blue-400 shadow-sm'
-                                : isCompleted
-                                  ? 'bg-emerald-50/40 border-emerald-200'
-                                  : 'bg-slate-50 border-slate-200'
+                              ? 'bg-blue-50/80 border-blue-400 shadow-sm'
+                              : isCompleted
+                                ? 'bg-emerald-50/40 border-emerald-200'
+                                : 'bg-slate-50 border-slate-200'
                               }`}
                           >
                             <div className="flex items-center justify-between">
@@ -1194,8 +1194,8 @@ export const Followups = () => {
                     <option value="Health Insurance">Health Insurance (Family / Individual)</option>
                     <option value="Motor Insurance">Motor Insurance (Car / Two Wheeler)</option>
                     <option value="ULIP & Retirement Plan">ULIP &amp; Retirement Plan</option>
-                    <option value="Mutual Funds & SIP">Mutual Funds &amp; SIP</option>
                     <option value="General Insurance">General Insurance</option>
+                    <option value="Mutual Funds & SIP">Mutual Funds &amp; SIP</option>
                   </select>
                 </div>
               </div>
