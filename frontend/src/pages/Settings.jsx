@@ -24,7 +24,7 @@ export const Settings = () => {
     officeName: 'SK Smart Investments Head Office',
     latitude: 12.8342,
     longitude: 79.7036,
-    radiusMeters: 50,
+    radiusMeters: 1.52,
     allowAdminBypass: true,
     customBypassCode: 'SK@GEO2026'
   });
@@ -41,7 +41,7 @@ export const Settings = () => {
         officeName: geofenceConfig.officeName || 'SK Smart Investments Head Office',
         latitude: geofenceConfig.latitude !== undefined ? geofenceConfig.latitude : 12.8342,
         longitude: geofenceConfig.longitude !== undefined ? geofenceConfig.longitude : 79.7036,
-        radiusMeters: geofenceConfig.radiusMeters !== undefined ? geofenceConfig.radiusMeters : 50,
+        radiusMeters: geofenceConfig.radiusMeters !== undefined ? geofenceConfig.radiusMeters : 1.52,
         allowAdminBypass: geofenceConfig.allowAdminBypass !== undefined ? geofenceConfig.allowAdminBypass : true,
         customBypassCode: geofenceConfig.customBypassCode || 'SK@GEO2026'
       });
@@ -264,13 +264,14 @@ export const Settings = () => {
                   onChange={(e) => setGeoForm({ ...geoForm, radiusMeters: Number(e.target.value) })}
                   className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                 >
-                  <option value={50}>50 Meters (Immediate Office Room / Building - Recommended)</option>
+                  <option value={1.52}>5 Feet (~1.5 Meters - Immediate Desk / Chair Zone - Recommended)</option>
+                  <option value={3.05}>10 Feet (~3.0 Meters - Single Cabin / Workspace)</option>
+                  <option value={7.62}>25 Feet (~7.6 Meters - Office Room)</option>
+                  <option value={15.24}>50 Feet (~15.2 Meters - Office Floor / Section)</option>
+                  <option value={30.48}>100 Feet (~30.5 Meters - Entire Office Suite)</option>
+                  <option value={50}>50 Meters (~164 Feet - Entire Office Building)</option>
                   <option value={100}>100 Meters (Office Complex)</option>
-                  <option value={250}>250 Meters (Office Campus &amp; Surroundings)</option>
-                  <option value={500}>500 Meters (Standard Office Vicinity)</option>
-                  <option value={1000}>1 Kilometer (Office Neighborhood)</option>
-                  <option value={5000}>5 Kilometers (City Zone)</option>
-                  <option value={15000}>15 Kilometers (Metropolitan Area)</option>
+                  <option value={500}>500 Meters (Vicinity)</option>
                 </select>
               </div>
 
@@ -297,7 +298,7 @@ export const Settings = () => {
                   <div className="mt-1.5 flex items-center space-x-2">
                     <span className="text-xs font-bold text-slate-700">Calculated Distance:</span>
                     <span className={`font-mono font-black text-sm ${liveTestDistance <= geoForm.radiusMeters ? 'text-emerald-700' : 'text-rose-600'}`}>
-                      {liveTestDistance > 1000 ? `${(liveTestDistance / 1000).toFixed(2)} km` : `${liveTestDistance} meters`}
+                      {(liveTestDistance * 3.28084).toFixed(1)} Feet ({liveTestDistance < 1000 ? `${liveTestDistance.toFixed(2)}m` : `${(liveTestDistance / 1000).toFixed(2)}km`})
                     </span>
                     <span className={`badge text-[10px] font-black ${liveTestDistance <= geoForm.radiusMeters ? 'badge-green' : 'badge-red'}`}>
                       {liveTestDistance <= geoForm.radiusMeters ? '✓ INSIDE GEOFENCE' : '✗ OUTSIDE GEOFENCE'}

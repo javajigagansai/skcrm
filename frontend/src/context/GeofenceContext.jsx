@@ -14,7 +14,19 @@ export const calculateDistanceMeters = (lat1, lon1, lat2, lon2) => {
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return Math.round(R * c);
+  return parseFloat((R * c).toFixed(2));
+};
+
+export const formatDistanceText = (meters) => {
+  if (meters === null || meters === undefined || isNaN(meters)) return '';
+  const feet = (meters * 3.28084).toFixed(1);
+  if (meters < 10) {
+    return `${feet} Feet (${meters.toFixed(2)}m)`;
+  }
+  if (meters < 1000) {
+    return `${Math.round(meters * 3.28084)} Feet (${Math.round(meters)}m)`;
+  }
+  return `${(meters / 1000).toFixed(2)} km (${Math.round(meters * 3.28084).toLocaleString()} Feet)`;
 };
 
 const DEFAULT_GEOFENCE_CONFIG = {
@@ -22,7 +34,7 @@ const DEFAULT_GEOFENCE_CONFIG = {
   officeName: 'SK Smart Investments Head Office',
   latitude: 12.8342, // Default Office Lat (e.g. Kanchipuram / Chennai HQ)
   longitude: 79.7036, // Default Office Lon
-  radiusMeters: 50, // 50 meters tight office room / building perimeter
+  radiusMeters: 1.52, // 5 Feet (~1.52 meters) ultra-strict desk perimeter
   allowAdminBypass: true,
   customBypassCode: 'SK@GEO2026'
 };
@@ -104,7 +116,7 @@ export const GeofenceProvider = ({ children }) => {
         if (geofenceConfig.enabled) {
           const targetLat = Number(geofenceConfig.latitude);
           const targetLon = Number(geofenceConfig.longitude);
-          const allowedRadius = Number(geofenceConfig.radiusMeters) || 50;
+          const allowedRadius = Number(geofenceConfig.radiusMeters) || 1.52;
 
           const distance = calculateDistanceMeters(userLat, userLon, targetLat, targetLon);
           setDistanceFromOffice(distance);
@@ -171,7 +183,7 @@ export const GeofenceProvider = ({ children }) => {
 
           const targetLat = Number(geofenceConfig.latitude);
           const targetLon = Number(geofenceConfig.longitude);
-          const allowedRadius = Number(geofenceConfig.radiusMeters) || 50;
+          const allowedRadius = Number(geofenceConfig.radiusMeters) || 1.52;
 
           const distance = calculateDistanceMeters(userLat, userLon, targetLat, targetLon);
           setDistanceFromOffice(distance);

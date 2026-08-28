@@ -93,12 +93,14 @@ export const GeofenceLockScreen = () => {
             {distanceFromOffice !== null && (
               <div className="flex items-center justify-between pt-1">
                 <span className="text-[11px] font-extrabold uppercase text-slate-400">Distance from Office:</span>
-                <span className={`font-black font-mono text-sm ${distanceFromOffice <= radius ? 'text-emerald-400' : 'text-rose-400'}`}>
-                  {distanceFromOffice > 1000 ? `${(distanceFromOffice / 1000).toFixed(2)} km` : `${distanceFromOffice} meters`}
-                  <span className="text-[10px] text-slate-500 font-normal ml-1">
-                    (Max allowed: {radius}m)
+                <div className="text-right">
+                  <span className={`font-black font-mono text-sm block ${distanceFromOffice <= radius ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {(distanceFromOffice * 3.28084).toFixed(1)} Feet ({distanceFromOffice < 1000 ? `${distanceFromOffice.toFixed(1)}m` : `${(distanceFromOffice / 1000).toFixed(2)}km`})
                   </span>
-                </span>
+                  <span className="text-[10px] text-slate-500 font-normal">
+                    Max allowed: {(radius * 3.28084).toFixed(0)} Feet ({radius}m)
+                  </span>
+                </div>
               </div>
             )}
           </div>
