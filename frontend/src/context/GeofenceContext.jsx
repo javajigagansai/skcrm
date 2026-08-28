@@ -142,13 +142,67 @@ export const GeofenceProvider = ({ children }) => {
     );
   }, [geofenceConfig, isBypassed]);
 
-  // Auto-verify when config changes or user logs in
+  // Continuous live GPS tracking & Auto-verification
   useEffect(() => {
-    if (geofenceConfig.enabled && !isBypassed) {
-      verifyLocation();
-    } else {
+    if (!geofenceConfig.enabled || isBypassed) {
       setGpsStatus('GRANTED');
+      return;
     }
+
+    // Initial check
+    verifyLocation();
+
+    // Continuous watchPosition for live movement tracking
+    let watchId = null;
+    if (navigator.geolocation) {
+      watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          const userLat = position.coords.latitude;
+          const userLon = position.coords.longitude;
+          const accuracy = position.coords.accuracy;
+
+          const locObj = {
+            latitude: userLat,
+            longitude: userLon,
+            accuracy: Math.round(accuracy),
+            timestamp: position.timestamp
+          };
+          setUserLocation(locObj);
+
+          const targetLat = Number(geofenceConfig.latitude);
+          const targetLon = Number(geofenceConfig.longitude);
+          const allowedRadius = Number(geofenceConfig.radiusMeters) || 500;
+
+          const distance = calculateDistanceMeters(userLat, userLon, targetLat, targetLon);
+          setDistanceFromOffice(distance);
+
+          if (distance <= allowedRadius) {
+            setGpsStatus('GRANTED');
+          } else {
+            setGpsStatus('OUTSIDE_FENCE');
+          }
+        },
+        (error) => {
+          if (error.code === error.PERMISSION_DENIED) {
+            setGpsStatus('DENIED');
+            setGpsError('Location permission denied. You must enable GPS to access the CRM.');
+          }
+        },
+        { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 }
+      );
+    }
+
+    // Periodic check every 30 seconds
+    const interval = setInterval(() => {
+      verifyLocation();
+    }, 30000);
+
+    return () => {
+      if (watchId !== null && navigator.geolocation) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+      clearInterval(interval);
+    };
   }, [geofenceConfig.enabled, geofenceConfig.latitude, geofenceConfig.longitude, geofenceConfig.radiusMeters, isBypassed, verifyLocation]);
 
   // Update config in Firestore & local state
