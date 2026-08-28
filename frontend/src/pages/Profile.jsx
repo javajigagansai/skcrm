@@ -19,7 +19,7 @@ export const Profile = () => {
 
   useEffect(() => {
     // Sync active staff user state from sessionStorage if available
-    const savedActive = sessionStorage.getItem('crm_v2_active_user') || localStorage.getItem('crm_v2_active_user');
+    const savedActive = sessionStorage.getItem('crm_v2_active_user');
     if (savedActive) {
       try {
         const parsed = JSON.parse(savedActive);

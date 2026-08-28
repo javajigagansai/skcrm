@@ -5,29 +5,69 @@ import {
   sendPasswordResetEmail,
   onAuthStateChanged,
   setPersistence,
-  browserSessionPersistence
+  inMemoryPersistence
 } from 'firebase/auth';
 import { doc, getDoc, getDocs, collection, query, where } from 'firebase/firestore';
 import { auth, db } from '../config/firebaseClient';
 
-// Ensure Firebase Auth uses browser session persistence only (cleared on tab close)
+// Ensure Firebase Auth uses in-memory persistence only (destroyed immediately when tab closes)
 try {
-  setPersistence(auth, browserSessionPersistence).catch(() => {});
-  // Purge any legacy active user from localStorage so closed tabs require login
+  setPersistence(auth, inMemoryPersistence).catch(() => {});
   localStorage.removeItem('crm_v2_active_user');
 } catch (e) {}
+
+// Mark tab as closed when navigating away or closing window/tab
+if (typeof window !== 'undefined') {
+  const markTabClosed = () => {
+    try {
+      sessionStorage.setItem('crm_session_tab_closed', 'true');
+      sessionStorage.setItem('crm_session_closed_at', Date.now().toString());
+    } catch (e) {}
+  };
+
+  window.addEventListener('beforeunload', markTabClosed);
+  window.addEventListener('pagehide', markTabClosed);
+}
+
+// Helper to verify if session should be kept (page reload) or discarded (tab was closed and reopened/restored via Ctrl+Shift+T)
+const checkAndPurgeClosedTabSession = () => {
+  try {
+    localStorage.removeItem('crm_v2_active_user');
+
+    const navEntries = typeof performance !== 'undefined' && performance.getEntriesByType ? performance.getEntriesByType('navigation') : [];
+    const isPageReload = navEntries.length > 0
+      ? navEntries[0].type === 'reload'
+      : (typeof performance !== 'undefined' && performance.navigation && performance.navigation.type === 1);
+
+    const tabWasClosed = sessionStorage.getItem('crm_session_tab_closed') === 'true';
+
+    // If tab was previously closed AND this is NOT a standard F5 refresh (e.g. reopened via Ctrl+Shift+T, restored session, or opened anew)
+    if (tabWasClosed && !isPageReload) {
+      sessionStorage.removeItem('crm_v2_active_user');
+      sessionStorage.removeItem('crm_session_tab_closed');
+      sessionStorage.removeItem('crm_session_closed_at');
+      firebaseSignOut(auth).catch(() => {});
+      return null;
+    }
+
+    // If it was a normal F5 reload, clear the closed flag so user stays logged in smoothly
+    if (isPageReload) {
+      sessionStorage.removeItem('crm_session_tab_closed');
+      sessionStorage.removeItem('crm_session_closed_at');
+    }
+
+    const saved = sessionStorage.getItem('crm_v2_active_user');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch (e) {}
+  return null;
+};
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
-    try {
-      // Strictly use sessionStorage so closing the tab/browser requires re-login
-      const saved = sessionStorage.getItem('crm_v2_active_user');
-      if (saved) return JSON.parse(saved);
-    } catch (e) {}
-    return null;
-  });
+  const [user, setUser] = useState(() => checkAndPurgeClosedTabSession());
   const [loading, setLoading] = useState(false);
 
   // Fetch user profile directly from Firestore users collection
@@ -90,9 +130,34 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
+    // Check if session was marked closed upon tab reopen / Ctrl+Shift+T
+    const activeSession = checkAndPurgeClosedTabSession();
+    if (!activeSession) {
+      setUser(null);
+      firebaseSignOut(auth).catch(() => {});
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
-      if (firebaseUser) {
+      const currentStoredUser = sessionStorage.getItem('crm_v2_active_user');
+      const tabWasClosed = sessionStorage.getItem('crm_session_tab_closed') === 'true';
+
+      const navEntries = typeof performance !== 'undefined' && performance.getEntriesByType ? performance.getEntriesByType('navigation') : [];
+      const isPageReload = navEntries.length > 0
+        ? navEntries[0].type === 'reload'
+        : (typeof performance !== 'undefined' && performance.navigation && performance.navigation.type === 1);
+
+      if (tabWasClosed && !isPageReload) {
+        sessionStorage.removeItem('crm_v2_active_user');
+        sessionStorage.removeItem('crm_session_tab_closed');
+        sessionStorage.removeItem('crm_session_closed_at');
+        firebaseSignOut(auth).catch(() => {});
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      if (firebaseUser && currentStoredUser) {
         try {
           const profile = await fetchFirestoreUserProfile(firebaseUser);
           if (profile) {
@@ -102,17 +167,14 @@ export const AuthProvider = ({ children }) => {
         } catch (err) {
           console.warn("Auth state change error:", err);
         }
-      } else {
-        const saved = sessionStorage.getItem('crm_v2_active_user');
-        if (saved) {
-          try {
-            setUser(JSON.parse(saved));
-          } catch (e) {
-            setUser(null);
-          }
-        } else {
+      } else if (currentStoredUser) {
+        try {
+          setUser(JSON.parse(currentStoredUser));
+        } catch (e) {
           setUser(null);
         }
+      } else {
+        setUser(null);
       }
       setLoading(false);
     });
@@ -129,6 +191,11 @@ export const AuthProvider = ({ children }) => {
 
       const formattedEmail = email.toLowerCase().trim();
       const inputPassword = password.trim();
+
+      // Reset any previous closed tab flag
+      sessionStorage.removeItem('crm_session_tab_closed');
+      sessionStorage.removeItem('crm_session_closed_at');
+      localStorage.removeItem('crm_v2_active_user');
 
       // Step 1: Query Firestore 'users' collection directly for the user account
       let matchedUser = null;
@@ -171,9 +238,9 @@ export const AuthProvider = ({ children }) => {
           branchId: matchedUser.branch || matchedUser.branchId || ''
         };
 
-        // Try authenticating with Firebase Auth in parallel with session persistence
+        // Try authenticating with Firebase Auth in parallel with in-memory persistence
         try {
-          await setPersistence(auth, browserSessionPersistence);
+          await setPersistence(auth, inMemoryPersistence);
           await signInWithEmailAndPassword(auth, formattedEmail, inputPassword);
         } catch (e) {
           // Firestore account is the authoritative source of truth
@@ -188,7 +255,7 @@ export const AuthProvider = ({ children }) => {
 
       // Step 3: Attempt Firebase Authentication (Identity service) if not in Firestore users list
       try {
-        await setPersistence(auth, browserSessionPersistence);
+        await setPersistence(auth, inMemoryPersistence);
         const userCred = await signInWithEmailAndPassword(auth, formattedEmail, inputPassword);
         const activeUser = await fetchFirestoreUserProfile(userCred.user);
         setUser(activeUser);
@@ -220,6 +287,8 @@ export const AuthProvider = ({ children }) => {
       await firebaseSignOut(auth).catch(() => {});
     } finally {
       sessionStorage.removeItem('crm_v2_active_user');
+      sessionStorage.removeItem('crm_session_tab_closed');
+      sessionStorage.removeItem('crm_session_closed_at');
       localStorage.removeItem('crm_v2_active_user');
       setUser(null);
       window.dispatchEvent(new CustomEvent('auth_user_logged_out'));
