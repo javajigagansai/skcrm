@@ -22,7 +22,7 @@ export const GeofenceLockScreen = () => {
 
   const targetLat = Number(geofenceConfig.latitude) || 0;
   const targetLon = Number(geofenceConfig.longitude) || 0;
-  const radius = Number(geofenceConfig.radiusMeters) || 500;
+  const radius = Number(geofenceConfig.radiusMeters) || 50;
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">

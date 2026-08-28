@@ -24,7 +24,7 @@ export const Settings = () => {
     officeName: 'SK Smart Investments Head Office',
     latitude: 12.8342,
     longitude: 79.7036,
-    radiusMeters: 500,
+    radiusMeters: 50,
     allowAdminBypass: true,
     customBypassCode: 'SK@GEO2026'
   });
@@ -41,7 +41,7 @@ export const Settings = () => {
         officeName: geofenceConfig.officeName || 'SK Smart Investments Head Office',
         latitude: geofenceConfig.latitude !== undefined ? geofenceConfig.latitude : 12.8342,
         longitude: geofenceConfig.longitude !== undefined ? geofenceConfig.longitude : 79.7036,
-        radiusMeters: geofenceConfig.radiusMeters !== undefined ? geofenceConfig.radiusMeters : 500,
+        radiusMeters: geofenceConfig.radiusMeters !== undefined ? geofenceConfig.radiusMeters : 50,
         allowAdminBypass: geofenceConfig.allowAdminBypass !== undefined ? geofenceConfig.allowAdminBypass : true,
         customBypassCode: geofenceConfig.customBypassCode || 'SK@GEO2026'
       });
@@ -264,10 +264,10 @@ export const Settings = () => {
                   onChange={(e) => setGeoForm({ ...geoForm, radiusMeters: Number(e.target.value) })}
                   className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                 >
-                  <option value={50}>50 Meters (Immediate Office Room / Building)</option>
+                  <option value={50}>50 Meters (Immediate Office Room / Building - Recommended)</option>
                   <option value={100}>100 Meters (Office Complex)</option>
                   <option value={250}>250 Meters (Office Campus &amp; Surroundings)</option>
-                  <option value={500}>500 Meters (Standard Office Vicinity - Recommended)</option>
+                  <option value={500}>500 Meters (Standard Office Vicinity)</option>
                   <option value={1000}>1 Kilometer (Office Neighborhood)</option>
                   <option value={5000}>5 Kilometers (City Zone)</option>
                   <option value={15000}>15 Kilometers (Metropolitan Area)</option>

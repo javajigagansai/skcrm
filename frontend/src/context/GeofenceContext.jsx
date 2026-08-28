@@ -22,7 +22,7 @@ const DEFAULT_GEOFENCE_CONFIG = {
   officeName: 'SK Smart Investments Head Office',
   latitude: 12.8342, // Default Office Lat (e.g. Kanchipuram / Chennai HQ)
   longitude: 79.7036, // Default Office Lon
-  radiusMeters: 500, // 500 meters allowable fence boundary
+  radiusMeters: 50, // 50 meters tight office room / building perimeter
   allowAdminBypass: true,
   customBypassCode: 'SK@GEO2026'
 };
@@ -104,7 +104,7 @@ export const GeofenceProvider = ({ children }) => {
         if (geofenceConfig.enabled) {
           const targetLat = Number(geofenceConfig.latitude);
           const targetLon = Number(geofenceConfig.longitude);
-          const allowedRadius = Number(geofenceConfig.radiusMeters) || 500;
+          const allowedRadius = Number(geofenceConfig.radiusMeters) || 50;
 
           const distance = calculateDistanceMeters(userLat, userLon, targetLat, targetLon);
           setDistanceFromOffice(distance);
@@ -171,7 +171,7 @@ export const GeofenceProvider = ({ children }) => {
 
           const targetLat = Number(geofenceConfig.latitude);
           const targetLon = Number(geofenceConfig.longitude);
-          const allowedRadius = Number(geofenceConfig.radiusMeters) || 500;
+          const allowedRadius = Number(geofenceConfig.radiusMeters) || 50;
 
           const distance = calculateDistanceMeters(userLat, userLon, targetLat, targetLon);
           setDistanceFromOffice(distance);
