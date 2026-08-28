@@ -1103,7 +1103,7 @@ export const Followups = () => {
                   <input
                     type="text"
                     required
-                    placeholder="e.g. RAMESH KUMAR"
+                    placeholder=""
                     value={newClientForm.clientName}
                     onChange={(e) => {
                       setNewClientForm({ ...newClientForm, clientName: e.target.value.toUpperCase() });
