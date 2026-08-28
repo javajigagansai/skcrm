@@ -29,11 +29,11 @@ export const Followups = () => {
     phone: '',
     category: 'High Networth Client',
     insuranceTypeInterest: 'Term & Savings Life Insurance',
-    insuranceCompany: 'Tata AIA / Star Health',
-    stageName: 'Prospect Onboarded & Requirement Captured',
+    insuranceCompany: '',
+    stageName: '',
     type: 'Phone Call',
     assignedTo: user?.name || '',
-    date: 'Today, 05:00 PM',
+    date: new Date().toLocaleDateString('en-IN') + ', 10:00 AM',
     conversationNotes: '',
     status: 'PENDING'
   });
@@ -92,7 +92,7 @@ export const Followups = () => {
 
   const [newStageForm, setNewStageForm] = useState({
     stageName: '',
-    date: 'Today, 05:00 PM',
+    date: new Date().toLocaleDateString('en-IN') + ', 10:00 AM',
     type: 'Phone Call',
     assignedTo: user?.name || '',
     conversationNotes: '',
@@ -106,13 +106,13 @@ export const Followups = () => {
   useEffect(() => {
     const unsubHubs = onSnapshot(collection(db, 'followup_hubs'), (snap) => {
       const items = snap.docs.map(d => ({ ...d.data(), _docId: d.id }))
-        .filter(c => !['Rahul Sharma', 'Priya Menon', 'Anand Kumar'].includes(c.clientName));
+        .filter(c => !['Rahul Sharma', 'Priya Menon', 'Anand Kumar'].includes(c.clientName) && !String(c.clientName || '').toLowerCase().includes('demo'));
       setClientData(items);
     }, err => console.warn('Firestore followup_hubs error:', err));
 
     const unsubSpreadsheet = onSnapshot(collection(db, 'spreadsheet_followups'), (snap) => {
       const items = snap.docs.map(d => ({ ...d.data(), id: d.id }))
-        .filter(c => !['Rahul Sharma', 'Priya Menon', 'Anand Kumar'].includes(c.clientName));
+        .filter(c => !['Rahul Sharma', 'Priya Menon', 'Anand Kumar'].includes(c.clientName) && !String(c.clientName || '').toLowerCase().includes('demo'));
       setSpreadsheetData(items);
     }, err => console.warn('Firestore spreadsheet_followups error:', err));
 
@@ -166,6 +166,7 @@ export const Followups = () => {
       phone: newClientForm.phone,
       category: newClientForm.category,
       insuranceTypeInterest: newClientForm.insuranceTypeInterest,
+      insuranceCompany: newClientForm.insuranceCompany || '',
       currentStage: newClientForm.stageName,
       currentAssignedTo: newClientForm.assignedTo,
       currentCreatedBy: createdByStr,
@@ -174,11 +175,11 @@ export const Followups = () => {
         {
           stepId: stepId,
           stageName: newClientForm.stageName,
-          date: newClientForm.date || 'Today, 05:00 PM',
+          date: newClientForm.date || (new Date().toLocaleDateString('en-IN') + ', 10:00 AM'),
           type: newClientForm.type,
           assignedTo: newClientForm.assignedTo,
           createdBy: createdByStr,
-          conversationNotes: newClientForm.conversationNotes || 'Initial follow-up registered.',
+          conversationNotes: newClientForm.conversationNotes || '',
           status: newClientForm.status,
           isCurrentActive: true
         }
@@ -192,10 +193,10 @@ export const Followups = () => {
       clientName: newClientForm.clientName,
       phone: newClientForm.phone,
       insuranceType: newClientForm.insuranceTypeInterest,
-      insuranceCompany: newClientForm.insuranceCompany || 'Tata AIA / Star Health',
+      insuranceCompany: newClientForm.insuranceCompany || '',
       salesPitch: newClientForm.stageName,
       clientStatus: newClientForm.status === 'COMPLETED' ? 'Closed' : 'Under Review',
-      advisorNotes: newClientForm.conversationNotes || 'Initial follow-up registered.',
+      advisorNotes: newClientForm.conversationNotes || '',
       assignedTo: newClientForm.assignedTo
     };
 
@@ -218,11 +219,11 @@ export const Followups = () => {
       phone: '',
       category: 'High Networth Client',
       insuranceTypeInterest: 'Term & Savings Life Insurance',
-      insuranceCompany: 'Tata AIA / Star Health',
-      stageName: 'Prospect Onboarded & Requirement Captured',
+      insuranceCompany: '',
+      stageName: '',
       type: 'Phone Call',
       assignedTo: user?.name || '',
-      date: 'Today, 05:00 PM',
+      date: new Date().toLocaleDateString('en-IN') + ', 10:00 AM',
       conversationNotes: '',
       status: 'PENDING'
     });
@@ -496,11 +497,11 @@ export const Followups = () => {
       (c.history || []).forEach(h => {
         list.push({
           date: h.date,
-          clientCategory: c.category,
+          clientCategory: c.category || 'Customer',
           prospectName: c.clientName,
           phone: c.phone,
-          insuranceType: c.insuranceTypeInterest,
-          insuranceCompany: 'Star Health / Tata AIA',
+          insuranceType: c.insuranceTypeInterest || '',
+          insuranceCompany: c.insuranceCompany || '',
           salesPitch: h.stageName,
           clientStatus: h.status,
           advisorNotes: h.conversationNotes
@@ -648,7 +649,7 @@ export const Followups = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
                   <div className="flex items-center space-x-3">
                     <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-700 text-white font-black text-lg flex items-center justify-center shadow-md">
-                      {client.clientName.charAt(0)}
+                      {(client.clientName || 'C').charAt(0)}
                     </div>
                     <div>
                       <div className="flex items-center space-x-2">
@@ -666,7 +667,7 @@ export const Followups = () => {
                         </span>
                       </div>
                       <p className="text-xs text-slate-500 font-medium">
-                        📞 <strong className="font-mono text-slate-700">{client.phone}</strong> • {client.city} • Product: <strong>{client.activeProduct}</strong>
+                        📞 <strong className="font-mono text-slate-700">{client.phone}</strong> {client.city ? `• ${client.city}` : ''} {client.insuranceTypeInterest || client.activeProduct ? `• ${client.insuranceTypeInterest || client.activeProduct}` : ''}
                       </p>
                     </div>
                   </div>
