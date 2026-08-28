@@ -1,12 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
+import { useGeofence } from '../../context/GeofenceContext';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Shield, LogOut, User, ChevronDown, CheckSquare, AlertCircle, Trash2, X } from 'lucide-react';
+import { Bell, Shield, LogOut, User, ChevronDown, CheckSquare, AlertCircle, Trash2, X, MapPin } from 'lucide-react';
 
 export const Header = () => {
   const { user, logout } = useAuth();
   const { notifications, unreadNotificationCount, markNotificationAsRead, markAllNotificationsAsRead, clearAllNotifications, deleteNotification } = useNotification();
+  const { geofenceConfig, distanceFromOffice } = useGeofence();
   const navigate = useNavigate();
 
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -75,6 +77,18 @@ export const Header = () => {
     <header className="h-16 bg-white border-b border-slate-200/80 px-6 flex items-center justify-end sticky top-0 z-30 shadow-xs">
       {/* Header Right Actions */}
       <div className="flex items-center space-x-3">
+        {/* Geofence Status Indicator */}
+        {geofenceConfig?.enabled && (
+          <div
+            onClick={() => navigate('/settings')}
+            className="hidden md:flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-black cursor-pointer hover:bg-emerald-100 transition shadow-2xs"
+            title={`GPS Geofence Enforced: ${geofenceConfig.officeName || 'HQ'} (Distance: ${distanceFromOffice !== null ? distanceFromOffice + 'm' : 'verifying...'})`}
+          >
+            <MapPin className="h-3.5 w-3.5 text-emerald-600 animate-pulse" />
+            <span>HQ Geofence Active</span>
+          </div>
+        )}
+
         {/* User Role Badge */}
         <div className="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 border border-slate-200 text-xs font-extrabold">
           <Shield className="h-3.5 w-3.5 text-blue-600" />

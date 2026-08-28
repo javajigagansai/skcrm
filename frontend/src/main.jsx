@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { GeofenceProvider } from './context/GeofenceContext';
 import { DataProvider } from './context/DataContext';
 import { Customer360Provider } from './context/Customer360Context';
 import { NotificationProvider } from './context/NotificationContext';
@@ -43,14 +44,16 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <ErrorBoundary>
       <BrowserRouter>
         <AuthProvider>
-          <NotificationProvider>
-            <DataProvider>
-              <Customer360Provider>
-                <AppRoutes />
-                <ToastContainer />
-              </Customer360Provider>
-            </DataProvider>
-          </NotificationProvider>
+          <GeofenceProvider>
+            <NotificationProvider>
+              <DataProvider>
+                <Customer360Provider>
+                  <AppRoutes />
+                  <ToastContainer />
+                </Customer360Provider>
+              </DataProvider>
+            </NotificationProvider>
+          </GeofenceProvider>
         </AuthProvider>
       </BrowserRouter>
     </ErrorBoundary>

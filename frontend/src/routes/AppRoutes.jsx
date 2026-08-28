@@ -44,6 +44,8 @@ const Profile = lazyRetry(() => import('../pages/Profile').then(m => ({ default:
 const Settings = lazyRetry(() => import('../pages/Settings').then(m => ({ default: m.Settings })));
 const Register = lazyRetry(() => import('../pages/Register').then(m => ({ default: m.Register })));
 
+import { GeofenceGuard } from '../components/security/GeofenceGuard';
+
 const PageLoader = () => (
   <div className="min-h-[400px] flex items-center justify-center p-8">
     <div className="flex flex-col items-center space-y-3">
@@ -73,11 +75,13 @@ const RoleProtectedRoute = ({ children, allowedRoles }) => {
   }
 
   return (
-    <MainLayout>
-      <Suspense fallback={<PageLoader />}>
-        {children}
-      </Suspense>
-    </MainLayout>
+    <GeofenceGuard>
+      <MainLayout>
+        <Suspense fallback={<PageLoader />}>
+          {children}
+        </Suspense>
+      </MainLayout>
+    </GeofenceGuard>
   );
 };
 
