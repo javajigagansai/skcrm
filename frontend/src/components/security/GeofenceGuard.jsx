@@ -7,18 +7,11 @@ export const GeofenceGuard = ({ children }) => {
   const { geofenceConfig, isAccessAllowed } = useGeofence();
   const { user } = useAuth();
 
-  // If geofencing is not enabled, or access is verified/bypassed, render normal content
-  if (!geofenceConfig.enabled || isAccessAllowed) {
+  // If geofence is disabled, or location is verified inside the perimeter, or session is bypassed
+  if (geofenceConfig?.enabled === false || isAccessAllowed) {
     return <>{children}</>;
   }
 
-  // Otherwise, lock the screen with the Geofence Security Screen
-  return (
-    <>
-      <GeofenceLockScreen />
-      <div className="filter blur-sm pointer-events-none select-none">
-        {children}
-      </div>
-    </>
-  );
+  // Strictly block any access - Do NOT render any CRM views or data behind it
+  return <GeofenceLockScreen />;
 };

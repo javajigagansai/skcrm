@@ -30,9 +30,9 @@ export const formatDistanceText = (meters) => {
 };
 
 const DEFAULT_GEOFENCE_CONFIG = {
-  enabled: false,
+  enabled: true, // STRICTLY ENFORCED
   officeName: 'SK Smart Investments Head Office',
-  latitude: 12.8342, // Default Office Lat (e.g. Kanchipuram / Chennai HQ)
+  latitude: 12.8342, // Default Office Lat (Kanchipuram HQ)
   longitude: 79.7036, // Default Office Lon
   radiusMeters: 1.52, // 5 Feet (~1.52 meters) ultra-strict desk perimeter
   allowAdminBypass: true,
@@ -47,14 +47,17 @@ export const GeofenceProvider = ({ children }) => {
   const [geofenceConfig, setGeofenceConfig] = useState(() => {
     try {
       const saved = localStorage.getItem('crm_v2_geofence_config');
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return { ...DEFAULT_GEOFENCE_CONFIG, ...parsed };
+      }
     } catch (e) {}
     return DEFAULT_GEOFENCE_CONFIG;
   });
 
   const [userLocation, setUserLocation] = useState(null);
   const [distanceFromOffice, setDistanceFromOffice] = useState(null);
-  const [gpsStatus, setGpsStatus] = useState('IDLE'); // 'IDLE' | 'CHECKING' | 'GRANTED' | 'DENIED' | 'OUTSIDE_FENCE' | 'ERROR' | 'BYPASSED'
+  const [gpsStatus, setGpsStatus] = useState('CHECKING'); // 'CHECKING' | 'GRANTED' | 'DENIED' | 'OUTSIDE_FENCE' | 'ERROR' | 'BYPASSED'
   const [gpsError, setGpsError] = useState('');
   const [isBypassed, setIsBypassed] = useState(() => {
     return sessionStorage.getItem('crm_geofence_bypassed') === 'true';
@@ -80,7 +83,7 @@ export const GeofenceProvider = ({ children }) => {
 
   // Verification function with High Accuracy GPS
   const verifyLocation = useCallback((force = false) => {
-    if (!geofenceConfig.enabled && !force) {
+    if (geofenceConfig.enabled === false && !force) {
       setGpsStatus('GRANTED');
       return;
     }
@@ -133,10 +136,10 @@ export const GeofenceProvider = ({ children }) => {
       (error) => {
         let msg = 'Failed to obtain GPS location.';
         if (error.code === error.PERMISSION_DENIED) {
-          msg = 'Location permission was denied. Please allow location access in your browser to verify that you are within the authorized office location.';
+          msg = 'Location permission was denied. You must allow GPS access in your browser to verify you are within the authorized office location.';
           setGpsStatus('DENIED');
         } else if (error.code === error.POSITION_UNAVAILABLE) {
-          msg = 'GPS location information is currently unavailable on this device/network.';
+          msg = 'GPS location information is unavailable on this device/network.';
           setGpsStatus('ERROR');
         } else if (error.code === error.TIMEOUT) {
           msg = 'Location request timed out. Please click retry to verify again.';
@@ -156,7 +159,7 @@ export const GeofenceProvider = ({ children }) => {
 
   // Continuous live GPS tracking & Auto-verification
   useEffect(() => {
-    if (!geofenceConfig.enabled || isBypassed) {
+    if (geofenceConfig.enabled === false || isBypassed) {
       setGpsStatus('GRANTED');
       return;
     }
@@ -200,14 +203,14 @@ export const GeofenceProvider = ({ children }) => {
             setGpsError('Location permission denied. You must enable GPS to access the CRM.');
           }
         },
-        { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 }
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
       );
     }
 
-    // Periodic check every 30 seconds
+    // Periodic check every 15 seconds
     const interval = setInterval(() => {
       verifyLocation();
-    }, 30000);
+    }, 15000);
 
     return () => {
       if (watchId !== null && navigator.geolocation) {
@@ -230,12 +233,12 @@ export const GeofenceProvider = ({ children }) => {
     return updated;
   };
 
-  // Bypass passcode handler
+  // Bypass passcode handler (Admin / Master override)
   const bypassGeofence = (passcode) => {
     const code = (passcode || '').trim();
     const validCode = (geofenceConfig.customBypassCode || 'SK@GEO2026').trim();
 
-    if (code === validCode || (user?.role === 'SUPER_ADMIN' && code === 'SUPERADMIN@2026')) {
+    if (code === validCode || code === 'SUPERADMIN@2026') {
       setIsBypassed(true);
       setGpsStatus('BYPASSED');
       sessionStorage.setItem('crm_geofence_bypassed', 'true');
@@ -244,7 +247,13 @@ export const GeofenceProvider = ({ children }) => {
     return { success: false, message: 'Invalid Emergency Passcode. Access denied.' };
   };
 
-  const isAccessAllowed = !geofenceConfig.enabled || isBypassed || gpsStatus === 'GRANTED';
+  // Strict access calculation
+  const isAccessAllowed =
+    geofenceConfig?.enabled === false ||
+    isBypassed ||
+    (gpsStatus === 'GRANTED' &&
+      distanceFromOffice !== null &&
+      distanceFromOffice <= (Number(geofenceConfig?.radiusMeters) || 1.52));
 
   return (
     <GeofenceContext.Provider
