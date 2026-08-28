@@ -5,10 +5,10 @@ import { useData } from '../context/DataContext';
 import { exportFollowupsPDF, exportFollowupsExcel } from '../utils/exportUtils';
 import { db } from '../config/firebaseClient';
 import { collection, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
-import { 
-  Plus, Search, Calendar as CalendarIcon, CheckCircle2, Clock, X, Edit3, Trash2, 
-  User, FileText, AlertCircle, ShieldCheck, Filter, UserCheck, MessageSquare, 
-  ChevronRight, ArrowRight, Layers, Check, Sparkles, PhoneCall, Video, Users as UsersIcon, Download, FileSpreadsheet 
+import {
+  Plus, Search, Calendar as CalendarIcon, CheckCircle2, Clock, X, Edit3, Trash2,
+  User, FileText, AlertCircle, ShieldCheck, Filter, UserCheck, MessageSquare,
+  ChevronRight, ArrowRight, Layers, Check, Sparkles, PhoneCall, Video, Users as UsersIcon, Download, FileSpreadsheet
 } from 'lucide-react';
 
 export const Followups = () => {
@@ -65,7 +65,7 @@ export const Followups = () => {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed.map(u => u.name);
-      } catch (e) {}
+      } catch (e) { }
     }
     return [];
   });
@@ -78,7 +78,7 @@ export const Followups = () => {
         try {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed) && parsed.length > 0) setStaffMembers(parsed.map(u => u.name));
-        } catch (e) {}
+        } catch (e) { }
       }
     };
 
@@ -122,7 +122,7 @@ export const Followups = () => {
   const dispatchFollowupNotifications = (clientName, stageName, assignedStaff, createdBy, status) => {
     try {
       const existing = JSON.parse(localStorage.getItem('crm_v2_admin_manager_notifications') || '[]');
-      
+
       const mgmtNotif = {
         id: 'FLW-MGMT-' + Date.now(),
         type: 'followup_status',
@@ -146,7 +146,7 @@ export const Followups = () => {
       };
 
       localStorage.setItem('crm_v2_admin_manager_notifications', JSON.stringify([mgmtNotif, staffNotif, ...existing]));
-    } catch (e) {}
+    } catch (e) { }
   };
 
   const handleCreateNewClientFollowup = async (e) => {
@@ -328,7 +328,7 @@ export const Followups = () => {
       // Also delete matching spreadsheet entries
       const toDelete = spreadsheetData.filter(s => s.clientName === clientName);
       for (const s of toDelete) {
-        try { await deleteDoc(doc(db, 'spreadsheet_followups', String(s.id))); } catch (e) {}
+        try { await deleteDoc(doc(db, 'spreadsheet_followups', String(s.id))); } catch (e) { }
       }
       if (selectedClientHistoryModal?.clientId === clientId) {
         setSelectedClientHistoryModal(null);
@@ -431,7 +431,7 @@ export const Followups = () => {
       const createdByMatch = (client.currentCreatedBy || '').toLowerCase().includes(term);
       const statusMatch = (client.overallStatus || '').toLowerCase().includes(term);
 
-      const historyMatch = (client.history || []).some(h => 
+      const historyMatch = (client.history || []).some(h =>
         (h.stageName || '').toLowerCase().includes(term) ||
         (h.conversationNotes || '').toLowerCase().includes(term) ||
         (h.assignedTo || '').toLowerCase().includes(term) ||
@@ -442,8 +442,8 @@ export const Followups = () => {
         (h.date || '').toLowerCase().includes(term)
       );
 
-      const matchesSearch = nameMatch || phoneMatch || idMatch || categoryMatch || insuranceTypeMatch || 
-                            stageMatch || assignedMatch || createdByMatch || statusMatch || historyMatch;
+      const matchesSearch = nameMatch || phoneMatch || idMatch || categoryMatch || insuranceTypeMatch ||
+        stageMatch || assignedMatch || createdByMatch || statusMatch || historyMatch;
 
       if (!matchesSearch) return false;
       return true;
@@ -469,7 +469,7 @@ export const Followups = () => {
       const rawTerm = searchTerm.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
       const rawPhone = (f.phone || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
 
-      const matchesSearch = 
+      const matchesSearch =
         (f.clientName || '').toLowerCase().includes(term) ||
         (f.phone || '').toLowerCase().includes(term) ||
         (rawTerm.length > 2 && rawPhone.includes(rawTerm)) ||
@@ -520,7 +520,7 @@ export const Followups = () => {
         </div>
 
         <div className="flex items-center space-x-2.5">
-          <button 
+          <button
             type="button"
             onClick={() => setShowCreateNewClientModal(true)}
             className="flex items-center space-x-1.5 px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs shadow-md transition cursor-pointer shrink-0"
@@ -532,7 +532,7 @@ export const Followups = () => {
 
           {isAdminOrManager && (
             <>
-              <button 
+              <button
                 onClick={() => exportFollowupsPDF(exportDataList)}
                 className="flex items-center space-x-1.5 px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer"
                 title="Download PDF Report"
@@ -541,7 +541,7 @@ export const Followups = () => {
                 <span>Download PDF Report</span>
               </button>
 
-              <button 
+              <button
                 onClick={() => exportFollowupsExcel(exportDataList)}
                 className="flex items-center space-x-1.5 px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer"
                 title="Download Excel (.xlsx) Spreadsheet"
@@ -575,7 +575,7 @@ export const Followups = () => {
       <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-card flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="relative max-w-md flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <input 
+          <input
             type="text"
             placeholder="Search Customer Name, Phone, Notes, Stage, Category, or Officer..."
             value={searchTerm}
@@ -596,21 +596,21 @@ export const Followups = () => {
 
         <div className="flex items-center space-x-1.5 bg-slate-100 p-1 rounded-2xl">
           {isAdminOrManager ? (
-            <button 
+            <button
               onClick={() => setFilterTab('ALL')}
               className={`px-3 py-1.5 rounded-xl text-xs font-black transition ${filterTab === 'ALL' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'}`}
             >
               All Records
             </button>
           ) : (
-            <button 
+            <button
               onClick={() => setFilterTab('MY_ASSIGNED')}
               className={`px-3 py-1.5 rounded-xl text-xs font-black transition ${filterTab === 'MY_ASSIGNED' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'}`}
             >
               My Assigned Follow-ups
             </button>
           )}
-          <button 
+          <button
             onClick={() => setFilterTab('PENDING')}
             className={`px-3 py-1.5 rounded-xl text-xs font-black transition ${filterTab === 'PENDING' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'}`}
           >
@@ -631,7 +631,7 @@ export const Followups = () => {
               <p className="text-xs text-slate-500 max-w-sm mx-auto">
                 There are currently 0 active follow-up records. Add a follow-up stage or customer to begin tracking progression.
               </p>
-              <button 
+              <button
                 type="button"
                 onClick={() => setShowCreateNewClientModal(true)}
                 className="px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs shadow transition cursor-pointer inline-flex items-center space-x-1.5 mt-2"
@@ -645,168 +645,166 @@ export const Followups = () => {
               const currentStep = client.history[client.history.length - 1];
               return (
                 <div key={client.clientId} className="bg-white rounded-3xl border border-slate-200/80 shadow-card p-6 space-y-5 hover:border-blue-300 transition">
-                {/* Client Header Bar */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-700 text-white font-black text-lg flex items-center justify-center shadow-md">
-                      {(client.clientName || 'C').charAt(0)}
-                    </div>
-                    <div>
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => openCustomer360(client.clientName)}
-                          className="text-base font-black text-slate-900 hover:text-blue-600 hover:underline transition cursor-pointer text-left flex items-center space-x-1"
-                          title="Click to view Customer 360° Profile"
-                        >
-                          <span className="uppercase">{client.clientName}</span>
-                          <Sparkles className="h-3.5 w-3.5 text-blue-500 opacity-80" />
-                        </button>
-                        <span className="badge badge-brand text-[10px]">{client.clientId}</span>
-                        <span className={`badge text-[10px] ${client.overallStatus === 'COMPLETED' ? 'badge-green' : 'badge-amber'}`}>
-                          {client.overallStatus}
-                        </span>
+                  {/* Client Header Bar */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-700 text-white font-black text-lg flex items-center justify-center shadow-md">
+                        {(client.clientName || 'C').charAt(0)}
                       </div>
-                      <p className="text-xs text-slate-500 font-medium">
-                        📞 <strong className="font-mono text-slate-700">{client.phone}</strong> {client.city ? `• ${client.city}` : ''} {client.insuranceTypeInterest || client.activeProduct ? `• ${client.insuranceTypeInterest || client.activeProduct}` : ''}
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => openCustomer360(client.clientName)}
+                            className="text-base font-black text-slate-900 hover:text-blue-600 hover:underline transition cursor-pointer text-left flex items-center space-x-1"
+                            title="Click to view Customer 360° Profile"
+                          >
+                            <span className="uppercase">{client.clientName}</span>
+                            <Sparkles className="h-3.5 w-3.5 text-blue-500 opacity-80" />
+                          </button>
+                          <span className="badge badge-brand text-[10px]">{client.clientId}</span>
+                          <span className={`badge text-[10px] ${client.overallStatus === 'COMPLETED' ? 'badge-green' : 'badge-amber'}`}>
+                            {client.overallStatus}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 font-medium">
+                          📞 <strong className="font-mono text-slate-700">{client.phone}</strong> {client.city ? `• ${client.city}` : ''} {client.insuranceTypeInterest || client.activeProduct ? `• ${client.insuranceTypeInterest || client.activeProduct}` : ''}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <button
+                        type="button"
+                        onClick={() => openCustomer360(client.clientName)}
+                        className="px-3 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-800 font-extrabold text-xs border border-purple-200 transition cursor-pointer flex items-center space-x-1.5 shadow-xs"
+                        title="Open Customer 360° Complete Profile"
+                      >
+                        <Sparkles className="h-3.5 w-3.5 text-purple-600" />
+                        <span>Customer 360°</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setTargetClientForNewStage(client); setShowAddStageModal(true); }}
+                        className="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs shadow transition cursor-pointer flex items-center space-x-1.5"
+                      >
+                        <Plus className="h-4 w-4" />
+                        <span>Add Follow-up Stage</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedClientHistoryModal(client)}
+                        className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition cursor-pointer flex items-center space-x-1"
+                      >
+                        <Layers className="h-3.5 w-3.5 text-blue-600" />
+                        <span>Full Lifecycle ({client.history.length} Steps)</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteClientFollowup(client.clientId, client.clientName)}
+                        className="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs border border-rose-200 transition cursor-pointer flex items-center space-x-1.5"
+                        title="Delete Customer Follow-up Completely"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        <span>Delete</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* CURRENT ACTIVE STAGE BANNER */}
+                  <div className="bg-slate-900 text-white p-4 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 border border-slate-800">
+                    <div className="space-y-1">
+                      <div className="flex items-center space-x-2">
+                        <span className="badge bg-amber-400 text-slate-950 font-black text-[10px]">CURRENT ACTIVE STAGE</span>
+                        <span className="font-mono text-xs text-blue-300 font-bold">Follow-up #{currentStep.stepId}</span>
+                      </div>
+                      <h4 className="text-sm font-black text-white">{currentStep.stageName}</h4>
+                      <p className="text-xs text-slate-300 font-normal bg-white/10 p-2.5 rounded-xl border border-white/10 mt-1">
+                        💬 <strong>Latest Conversation Topic:</strong> "{currentStep.conversationNotes}"
                       </p>
                     </div>
-                  </div>
 
-                  <div className="flex items-center space-x-2">
-                    <button
-                      type="button"
-                      onClick={() => openCustomer360(client.clientName)}
-                      className="px-3 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-800 font-extrabold text-xs border border-purple-200 transition cursor-pointer flex items-center space-x-1.5 shadow-xs"
-                      title="Open Customer 360° Complete Profile"
-                    >
-                      <Sparkles className="h-3.5 w-3.5 text-purple-600" />
-                      <span>Customer 360°</span>
-                    </button>
-                    <button 
-                      type="button"
-                      onClick={() => { setTargetClientForNewStage(client); setShowAddStageModal(true); }}
-                      className="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs shadow transition cursor-pointer flex items-center space-x-1.5"
-                    >
-                      <Plus className="h-4 w-4" />
-                      <span>Add Follow-up Stage</span>
-                    </button>
-                    <button 
-                      type="button"
-                      onClick={() => setSelectedClientHistoryModal(client)}
-                      className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition cursor-pointer flex items-center space-x-1"
-                    >
-                      <Layers className="h-3.5 w-3.5 text-blue-600" />
-                      <span>Full Lifecycle ({client.history.length} Steps)</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteClientFollowup(client.clientId, client.clientName)}
-                      className="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs border border-rose-200 transition cursor-pointer flex items-center space-x-1.5"
-                      title="Delete Customer Follow-up Completely"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      <span>Delete</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* CURRENT ACTIVE STAGE BANNER */}
-                <div className="bg-slate-900 text-white p-4 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 border border-slate-800">
-                  <div className="space-y-1">
-                    <div className="flex items-center space-x-2">
-                      <span className="badge bg-amber-400 text-slate-950 font-black text-[10px]">CURRENT ACTIVE STAGE</span>
-                      <span className="font-mono text-xs text-blue-300 font-bold">Follow-up #{currentStep.stepId}</span>
-                    </div>
-                    <h4 className="text-sm font-black text-white">{currentStep.stageName}</h4>
-                    <p className="text-xs text-slate-300 font-normal bg-white/10 p-2.5 rounded-xl border border-white/10 mt-1">
-                      💬 <strong>Latest Conversation Topic:</strong> "{currentStep.conversationNotes}"
-                    </p>
-                  </div>
-
-                  <div className="shrink-0 space-y-1 text-right border-t md:border-t-0 md:border-l border-slate-800 pt-2 md:pt-0 md:pl-4">
-                    <div className="text-xs text-slate-300 font-semibold">
-                      👤 Assigned Officer: <strong className="text-amber-300 font-bold">{currentStep.assignedTo}</strong>
-                    </div>
-                    <div className="text-[11px] text-slate-400">
-                      ✍️ Assigned By: <span className="text-purple-300 font-semibold">{currentStep.createdBy}</span>
-                    </div>
-                    <div className="text-xs text-emerald-400 font-bold">
-                      📅 Scheduled: {currentStep.date}
+                    <div className="shrink-0 space-y-1 text-right border-t md:border-t-0 md:border-l border-slate-800 pt-2 md:pt-0 md:pl-4">
+                      <div className="text-xs text-slate-300 font-semibold">
+                        👤 Assigned Officer: <strong className="text-amber-300 font-bold">{currentStep.assignedTo}</strong>
+                      </div>
+                      <div className="text-[11px] text-slate-400">
+                        ✍️ Assigned By: <span className="text-purple-300 font-semibold">{currentStep.createdBy}</span>
+                      </div>
+                      <div className="text-xs text-emerald-400 font-bold">
+                        📅 Scheduled: {currentStep.date}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* VISUAL TIMELINE PROGRESSION BAR ("FROM WHERE TO WHERE THE FOLLOW-UP IS GOING ON") */}
-                <div className="space-y-2 pt-1">
-                  <span className="text-[11px] font-black uppercase text-slate-500 tracking-wider flex items-center space-x-1.5">
-                    <Clock className="h-3.5 w-3.5 text-blue-600" />
-                    <span>Follow-up Lifecycle Progression ("From Start to Current Stage"):</span>
-                  </span>
+                  {/* VISUAL TIMELINE PROGRESSION BAR ("FROM WHERE TO WHERE THE FOLLOW-UP IS GOING ON") */}
+                  <div className="space-y-2 pt-1">
+                    <span className="text-[11px] font-black uppercase text-slate-500 tracking-wider flex items-center space-x-1.5">
+                      <Clock className="h-3.5 w-3.5 text-blue-600" />
+                      <span>Follow-up Lifecycle Progression ("From Start to Current Stage"):</span>
+                    </span>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 relative">
-                    {client.history.map((step, sIdx) => {
-                      const isCompleted = step.status === 'COMPLETED';
-                      const isCurrent = step.isCurrentActive;
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 relative">
+                      {client.history.map((step, sIdx) => {
+                        const isCompleted = step.status === 'COMPLETED';
+                        const isCurrent = step.isCurrentActive;
 
-                      return (
-                        <div 
-                          key={step.stepId} 
-                          className={`p-3.5 rounded-2xl border transition relative space-y-2 ${
-                            isCurrent 
-                              ? 'bg-blue-50/80 border-blue-400 shadow-sm' 
-                              : isCompleted 
-                              ? 'bg-emerald-50/40 border-emerald-200' 
-                              : 'bg-slate-50 border-slate-200'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-mono font-black text-slate-500">Step {sIdx + 1}: {step.stepId}</span>
-                            <span className={`badge text-[9px] font-black ${
-                              isCurrent ? 'bg-blue-600 text-white' : isCompleted ? 'badge-green' : 'badge-amber'
-                            }`}>
-                              {isCurrent ? 'ACTIVE NOW' : step.status}
-                            </span>
-                          </div>
+                        return (
+                          <div
+                            key={step.stepId}
+                            className={`p-3.5 rounded-2xl border transition relative space-y-2 ${isCurrent
+                                ? 'bg-blue-50/80 border-blue-400 shadow-sm'
+                                : isCompleted
+                                  ? 'bg-emerald-50/40 border-emerald-200'
+                                  : 'bg-slate-50 border-slate-200'
+                              }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-mono font-black text-slate-500">Step {sIdx + 1}: {step.stepId}</span>
+                              <span className={`badge text-[9px] font-black ${isCurrent ? 'bg-blue-600 text-white' : isCompleted ? 'badge-green' : 'badge-amber'
+                                }`}>
+                                {isCurrent ? 'ACTIVE NOW' : step.status}
+                              </span>
+                            </div>
 
-                          <div>
-                            <h5 className="text-xs font-black text-slate-900">{step.stageName}</h5>
-                            <p className="text-[10px] text-slate-500 font-bold">{step.date} • {step.type}</p>
-                          </div>
+                            <div>
+                              <h5 className="text-xs font-black text-slate-900">{step.stageName}</h5>
+                              <p className="text-[10px] text-slate-500 font-bold">{step.date} • {step.type}</p>
+                            </div>
 
-                          <p className="text-[11px] text-slate-600 leading-snug line-clamp-2 italic font-normal">
-                            "{step.conversationNotes}"
-                          </p>
+                            <p className="text-[11px] text-slate-600 leading-snug line-clamp-2 italic font-normal">
+                              "{step.conversationNotes}"
+                            </p>
 
-                          <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[10px]">
-                            <span className="font-extrabold text-slate-800">👤 {step.assignedTo}</span>
-                            <div className="flex items-center space-x-2">
-                              <button 
-                                type="button"
-                                onClick={() => { setEditingStage({ ...step }); setEditingClientId(client.clientId); setShowEditStageModal(true); }}
-                                className="text-blue-600 hover:underline font-extrabold flex items-center space-x-0.5 cursor-pointer"
-                              >
-                                <Edit3 className="h-3 w-3" />
-                                <span>Edit</span>
-                              </button>
-                              <button 
-                                type="button"
-                                onClick={() => handleDeleteStage(client.clientId, step.stepId)}
-                                className="text-rose-600 hover:underline font-extrabold flex items-center space-x-0.5 cursor-pointer"
-                                title="Delete Step"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                                <span>Delete</span>
-                              </button>
+                            <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[10px]">
+                              <span className="font-extrabold text-slate-800">👤 {step.assignedTo}</span>
+                              <div className="flex items-center space-x-2">
+                                <button
+                                  type="button"
+                                  onClick={() => { setEditingStage({ ...step }); setEditingClientId(client.clientId); setShowEditStageModal(true); }}
+                                  className="text-blue-600 hover:underline font-extrabold flex items-center space-x-0.5 cursor-pointer"
+                                >
+                                  <Edit3 className="h-3 w-3" />
+                                  <span>Edit</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteStage(client.clientId, step.stepId)}
+                                  className="text-rose-600 hover:underline font-extrabold flex items-center space-x-0.5 cursor-pointer"
+                                  title="Delete Step"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                  <span>Delete</span>
+                                </button>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          }))}
+              );
+            }))}
         </div>
       ) : (
         /* VIEW MODE 2: SAMPLE SPREADSHEET TABLE (19 Entries Matching Image) */
@@ -836,55 +834,55 @@ export const Followups = () => {
                   </tr>
                 ) : (
                   filteredSpreadsheet.map((f, idx) => {
-                  const isHealth = f.insuranceType === 'HEALTH';
-                  return (
-                    <tr 
-                      key={f.id || idx} 
-                      className={`transition hover:bg-blue-50/60 ${isHealth ? 'bg-orange-50/60' : idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}
-                    >
-                      <td className="p-3.5 font-bold text-slate-900 border-r border-slate-200/80 font-mono">{f.date}</td>
-                      <td className="p-3.5 border-r border-slate-200/80">
-                        <span className={`badge text-[10px] ${f.clientCategory === 'New Lead' ? 'bg-blue-100 text-blue-800 font-extrabold' : 'bg-purple-100 text-purple-800 font-extrabold'}`}>
-                          {f.clientCategory}
-                        </span>
-                      </td>
-                      <td className="p-3.5 border-r border-slate-200/80">
-                        <button
-                          onClick={() => openCustomer360(f.clientName)}
-                          className="font-black text-slate-900 hover:text-blue-600 hover:underline transition cursor-pointer text-left flex items-center space-x-1"
-                          title="Click to view Customer 360° Profile"
-                        >
-                          <span>{f.clientName}</span>
-                          <Sparkles className="h-3 w-3 text-blue-500 opacity-80" />
-                        </button>
-                      </td>
-                      <td className="p-3.5 font-mono font-bold text-slate-900 border-r border-slate-200/80">{f.phone}</td>
-                      <td className="p-3.5 border-r border-slate-200/80">
-                        <span className={`badge text-[10px] font-black ${isHealth ? 'bg-orange-100 text-orange-800' : 'bg-emerald-100 text-emerald-800'}`}>
-                          {f.insuranceType}
-                        </span>
-                      </td>
-                      <td className="p-3.5 font-extrabold text-blue-900 border-r border-slate-200/80">{f.insuranceCompany}</td>
-                      <td className="p-3.5 font-bold text-slate-800 border-r border-slate-200/80">{f.salesPitch}</td>
-                      <td className="p-3.5 border-r border-slate-200/80">
-                        <span className="badge bg-sky-100 text-sky-800 text-[10px] font-extrabold">
-                          {f.clientStatus}
-                        </span>
-                      </td>
-                      <td className="p-3.5 text-slate-700 italic font-medium border-r border-slate-200/80">{f.advisorNotes}</td>
-                      <td className="p-3.5 text-center">
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteSpreadsheetFollowup(f.id, f.clientName)}
-                          className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-100 hover:text-rose-800 border border-rose-200 transition cursor-pointer inline-flex items-center justify-center"
-                          title="Delete Follow-up Entry"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                }))}
+                    const isHealth = f.insuranceType === 'HEALTH';
+                    return (
+                      <tr
+                        key={f.id || idx}
+                        className={`transition hover:bg-blue-50/60 ${isHealth ? 'bg-orange-50/60' : idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}
+                      >
+                        <td className="p-3.5 font-bold text-slate-900 border-r border-slate-200/80 font-mono">{f.date}</td>
+                        <td className="p-3.5 border-r border-slate-200/80">
+                          <span className={`badge text-[10px] ${f.clientCategory === 'New Lead' ? 'bg-blue-100 text-blue-800 font-extrabold' : 'bg-purple-100 text-purple-800 font-extrabold'}`}>
+                            {f.clientCategory}
+                          </span>
+                        </td>
+                        <td className="p-3.5 border-r border-slate-200/80">
+                          <button
+                            onClick={() => openCustomer360(f.clientName)}
+                            className="font-black text-slate-900 hover:text-blue-600 hover:underline transition cursor-pointer text-left flex items-center space-x-1"
+                            title="Click to view Customer 360° Profile"
+                          >
+                            <span>{f.clientName}</span>
+                            <Sparkles className="h-3 w-3 text-blue-500 opacity-80" />
+                          </button>
+                        </td>
+                        <td className="p-3.5 font-mono font-bold text-slate-900 border-r border-slate-200/80">{f.phone}</td>
+                        <td className="p-3.5 border-r border-slate-200/80">
+                          <span className={`badge text-[10px] font-black ${isHealth ? 'bg-orange-100 text-orange-800' : 'bg-emerald-100 text-emerald-800'}`}>
+                            {f.insuranceType}
+                          </span>
+                        </td>
+                        <td className="p-3.5 font-extrabold text-blue-900 border-r border-slate-200/80">{f.insuranceCompany}</td>
+                        <td className="p-3.5 font-bold text-slate-800 border-r border-slate-200/80">{f.salesPitch}</td>
+                        <td className="p-3.5 border-r border-slate-200/80">
+                          <span className="badge bg-sky-100 text-sky-800 text-[10px] font-extrabold">
+                            {f.clientStatus}
+                          </span>
+                        </td>
+                        <td className="p-3.5 text-slate-700 italic font-medium border-r border-slate-200/80">{f.advisorNotes}</td>
+                        <td className="p-3.5 text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteSpreadsheetFollowup(f.id, f.clientName)}
+                            className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-100 hover:text-rose-800 border border-rose-200 transition cursor-pointer inline-flex items-center justify-center"
+                            title="Delete Follow-up Entry"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  }))}
               </tbody>
             </table>
           </div>
@@ -935,7 +933,7 @@ export const Followups = () => {
               ))}
             </div>
 
-            <button 
+            <button
               onClick={() => setSelectedClientHistoryModal(null)}
               className="w-full py-2.5 rounded-xl bg-slate-900 text-white font-bold text-xs"
             >
@@ -957,34 +955,34 @@ export const Followups = () => {
             <form onSubmit={handleAddStage} className="space-y-3">
               <div>
                 <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Stage Title</label>
-                <input 
-                  type="text" 
-                  required 
+                <input
+                  type="text"
+                  required
                   placeholder=""
-                  value={newStageForm.stageName} 
-                  onChange={(e) => setNewStageForm({ ...newStageForm, stageName: e.target.value })} 
-                  className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold" 
+                  value={newStageForm.stageName}
+                  onChange={(e) => setNewStageForm({ ...newStageForm, stageName: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold"
                 />
               </div>
 
               <div>
                 <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Topic of Conversation &amp; Detailed Notes</label>
-                <textarea 
-                  rows="3" 
-                  required 
+                <textarea
+                  rows="3"
+                  required
                   placeholder=""
-                  value={newStageForm.conversationNotes} 
-                  onChange={(e) => setNewStageForm({ ...newStageForm, conversationNotes: e.target.value })} 
-                  className="w-full px-3 py-2 rounded-xl border text-xs outline-none" 
+                  value={newStageForm.conversationNotes}
+                  onChange={(e) => setNewStageForm({ ...newStageForm, conversationNotes: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl border text-xs outline-none"
                 ></textarea>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Assign to Staff Member</label>
-                  <select 
-                    value={newStageForm.assignedTo} 
-                    onChange={(e) => setNewStageForm({ ...newStageForm, assignedTo: e.target.value })} 
+                  <select
+                    value={newStageForm.assignedTo}
+                    onChange={(e) => setNewStageForm({ ...newStageForm, assignedTo: e.target.value })}
                     className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold"
                   >
                     {staffMembers.map(staff => (
@@ -994,12 +992,12 @@ export const Followups = () => {
                 </div>
                 <div>
                   <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Scheduled Time</label>
-                  <input 
-                    type="text" 
-                    required 
-                    value={newStageForm.date} 
-                    onChange={(e) => setNewStageForm({ ...newStageForm, date: e.target.value })} 
-                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold text-blue-700" 
+                  <input
+                    type="text"
+                    required
+                    value={newStageForm.date}
+                    onChange={(e) => setNewStageForm({ ...newStageForm, date: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold text-blue-700"
                   />
                 </div>
               </div>
@@ -1022,32 +1020,32 @@ export const Followups = () => {
             <form onSubmit={handleSaveEditStage} className="space-y-3">
               <div>
                 <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Stage Title</label>
-                <input 
-                  type="text" 
-                  required 
-                  value={editingStage.stageName} 
-                  onChange={(e) => setEditingStage({ ...editingStage, stageName: e.target.value })} 
-                  className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold" 
+                <input
+                  type="text"
+                  required
+                  value={editingStage.stageName}
+                  onChange={(e) => setEditingStage({ ...editingStage, stageName: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold"
                 />
               </div>
 
               <div>
                 <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Topic of Conversation &amp; Detailed Notes</label>
-                <textarea 
-                  rows="3" 
-                  required 
-                  value={editingStage.conversationNotes} 
-                  onChange={(e) => setEditingStage({ ...editingStage, conversationNotes: e.target.value })} 
-                  className="w-full px-3 py-2 rounded-xl border text-xs outline-none" 
+                <textarea
+                  rows="3"
+                  required
+                  value={editingStage.conversationNotes}
+                  onChange={(e) => setEditingStage({ ...editingStage, conversationNotes: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl border text-xs outline-none"
                 ></textarea>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Assigned Staff Member</label>
-                  <select 
-                    value={editingStage.assignedTo} 
-                    onChange={(e) => setEditingStage({ ...editingStage, assignedTo: e.target.value })} 
+                  <select
+                    value={editingStage.assignedTo}
+                    onChange={(e) => setEditingStage({ ...editingStage, assignedTo: e.target.value })}
                     className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold"
                   >
                     {staffMembers.map(staff => (
@@ -1058,9 +1056,9 @@ export const Followups = () => {
                 <div>
                   <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Step Status</label>
                   {isAdminOrManager ? (
-                    <select 
-                      value={editingStage.status} 
-                      onChange={(e) => setEditingStage({ ...editingStage, status: e.target.value })} 
+                    <select
+                      value={editingStage.status}
+                      onChange={(e) => setEditingStage({ ...editingStage, status: e.target.value })}
                       className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold bg-white text-slate-800"
                     >
                       <option value="PENDING">PENDING</option>
@@ -1102,17 +1100,17 @@ export const Followups = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="relative">
                   <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Customer Name (CAPITALS ONLY) *</label>
-                  <input 
-                    type="text" 
-                    required 
+                  <input
+                    type="text"
+                    required
                     placeholder="e.g. RAMESH KUMAR"
-                    value={newClientForm.clientName} 
+                    value={newClientForm.clientName}
                     onChange={(e) => {
                       setNewClientForm({ ...newClientForm, clientName: e.target.value.toUpperCase() });
                       setShowCustomerAutocomplete(true);
-                    }} 
+                    }}
                     onFocus={() => setShowCustomerAutocomplete(true)}
-                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold focus:border-blue-600 focus:ring-2 focus:ring-blue-100 uppercase" 
+                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold focus:border-blue-600 focus:ring-2 focus:ring-blue-100 uppercase"
                   />
 
                   {/* LIVE CRM CUSTOMER 360 AUTOCOMPLETE DROPDOWN */}
@@ -1156,13 +1154,13 @@ export const Followups = () => {
                 </div>
                 <div>
                   <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Mobile Number *</label>
-                  <input 
-                    type="text" 
-                    required 
+                  <input
+                    type="text"
+                    required
                     placeholder=""
-                    value={newClientForm.phone} 
-                    onChange={(e) => setNewClientForm({ ...newClientForm, phone: e.target.value })} 
-                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-mono font-bold" 
+                    value={newClientForm.phone}
+                    onChange={(e) => setNewClientForm({ ...newClientForm, phone: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-mono font-bold"
                   />
                 </div>
               </div>
@@ -1170,9 +1168,9 @@ export const Followups = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Customer Category</label>
-                  <select 
-                    value={newClientForm.category} 
-                    onChange={(e) => setNewClientForm({ ...newClientForm, category: e.target.value })} 
+                  <select
+                    value={newClientForm.category}
+                    onChange={(e) => setNewClientForm({ ...newClientForm, category: e.target.value })}
                     className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold"
                   >
                     <option value="High Networth Client">High Networth Customer</option>
@@ -1186,49 +1184,49 @@ export const Followups = () => {
 
                 <div>
                   <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Product / Insurance Interest</label>
-                  <select 
-                    value={newClientForm.insuranceTypeInterest} 
-                    onChange={(e) => setNewClientForm({ ...newClientForm, insuranceTypeInterest: e.target.value })} 
+                  <select
+                    value={newClientForm.insuranceTypeInterest}
+                    onChange={(e) => setNewClientForm({ ...newClientForm, insuranceTypeInterest: e.target.value })}
                     className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold"
                   >
                     <option value="Term & Savings Life Insurance">Term &amp; Savings Life Insurance</option>
                     <option value="Family Health Guard Policy">Family Health Guard Policy</option>
                     <option value="Comprehensive Motor Insurance">Comprehensive Motor Insurance</option>
-                    <option value="Mutual Funds & SIP">Mutual Funds &amp; SIP</option>
                     <option value="ULIP & Retirement Plan">ULIP &amp; Retirement Plan</option>
+                    <option value="Mutual Funds & SIP">Mutual Funds &amp; SIP</option>
                   </select>
                 </div>
               </div>
 
               <div>
                 <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Initial Follow-up Stage Title *</label>
-                <input 
-                  type="text" 
-                  required 
+                <input
+                  type="text"
+                  required
                   placeholder=""
-                  value={newClientForm.stageName} 
-                  onChange={(e) => setNewClientForm({ ...newClientForm, stageName: e.target.value })} 
-                  className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold text-blue-900" 
+                  value={newClientForm.stageName}
+                  onChange={(e) => setNewClientForm({ ...newClientForm, stageName: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold text-blue-900"
                 />
               </div>
 
               <div>
                 <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Initial Conversation Notes / Topic</label>
-                <textarea 
-                  rows="2" 
+                <textarea
+                  rows="2"
                   placeholder=""
-                  value={newClientForm.conversationNotes} 
-                  onChange={(e) => setNewClientForm({ ...newClientForm, conversationNotes: e.target.value })} 
-                  className="w-full px-3 py-2 rounded-xl border text-xs outline-none" 
+                  value={newClientForm.conversationNotes}
+                  onChange={(e) => setNewClientForm({ ...newClientForm, conversationNotes: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl border text-xs outline-none"
                 ></textarea>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Interaction Type</label>
-                  <select 
-                    value={newClientForm.type} 
-                    onChange={(e) => setNewClientForm({ ...newClientForm, type: e.target.value })} 
+                  <select
+                    value={newClientForm.type}
+                    onChange={(e) => setNewClientForm({ ...newClientForm, type: e.target.value })}
                     className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold"
                   >
                     <option value="Phone Call">Phone Call</option>
@@ -1241,9 +1239,9 @@ export const Followups = () => {
 
                 <div>
                   <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Assigned Officer</label>
-                  <select 
-                    value={newClientForm.assignedTo} 
-                    onChange={(e) => setNewClientForm({ ...newClientForm, assignedTo: e.target.value })} 
+                  <select
+                    value={newClientForm.assignedTo}
+                    onChange={(e) => setNewClientForm({ ...newClientForm, assignedTo: e.target.value })}
                     className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold"
                   >
                     {staffMembers.map(staff => (
@@ -1255,9 +1253,9 @@ export const Followups = () => {
                 <div>
                   <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Status</label>
                   {isAdminOrManager ? (
-                    <select 
-                      value={newClientForm.status} 
-                      onChange={(e) => setNewClientForm({ ...newClientForm, status: e.target.value })} 
+                    <select
+                      value={newClientForm.status}
+                      onChange={(e) => setNewClientForm({ ...newClientForm, status: e.target.value })}
                       className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold bg-white text-slate-800"
                     >
                       <option value="PENDING">PENDING</option>
@@ -1275,11 +1273,11 @@ export const Followups = () => {
 
               <div>
                 <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Scheduled Date &amp; Time</label>
-                <input 
-                  type="text" 
-                  value={newClientForm.date} 
-                  onChange={(e) => setNewClientForm({ ...newClientForm, date: e.target.value })} 
-                  className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold text-blue-700" 
+                <input
+                  type="text"
+                  value={newClientForm.date}
+                  onChange={(e) => setNewClientForm({ ...newClientForm, date: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold text-blue-700"
                 />
               </div>
 
@@ -1291,8 +1289,8 @@ export const Followups = () => {
                 >
                   Cancel
                 </button>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow transition cursor-pointer"
                 >
                   Create Follow-up Record
