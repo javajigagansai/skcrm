@@ -366,20 +366,22 @@ export const Expenses = () => {
                       </td>
                       <td className="p-4 text-center">
                         {user?.role !== 'VIEWER' ? (
-                          <div className="flex items-center justify-center space-x-1.5">
+                          <div className="flex items-center justify-center space-x-2">
                             <button
-                              onClick={() => setEditingExpense(exp)}
-                              className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition border border-blue-200 cursor-pointer"
-                              title="Edit Expense Record"
+                              onClick={() => setEditingExpense({ ...exp })}
+                              className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white font-bold text-xs border border-blue-200 shadow-2xs transition cursor-pointer"
+                              title="Edit Expenditure Record"
                             >
                               <Edit3 className="h-3.5 w-3.5" />
+                              <span>Edit</span>
                             </button>
                             <button
                               onClick={() => handleDeleteExpense(exp)}
-                              className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition border border-rose-200 cursor-pointer"
-                              title="Delete Expense Record"
+                              className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-600 hover:text-white font-bold text-xs border border-rose-200 shadow-2xs transition cursor-pointer"
+                              title="Delete Expenditure Record"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
+                              <span>Delete</span>
                             </button>
                           </div>
                         ) : (
@@ -432,10 +434,10 @@ export const Expenses = () => {
                   <option value="Generator & Fuel / Gas">⚡ Generator &amp; Fuel / Gas Spending</option>
                   <option value="Rent & Office Space">🏢 Rent &amp; Office Space</option>
                   <option value="Electricity & Utilities">💡 Electricity &amp; Utilities</option>
-                  <option value="Internet & Telecom">🌐 Internet &amp; Telecom</option>
-                  <option value="Marketing & Campaigns">📢 Marketing &amp; Campaigns</option>
-                  <option value="Office Supplies & Maintenance">🛠️ Office Supplies &amp; Maintenance</option>
-                  <option value="Travel & Conveyance">🚗 Travel &amp; Conveyance</option>
+                  <option value="Internet & Telecom">🌐 Internet & Telecom</option>
+                  <option value="Marketing & Campaigns">📢 Marketing & Campaigns</option>
+                  <option value="Office Supplies & Maintenance">🛠️ Office Supplies & Maintenance</option>
+                  <option value="Travel & Conveyance">🚗 Travel & Conveyance</option>
                   <option value="Miscellaneous">📦 Miscellaneous Operational</option>
                   <option value="Other">✏️ Other (Specify Custom)</option>
                 </select>
@@ -448,12 +450,12 @@ export const Expenses = () => {
                   <select
                     value={selectedStaffId}
                     onChange={(e) => handleSelectStaff(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-purple-200 text-xs outline-none font-bold bg-white focus:border-purple-500"
+                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold bg-white text-slate-800 focus:border-purple-500"
                   >
-                    <option value="">-- Choose Staff Member or Type Below --</option>
+                    <option value="">-- Choose Staff Member --</option>
                     {activeStaffList.map(st => (
-                      <option key={st.uid || st.id} value={st.uid || st.id}>
-                        {st.name} — {st.title || st.role || 'Staff'} (Fixed: ₹{Number(st.fixedSalary || 0).toLocaleString('en-IN')})
+                      <option key={st.id || st.uid} value={st.id || st.uid}>
+                        {st.name} ({st.role || 'Staff Advisor'}) - Default: ₹{Number(st.salary || st.fixedSalary || 0).toLocaleString('en-IN')}
                       </option>
                     ))}
                   </select>
@@ -462,27 +464,29 @@ export const Expenses = () => {
 
               {categoryOption === 'Other' && (
                 <div>
-                  <label className="block text-[11px] font-black uppercase text-blue-600 mb-1">Specify Custom Category</label>
+                  <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Custom Category Name *</label>
                   <input 
                     type="text" 
                     required 
-                    placeholder="e.g. Generator Maintenance, Client Entertainment..." 
+                    placeholder="e.g. Legal Fees, Accounting Audit" 
                     value={customCategory} 
                     onChange={(e) => {
                       setCustomCategory(e.target.value);
-                      setNewExp(prev => ({ ...prev, category: e.target.value.trim() || 'Other' }));
+                      setNewExp(prev => ({ ...prev, category: e.target.value }));
                     }} 
-                    className="w-full px-3 py-2 rounded-xl border border-blue-300 text-xs outline-none bg-blue-50/30 focus:border-blue-500 font-bold" 
+                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold focus:border-blue-500" 
                   />
                 </div>
               )}
 
               <div>
-                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Expense Description *</label>
+                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">
+                  {categoryOption === 'Staff Salary (Payroll)' ? 'Staff Member Name / Payout Notes *' : 'Description / Vendor / Item *'}
+                </label>
                 <input 
                   type="text" 
                   required 
-                  placeholder={categoryOption === 'Staff Salary (Payroll)' ? "Monthly Salary Payout — John Doe" : "Office Electricity Bill for Aug 2026"}
+                  placeholder={categoryOption === 'Staff Salary (Payroll)' ? 'e.g. Salary Payout - Priya Sharma (August)' : 'e.g. Office Diesel 40L, Monthly Fiber Broadband'} 
                   value={newExp.description} 
                   onChange={(e) => setNewExp({...newExp, description: e.target.value})} 
                   className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold focus:border-blue-500" 
@@ -526,24 +530,36 @@ export const Expenses = () => {
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between border-b pb-3">
-              <h3 className="text-base font-black text-slate-900">Update Expenditure Record</h3>
+              <div className="flex items-center space-x-2">
+                <Edit3 className="h-5 w-5 text-blue-600" />
+                <h3 className="text-base font-black text-slate-900">Edit Expenditure Record</h3>
+              </div>
               <button onClick={() => setEditingExpense(null)} className="text-slate-400 hover:text-slate-600 cursor-pointer"><X className="h-5 w-5" /></button>
             </div>
 
             <form onSubmit={handleUpdateExpense} className="space-y-3.5">
               <div>
-                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Category</label>
-                <input 
-                  type="text"
-                  required
-                  value={editingExpense.category || ''}
-                  onChange={(e) => setEditingExpense({ ...editingExpense, category: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold focus:border-blue-500"
-                />
+                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Expense Category</label>
+                <select 
+                  value={editingExpense.category || 'Other'} 
+                  onChange={(e) => setEditingExpense({ ...editingExpense, category: e.target.value })} 
+                  className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold focus:border-blue-500 bg-white"
+                >
+                  <option value="Staff Salary (Payroll)">💼 Staff Salary (Payroll) Payout</option>
+                  <option value="Generator & Fuel / Gas">⚡ Generator &amp; Fuel / Gas Spending</option>
+                  <option value="Rent & Office Space">🏢 Rent & Office Space</option>
+                  <option value="Electricity & Utilities">💡 Electricity & Utilities</option>
+                  <option value="Internet & Telecom">🌐 Internet & Telecom</option>
+                  <option value="Marketing & Campaigns">📢 Marketing & Campaigns</option>
+                  <option value="Office Supplies & Maintenance">🛠️ Office Supplies & Maintenance</option>
+                  <option value="Travel & Conveyance">🚗 Travel & Conveyance</option>
+                  <option value="Miscellaneous">📦 Miscellaneous Operational</option>
+                  <option value={editingExpense.category || 'Other'}>{editingExpense.category || 'Custom Category'}</option>
+                </select>
               </div>
 
               <div>
-                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Description *</label>
+                <label className="block text-[11px] font-black uppercase text-slate-600 mb-1">Description / Staff / Vendor *</label>
                 <input 
                   type="text" 
                   required 
@@ -576,9 +592,26 @@ export const Expenses = () => {
                 />
               </div>
 
-              <button type="submit" className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer">
-                Save Changes to Database
-              </button>
+              <div className="flex items-center space-x-2 pt-2">
+                <button 
+                  type="button"
+                  onClick={() => {
+                    const expToDelete = editingExpense;
+                    setEditingExpense(null);
+                    handleDeleteExpense(expToDelete);
+                  }}
+                  className="px-4 py-2.5 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-600 hover:text-white font-bold text-xs border border-rose-200 transition cursor-pointer flex items-center space-x-1"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  <span>Delete</span>
+                </button>
+                <button 
+                  type="submit" 
+                  className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md transition cursor-pointer"
+                >
+                  Save Changes
+                </button>
+              </div>
             </form>
           </div>
         </div>
