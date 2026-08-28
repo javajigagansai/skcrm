@@ -195,7 +195,6 @@ export const Expenses = () => {
           <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center space-x-2">
             <span>Company Expenditure Tracker</span>
           </h1>
-          <p className="text-xs text-slate-500 font-medium">Live Company Expenses, Overheads &amp; Staff Payroll Management</p>
         </div>
         {user?.role !== 'VIEWER' && (
           <div className="flex items-center space-x-2.5 flex-wrap gap-2">
