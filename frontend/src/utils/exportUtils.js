@@ -339,6 +339,139 @@ export const exportCustomerRegistryPDF = (customers) => {
   printWindow.document.close();
 };
 
+// Helper to render high-resolution vector SVG Chart for Financial Cash Flow (Revenue vs Expenses vs Net Margin)
+const generateFinancialCashFlowSVG = (financialChart = []) => {
+  if (!financialChart || !Array.isArray(financialChart) || financialChart.length === 0) return '';
+
+  const chartData = financialChart.slice(0, 31);
+  const count = chartData.length;
+  if (count === 0) return '';
+
+  const dataPoints = chartData.map(d => {
+    const inc = Number(d.rawIncome !== undefined ? d.rawIncome : (d.income ? d.income * 100000 : (d.revenue ? d.revenue * 100000 : 0)));
+    const exp = Number(d.rawExpense !== undefined ? d.rawExpense : (d.expense ? d.expense * 100000 : (d.totalExpenses ? d.totalExpenses * 100000 : 0)));
+    const profit = inc - exp;
+    return {
+      label: d.label || d.month || '',
+      fullLabel: d.fullLabel || d.label || '',
+      income: inc,
+      expense: exp,
+      profit
+    };
+  });
+
+  const totalInc = dataPoints.reduce((s, d) => s + d.income, 0);
+  const totalExp = dataPoints.reduce((s, d) => s + d.expense, 0);
+  const netProfit = totalInc - totalExp;
+
+  const maxVal = Math.max(
+    ...dataPoints.map(d => Math.max(d.income, d.expense, Math.abs(d.profit))),
+    10000
+  );
+
+  const svgWidth = 840;
+  const svgHeight = 220;
+  const padLeft = 65;
+  const padRight = 30;
+  const padTop = 25;
+  const padBottom = 35;
+
+  const plotWidth = svgWidth - padLeft - padRight;
+  const plotHeight = svgHeight - padTop - padBottom;
+
+  // Y-axis grid levels (4 ticks: 0%, 33%, 66%, 100%)
+  const yTicks = [0, 0.33, 0.66, 1].map(pct => {
+    const val = Math.round(maxVal * pct);
+    const y = padTop + plotHeight - (pct * plotHeight);
+    const label = val >= 10000000 ? `₹${(val / 10000000).toFixed(1)}Cr` : (val >= 100000 ? `₹${(val / 100000).toFixed(1)}L` : (val >= 1000 ? `₹${(val / 1000).toFixed(0)}k` : `₹${val}`));
+    return { y, val, label };
+  });
+
+  const slotWidth = plotWidth / count;
+  const barWidth = Math.max(3, Math.min(20, (slotWidth - 6) / 2));
+
+  let barsHtml = '';
+  let linePoints = [];
+  let xLabelsHtml = '';
+
+  dataPoints.forEach((d, idx) => {
+    const slotCenterX = padLeft + (idx * slotWidth) + (slotWidth / 2);
+    
+    // Revenue bar (Green)
+    const incHeight = maxVal > 0 ? (d.income / maxVal) * plotHeight : 0;
+    const incY = padTop + plotHeight - incHeight;
+    const incX = slotCenterX - barWidth - 1;
+
+    // Expense bar (Red/Rose)
+    const expHeight = maxVal > 0 ? (d.expense / maxVal) * plotHeight : 0;
+    const expY = padTop + plotHeight - expHeight;
+    const expX = slotCenterX + 1;
+
+    // Profit Dot & Line (Blue)
+    const profitClamped = Math.max(0, d.profit);
+    const profitHeight = maxVal > 0 ? (profitClamped / maxVal) * plotHeight : 0;
+    const profitY = padTop + plotHeight - profitHeight;
+    linePoints.push(`${slotCenterX},${profitY}`);
+
+    if (d.income > 0) {
+      barsHtml += `<rect x="${incX}" y="${incY}" width="${barWidth}" height="${incHeight}" fill="#10B981" rx="2" ry="2" />`;
+    }
+    if (d.expense > 0) {
+      barsHtml += `<rect x="${expX}" y="${expY}" width="${barWidth}" height="${expHeight}" fill="#F43F5E" rx="2" ry="2" />`;
+    }
+
+    barsHtml += `<circle cx="${slotCenterX}" cy="${profitY}" r="3" fill="${d.profit >= 0 ? '#2563EB' : '#DC2626'}" stroke="#ffffff" stroke-width="1.5"/>`;
+
+    // Throttled X-axis labels to prevent overcrowding
+    const showLabel = count <= 14 || idx === 0 || idx === count - 1 || idx % Math.ceil(count / 12) === 0;
+    if (showLabel) {
+      xLabelsHtml += `<text x="${slotCenterX}" y="${padTop + plotHeight + 16}" text-anchor="middle" font-size="9" font-weight="600" fill="#64748b">${d.label}</text>`;
+    }
+  });
+
+  const polylineHtml = linePoints.length > 1 
+    ? `<polyline fill="none" stroke="#2563EB" stroke-width="2" stroke-dasharray="3,3" points="${linePoints.join(' ')}" opacity="0.9" />`
+    : '';
+
+  const gridHtml = yTicks.map(t => `
+    <line x1="${padLeft}" y1="${t.y}" x2="${svgWidth - padRight}" y2="${t.y}" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="2,2"/>
+    <text x="${padLeft - 8}" y="${t.y + 3}" text-anchor="end" font-size="8.5" font-weight="700" fill="#94a3b8">${t.label}</text>
+  `).join('');
+
+  return `
+    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:14px 14px 10px 14px; margin-bottom:16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding:0 4px; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
+        <span style="font-size:11px; font-weight:900; color:#1e293b; text-transform:uppercase; letter-spacing:0.5px;">
+          📈 Cash Flow &amp; Margin Graph (Revenue vs Expenses vs Net Profit)
+        </span>
+        <div style="display:flex; align-items:center; gap:14px; font-size:10px; font-weight:800;">
+          <span style="display:inline-flex; align-items:center; gap:5px; color:#059669;">
+            <span style="width:10px; height:10px; background:#10B981; border-radius:2px; display:inline-block;"></span> Revenue (₹${totalInc.toLocaleString('en-IN')})
+          </span>
+          <span style="display:inline-flex; align-items:center; gap:5px; color:#e11d48;">
+            <span style="width:10px; height:10px; background:#F43F5E; border-radius:2px; display:inline-block;"></span> Expenses (₹${totalExp.toLocaleString('en-IN')})
+          </span>
+          <span style="display:inline-flex; align-items:center; gap:5px; color:#2563eb;">
+            <span style="width:12px; height:2px; background:#2563EB; display:inline-block; vertical-align:middle;"></span> Net Margin (${netProfit >= 0 ? '+₹' : '-₹'}${Math.abs(netProfit).toLocaleString('en-IN')})
+          </span>
+        </div>
+      </div>
+      <svg viewBox="0 0 ${svgWidth} ${svgHeight}" style="width:100%; height:auto; display:block; font-family:'Segoe UI', Arial, sans-serif;">
+        <!-- Gridlines -->
+        ${gridHtml}
+        <!-- Zero baseline -->
+        <line x1="${padLeft}" y1="${padTop + plotHeight}" x2="${svgWidth - padRight}" y2="${padTop + plotHeight}" stroke="#cbd5e1" stroke-width="1.5"/>
+        <!-- Bars -->
+        ${barsHtml}
+        <!-- Trend Line -->
+        ${polylineHtml}
+        <!-- X Axis Labels -->
+        ${xLabelsHtml}
+      </svg>
+    </div>
+  `;
+};
+
 // Export Complete Dashboard Analytics to PDF (Including All Dashboard Data, KPIs, Categories, Insurers, Staff, Financials, Conversions, Renewals & Expenses)
 export const exportDashboardAnalyticsPDF = (
   dateFilter,
@@ -525,6 +658,7 @@ export const exportDashboardAnalyticsPDF = (
       <!-- SECTION 4: FINANCIAL CASH FLOW & REVENUE TIMELINE -->
       ${financialChart.length > 0 ? `
         <div class="section-title">4. Financial Cash Flow &amp; Revenue Timeline</div>
+        ${generateFinancialCashFlowSVG(financialChart)}
         <table>
           <thead>
             <tr>
