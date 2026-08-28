@@ -31,6 +31,7 @@ export const StaffManagement = () => {
   });
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [staff360SearchTerm, setStaff360SearchTerm] = useState('');
   const [selectedStaff360, setSelectedStaff360] = useState(null);
   const [active360Tab, setActive360Tab] = useState('OVERVIEW');
   const [showAddStaffModal, setShowAddStaffModal] = useState(false);
@@ -254,19 +255,38 @@ export const StaffManagement = () => {
     }
   };
 
-  const filteredStaff = staffList.filter(st => {
-    if (!st) return false;
-    const name = st.name || '';
-    const email = st.email || '';
-    const role = st.role || '';
+  const filteredStaff = useMemo(() => {
+    if (!Array.isArray(staffList)) return [];
+    const term = (searchTerm || '').trim().toLowerCase();
+    if (!term) return staffList;
 
-    const matchesSearch =
-      name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      role.toLowerCase().includes(searchTerm.toLowerCase());
+    const rawTerm = term.replace(/[^a-zA-Z0-9]/g, '');
 
-    return matchesSearch;
-  });
+    return staffList.filter(st => {
+      if (!st) return false;
+      const name = String(st.name || st.displayName || st.staffName || '').toLowerCase();
+      const email = String(st.email || '').toLowerCase();
+      const role = String(st.role || '').toLowerCase();
+      const title = String(st.title || '').toLowerCase();
+      const branch = String(st.branch || '').toLowerCase();
+      const uid = String(st.uid || st.id || '').toLowerCase();
+      const status = String(st.status || '').toLowerCase();
+      const phone = String(st.phone || st.mobile || '').toLowerCase();
+      const rawPhone = phone.replace(/[^a-zA-Z0-9]/g, '');
+
+      return (
+        name.includes(term) ||
+        email.includes(term) ||
+        role.includes(term) ||
+        title.includes(term) ||
+        branch.includes(term) ||
+        uid.includes(term) ||
+        status.includes(term) ||
+        phone.includes(term) ||
+        (rawTerm.length > 2 && rawPhone.includes(rawTerm))
+      );
+    });
+  }, [staffList, searchTerm]);
 
   const getStaffAssignedClients = (staffObj) => {
     if (!staffObj) return [];
@@ -410,131 +430,174 @@ export const StaffManagement = () => {
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <input
             type="text"
-            placeholder="Search staff by Name, Email, or Role..."
+            placeholder="Search staff by Name, Email, Phone, Role, Branch..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold focus:ring-2 focus:ring-blue-600 outline-none"
+            className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none bg-white"
           />
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => setSearchTerm('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+              title="Clear search"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center space-x-3 text-xs font-bold text-slate-500">
+          <span>Showing <strong className="text-blue-700 font-black">{filteredStaff.length}</strong> of {staffList.length} staff members</span>
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold transition flex items-center space-x-1 cursor-pointer"
+            >
+              <span>Reset</span>
+            </button>
+          )}
         </div>
       </div>
 
       {/* Staff Grid Cards View */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {filteredStaff.map(st => {
-          const metrics = getStaffLiveMetrics(st);
-          const target = st.monthlyTarget || 400000;
-          const achieved = metrics.achievedRevenue;
-          const progressPct = Math.min(100, Math.round((achieved / target) * 100));
+      {filteredStaff.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {filteredStaff.map(st => {
+            const metrics = getStaffLiveMetrics(st);
+            const target = st.monthlyTarget || 400000;
+            const achieved = metrics.achievedRevenue;
+            const progressPct = Math.min(100, Math.round((achieved / target) * 100));
 
-          return (
-            <div
-              key={st.uid}
-              className="bg-white rounded-3xl border border-slate-200 shadow-card hover:shadow-xl hover:border-blue-300 transition space-y-4 p-5 relative group"
-            >
-              {/* Header Badge */}
-              <div className="flex items-center justify-between border-b pb-3">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2.5 rounded-2xl bg-blue-50 text-blue-600 font-black">
-                    <UserCheck className="h-6 w-6" />
+            return (
+              <div
+                key={st.uid}
+                className="bg-white rounded-3xl border border-slate-200 shadow-card hover:shadow-xl hover:border-blue-300 transition space-y-4 p-5 relative group"
+              >
+                {/* Header Badge */}
+                <div className="flex items-center justify-between border-b pb-3">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2.5 rounded-2xl bg-blue-50 text-blue-600 font-black">
+                      <UserCheck className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black text-slate-900 group-hover:text-blue-600 transition">{st.name}</h3>
+                      <p className="text-[11px] text-slate-500 font-semibold">{st.title || 'Staff Advisor'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-sm font-black text-slate-900 group-hover:text-blue-600 transition">{st.name}</h3>
-                    <p className="text-[11px] text-slate-500 font-semibold">{st.title || 'Staff Advisor'}</p>
+                  <span className={`badge text-[10px] font-black uppercase ${st.status === 'ACTIVE' ? 'badge-green' : 'badge-red'}`}>
+                    {st.status || 'ACTIVE'}
+                  </span>
+                </div>
+
+                {/* Contact Details */}
+                <div className="text-xs text-slate-600 space-y-1.5 font-semibold">
+                  <p className="flex items-center space-x-2 truncate">
+                    <Mail className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                    <span className="font-mono text-slate-800">{st.email}</span>
+                  </p>
+                  <p className="flex items-center space-x-2">
+                    <Phone className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                    <span>{st.phone || '9876543210'}</span>
+                  </p>
+                </div>
+
+                {/* Business & Target Meter */}
+                <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 space-y-2 text-xs">
+                  <div className="flex items-center justify-between text-[11px] font-extrabold">
+                    <span className="text-slate-600 uppercase">Fixed Monthly Salary:</span>
+                    <span className="text-rose-600 font-black">₹{Number(st.fixedSalary !== undefined ? st.fixedSalary : 270000).toLocaleString()}/mo</span>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] font-extrabold pt-0.5">
+                    <span className="text-slate-600 uppercase">Monthly Target:</span>
+                    <span className="text-blue-700 font-black">₹{(target / 100000).toFixed(1)} Lakhs</span>
+                  </div>
+                  <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${progressPct >= 90 ? 'bg-emerald-500' : progressPct >= 60 ? 'bg-blue-600' : 'bg-amber-500'}`}
+                      style={{ width: `${progressPct}%` }}
+                    ></div>
+                  </div>
+                  <div className="flex items-center justify-between text-[10px] font-extrabold pt-0.5">
+                    <span className="text-emerald-700">Achieved: ₹{(achieved / 100000).toFixed(2)} L</span>
+                    <span className="text-purple-700">{progressPct}% Completed</span>
                   </div>
                 </div>
-                <span className={`badge text-[10px] font-black uppercase ${st.status === 'ACTIVE' ? 'badge-green' : 'badge-red'}`}>
-                  {st.status || 'ACTIVE'}
-                </span>
+
+                {/* Staff Summary Stats Row */}
+                <div className="grid grid-cols-3 gap-2 text-center text-[10px] pt-1">
+                  <div className="bg-blue-50/60 p-2 rounded-xl border border-blue-100">
+                    <span className="block text-slate-500 font-extrabold">Clients</span>
+                    <span className="font-black text-blue-900 text-xs">{metrics.clientsCount}</span>
+                  </div>
+                  <div className="bg-purple-50/60 p-2 rounded-xl border border-purple-100">
+                    <span className="block text-slate-500 font-extrabold">Policies</span>
+                    <span className="font-black text-purple-900 text-xs">{metrics.policiesCount}</span>
+                  </div>
+                  <div className="bg-emerald-50/60 p-2 rounded-xl border border-emerald-100">
+                    <span className="block text-slate-500 font-extrabold">Commission</span>
+                    <span className="font-black text-emerald-900 text-xs">₹{metrics.commissionEarned.toLocaleString()}</span>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="pt-2 border-t border-slate-200 flex items-center justify-between gap-1">
+                  <button
+                    onClick={() => handleOpenEditStaff(st)}
+                    className="px-2.5 py-1.5 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 font-extrabold text-[10px] transition cursor-pointer flex items-center space-x-1"
+                    title="Edit staff details and fixed salary"
+                  >
+                    <Edit className="h-3 w-3" />
+                    <span>Edit Staff</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setTargetStaff(st);
+                      setNewTargetAmount(st.monthlyTarget || 400000);
+                      setShowEditTargetModal(true);
+                    }}
+                    className="px-2.5 py-1.5 rounded-xl bg-amber-50 text-amber-800 hover:bg-amber-100 font-extrabold text-[10px] transition cursor-pointer flex items-center space-x-1"
+                  >
+                    <Target className="h-3 w-3" />
+                    <span>Target</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setSelectedStaff360(st);
+                      setActive360Tab('OVERVIEW');
+                      setStaff360SearchTerm('');
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-[11px] transition cursor-pointer shadow-xs flex items-center space-x-1"
+                  >
+                    <span>360°</span>
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               </div>
-
-              {/* Contact Details */}
-              <div className="text-xs text-slate-600 space-y-1.5 font-semibold">
-                <p className="flex items-center space-x-2 truncate">
-                  <Mail className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                  <span className="font-mono text-slate-800">{st.email}</span>
-                </p>
-                <p className="flex items-center space-x-2">
-                  <Phone className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                  <span>{st.phone || '9876543210'}</span>
-                </p>
-              </div>
-
-              {/* Business & Target Meter */}
-              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 space-y-2 text-xs">
-                <div className="flex items-center justify-between text-[11px] font-extrabold">
-                  <span className="text-slate-600 uppercase">Fixed Monthly Salary:</span>
-                  <span className="text-rose-600 font-black">₹{Number(st.fixedSalary !== undefined ? st.fixedSalary : 270000).toLocaleString()}/mo</span>
-                </div>
-                <div className="flex items-center justify-between text-[11px] font-extrabold pt-0.5">
-                  <span className="text-slate-600 uppercase">Monthly Target:</span>
-                  <span className="text-blue-700 font-black">₹{(target / 100000).toFixed(1)} Lakhs</span>
-                </div>
-                <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 ${progressPct >= 90 ? 'bg-emerald-500' : progressPct >= 60 ? 'bg-blue-600' : 'bg-amber-500'}`}
-                    style={{ width: `${progressPct}%` }}
-                  ></div>
-                </div>
-                <div className="flex items-center justify-between text-[10px] font-extrabold pt-0.5">
-                  <span className="text-emerald-700">Achieved: ₹{(achieved / 100000).toFixed(2)} L</span>
-                  <span className="text-purple-700">{progressPct}% Completed</span>
-                </div>
-              </div>
-
-              {/* Staff Summary Stats Row */}
-              <div className="grid grid-cols-3 gap-2 text-center text-[10px] pt-1">
-                <div className="bg-blue-50/60 p-2 rounded-xl border border-blue-100">
-                  <span className="block text-slate-500 font-extrabold">Clients</span>
-                  <span className="font-black text-blue-900 text-xs">{metrics.clientsCount}</span>
-                </div>
-                <div className="bg-purple-50/60 p-2 rounded-xl border border-purple-100">
-                  <span className="block text-slate-500 font-extrabold">Policies</span>
-                  <span className="font-black text-purple-900 text-xs">{metrics.policiesCount}</span>
-                </div>
-                <div className="bg-emerald-50/60 p-2 rounded-xl border border-emerald-100">
-                  <span className="block text-slate-500 font-extrabold">Commission</span>
-                  <span className="font-black text-emerald-900 text-xs">₹{metrics.commissionEarned.toLocaleString()}</span>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="pt-2 border-t border-slate-200 flex items-center justify-between gap-1">
-                <button
-                  onClick={() => handleOpenEditStaff(st)}
-                  className="px-2.5 py-1.5 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 font-extrabold text-[10px] transition cursor-pointer flex items-center space-x-1"
-                  title="Edit staff details and fixed salary"
-                >
-                  <Edit className="h-3 w-3" />
-                  <span>Edit Staff</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setTargetStaff(st);
-                    setNewTargetAmount(st.monthlyTarget || 400000);
-                    setShowEditTargetModal(true);
-                  }}
-                  className="px-2.5 py-1.5 rounded-xl bg-amber-50 text-amber-800 hover:bg-amber-100 font-extrabold text-[10px] transition cursor-pointer flex items-center space-x-1"
-                >
-                  <Target className="h-3 w-3" />
-                  <span>Target</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setSelectedStaff360(st);
-                    setActive360Tab('OVERVIEW');
-                  }}
-                  className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-[11px] transition cursor-pointer shadow-xs flex items-center space-x-1"
-                >
-                  <span>360°</span>
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-card p-12 text-center space-y-3">
+          <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
+            <Search className="h-6 w-6" />
+          </div>
+          <h3 className="text-base font-black text-slate-900">No Staff Members Found</h3>
+          <p className="text-xs text-slate-500 max-w-sm mx-auto">
+            No active staff records match your search <strong className="text-slate-800 font-bold">"{searchTerm}"</strong>.
+          </p>
+          <button
+            type="button"
+            onClick={() => setSearchTerm('')}
+            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow transition cursor-pointer inline-flex items-center space-x-1.5 mt-2"
+          >
+            <X className="h-4 w-4" />
+            <span>Clear Search Filter</span>
+          </button>
+        </div>
+      )}
 
       {/* ================= MODAL: INDIVIDUAL STAFF 360° DOSSIER ================= */}
       {selectedStaff360 && (
@@ -693,76 +756,143 @@ export const StaffManagement = () => {
             )}
 
             {/* TAB CONTENT 2: ASSIGNED CLIENTS LIST */}
-            {active360Tab === 'CLIENTS' && (
-              <div className="space-y-3">
-                <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider">Clients Assigned to {selectedStaff360.name}</h4>
-                <div className="overflow-x-auto rounded-2xl border border-slate-200">
-                  <table className="w-full text-left text-xs font-semibold">
-                    <thead className="bg-slate-900 text-white font-extrabold text-[10px] uppercase">
-                      <tr>
-                        <th className="p-3">Customer Name</th>
-                        <th className="p-3">Phone Number</th>
-                        <th className="p-3">City</th>
-                        <th className="p-3">Marital Status</th>
-                        <th className="p-3">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {getStaffAssignedClients(selectedStaff360).map(c => (
-                        <tr key={c.id} className="hover:bg-slate-50 transition">
-                          <td className="p-3 font-extrabold text-slate-900">{c.name}</td>
-                          <td className="p-3 font-mono">{c.phone || c.mobileNumber || '9876543210'}</td>
-                          <td className="p-3">{c.city || 'Chennai'}</td>
-                          <td className="p-3">{c.maritalStatus || 'Married'}</td>
-                          <td className="p-3"><span className="badge badge-green text-[10px]">Active</span></td>
-                        </tr>
-                      ))}
-                      {getStaffAssignedClients(selectedStaff360).length === 0 && (
-                        <tr>
-                          <td colSpan="5" className="p-6 text-center text-slate-400">No clients currently assigned to this staff member.</td>
-                        </tr>
+            {active360Tab === 'CLIENTS' && (() => {
+              const allClients = getStaffAssignedClients(selectedStaff360);
+              const term = (staff360SearchTerm || '').trim().toLowerCase();
+              const filteredClients = allClients.filter(c => {
+                if (!term) return true;
+                return (
+                  (c.name || '').toLowerCase().includes(term) ||
+                  (c.phone || c.mobileNumber || '').includes(term) ||
+                  (c.city || '').toLowerCase().includes(term)
+                );
+              });
+
+              return (
+                <div className="space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider">Clients Assigned to {selectedStaff360.name} ({allClients.length})</h4>
+                    <div className="relative max-w-xs w-full">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="Filter clients..."
+                        value={staff360SearchTerm}
+                        onChange={(e) => setStaff360SearchTerm(e.target.value)}
+                        className="w-full pl-9 pr-7 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold focus:ring-2 focus:ring-blue-600 outline-none"
+                      />
+                      {staff360SearchTerm && (
+                        <button onClick={() => setStaff360SearchTerm('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                          <X className="h-3.5 w-3.5" />
+                        </button>
                       )}
-                    </tbody>
-                  </table>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                    <table className="w-full text-left text-xs font-semibold">
+                      <thead className="bg-slate-900 text-white font-extrabold text-[10px] uppercase">
+                        <tr>
+                          <th className="p-3">Customer Name</th>
+                          <th className="p-3">Phone Number</th>
+                          <th className="p-3">City</th>
+                          <th className="p-3">Marital Status</th>
+                          <th className="p-3">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {filteredClients.map(c => (
+                          <tr key={c.id} className="hover:bg-slate-50 transition">
+                            <td className="p-3 font-extrabold text-slate-900">{c.name}</td>
+                            <td className="p-3 font-mono">{c.phone || c.mobileNumber || '9876543210'}</td>
+                            <td className="p-3">{c.city || 'Chennai'}</td>
+                            <td className="p-3">{c.maritalStatus || 'Married'}</td>
+                            <td className="p-3"><span className="badge badge-green text-[10px]">Active</span></td>
+                          </tr>
+                        ))}
+                        {filteredClients.length === 0 && (
+                          <tr>
+                            <td colSpan="5" className="p-6 text-center text-slate-400">
+                              {staff360SearchTerm ? `No assigned clients match "${staff360SearchTerm}"` : 'No clients currently assigned to this staff member.'}
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* TAB CONTENT 3: ISSUED POLICIES */}
-            {active360Tab === 'POLICIES' && (
-              <div className="space-y-3">
-                <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider">Insurance &amp; Investment Contracts Issued by {selectedStaff360.name}</h4>
-                <div className="overflow-x-auto rounded-2xl border border-slate-200">
-                  <table className="w-full text-left text-xs font-semibold">
-                    <thead className="bg-slate-900 text-white font-extrabold text-[10px] uppercase">
-                      <tr>
-                        <th className="p-3">Policy ID</th>
-                        <th className="p-3">Client Name</th>
-                        <th className="p-3">Insurer</th>
-                        <th className="p-3">Premium (₹)</th>
-                        <th className="p-3">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {getStaffIssuedPolicies(selectedStaff360).map(p => (
-                        <tr key={p.id} className="hover:bg-slate-50 transition">
-                          <td className="p-3 font-mono font-bold text-blue-700">{p.id}</td>
-                          <td className="p-3 font-black text-slate-900">{p.customerName}</td>
-                          <td className="p-3">{p.insuranceCompany}</td>
-                          <td className="p-3 font-mono text-emerald-700 font-bold">₹{p.grossPremium?.toLocaleString()}</td>
-                          <td className="p-3"><span className="badge badge-green text-[10px]">{p.status}</span></td>
-                        </tr>
-                      ))}
-                      {getStaffIssuedPolicies(selectedStaff360).length === 0 && (
-                        <tr>
-                          <td colSpan="5" className="p-6 text-center text-slate-400">No policies issued by this staff member yet.</td>
-                        </tr>
+            {active360Tab === 'POLICIES' && (() => {
+              const allPolicies = getStaffIssuedPolicies(selectedStaff360);
+              const term = (staff360SearchTerm || '').trim().toLowerCase();
+              const filteredPolicies = allPolicies.filter(p => {
+                if (!term) return true;
+                return (
+                  (p.id || '').toLowerCase().includes(term) ||
+                  (p.customerName || '').toLowerCase().includes(term) ||
+                  (p.insuranceCompany || '').toLowerCase().includes(term) ||
+                  (p.status || '').toLowerCase().includes(term)
+                );
+              });
+
+              return (
+                <div className="space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider">Insurance &amp; Investment Contracts Issued by {selectedStaff360.name} ({allPolicies.length})</h4>
+                    <div className="relative max-w-xs w-full">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="Filter policies..."
+                        value={staff360SearchTerm}
+                        onChange={(e) => setStaff360SearchTerm(e.target.value)}
+                        className="w-full pl-9 pr-7 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold focus:ring-2 focus:ring-blue-600 outline-none"
+                      />
+                      {staff360SearchTerm && (
+                        <button onClick={() => setStaff360SearchTerm('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                          <X className="h-3.5 w-3.5" />
+                        </button>
                       )}
-                    </tbody>
-                  </table>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                    <table className="w-full text-left text-xs font-semibold">
+                      <thead className="bg-slate-900 text-white font-extrabold text-[10px] uppercase">
+                        <tr>
+                          <th className="p-3">Policy ID</th>
+                          <th className="p-3">Client Name</th>
+                          <th className="p-3">Insurer</th>
+                          <th className="p-3">Premium (₹)</th>
+                          <th className="p-3">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {filteredPolicies.map(p => (
+                          <tr key={p.id} className="hover:bg-slate-50 transition">
+                            <td className="p-3 font-mono font-bold text-blue-700">{p.id}</td>
+                            <td className="p-3 font-black text-slate-900">{p.customerName}</td>
+                            <td className="p-3">{p.insuranceCompany}</td>
+                            <td className="p-3 font-mono text-emerald-700 font-bold">₹{p.grossPremium?.toLocaleString()}</td>
+                            <td className="p-3"><span className="badge badge-green text-[10px]">{p.status}</span></td>
+                          </tr>
+                        ))}
+                        {filteredPolicies.length === 0 && (
+                          <tr>
+                            <td colSpan="5" className="p-6 text-center text-slate-400">
+                              {staff360SearchTerm ? `No policies match "${staff360SearchTerm}"` : 'No policies issued by this staff member yet.'}
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
           </div>
         </div>
