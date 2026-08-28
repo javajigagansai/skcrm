@@ -28,7 +28,7 @@ export const Followups = () => {
     clientName: '',
     phone: '',
     category: 'High Networth Client',
-    insuranceTypeInterest: 'Term & Savings Life Insurance',
+    insuranceTypeInterest: 'Term Insurance',
     insuranceCompany: '',
     stageName: '',
     type: 'Phone Call',
@@ -218,7 +218,7 @@ export const Followups = () => {
       clientName: '',
       phone: '',
       category: 'High Networth Client',
-      insuranceTypeInterest: 'Term & Savings Life Insurance',
+      insuranceTypeInterest: 'Term Insurance',
       insuranceCompany: '',
       stageName: '',
       type: 'Phone Call',
@@ -1187,13 +1187,15 @@ export const Followups = () => {
                   <select
                     value={newClientForm.insuranceTypeInterest}
                     onChange={(e) => setNewClientForm({ ...newClientForm, insuranceTypeInterest: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold"
+                    className="w-full px-3 py-2 rounded-xl border text-xs outline-none font-bold bg-white"
                   >
-                    <option value="Term & Savings Life Insurance">Term &amp; Savings Life Insurance</option>
-                    <option value="Family Health Guard Policy">Family Health Guard Policy</option>
-                    <option value="Comprehensive Motor Insurance">Comprehensive Motor Insurance</option>
+                    <option value="Term Insurance">Term Insurance</option>
+                    <option value="Life Insurance">Life Insurance</option>
+                    <option value="Health Insurance">Health Insurance (Family / Individual)</option>
+                    <option value="Motor Insurance">Motor Insurance (Car / Two Wheeler)</option>
                     <option value="ULIP & Retirement Plan">ULIP &amp; Retirement Plan</option>
                     <option value="Mutual Funds & SIP">Mutual Funds &amp; SIP</option>
+                    <option value="General Insurance">General Insurance</option>
                   </select>
                 </div>
               </div>
