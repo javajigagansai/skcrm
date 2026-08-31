@@ -2,29 +2,33 @@ import React, { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { MainLayout } from '../components/layout/MainLayout';
-import { Login } from '../pages/Login';
+import { GeofenceGuard } from '../components/security/GeofenceGuard';
 
-// Resilient Lazy Import helper to handle production chunk deployment hash updates
-const lazyRetry = (componentImport) => {
-  return lazy(async () => {
-    const pageAlreadyRefreshed = JSON.parse(
-      window.sessionStorage.getItem('page_refreshed_for_chunk_error') || 'false'
+// Fallback helper to automatically retry lazy load if a network glitch occurs during chunk loading
+const lazyRetry = (componentImport) =>
+  lazy(async () => {
+    const pageHasAlreadyBeenForceRefreshed = JSON.parse(
+      window.sessionStorage.getItem('page-has-been-force-refreshed') || 'false'
     );
+
     try {
       const component = await componentImport();
-      window.sessionStorage.setItem('page_refreshed_for_chunk_error', 'false');
+      window.sessionStorage.setItem('page-has-been-force-refreshed', 'false');
       return component;
     } catch (error) {
-      if (!pageAlreadyRefreshed) {
-        window.sessionStorage.setItem('page_refreshed_for_chunk_error', 'true');
+      if (!pageHasAlreadyBeenForceRefreshed) {
+        // Assume network chunk failure, refresh once to get latest chunks
+        window.sessionStorage.setItem('page-has-been-force-refreshed', 'true');
         window.location.reload();
+        return;
       }
+      // If already reloaded and still fails, throw error for ErrorBoundary
       throw error;
     }
   });
-};
 
-// Dynamic Lazy Imports with Deployment Auto-Recovery
+// Lazy-loaded pages with smart retry wrapper
+const Login = lazyRetry(() => import('../pages/Login').then(m => ({ default: m.Login })));
 const Dashboard = lazyRetry(() => import('../pages/Dashboard').then(m => ({ default: m.Dashboard })));
 const Customers = lazyRetry(() => import('../pages/Customers').then(m => ({ default: m.Customers })));
 const Policies = lazyRetry(() => import('../pages/Policies').then(m => ({ default: m.Policies })));
@@ -43,8 +47,6 @@ const SpecialDays = lazyRetry(() => import('../pages/SpecialDays').then(m => ({ 
 const Profile = lazyRetry(() => import('../pages/Profile').then(m => ({ default: m.Profile })));
 const Settings = lazyRetry(() => import('../pages/Settings').then(m => ({ default: m.Settings })));
 const Register = lazyRetry(() => import('../pages/Register').then(m => ({ default: m.Register })));
-
-import { GeofenceGuard } from '../components/security/GeofenceGuard';
 
 const PageLoader = () => (
   <div className="min-h-[400px] flex items-center justify-center p-8">
@@ -126,4 +128,3 @@ export const AppRoutes = () => {
     </Routes>
   );
 };
-

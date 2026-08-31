@@ -4,11 +4,18 @@ import { useAuth } from '../../context/AuthContext';
 import { GeofenceLockScreen } from './GeofenceLockScreen';
 
 export const GeofenceGuard = ({ children }) => {
-  const { geofenceConfig, isAccessAllowed } = useGeofence();
+  const { isAccessAllowed, gpsStatus } = useGeofence();
   const { user } = useAuth();
 
-  // If geofence is disabled, or location is verified inside the perimeter, or session is bypassed
-  if (geofenceConfig?.enabled === false || isAccessAllowed) {
+  const isAdmin = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN';
+
+  // Admins have unrestricted remote access from anywhere
+  if (isAdmin) {
+    return <>{children}</>;
+  }
+
+  // Staff, Managers, Employees: Must be verified inside office perimeter or have single-use OTP
+  if (isAccessAllowed) {
     return <>{children}</>;
   }
 

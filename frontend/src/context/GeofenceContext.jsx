@@ -1,18 +1,27 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { doc, setDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../config/firebaseClient';
 import { useAuth } from './AuthContext';
 
+// Helper to generate secure 6-digit rotating OTP
+export const generateNewOTP = () => {
+  return String(Math.floor(100000 + Math.random() * 900000));
+};
+
 // Earth's radius in meters for Haversine distance calculation
 export const calculateDistanceMeters = (lat1, lon1, lat2, lon2) => {
-  if (lat1 === undefined || lon1 === undefined || lat2 === undefined || lon2 === undefined) return Infinity;
+  const nLat1 = Number(lat1);
+  const nLon1 = Number(lon1);
+  const nLat2 = Number(lat2);
+  const nLon2 = Number(lon2);
+  if (isNaN(nLat1) || isNaN(nLon1) || isNaN(nLat2) || isNaN(nLon2)) return Infinity;
   const R = 6371e3; // meters
   const toRad = (deg) => (deg * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
+  const dLat = toRad(nLat2 - nLat1);
+  const dLon = toRad(nLon2 - nLon1);
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    Math.cos(toRad(nLat1)) * Math.cos(toRad(nLat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return parseFloat((R * c).toFixed(2));
 };
@@ -30,26 +39,28 @@ export const formatDistanceText = (meters) => {
 };
 
 const DEFAULT_GEOFENCE_CONFIG = {
-  enabled: true, // STRICTLY ENFORCED
+  enabled: true,
   officeName: 'SK Smart Investments Head Office',
-  latitude: 12.8342, // Default Office Lat (Kanchipuram HQ)
-  longitude: 79.7036, // Default Office Lon
-  radiusMeters: 1.52, // 5 Feet (~1.52 meters) ultra-strict desk perimeter
+  latitude: 12.8342, // Default Office HQ Latitude
+  longitude: 79.7036, // Default Office HQ Longitude
+  radiusMeters: 50, // 50 meters perimeter
   allowAdminBypass: true,
-  customBypassCode: 'SK@GEO2026'
+  currentOtp: '849201',
+  customBypassCode: '849201'
 };
 
 const GeofenceContext = createContext(null);
 
 export const GeofenceProvider = ({ children }) => {
   const { user } = useAuth();
+  const isAdmin = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN';
 
   const [geofenceConfig, setGeofenceConfig] = useState(() => {
     try {
       const saved = localStorage.getItem('crm_v2_geofence_config');
       if (saved) {
         const parsed = JSON.parse(saved);
-        return { ...DEFAULT_GEOFENCE_CONFIG, ...parsed };
+        return { ...DEFAULT_GEOFENCE_CONFIG, ...parsed, enabled: true };
       }
     } catch (e) {}
     return DEFAULT_GEOFENCE_CONFIG;
@@ -59,48 +70,67 @@ export const GeofenceProvider = ({ children }) => {
   const [distanceFromOffice, setDistanceFromOffice] = useState(null);
   const [gpsStatus, setGpsStatus] = useState('CHECKING'); // 'CHECKING' | 'GRANTED' | 'DENIED' | 'OUTSIDE_FENCE' | 'ERROR' | 'BYPASSED'
   const [gpsError, setGpsError] = useState('');
-  const [isBypassed, setIsBypassed] = useState(() => {
-    return sessionStorage.getItem('crm_geofence_bypassed') === 'true';
-  });
+  const [isBypassed, setIsBypassed] = useState(false);
 
-  // Listen to live updates from Firestore settings/geofence_security
+  const configRef = useRef(geofenceConfig);
+  configRef.current = geofenceConfig;
+
+  const isBypassedRef = useRef(isBypassed);
+  isBypassedRef.current = isBypassed;
+
+  const isAdminRef = useRef(isAdmin);
+  isAdminRef.current = isAdmin;
+
+  // Sync real-time settings from Firestore
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'settings', 'geofence_security'), (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
-        const merged = { ...DEFAULT_GEOFENCE_CONFIG, ...data };
+        const merged = { 
+          ...DEFAULT_GEOFENCE_CONFIG, 
+          ...data,
+          enabled: true,
+          currentOtp: data.currentOtp || data.customBypassCode || '849201',
+          customBypassCode: data.currentOtp || data.customBypassCode || '849201'
+        };
         setGeofenceConfig(merged);
         try {
           localStorage.setItem('crm_v2_geofence_config', JSON.stringify(merged));
         } catch (e) {}
+      } else {
+        const initOtp = generateNewOTP();
+        const initConfig = { ...DEFAULT_GEOFENCE_CONFIG, enabled: true, currentOtp: initOtp, customBypassCode: initOtp };
+        setDoc(doc(db, 'settings', 'geofence_security'), initConfig, { merge: true }).catch(() => {});
       }
     }, (err) => {
-      console.warn("Geofence config sync warning:", err.message);
+      console.warn("Geofence config sync:", err.message);
     });
 
     return () => unsub();
   }, []);
 
-  // Verification function with High Accuracy GPS
-  const verifyLocation = useCallback((force = false) => {
-    if (geofenceConfig.enabled === false && !force) {
+  // Location check handler
+  const verifyLocation = useCallback((isInitial = false) => {
+    if (isAdminRef.current) {
       setGpsStatus('GRANTED');
       return;
     }
 
-    if (isBypassed) {
+    if (isBypassedRef.current) {
       setGpsStatus('BYPASSED');
       return;
     }
 
     if (!navigator.geolocation) {
       setGpsStatus('ERROR');
-      setGpsError('Geolocation is not supported by your browser or device.');
+      setGpsError('Geolocation is not supported by your browser or device hardware.');
       return;
     }
 
-    setGpsStatus('CHECKING');
-    setGpsError('');
+    if (isInitial) {
+      setGpsStatus('CHECKING');
+      setGpsError('');
+    }
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -116,21 +146,19 @@ export const GeofenceProvider = ({ children }) => {
         };
         setUserLocation(locObj);
 
-        if (geofenceConfig.enabled) {
-          const targetLat = Number(geofenceConfig.latitude);
-          const targetLon = Number(geofenceConfig.longitude);
-          const allowedRadius = Number(geofenceConfig.radiusMeters) || 1.52;
+        const currentConf = configRef.current;
+        const targetLat = Number(currentConf.latitude);
+        const targetLon = Number(currentConf.longitude);
+        const allowedRadius = Number(currentConf.radiusMeters) || 50;
 
-          const distance = calculateDistanceMeters(userLat, userLon, targetLat, targetLon);
-          setDistanceFromOffice(distance);
+        const distance = calculateDistanceMeters(userLat, userLon, targetLat, targetLon);
+        setDistanceFromOffice(distance);
 
-          if (distance <= allowedRadius) {
-            setGpsStatus('GRANTED');
-          } else {
-            setGpsStatus('OUTSIDE_FENCE');
-          }
-        } else {
+        // Staff & Managers: Strict boundary enforcement
+        if (distance <= allowedRadius) {
           setGpsStatus('GRANTED');
+        } else {
+          setGpsStatus('OUTSIDE_FENCE');
         }
       },
       (error) => {
@@ -143,35 +171,35 @@ export const GeofenceProvider = ({ children }) => {
           setGpsStatus('ERROR');
         } else if (error.code === error.TIMEOUT) {
           msg = 'Location request timed out. Please click retry to verify again.';
-          setGpsStatus('ERROR');
+          if (isInitial) setGpsStatus('ERROR');
         } else {
-          setGpsStatus('ERROR');
+          if (isInitial) setGpsStatus('ERROR');
         }
         setGpsError(msg);
       },
       {
         enableHighAccuracy: true,
-        timeout: 15000,
+        timeout: 5000,
         maximumAge: 0
       }
     );
-  }, [geofenceConfig, isBypassed]);
+  }, []);
 
-  // Continuous live GPS tracking & Auto-verification
+  // Continuous live tracking for Staff & Managers (every 2.5 seconds)
   useEffect(() => {
-    if (geofenceConfig.enabled === false || isBypassed) {
-      setGpsStatus('GRANTED');
+    if (isAdmin || isBypassed) {
+      setGpsStatus(isAdmin ? 'GRANTED' : 'BYPASSED');
       return;
     }
 
-    // Initial check
-    verifyLocation();
+    verifyLocation(true);
 
-    // Continuous watchPosition for live movement tracking
     let watchId = null;
     if (navigator.geolocation) {
       watchId = navigator.geolocation.watchPosition(
         (position) => {
+          if (isAdminRef.current || isBypassedRef.current) return;
+
           const userLat = position.coords.latitude;
           const userLon = position.coords.longitude;
           const accuracy = position.coords.accuracy;
@@ -184,9 +212,10 @@ export const GeofenceProvider = ({ children }) => {
           };
           setUserLocation(locObj);
 
-          const targetLat = Number(geofenceConfig.latitude);
-          const targetLon = Number(geofenceConfig.longitude);
-          const allowedRadius = Number(geofenceConfig.radiusMeters) || 1.52;
+          const currentConf = configRef.current;
+          const targetLat = Number(currentConf.latitude);
+          const targetLon = Number(currentConf.longitude);
+          const allowedRadius = Number(currentConf.radiusMeters) || 50;
 
           const distance = calculateDistanceMeters(userLat, userLon, targetLat, targetLon);
           setDistanceFromOffice(distance);
@@ -203,14 +232,15 @@ export const GeofenceProvider = ({ children }) => {
             setGpsError('Location permission denied. You must enable GPS to access the CRM.');
           }
         },
-        { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+        { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
       );
     }
 
-    // Periodic check every 15 seconds
     const interval = setInterval(() => {
-      verifyLocation();
-    }, 15000);
+      if (!isAdminRef.current && !isBypassedRef.current) {
+        verifyLocation(false);
+      }
+    }, 2500);
 
     return () => {
       if (watchId !== null && navigator.geolocation) {
@@ -218,11 +248,11 @@ export const GeofenceProvider = ({ children }) => {
       }
       clearInterval(interval);
     };
-  }, [geofenceConfig.enabled, geofenceConfig.latitude, geofenceConfig.longitude, geofenceConfig.radiusMeters, isBypassed, verifyLocation]);
+  }, [isAdmin, isBypassed, verifyLocation]);
 
   // Update config in Firestore & local state
   const updateGeofenceConfig = async (newConfig) => {
-    const updated = { ...geofenceConfig, ...newConfig };
+    const updated = { ...geofenceConfig, ...newConfig, enabled: true };
     setGeofenceConfig(updated);
     try {
       localStorage.setItem('crm_v2_geofence_config', JSON.stringify(updated));
@@ -233,27 +263,61 @@ export const GeofenceProvider = ({ children }) => {
     return updated;
   };
 
-  // Bypass passcode handler (Admin / Master override)
-  const bypassGeofence = (passcode) => {
-    const code = (passcode || '').trim();
-    const validCode = (geofenceConfig.customBypassCode || 'SK@GEO2026').trim();
-
-    if (code === validCode || code === 'SUPERADMIN@2026') {
-      setIsBypassed(true);
-      setGpsStatus('BYPASSED');
-      sessionStorage.setItem('crm_geofence_bypassed', 'true');
-      return { success: true };
-    }
-    return { success: false, message: 'Invalid Emergency Passcode. Access denied.' };
+  // Roll new OTP
+  const rotateOTP = async () => {
+    const nextOtp = generateNewOTP();
+    await updateGeofenceConfig({
+      currentOtp: nextOtp,
+      customBypassCode: nextOtp,
+      lastRotatedAt: new Date().toISOString()
+    });
+    return nextOtp;
   };
 
-  // Strict access calculation
-  const isAccessAllowed =
-    geofenceConfig?.enabled === false ||
-    isBypassed ||
-    (gpsStatus === 'GRANTED' &&
+  // Single-use OTP authorization
+  const bypassGeofence = async (passcode) => {
+    const code = (passcode || '').trim();
+    const activeOtp = String(geofenceConfig.currentOtp || geofenceConfig.customBypassCode || '').trim();
+    const superAdminMaster = 'SUPERADMIN@2026';
+
+    const isValid = (code && (code === activeOtp || code === superAdminMaster));
+
+    if (isValid) {
+      setIsBypassed(true);
+      setGpsStatus('BYPASSED');
+
+      // Burn used OTP and generate fresh one in Firestore
+      try {
+        const nextOtp = generateNewOTP();
+        await updateGeofenceConfig({
+          currentOtp: nextOtp,
+          customBypassCode: nextOtp,
+          lastOtpUsedAt: new Date().toISOString(),
+          lastBypassedByUser: user?.name || user?.email || 'Staff User'
+        });
+      } catch (err) {
+        console.warn('Error rotating OTP:', err);
+      }
+
+      return { success: true, message: 'Access authorized! Single-use OTP has been consumed and rotated.' };
+    }
+
+    return { success: false, message: 'Invalid or expired Emergency OTP Passcode. Please contact Admin.' };
+  };
+
+  // Strict Access Allowed:
+  // True if Admin (anywhere in world) OR bypassed with single-use OTP OR inside office perimeter
+  const isAccessAllowed = Boolean(
+    isAdmin === true ||
+    isBypassed === true ||
+    (
+      gpsStatus === 'GRANTED' &&
+      userLocation !== null &&
       distanceFromOffice !== null &&
-      distanceFromOffice <= (Number(geofenceConfig?.radiusMeters) || 1.52));
+      !isNaN(distanceFromOffice) &&
+      distanceFromOffice <= (Number(geofenceConfig?.radiusMeters) || 50)
+    )
+  );
 
   return (
     <GeofenceContext.Provider
@@ -264,9 +328,11 @@ export const GeofenceProvider = ({ children }) => {
         gpsStatus,
         gpsError,
         isBypassed,
+        isAdmin,
         isAccessAllowed,
-        verifyLocation,
+        verifyLocation: () => verifyLocation(true),
         updateGeofenceConfig,
+        rotateOTP,
         bypassGeofence
       }}
     >

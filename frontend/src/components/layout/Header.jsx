@@ -82,7 +82,7 @@ export const Header = () => {
           <div
             onClick={() => navigate('/settings')}
             className="hidden md:flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-black cursor-pointer hover:bg-emerald-100 transition shadow-2xs"
-            title={`GPS Geofence Enforced: ${geofenceConfig.officeName || 'HQ'} (Distance: ${distanceFromOffice !== null ? distanceFromOffice + 'm' : 'verifying...'})`}
+            title={`GPS Geofence Enforced: ${geofenceConfig.officeName || 'HQ'} (Distance: ${distanceFromOffice !== null ? (distanceFromOffice * 3.28084).toFixed(0) + 'ft / ' + distanceFromOffice + 'm' : 'verifying...'})`}
           >
             <MapPin className="h-3.5 w-3.5 text-emerald-600 animate-pulse" />
             <span>HQ Geofence Active</span>
@@ -127,117 +127,138 @@ export const Header = () => {
                       onClick={markAllNotificationsAsRead} 
                       className="text-[10px] font-extrabold text-blue-300 hover:text-white transition cursor-pointer hover:underline"
                     >
-                      Mark Read
+                      Mark all as read
                     </button>
                   )}
                   {notifications.length > 0 && (
                     <button 
                       onClick={clearAllNotifications} 
-                      className="text-[10px] font-extrabold text-rose-300 hover:text-rose-100 transition cursor-pointer flex items-center space-x-1 hover:underline bg-rose-500/20 px-2 py-0.5 rounded-lg border border-rose-500/30"
+                      className="text-slate-400 hover:text-rose-400 transition cursor-pointer"
+                      title="Clear All Notifications"
                     >
-                      <Trash2 className="h-3 w-3 inline" />
-                      <span>Clear All</span>
+                      <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   )}
                 </div>
               </div>
 
-              <div className="divide-y divide-slate-100 max-h-80 overflow-y-auto">
-                {notifications.map(n => (
-                  <div 
-                    key={n.id}
-                    className={`p-3.5 hover:bg-slate-50 transition flex items-start space-x-3 group relative ${(!n.isRead && !n.read) ? 'bg-blue-50/50 font-semibold' : 'bg-white'}`}
-                  >
+              <div className="max-h-[350px] overflow-y-auto divide-y divide-slate-100">
+                {notifications.length === 0 ? (
+                  <div className="p-6 text-center text-slate-400 text-xs">
+                    <CheckSquare className="h-8 w-8 text-slate-300 mx-auto mb-2" />
+                    <p className="font-bold">You are all caught up!</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">No new notifications.</p>
+                  </div>
+                ) : (
+                  notifications.map((notif) => (
                     <div 
-                      onClick={() => handleNotifClick(n)}
-                      className={`p-2 rounded-xl shrink-0 mt-0.5 cursor-pointer ${n.type === 'TASK_ASSIGNED' ? 'bg-amber-100 text-amber-700' : n.type === 'NEW_MESSAGE' ? 'bg-indigo-100 text-indigo-700' : 'bg-blue-100 text-blue-600'}`}
+                      key={notif.id}
+                      onClick={() => handleNotifClick(notif)}
+                      className={`p-3.5 flex items-start space-x-3 transition cursor-pointer group ${notif.read ? 'bg-white opacity-70 hover:opacity-100 hover:bg-slate-50' : 'bg-blue-50/60 hover:bg-blue-50'}`}
                     >
-                      {n.type === 'TASK_ASSIGNED' ? <CheckSquare className="h-4 w-4 text-amber-600" /> : <AlertCircle className="h-4 w-4 text-blue-600" />}
-                    </div>
-                    <div 
-                      onClick={() => handleNotifClick(n)}
-                      className="flex-1 space-y-0.5 cursor-pointer min-w-0 pr-1"
-                    >
-                      <div className="flex items-center justify-between">
-                        <p className={`text-xs ${(!n.isRead && !n.read) ? 'font-black text-slate-900' : 'font-semibold text-slate-700'}`}>{n.title}</p>
-                        {(!n.isRead && !n.read) && <span className="h-2 w-2 rounded-full bg-blue-600 shrink-0 mr-1"></span>}
+                      <div className={`p-2 rounded-xl mt-0.5 shrink-0 ${
+                        notif.type === 'BIRTHDAY' || notif.type === 'ANNIVERSARY' ? 'bg-purple-100 text-purple-600' :
+                        notif.type === 'TASK' ? 'bg-blue-100 text-blue-600' :
+                        notif.type === 'EXPENSE' ? 'bg-amber-100 text-amber-600' :
+                        'bg-slate-100 text-slate-600'
+                      }`}>
+                        <AlertCircle className="h-4 w-4" />
                       </div>
-                      <p className="text-[11px] text-slate-500 leading-snug">{n.message || n.desc}</p>
-                      <span className="text-[10px] text-slate-400 font-bold block pt-1">
-                        {n.createdAt?.toDate ? n.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now'}
-                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <h4 className={`text-xs truncate ${notif.read ? 'font-bold text-slate-700' : 'font-black text-slate-900'}`}>{notif.title}</h4>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteNotification(notif.id);
+                            }}
+                            className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-500 transition p-0.5"
+                            title="Delete notification"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                        <p className="text-[11px] text-slate-600 line-clamp-2 mt-0.5">{notif.message}</p>
+                        <span className="text-[9px] text-slate-400 font-bold block mt-1">
+                          {notif.createdAt ? new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now'}
+                        </span>
+                      </div>
                     </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteNotification(n.id);
-                      }}
-                      className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer shrink-0 self-start mt-0.5"
-                      title="Remove this notification"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                ))}
-                {notifications.length === 0 && (
-                  <div className="p-6 text-center text-xs text-slate-400 font-semibold">
-                    No new notifications.
-                  </div>
+                  ))
                 )}
               </div>
 
-              <div className="p-2.5 bg-slate-50 text-center border-t border-slate-100 flex items-center justify-center">
-                <span className="text-[10px] font-black text-red-600 uppercase tracking-wider">SK SMART INVESTMENTS</span>
-              </div>
+              {notifications.length > 0 && (
+                <div className="p-2 bg-slate-50 border-t border-slate-100 text-center">
+                  <span className="text-[10px] text-slate-400 font-bold">Showing latest alerts &amp; reminders</span>
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        {/* User Profile & Direct Logout/Switch Login Link */}
+        {/* User Profile Dropdown Menu */}
         <div className="relative" ref={userMenuRef}>
           <button 
             onClick={() => setShowUserMenu(!showUserMenu)}
-            className="flex items-center space-x-2 p-1.5 rounded-xl hover:bg-slate-100 transition cursor-pointer border border-slate-200/60"
+            className="flex items-center space-x-2.5 p-1.5 rounded-2xl hover:bg-slate-100 transition cursor-pointer border border-transparent hover:border-slate-200"
           >
-            <div className="h-8 w-8 rounded-xl overflow-hidden bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-black text-xs flex items-center justify-center border border-white shadow-xs">
-              {user?.avatarUrl ? (
-                <img src={user.avatarUrl} alt={user.name} className="h-full w-full object-cover" />
-              ) : (
-                <span>{user?.name ? user.name.charAt(0) : 'U'}</span>
-              )}
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 text-white flex items-center justify-center font-black text-xs shadow">
+              {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
             </div>
-            <span className="text-xs font-extrabold text-slate-800 hidden md:inline">{user?.name || 'User'}</span>
+            <div className="text-left hidden md:block">
+              <span className="text-xs font-black text-slate-800 block truncate max-w-[120px]">{user?.name || 'User'}</span>
+              <span className="text-[10px] font-extrabold text-slate-400 block -mt-0.5 capitalize">{user?.role?.toLowerCase() || 'Advisor'}</span>
+            </div>
             <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
           </button>
 
+          {/* User Dropdown Panel */}
           {showUserMenu && (
-            <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-200 p-2 space-y-1 z-50">
-              <div className="px-3 py-2 border-b border-slate-100">
-                <p className="text-xs font-extrabold text-slate-900 truncate">{user?.name}</p>
-                <p className="text-[10px] text-slate-400 truncate">{user?.email}</p>
+            <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-3xl shadow-xl border border-slate-200 py-2 z-50 animate-fadeIn">
+              <div className="px-4 py-2 border-b border-slate-100">
+                <p className="text-xs font-black text-slate-800 truncate">{user?.name}</p>
+                <p className="text-[10px] text-slate-500 font-semibold truncate">{user?.email}</p>
               </div>
-              {isManagerOrAdmin && (
-                <button 
+
+              <div className="py-1">
+                {isManagerOrAdmin && (
+                  <button
+                    onClick={() => {
+                      setShowUserMenu(false);
+                      navigate('/profile');
+                    }}
+                    className="w-full px-4 py-2 text-left text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-blue-600 flex items-center space-x-2 cursor-pointer"
+                  >
+                    <User className="h-3.5 w-3.5 text-slate-500" />
+                    <span>My Profile</span>
+                  </button>
+                )}
+                <button
                   onClick={() => {
                     setShowUserMenu(false);
-                    navigate('/profile');
+                    navigate('/special-days');
                   }}
-                  className="w-full flex items-center space-x-2 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition cursor-pointer"
+                  className="w-full px-4 py-2 text-left text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-blue-600 flex items-center space-x-2 cursor-pointer"
                 >
-                  <User className="h-4 w-4 text-blue-600" />
-                  <span>My Profile</span>
+                  <Bell className="h-3.5 w-3.5 text-slate-500" />
+                  <span>Special Days</span>
                 </button>
-              )}
-              <button 
-                onClick={() => {
-                  logout();
-                  navigate('/login');
-                }}
-                className="w-full flex items-center space-x-2 px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 transition cursor-pointer border-t border-slate-100 mt-1 pt-1.5"
-              >
-                <LogOut className="h-4 w-4" />
-                <span>Switch / Logout</span>
-              </button>
+              </div>
+
+              <div className="border-t border-slate-100 pt-1">
+                <button
+                  onClick={async () => {
+                    setShowUserMenu(false);
+                    await logout();
+                    navigate('/login');
+                  }}
+                  className="w-full px-4 py-2 text-left text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center space-x-2 cursor-pointer"
+                >
+                  <LogOut className="h-3.5 w-3.5 text-rose-500" />
+                  <span>Log Out</span>
+                </button>
+              </div>
             </div>
           )}
         </div>

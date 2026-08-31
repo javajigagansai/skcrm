@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useGeofence, calculateDistanceMeters } from '../context/GeofenceContext';
+import { useGeofence, calculateDistanceMeters, generateNewOTP } from '../context/GeofenceContext';
 import { useNavigate } from 'react-router-dom';
-import { Settings as SettingsIcon, Building2, Save, Key, UserCheck, ShieldCheck, MapPin, Navigation, Compass, AlertTriangle, CheckCircle2, RefreshCw } from 'lucide-react';
+import { 
+  Settings as SettingsIcon, Building2, Save, Key, UserCheck, ShieldCheck, 
+  MapPin, Navigation, Compass, AlertTriangle, CheckCircle2, RefreshCw, Copy, Sparkles, Lock 
+} from 'lucide-react';
 
 export const Settings = () => {
   const { user } = useAuth();
-  const { geofenceConfig, updateGeofenceConfig, userLocation } = useGeofence();
+  const { geofenceConfig, updateGeofenceConfig, rotateOTP, userLocation } = useGeofence();
   const navigate = useNavigate();
   const isAdminOrHigher = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN';
 
@@ -20,30 +23,34 @@ export const Settings = () => {
   });
 
   const [geoForm, setGeoForm] = useState({
-    enabled: false,
+    enabled: true,
     officeName: 'SK Smart Investments Head Office',
     latitude: 12.8342,
     longitude: 79.7036,
-    radiusMeters: 1.52,
+    radiusMeters: 50,
     allowAdminBypass: true,
-    customBypassCode: 'SK@GEO2026'
+    currentOtp: '849201',
+    customBypassCode: '849201'
   });
 
   const [isCapturingGPS, setIsCapturingGPS] = useState(false);
   const [gpsCaptureMsg, setGpsCaptureMsg] = useState('');
   const [liveTestDistance, setLiveTestDistance] = useState(null);
   const [saveStatus, setSaveStatus] = useState('');
+  const [copiedOtp, setCopiedOtp] = useState(false);
+  const [isRotatingOtp, setIsRotatingOtp] = useState(false);
 
   useEffect(() => {
     if (geofenceConfig) {
       setGeoForm({
-        enabled: geofenceConfig.enabled || false,
+        enabled: geofenceConfig.enabled !== undefined ? geofenceConfig.enabled : true,
         officeName: geofenceConfig.officeName || 'SK Smart Investments Head Office',
         latitude: geofenceConfig.latitude !== undefined ? geofenceConfig.latitude : 12.8342,
         longitude: geofenceConfig.longitude !== undefined ? geofenceConfig.longitude : 79.7036,
-        radiusMeters: geofenceConfig.radiusMeters !== undefined ? geofenceConfig.radiusMeters : 1.52,
+        radiusMeters: geofenceConfig.radiusMeters !== undefined ? geofenceConfig.radiusMeters : 50,
         allowAdminBypass: geofenceConfig.allowAdminBypass !== undefined ? geofenceConfig.allowAdminBypass : true,
-        customBypassCode: geofenceConfig.customBypassCode || 'SK@GEO2026'
+        currentOtp: geofenceConfig.currentOtp || geofenceConfig.customBypassCode || '849201',
+        customBypassCode: geofenceConfig.currentOtp || geofenceConfig.customBypassCode || '849201'
       });
     }
   }, [geofenceConfig]);
@@ -70,14 +77,34 @@ export const Settings = () => {
         }));
 
         setIsCapturingGPS(false);
-        setGpsCaptureMsg(`✓ Captured coordinates: ${lat}, ${lon} (Accuracy: ±${acc}m)`);
+        setGpsCaptureMsg(`✓ Captured coordinates: ${lat}, ${lon} (Device Accuracy: ±${acc}m)`);
       },
       (err) => {
         setIsCapturingGPS(false);
-        setGpsCaptureMsg(`⚠️ Failed to capture GPS: ${err.message}. Please ensure location permissions are granted in browser.`);
+        setGpsCaptureMsg(`⚠️ Failed to capture GPS: ${err.message}. Please ensure location permissions are granted.`);
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
+  };
+
+  const handleManualRotateOTP = async () => {
+    setIsRotatingOtp(true);
+    try {
+      const nextCode = await rotateOTP();
+      setGeoForm(prev => ({ ...prev, currentOtp: nextCode, customBypassCode: nextCode }));
+      alert(`New Single-Use Emergency Passcode generated: ${nextCode}`);
+    } catch (e) {
+      alert('Error rotating OTP: ' + e.message);
+    } finally {
+      setIsRotatingOtp(false);
+    }
+  };
+
+  const handleCopyOTP = () => {
+    const code = geoForm.currentOtp || geoForm.customBypassCode || '849201';
+    navigator.clipboard.writeText(code);
+    setCopiedOtp(true);
+    setTimeout(() => setCopiedOtp(false), 2500);
   };
 
   const handleTestDistance = () => {
@@ -107,7 +134,8 @@ export const Settings = () => {
         longitude: Number(geoForm.longitude),
         radiusMeters: Number(geoForm.radiusMeters),
         allowAdminBypass: geoForm.allowAdminBypass,
-        customBypassCode: geoForm.customBypassCode
+        currentOtp: geoForm.currentOtp,
+        customBypassCode: geoForm.currentOtp
       });
 
       setSaveStatus('Saved!');
@@ -126,7 +154,7 @@ export const Settings = () => {
           <SettingsIcon className="h-7 w-7 text-blue-600" />
           <span>System Settings &amp; Security Controls</span>
         </h1>
-        <p className="text-xs text-slate-500 font-semibold">Workspace metadata, office location geofencing, and security perimeter rules.</p>
+        <p className="text-xs text-slate-500 font-semibold">Workspace metadata, office location geofencing, and rotating single-use security perimeter rules.</p>
       </div>
 
       {isAdminOrHigher && (
@@ -154,7 +182,7 @@ export const Settings = () => {
 
       {/* ================= GEOFENCING SECURITY PERIMETER SECTION ================= */}
       {isAdminOrHigher && (
-        <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-card space-y-5">
+        <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-card space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-4 gap-3">
             <div className="flex items-center space-x-3">
               <div className={`p-2.5 rounded-2xl font-black ${geoForm.enabled ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
@@ -164,10 +192,12 @@ export const Settings = () => {
                 <div className="flex items-center space-x-2">
                   <h3 className="text-sm font-black text-slate-900">GPS Location Geofence Protection</h3>
                   <span className={`badge text-[10px] font-black uppercase ${geoForm.enabled ? 'badge-green' : 'badge-red'}`}>
-                    {geoForm.enabled ? 'ENFORCED' : 'DISABLED'}
+                    {geoForm.enabled ? 'STRICTLY ENFORCED' : 'DISABLED'}
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 font-semibold">Restrict CRM access strictly to authorized office coordinates (Latitude / Longitude perimeter)</p>
+                <p className="text-xs text-slate-500 font-semibold">
+                  Restricts CRM access strictly to authorized office coordinates (Staff &amp; Managers outside the perimeter are blocked)
+                </p>
               </div>
             </div>
 
@@ -181,9 +211,65 @@ export const Settings = () => {
               />
               <div className="w-12 h-6.5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
               <span className="ml-2.5 text-xs font-black text-slate-800">
-                {geoForm.enabled ? 'Enabled' : 'Disabled'}
+                {geoForm.enabled ? 'Enforced' : 'Disabled'}
               </span>
             </label>
+          </div>
+
+          {/* ================= DYNAMIC ROTATING OTP PASSCODE CARD ================= */}
+          <div className="bg-gradient-to-br from-amber-50 via-amber-100/40 to-yellow-50 p-5 rounded-2xl border border-amber-200 shadow-xs space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center space-x-2.5">
+                <div className="p-2 rounded-xl bg-amber-500 text-slate-950 font-black">
+                  <Key className="h-5 w-5" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-black text-amber-950 uppercase tracking-wider">
+                    Emergency Single-Use OTP Passcode
+                  </h4>
+                  <p className="text-[11px] text-amber-800 font-semibold">
+                    Automatically rotates to a new secret OTP every time any staff member authorizes with it
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <button
+                  type="button"
+                  onClick={handleCopyOTP}
+                  className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-800 border border-amber-300 font-extrabold text-xs shadow-2xs transition cursor-pointer flex items-center space-x-1"
+                >
+                  <Copy className="h-3.5 w-3.5 text-slate-600" />
+                  <span>{copiedOtp ? 'Copied!' : 'Copy OTP'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleManualRotateOTP}
+                  disabled={isRotatingOtp}
+                  className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-2xs transition cursor-pointer flex items-center space-x-1 disabled:opacity-50"
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 ${isRotatingOtp ? 'animate-spin' : ''}`} />
+                  <span>Roll New OTP</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-white/90 p-4 rounded-xl border border-amber-200/80 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">
+                  Active Single-Use Secret Passcode:
+                </span>
+                <span className="text-2xl font-black font-mono tracking-widest text-slate-900">
+                  {geoForm.currentOtp || '849201'}
+                </span>
+              </div>
+              <div className="text-right">
+                <span className="badge bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase">
+                  Auto-Rotation Active
+                </span>
+                <p className="text-[10px] text-slate-500 font-medium mt-0.5">Burns immediately upon use</p>
+              </div>
+            </div>
           </div>
 
           <div className="space-y-4">
@@ -253,40 +339,26 @@ export const Settings = () => {
               </button>
             </div>
 
-            {/* Allowable Radius and Bypass Code */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-              <div>
-                <label className="block text-xs font-black uppercase text-slate-600 mb-1">
-                  Allowed Perimeter Radius
-                </label>
-                <select
-                  value={geoForm.radiusMeters}
-                  onChange={(e) => setGeoForm({ ...geoForm, radiusMeters: Number(e.target.value) })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                >
-                  <option value={1.52}>5 Feet (~1.5 Meters - Immediate Desk / Chair Zone - Recommended)</option>
-                  <option value={3.05}>10 Feet (~3.0 Meters - Single Cabin / Workspace)</option>
-                  <option value={7.62}>25 Feet (~7.6 Meters - Office Room)</option>
-                  <option value={15.24}>50 Feet (~15.2 Meters - Office Floor / Section)</option>
-                  <option value={30.48}>100 Feet (~30.5 Meters - Entire Office Suite)</option>
-                  <option value={50}>50 Meters (~164 Feet - Entire Office Building)</option>
-                  <option value={100}>100 Meters (Office Complex)</option>
-                  <option value={500}>500 Meters (Vicinity)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-black uppercase text-slate-600 mb-1">
-                  Admin Emergency Bypass Passcode
-                </label>
-                <input
-                  type="text"
-                  value={geoForm.customBypassCode}
-                  onChange={(e) => setGeoForm({ ...geoForm, customBypassCode: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-mono font-bold outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="SK@GEO2026"
-                />
-              </div>
+            {/* Allowable Radius */}
+            <div>
+              <label className="block text-xs font-black uppercase text-slate-600 mb-1">
+                Allowed Perimeter Radius
+              </label>
+              <select
+                value={geoForm.radiusMeters}
+                onChange={(e) => setGeoForm({ ...geoForm, radiusMeters: Number(e.target.value) })}
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              >
+                <option value={1.52}>5 Feet (~1.5 Meters - Immediate Desk / Chair Zone)</option>
+                <option value={3.05}>10 Feet (~3.0 Meters - Single Cabin / Workspace)</option>
+                <option value={7.62}>25 Feet (~7.6 Meters - Office Room)</option>
+                <option value={15.24}>50 Feet (~15.2 Meters - Office Floor / Section)</option>
+                <option value={30.48}>100 Feet (~30.5 Meters - Entire Office Suite)</option>
+                <option value={50}>50 Meters (~164 Feet - Entire Office Building - Recommended)</option>
+                <option value={100}>100 Meters (Office Complex)</option>
+                <option value={500}>500 Meters (Standard Office Vicinity)</option>
+                <option value={1000}>1 Kilometer (Office Neighborhood)</option>
+              </select>
             </div>
 
             {/* Test Location Distance Tool */}
@@ -370,4 +442,3 @@ export const Settings = () => {
     </div>
   );
 };
-

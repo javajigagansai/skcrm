@@ -214,7 +214,9 @@ export const DataProvider = ({ children }) => {
   const leads = useMemo(() => filterScopedRecords(user, rawLeads), [user, rawLeads]);
   const followups = useMemo(() => filterScopedRecords(user, rawFollowups), [user, rawFollowups]);
   const tasks = useMemo(() => filterScopedRecords(user, rawTasks), [user, rawTasks]);
+  // 100% Manual Entry - Live records from Firestore income collection
   const income = useMemo(() => (user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER' ? rawIncome : []), [user, rawIncome]);
+  // 100% Manual Entry - Live records from Firestore expenses collection
   const expenses = useMemo(() => (user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER' ? rawExpenses : []), [user, rawExpenses]);
   const auditLogs = useMemo(() => {
     if (user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'MANAGER') {
@@ -222,8 +224,17 @@ export const DataProvider = ({ children }) => {
     }
     return rawAuditLogs.filter(l => l.userName === user?.name || l.userRole === user?.role);
   }, [user, rawAuditLogs]);
+
   const staffList = useMemo(() => {
-    return rawUsers;
+    if (Array.isArray(rawUsers) && rawUsers.length > 0) return rawUsers;
+    try {
+      const saved = localStorage.getItem('crm_v2_users_list');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return [];
   }, [rawUsers]);
 
 
@@ -1060,9 +1071,98 @@ export const DataProvider = ({ children }) => {
 
   const addIncome = async (incData) => {
     const id = incData.id || `INC-SK-${Date.now()}`;
-    const newInc = { ...incData, id, date: incData.date || new Date().toISOString().split('T')[0] };
-    await setDoc(doc(db, 'income', id), newInc, { merge: true });
+    const amountNum = Number(incData.amount || incData.grossAmount || 0);
+    const netAmountNum = Number(incData.netAmount !== undefined ? incData.netAmount : Math.round(amountNum * 0.95));
+    const dateStr = incData.date || incData.receivedDate || new Date().toISOString().split('T')[0];
+    const timeStr = incData.time || new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+    
+    const newInc = {
+      ...incData,
+      id,
+      amount: amountNum,
+      grossAmount: amountNum,
+      netAmount: netAmountNum,
+      date: dateStr,
+      receivedDate: dateStr,
+      time: timeStr,
+      createdAt: incData.createdAt || new Date().toISOString()
+    };
+
+    setIncome(prev => [newInc, ...(prev || []).filter(i => i.id !== id)]);
+
+    try {
+      await setDoc(doc(db, 'income', String(id)), sanitizeForFirestore(newInc), { merge: true });
+    } catch (e) {
+      console.warn('Firestore addIncome error:', e);
+    }
+
+    addAuditLog({
+      userName: user?.name || 'Admin User',
+      userRole: user?.role || 'ADMIN',
+      action: 'CREATE_INCOME',
+      module: 'Income',
+      affectedRecord: id,
+      details: `Recorded brokerage income of ₹${amountNum.toLocaleString('en-IN')} for ${newInc.customerName || 'Customer'} (${newInc.payorCompany || 'Company'})`
+    });
+
     return newInc;
+  };
+
+  const updateIncome = async (id, updatedData) => {
+    if (!id) return;
+    const amountNum = Number(updatedData.amount || updatedData.grossAmount || 0);
+    const netAmountNum = Number(updatedData.netAmount !== undefined ? updatedData.netAmount : Math.round(amountNum * 0.95));
+    const dateStr = updatedData.date || updatedData.receivedDate || new Date().toISOString().split('T')[0];
+    const timeStr = updatedData.time || new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+    const updated = {
+      ...updatedData,
+      id,
+      amount: amountNum,
+      grossAmount: amountNum,
+      netAmount: netAmountNum,
+      date: dateStr,
+      receivedDate: dateStr,
+      time: timeStr,
+      updatedAt: new Date().toISOString()
+    };
+
+    setIncome(prev => (prev || []).map(inc => (String(inc.id) === String(id) ? { ...inc, ...updated } : inc)));
+
+    try {
+      await setDoc(doc(db, 'income', String(id)), sanitizeForFirestore(updated), { merge: true });
+    } catch (e) {
+      console.warn('Firestore updateIncome error:', e);
+    }
+
+    addAuditLog({
+      userName: user?.name || 'Admin User',
+      userRole: user?.role || 'ADMIN',
+      action: 'UPDATE_INCOME',
+      module: 'Income',
+      affectedRecord: String(id),
+      details: `Updated income voucher ${id}: Gross ₹${amountNum.toLocaleString('en-IN')}, Net ₹${netAmountNum.toLocaleString('en-IN')}`
+    });
+
+    return updated;
+  };
+
+  const deleteIncome = async (id) => {
+    if (!id) return;
+    setIncome(prev => (prev || []).filter(inc => String(inc.id) !== String(id)));
+    try {
+      await deleteDoc(doc(db, 'income', String(id)));
+    } catch (e) {
+      console.warn('Firestore deleteIncome error:', e);
+    }
+    addAuditLog({
+      userName: user?.name || 'Admin User',
+      userRole: user?.role || 'ADMIN',
+      action: 'DELETE_INCOME',
+      module: 'Income',
+      affectedRecord: String(id),
+      details: `Deleted income voucher ${id}`
+    });
   };
 
   const addExpense = async (expData) => {
@@ -1362,6 +1462,8 @@ export const DataProvider = ({ children }) => {
       updateTaskStatus,
       deleteTask,
       addIncome,
+      updateIncome,
+      deleteIncome,
       addExpense,
       updateExpense,
       deleteExpense,

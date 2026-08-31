@@ -1366,18 +1366,18 @@ export const exportClaimsExcel = (claimsList = []) => {
 
 // Export Income & Commission Register to Excel / CSV
 export const exportIncomeExcel = (incomeList = []) => {
-  const headers = ['Voucher No', 'Transaction Date', 'Client Name', 'Income Category', 'Payor Company / Broker', 'Commission Amount (₹)', 'TDS Deducted (₹)', 'Net Income Received (₹)', 'Assigned Advisor', 'Status'];
+  const headers = ['Voucher No', 'Transaction Date', 'Transaction Time', 'Client Name', 'Income Category', 'Payor Company / Broker', 'Commission Amount (₹)', 'Net Income Received (₹)', 'Assigned Advisor', 'Status'];
   
   const rows = incomeList.map(inc => [
-    inc.id || inc.voucherNo || 'SK-INC-101',
-    inc.date || '2026-08-15',
+    inc.id || 'N/A',
+    inc.date || inc.receivedDate || '',
+    inc.time || '',
     inc.clientName || inc.customerName || 'N/A',
     inc.category || inc.type || 'Insurance Brokerage',
-    inc.payorCompany || inc.companyName || 'Tata AIA Life',
-    inc.amount ? `₹${Number(inc.amount).toLocaleString('en-IN')}` : '₹15,000',
-    inc.tdsAmount ? `₹${Number(inc.tdsAmount).toLocaleString('en-IN')}` : '₹750',
-    inc.netAmount ? `₹${Number(inc.netAmount).toLocaleString('en-IN')}` : '₹14,250',
-    inc.assignedStaffName || inc.assignedStaff || 'Prakash Gajendiran',
+    inc.payorCompany || inc.companyName || 'N/A',
+    inc.amount ? `₹${Number(inc.amount).toLocaleString('en-IN')}` : '₹0',
+    inc.netAmount ? `₹${Number(inc.netAmount).toLocaleString('en-IN')}` : (inc.amount ? `₹${Number(inc.amount).toLocaleString('en-IN')}` : '₹0'),
+    inc.assignedStaffName || inc.assignedStaff || 'Unassigned',
     inc.status || 'RECEIVED'
   ]);
 

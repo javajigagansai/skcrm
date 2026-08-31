@@ -23,7 +23,6 @@ if (typeof window !== 'undefined') {
   };
 }
 
-
 // Catch Vite dynamic import chunk loading failures (e.g. after deployment updates)
 window.addEventListener('vite:preloadError', () => {
   window.location.reload();
@@ -59,4 +58,3 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     </ErrorBoundary>
   </React.StrictMode>
 );
-

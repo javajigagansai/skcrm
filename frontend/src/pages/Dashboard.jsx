@@ -201,7 +201,7 @@ export const Dashboard = () => {
     };
   }, []);
 
-  // Live Expenses Calculations (Filtered by Date Filter, Live Single Source of Truth)
+  // Live Expenses Calculations (Filtered by Date Filter, Live Single Source of Truth matching Company Expenditure Tracker)
   const companyOperatingExpenses = useMemo(() => {
     const allList = Array.isArray(expenses) ? expenses : [];
     
@@ -210,7 +210,7 @@ export const Dashboard = () => {
       return isDateInSelectedFilter(d, dateFilter, customStartDate, customEndDate);
     });
 
-    const activeList = filteredList.length > 0 ? filteredList : allList;
+    const activeList = dateFilter === 'ALL' ? allList : filteredList;
 
     // Staff Payroll vs Operational breakdown from live database records
     const payrollItems = activeList.filter(e => {
@@ -672,7 +672,7 @@ export const Dashboard = () => {
     const expenseByDate = {};
     const expenseByMonth = {};
 
-    const allIncome = [...(income && income.length > 0 ? income : fallbackIncomeData)];
+    const allIncome = Array.isArray(income) && income.length > 0 ? income : (fallbackIncomeData || []);
     allIncome.forEach(item => {
       const dStr = item.date || item.receivedDate || item.createdAt || item.timestamp;
       if (!dStr) return;
@@ -683,23 +683,13 @@ export const Dashboard = () => {
       incomeByMonth[mKey] = (incomeByMonth[mKey] || 0) + amt;
     });
 
-    (policies || []).forEach(p => {
-      const dStr = p.startDate || p.issueDate || p.createdAt;
-      if (!dStr) return;
-      const dKey = typeof dStr === 'string' ? dStr.split('T')[0] : toDateKey(new Date(dStr));
-      const mKey = dKey.substring(0, 7);
-      const amt = Number(p.grossPremium || p.premiumAmount || 0);
-      incomeByDate[dKey] = (incomeByDate[dKey] || 0) + amt;
-      incomeByMonth[mKey] = (incomeByMonth[mKey] || 0) + amt;
-    });
-
-    const allExpenses = (companyOperatingExpenses?.items && companyOperatingExpenses.items.length > 0) ? companyOperatingExpenses.items : (expenses || []);
+    const allExpenses = Array.isArray(expenses) ? expenses : [];
     allExpenses.forEach(item => {
       const dStr = item.expenseDate || item.date || item.createdAt || item.timestamp;
       if (!dStr) return;
       const dKey = typeof dStr === 'string' ? dStr.split('T')[0] : toDateKey(new Date(dStr));
       const mKey = dKey.substring(0, 7);
-      const amt = Number(item.amount || 0);
+      const amt = Number(item.amount || item.expenseAmount || 0);
       expenseByDate[dKey] = (expenseByDate[dKey] || 0) + amt;
       expenseByMonth[mKey] = (expenseByMonth[mKey] || 0) + amt;
     });
@@ -733,7 +723,7 @@ export const Dashboard = () => {
         netProfit: netProfitLakhs
       };
     });
-  }, [dateFilter, customStartDate, customEndDate, policies, income, companyOperatingExpenses, expenses]);
+  }, [dateFilter, customStartDate, customEndDate, income, expenses]);
 
   const dynamicAcquisitionsChart = useMemo(() => {
     const now = new Date();
@@ -1786,36 +1776,158 @@ export const Dashboard = () => {
         </div>
       );
     } else if (activeModal === 'INCOME_EXPENSE_CHART') {
-      title = "Chart Analysis: Income vs Operational Expense Variance";
-      subtitle = `Revenue received vs operational overhead expenses comparison (${dateFilter}).`;
+      title = "Executive Financial Ledger: Income vs Company Expenditure Variance";
+      subtitle = `Complete revenue inflows vs live company expenditures & payroll comparison (${dateFilter}).`;
+      
+      const totalPeriodIncome = dynamicFinancialsChart.reduce((s, row) => s + (Number(row.rawIncome) || 0), 0);
+      const totalPeriodExpense = dynamicFinancialsChart.reduce((s, row) => s + (Number(row.rawExpense) || 0), 0);
+      const periodNetVariance = totalPeriodIncome - totalPeriodExpense;
+      const profitMarginPct = totalPeriodIncome > 0 ? ((periodNetVariance / totalPeriodIncome) * 100).toFixed(1) : 0;
+
       content = (
         <div className="space-y-6">
-          <div className="h-[440px] w-full bg-slate-50 p-4 rounded-2xl border border-slate-200">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart 
-                data={dynamicFinancialsChart}
-                margin={{ top: 15, right: 20, left: -10, bottom: 5 }}
-                barGap={6}
-                barCategoryGap="40%"
+          {/* Top 3 Synchronized Financial Summary Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/60 p-4 rounded-2xl border border-emerald-200 shadow-xs">
+              <span className="text-[11px] font-black text-emerald-800 uppercase tracking-wider">Total Gross Income Received</span>
+              <p className="text-2xl font-black text-slate-900 mt-1">₹{totalPeriodIncome.toLocaleString('en-IN')}</p>
+              <span className="text-[10px] text-emerald-700 font-semibold">Brokerage &amp; Commission Inflow</span>
+            </div>
+            <div className="bg-gradient-to-br from-rose-50 to-rose-100/60 p-4 rounded-2xl border border-rose-200 shadow-xs">
+              <span className="text-[11px] font-black text-rose-800 uppercase tracking-wider">Total Company Expenditure</span>
+              <p className="text-2xl font-black text-slate-900 mt-1">₹{totalPeriodExpense.toLocaleString('en-IN')}</p>
+              <span className="text-[10px] text-rose-700 font-semibold">
+                {companyOperatingExpenses.items.length} Recorded {companyOperatingExpenses.items.length === 1 ? 'Expense Entry' : 'Expense Entries'}
+              </span>
+            </div>
+            <div className={`p-4 rounded-2xl border shadow-xs ${periodNetVariance >= 0 ? 'bg-gradient-to-br from-blue-50 to-blue-100/60 border-blue-200' : 'bg-gradient-to-br from-amber-50 to-amber-100/60 border-amber-200'}`}>
+              <span className={`text-[11px] font-black uppercase tracking-wider ${periodNetVariance >= 0 ? 'text-blue-800' : 'text-amber-800'}`}>
+                {periodNetVariance >= 0 ? 'Net Operating Surplus / Margin' : 'Net Operating Deficit'}
+              </span>
+              <p className={`text-2xl font-black mt-1 ${periodNetVariance >= 0 ? 'text-blue-900' : 'text-rose-700'}`}>
+                {periodNetVariance >= 0 ? `+₹${periodNetVariance.toLocaleString('en-IN')}` : `-₹${Math.abs(periodNetVariance).toLocaleString('en-IN')}`}
+              </p>
+              <span className={`text-[10px] font-semibold ${periodNetVariance >= 0 ? 'text-blue-700' : 'text-amber-700'}`}>
+                {profitMarginPct}% Operating Profit Margin
+              </span>
+            </div>
+          </div>
+
+          {/* Large Interactive Financial Bar Chart */}
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-black uppercase text-slate-700">Financial Timeline Distribution (In Lakhs ₹)</h4>
+              <span className="text-[10px] text-slate-500 font-bold">1.00 L = ₹1,00,000</span>
+            </div>
+            <div className="h-[360px] w-full bg-slate-50 p-2 rounded-xl">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart 
+                  data={dynamicFinancialsChart}
+                  margin={{ top: 15, right: 20, left: -10, bottom: 5 }}
+                  barGap={6}
+                  barCategoryGap="40%"
+                >
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                  <XAxis 
+                    dataKey="label" 
+                    tickLine={false} 
+                    axisLine={false} 
+                    interval={0}
+                    angle={0}
+                    textAnchor="middle"
+                    height={25}
+                    tick={{ fontSize: dynamicFinancialsChart.length > 15 ? 9 : 11, fontWeight: 700, fill: '#64748B' }} 
+                  />
+                  <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700 }} unit="L" />
+                  <Tooltip content={<FinancialChartTooltip />} cursor={{ fill: '#F1F5F9' }} />
+                  <Legend wrapperStyle={{ paddingTop: '10px' }} />
+                  <Bar dataKey="income" fill="#10B981" radius={[6, 6, 0, 0]} barSize={dynamicFinancialsChart.length > 15 ? 7 : (dynamicFinancialsChart.length > 7 ? 14 : 24)} name="Income (Lakhs)" />
+                  <Bar dataKey="expense" fill="#EF4444" radius={[6, 6, 0, 0]} barSize={dynamicFinancialsChart.length > 15 ? 7 : (dynamicFinancialsChart.length > 7 ? 14 : 24)} name="Expense (Lakhs)" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Variance Ledger Table */}
+          <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
+            <div className="bg-slate-900 text-white px-4 py-3 flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Scale className="h-4 w-4 text-emerald-400" />
+                <h4 className="text-xs font-black uppercase tracking-wider">Synchronized Period Variance Ledger</h4>
+              </div>
+              <span className="text-[10px] text-slate-300 font-bold">{dynamicFinancialsChart.length} Period Slots</span>
+            </div>
+            <div className="max-h-72 overflow-y-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-100 text-slate-700 font-black border-b sticky top-0">
+                  <tr>
+                    <th className="p-3">Timeline Interval</th>
+                    <th className="p-3 text-right">Income (₹)</th>
+                    <th className="p-3 text-right">Expenditure (₹)</th>
+                    <th className="p-3 text-right">Net Variance (₹)</th>
+                    <th className="p-3 text-center">Ledger Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-medium">
+                  {dynamicFinancialsChart.map((row, idx) => {
+                    const incAmt = Number(row.rawIncome || 0);
+                    const expAmt = Number(row.rawExpense || 0);
+                    const netAmt = incAmt - expAmt;
+                    return (
+                      <tr key={idx} className="hover:bg-slate-50 transition">
+                        <td className="p-3 font-bold text-slate-900">{row.fullLabel || row.label}</td>
+                        <td className="p-3 text-right font-mono font-bold text-emerald-700">₹{incAmt.toLocaleString('en-IN')}</td>
+                        <td className="p-3 text-right font-mono font-bold text-rose-600">₹{expAmt.toLocaleString('en-IN')}</td>
+                        <td className={`p-3 text-right font-mono font-black ${netAmt >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+                          {netAmt >= 0 ? `+₹${netAmt.toLocaleString('en-IN')}` : `-₹${Math.abs(netAmt).toLocaleString('en-IN')}`}
+                        </td>
+                        <td className="p-3 text-center">
+                          {netAmt > 0 ? (
+                            <span className="badge badge-green text-[10px]">Surplus</span>
+                          ) : netAmt < 0 ? (
+                            <span className="badge badge-red text-[10px]">Deficit</span>
+                          ) : (
+                            <span className="badge bg-slate-100 text-slate-500 text-[10px]">Balanced / No Inflow</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Direct Navigation Links */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => {
+                  setActiveModal(null);
+                  navigate('/income');
+                }}
+                className="px-4 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-xs flex items-center space-x-1.5 transition cursor-pointer"
               >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                <XAxis 
-                  dataKey="label" 
-                  tickLine={false} 
-                  axisLine={false} 
-                  interval={0}
-                  angle={0}
-                  textAnchor="middle"
-                  height={25}
-                  tick={{ fontSize: dynamicFinancialsChart.length > 15 ? 9 : 11, fontWeight: 700, fill: '#64748B' }} 
-                />
-                <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 700 }} unit="L" />
-                <Tooltip content={<FinancialChartTooltip />} cursor={{ fill: '#F1F5F9' }} />
-                <Legend wrapperStyle={{ paddingTop: '10px' }} />
-                <Bar dataKey="income" fill="#10B981" radius={[6, 6, 0, 0]} barSize={dynamicFinancialsChart.length > 15 ? 7 : (dynamicFinancialsChart.length > 7 ? 14 : 24)} name="Income (Lakhs)" />
-                <Bar dataKey="expense" fill="#EF4444" radius={[6, 6, 0, 0]} barSize={dynamicFinancialsChart.length > 15 ? 7 : (dynamicFinancialsChart.length > 7 ? 14 : 24)} name="Expense (Lakhs)" />
-              </BarChart>
-            </ResponsiveContainer>
+                <TrendingUp className="h-3.5 w-3.5 text-emerald-600" />
+                <span>Open Income &amp; Brokerage Register</span>
+              </button>
+              <button
+                onClick={() => {
+                  setActiveModal(null);
+                  navigate('/expenses');
+                }}
+                className="px-4 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 font-bold text-xs flex items-center space-x-1.5 transition cursor-pointer"
+              >
+                <Building2 className="h-3.5 w-3.5 text-rose-600" />
+                <span>Open Company Expenditure Tracker</span>
+              </button>
+            </div>
+            <button
+              onClick={() => setActiveModal(null)}
+              className="px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition cursor-pointer"
+            >
+              Close
+            </button>
           </div>
         </div>
       );
